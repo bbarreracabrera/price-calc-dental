@@ -1,474 +1,433 @@
 import React, { useState, useEffect } from 'react';
 import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable'; // Nueva librería para tablas PDF
+import * as XLSX from 'xlsx'; // Nueva librería para Excel Real
 import { 
-  Calculator, Download, User, Stethoscope, 
-  Share2, X, Landmark, CreditCard, Settings, 
-  ChevronRight, Activity, Library, Plus, Trash2, 
-  Save, History, FileText, RefreshCw, Search, 
-  FileSpreadsheet, MessageCircle 
+  Calculator, User, Share2, X, Landmark, CreditCard, Settings, 
+  Activity, Library, Plus, Trash2, Save, History, 
+  Search, MessageCircle, Moon, Sun, TrendingUp, Cloud, Diamond, FileSpreadsheet
 } from 'lucide-react';
 
+// --- ESTILOS DE LUJO ---
+const goldGradient = "bg-gradient-to-r from-[#D4AF37] via-[#F2D06B] to-[#B69121]";
+const goldText = "bg-clip-text text-transparent bg-gradient-to-r from-[#D4AF37] to-[#F2D06B]";
+
+// --- COMPONENTES VISUALES ---
+const Card = ({ children, className = "", darkMode, noBorder = false }) => (
+  <div className={`p-5 rounded-3xl transition-all duration-300 relative overflow-hidden backdrop-blur-xl ${
+    darkMode 
+      ? `bg-[#1a1a1a]/60 ${noBorder ? '' : 'border border-white/10'} shadow-2xl shadow-black/50` 
+      : `bg-white/70 ${noBorder ? '' : 'border border-amber-900/5'} shadow-xl shadow-amber-900/5`
+  } ${className}`}>
+    {children}
+  </div>
+);
+
+const Button = ({ onClick, children, variant = "primary", className = "", darkMode }) => {
+  const baseStyle = "p-3 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 tracking-wide relative overflow-hidden";
+  let variantStyle = "";
+  if (variant === "primary") variantStyle = `${goldGradient} text-white shadow-lg shadow-[#D4AF37]/40 hover:brightness-110`;
+  if (variant === "secondary") variantStyle = darkMode 
+    ? "bg-white/5 border border-white/10 text-[#F2D06B] hover:bg-white/10" 
+    : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50";
+  return <button onClick={onClick} className={`${baseStyle} ${variantStyle} ${className}`}>{children}</button>;
+};
+
+const InputField = ({ label, icon: Icon, darkMode, ...props }) => (
+  <div className="w-full">
+    {label && <label className={`text-[10px] font-bold uppercase tracking-widest mb-1.5 block ml-1 opacity-70 ${darkMode ? 'text-[#F2D06B]' : 'text-stone-500'}`}>{label}</label>}
+    <div className={`flex items-center p-3.5 rounded-2xl border transition-all duration-300 group ${
+      darkMode 
+        ? 'bg-black/40 border-white/5 focus-within:border-[#D4AF37]/60 focus-within:bg-black/60' 
+        : 'bg-white/60 border-stone-200 focus-within:border-[#D4AF37]/60 focus-within:bg-white'
+    }`}>
+      {Icon && <Icon size={18} className={`mr-3 transition-colors ${darkMode ? 'text-white/40 group-focus-within:text-[#D4AF37]' : 'text-stone-400 group-focus-within:text-[#D4AF37]'}`}/>}
+      <input {...props} className={`bg-transparent outline-none w-full font-medium ${darkMode ? 'text-white placeholder-white/20' : 'text-stone-800 placeholder-stone-400'}`}/>
+    </div>
+  </div>
+);
+
+// --- APP PRINCIPAL ---
 function App() {
-  // --- NAVEGACIÓN ---
-  const [activeTab, setActiveTab] = useState('quote'); 
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [activeTab, setActiveTab] = useState('dashboard'); 
 
-  // --- CONFIGURACIÓN (PERSISTENTE) ---
-  const [config, setConfig] = useState(() => {
-    const saved = localStorage.getItem('priceCalcConfig');
-    return saved ? JSON.parse(saved) : {
-      hourlyRate: 25000,
-      profitMargin: 30,
-      bankName: "Banco Estado",
-      accountType: "Cuenta RUT",
-      accountNumber: "",
-      rut: "",
-      email: "",
-      name: "Dr. Benjamín",
-      mpLink: ""
-    };
+  // Datos Persistentes
+  const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('priceCalcConfig')) || {
+    hourlyRate: 25000, profitMargin: 30, bankName: "Banco Estado", accountType: "Cuenta RUT", accountNumber: "", rut: "", email: "", name: "Dr. Benjamín", mpLink: ""
   });
+  const [protocols, setProtocols] = useState(() => JSON.parse(localStorage.getItem('dentalProtocols')) || []);
+  const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('dentalHistory')) || []);
 
-  // --- CATÁLOGO (PERSISTENTE) ---
-  const [protocols, setProtocols] = useState(() => {
-    const saved = localStorage.getItem('dentalProtocols');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // --- HISTORIAL (PERSISTENTE) ---
-  const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem('dentalHistory');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // --- ESTADOS DE SESIÓN ---
-  const [session, setSession] = useState({
-    patientName: '',
-    treatmentName: '',
-    clinicalTime: 60,
-    baseCost: 0
-  });
-
-  // --- ESTADOS TEMPORALES ---
-  const [newProtocolName, setNewProtocolName] = useState('');
-  const [newProtocolTime, setNewProtocolTime] = useState(30);
-  const [newProtocolItems, setNewProtocolItems] = useState([]);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemCost, setNewItemCost] = useState('');
-  const [searchTerm, setSearchTerm] = useState(''); // Nuevo para buscar
-
-  // --- MODALES ---
-  const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [isLoadProtocolOpen, setLoadProtocolOpen] = useState(false);
+  const [session, setSession] = useState({ patientName: '', treatmentName: '', clinicalTime: 60, baseCost: 0 });
+  const [newProtocol, setNewProtocol] = useState({ name: '', time: 30, items: [] });
+  const [newItem, setNewItem] = useState({ name: '', cost: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [modal, setModal] = useState({ type: null, data: null });
   const [notification, setNotification] = useState('');
 
-  // --- EFECTOS ---
+  useEffect(() => { localStorage.setItem('theme', darkMode ? 'dark' : 'light'); }, [darkMode]);
   useEffect(() => { localStorage.setItem('priceCalcConfig', JSON.stringify(config)); }, [config]);
   useEffect(() => { localStorage.setItem('dentalProtocols', JSON.stringify(protocols)); }, [protocols]);
   useEffect(() => { localStorage.setItem('dentalHistory', JSON.stringify(history)); }, [history]);
 
-  // --- CÁLCULOS ---
   const calculateTotal = (time, cost, margin) => {
     const costLabor = (Number(config.hourlyRate) / 60) * Number(time);
     const totalCost = costLabor + Number(cost);
     const marginDecimal = Number(margin) / 100;
     if (marginDecimal >= 1) return totalCost;
-    let finalPrice = totalCost / (1 - marginDecimal);
-    return isFinite(finalPrice) ? Math.round(finalPrice) : 0;
+    const final = totalCost / (1 - marginDecimal);
+    return isFinite(final) ? Math.round(final) : 0;
   };
+  const currentTotal = calculateTotal(session.clinicalTime, session.baseCost, config.profitMargin);
+  const totalIncome = history.reduce((acc, curr) => acc + curr.total, 0);
 
-  const total = calculateTotal(session.clinicalTime, session.baseCost, config.profitMargin);
+  const notify = (msg) => { setNotification(msg); setTimeout(() => setNotification(''), 3000); };
 
-  // --- FUNCIONES NUEVAS V5.0 ---
-  
-  // 1. WhatsApp Directo
-  const sendWhatsApp = () => {
-    const text = `Hola ${session.patientName}, aquí tienes el detalle de tu tratamiento (${session.treatmentName}).\n\n💰 Total: $${total.toLocaleString('es-CL')}\n\n🏦 Datos Transferencia:\n${config.bankName} / ${config.accountType}\nN°: ${config.accountNumber}\nRUT: ${config.rut}\n${config.email}\n\nO paga con tarjeta aquí: ${config.mpLink}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-    setPaymentModalOpen(false);
-  };
-
-  // 2. Exportar a Excel (CSV)
-  const exportToCSV = () => {
-    if (history.length === 0) {
-      showNotification("❌ No hay datos para exportar");
-      return;
-    }
-    // Encabezados
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Fecha,Paciente,Tratamiento,Tiempo(min),Costo Base,Total Cobrado\n";
-    
-    // Filas
-    history.forEach(row => {
-      csvContent += `${row.date},${row.patientName},${row.treatmentName},${row.details.clinicalTime},${row.details.baseCost},${row.total}\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "reporte_ingresos_dental.csv");
-    document.body.appendChild(link);
-    link.click();
-    showNotification("✅ Reporte Excel Descargado");
-  };
-
-  // --- LOGICA HISTORIAL Y OTROS ---
-  const saveToHistory = () => {
-    if (!session.patientName || total === 0) { showNotification("❌ Faltan datos"); return; }
-    const newRecord = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString(),
-      patientName: session.patientName,
-      treatmentName: session.treatmentName,
-      total: total,
-      details: { ...session }
+  const handleSaveHistory = () => {
+    if (!session.patientName) return notify("Falta nombre");
+    const newRecord = { 
+      ...session, 
+      id: Date.now(), 
+      date: new Date().toLocaleDateString(), 
+      total: currentTotal, 
+      profit: currentTotal - (Number(session.baseCost) + ((Number(config.hourlyRate)/60)*Number(session.clinicalTime))), // Calculamos Ganancia Real
+      details: { ...session } 
     };
     setHistory([newRecord, ...history]);
-    showNotification("✅ Guardado en Historial");
+    notify("Guardado en Historial"); setActiveTab('dashboard');
   };
 
-  const loadFromHistory = (record) => {
-    setSession(record.details);
-    setActiveTab('quote');
-    showNotification(`✅ Cargado: ${record.patientName}`);
-  };
-
-  const deleteFromHistory = (id) => {
-    if(confirm("¿Borrar este registro?")) {
-      setHistory(history.filter(h => h.id !== id));
-      showNotification("🗑️ Registro eliminado");
-    }
-  };
-
-  const addItemToProtocol = () => {
-    if (!newItemName || !newItemCost) return;
-    setNewProtocolItems([...newProtocolItems, { name: newItemName, cost: Number(newItemCost) }]);
-    setNewItemName(''); setNewItemCost('');
-  };
-
-  const removeItemFromProtocol = (index) => {
-    const updated = [...newProtocolItems];
-    updated.splice(index, 1);
-    setNewProtocolItems(updated);
-  };
-
-  const saveProtocol = () => {
-    if (!newProtocolName) { showNotification("❌ Falta nombre"); return; }
-    const totalMaterialCost = newProtocolItems.reduce((acc, item) => acc + item.cost, 0);
-    const newProtocol = {
-      id: Date.now(),
-      name: newProtocolName,
-      time: newProtocolTime,
-      totalCost: totalMaterialCost,
-      items: newProtocolItems
-    };
-    setProtocols([...protocols, newProtocol]);
-    setNewProtocolName(''); setNewProtocolItems([]); setNewProtocolTime(30);
-    showNotification("✅ Protocolo Guardado");
-  };
-
-  const deleteProtocol = (id) => setProtocols(protocols.filter(p => p.id !== id));
-
-  const loadProtocolToSession = (protocol) => {
-    setSession(prev => ({
-      ...prev, treatmentName: protocol.name, clinicalTime: protocol.time, baseCost: protocol.totalCost
+  // --- FUNCIÓN EXCEL PRO ---
+  const exportToExcel = () => {
+    if (history.length === 0) return notify("No hay datos");
+    
+    // 1. Preparamos los datos limpios para el Excel
+    const dataToExport = history.map(h => ({
+      Fecha: h.date,
+      Paciente: h.patientName,
+      Tratamiento: h.treatmentName,
+      "Minutos": h.details.clinicalTime,
+      "Costo Insumos": h.details.baseCost,
+      "Precio Cobrado": h.total,
+      "Ganancia Estimada": h.profit ? Math.round(h.profit) : 0 // Nueva columna CEO
     }));
-    setLoadProtocolOpen(false);
-    setActiveTab('quote');
-    showNotification(`✅ Cargado: ${protocol.name}`);
+
+    // 2. Creamos el libro y la hoja
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Finanzas ShiningCloud");
+
+    // 3. Ajustamos ancho de columnas (Estética)
+    const wscols = [
+      {wch: 12}, {wch: 25}, {wch: 25}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 15}
+    ];
+    ws['!cols'] = wscols;
+
+    // 4. Descargar
+    XLSX.writeFile(wb, "Reporte_ShiningCloud.xlsx");
+    notify("📊 Excel Pro Descargado");
   };
 
-  const handleConfigChange = (e) => setConfig(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleSessionChange = (e) => setSession(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(''), 3000); };
-
+  // --- FUNCIÓN PDF PRO ---
   const generatePDF = () => {
-    if (!session.patientName || total === 0) { showNotification("❌ Faltan datos"); return; }
     const doc = new jsPDF();
-    doc.setFillColor(37, 99, 235); doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.text("Presupuesto Dental", 20, 20);
-    doc.setFontSize(12); doc.text(`Dr(a). ${config.name}`, 20, 30);
-    doc.setTextColor(40, 40, 40); doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 160, 30);
-    doc.setFontSize(14); doc.text(`Paciente: ${session.patientName}`, 20, 60); doc.text(`Tratamiento: ${session.treatmentName}`, 20, 70);
-    doc.setDrawColor(200, 200, 200); doc.line(20, 85, 190, 85);
-    doc.setFontSize(12); doc.text("Concepto", 25, 92); doc.text("Valor", 160, 92); doc.line(20, 98, 190, 98);
-    doc.setFont("helvetica", "bold"); doc.text("Tratamiento Integral", 25, 110); doc.text(`$ ${total.toLocaleString('es-CL')}`, 160, 110);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text("(Incluye honorarios clínicos, insumos y esterilización)", 25, 118);
-    doc.setFillColor(245, 247, 250); doc.roundedRect(100, 130, 90, 30, 3, 3, 'F');
-    doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.setTextColor(37, 99, 235); doc.text(`TOTAL: $ ${total.toLocaleString('es-CL')}`, 110, 150);
+    
+    // Encabezado Corporativo
+    doc.setFillColor(15, 15, 15); // Negro
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(212, 175, 55); doc.setFontSize(26); doc.text("ShiningCloud", 15, 20); // Logo
+    doc.setTextColor(255, 255, 255); doc.setFontSize(10); doc.text(`Dr. ${config.name}`, 15, 30);
+    doc.text(`RUT: ${config.rut}`, 15, 35);
+    
+    // Fecha alineada a la derecha
+    doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 160, 30);
+
+    // Datos del Paciente (Estilo ficha)
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14); doc.text("Presupuesto Clínico", 15, 55);
+    
+    doc.setFontSize(11);
+    doc.text(`Paciente: ${session.patientName}`, 15, 65);
+    doc.text(`Tratamiento Solicitado: ${session.treatmentName}`, 15, 72);
+
+    // Tabla Profesional (Usando autoTable)
+    autoTable(doc, {
+      startY: 80,
+      head: [['Concepto', 'Detalle', 'Valor']],
+      body: [
+        ['Honorarios Clínicos', 'Atención profesional y tiempo de sillón', `$ ${Math.round(currentTotal * 0.7).toLocaleString('es-CL')}`],
+        ['Insumos y Laboratorio', 'Materiales estériles y desechables', `$ ${Math.round(currentTotal * 0.3).toLocaleString('es-CL')}`],
+        [{content: 'TOTAL PRESUPUESTO', colSpan: 2, styles: {fontStyle: 'bold', halign: 'right'}}, {content: `$ ${currentTotal.toLocaleString('es-CL')}`, styles: {fontStyle: 'bold'}}]
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [20, 20, 20], textColor: [212, 175, 55] }, // Cabecera Negra y Dorada
+      styles: { fontSize: 10, cellPadding: 3 }
+    });
+
+    // Pie de Página Legal
+    const finalY = doc.lastAutoTable.finalY + 20;
+    doc.setFontSize(9); doc.setTextColor(100, 100, 100);
+    doc.text("Términos y Condiciones:", 15, finalY);
+    doc.setFontSize(8);
+    doc.text("1. Este presupuesto tiene una validez de 15 días hábiles.", 15, finalY + 5);
+    doc.text("2. El pago puede realizarse vía transferencia o tarjeta de crédito.", 15, finalY + 10);
+    doc.text("3. No incluye tratamientos adicionales no descritos en este documento.", 15, finalY + 15);
+
+    // Línea de Firma
+    doc.setDrawColor(0, 0, 0);
+    doc.line(130, finalY + 30, 190, finalY + 30);
+    doc.text("Firma Profesional Responsable", 135, finalY + 35);
+
     doc.save(`Presupuesto_${session.patientName}.pdf`);
-    showNotification("✅ PDF Generado");
+    notify("✅ PDF Legal Generado");
   };
 
-  const copyData = (type) => {
-    let text = type === 'transfer' 
-      ? `Hola ${session.patientName}, tratamiento: ${session.treatmentName}\n💰 Total: $${total.toLocaleString('es-CL')}\n\n🏦 Datos:\n${config.bankName} / ${config.accountType}\nN°: ${config.accountNumber}\nRUT: ${config.rut}\n${config.name}\n${config.email}`
-      : `Hola ${session.patientName}, paga tu tratamiento de $${total.toLocaleString('es-CL')} aquí:\n${config.mpLink}`;
-    navigator.clipboard.writeText(text);
-    showNotification("✅ Copiado"); setPaymentModalOpen(false);
+  const sendWhatsApp = () => {
+    const text = `👋 Hola *${session.patientName}*,\n\nAdjunto el detalle de tu presupuesto para el tratamiento de *${session.treatmentName}*.\n\n────────────────\n💎 *Total a Pagar: $${currentTotal.toLocaleString('es-CL')}*\n────────────────\n\n🏦 *Datos de Transferencia:*\nBanco: ${config.bankName}\nTipo: ${config.accountType}\nN°: ${config.accountNumber}\nRut: ${config.rut}\n\n💳 *O paga con tarjeta aquí:*\n${config.mpLink}\n\nQuedo atento a tus dudas.\n*Dr. ${config.name}*`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    setModal({ type: null });
   };
 
-  // Filtrado de Historial
-  const filteredHistory = history.filter(h => 
-    h.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    h.treatmentName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  // --- RENDERIZADO (IGUAL QUE ANTES) ---
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-28">
+    <div 
+      className={`min-h-screen font-sans transition-colors duration-700 pb-32 selection:bg-[#D4AF37]/30 ${darkMode ? 'text-white' : 'text-stone-800'}`}
+      style={{
+        backgroundColor: darkMode ? '#090909' : '#F5F5F4',
+        backgroundImage: darkMode 
+          ? `radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.15) 0px, transparent 50%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.07'/%3E%3C/svg%3E")`
+          : `radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.1) 0px, transparent 50%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E")`
+      }}
+    >
       
       {notification && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-6 py-3 rounded-full shadow-xl animate-bounce flex gap-2 items-center">
-          <Activity size={16} className="text-green-400"/> {notification}
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 backdrop-blur-xl bg-black/90 border border-[#D4AF37] text-[#D4AF37] px-6 py-3 rounded-full shadow-2xl animate-bounce flex gap-2 items-center text-sm font-bold tracking-wide">
+          <Diamond size={16} className="text-[#D4AF37] fill-[#D4AF37]"/> {notification}
         </div>
       )}
 
       {/* HEADER */}
-      <div className="bg-white shadow-sm sticky top-0 z-10 px-4 py-3 border-b border-slate-100">
-        <div className="flex justify-between items-center mb-3">
-          <h1 className="text-lg font-extrabold text-blue-700 tracking-tight flex items-center gap-1">
-            PriceCalc <span className="text-slate-300 font-light">| CEO</span>
+      <div className={`sticky top-0 z-20 px-6 py-5 flex justify-between items-center backdrop-blur-md border-b transition-colors duration-500 ${darkMode ? 'bg-[#090909]/80 border-white/5' : 'bg-[#F5F5F4]/80 border-stone-200'}`}>
+        <div className="flex items-center gap-2">
+          <Cloud size={28} className="text-[#D4AF37] fill-[#D4AF37]/20 drop-shadow-lg" />
+          <h1 className={`text-2xl font-black tracking-tighter ${goldText} drop-shadow-sm`}>
+            Shining<span className={darkMode ? 'text-white' : 'text-stone-700'}>Cloud</span>
           </h1>
-          {/* TOTAL ACUMULADO */}
-          <div className="bg-green-50 px-3 py-1 rounded-full border border-green-100 flex items-center gap-2">
-            <span className="text-[10px] uppercase font-bold text-green-600">Proyectado</span>
-            <span className="text-xs font-bold text-green-800">${history.reduce((a,b)=>a+b.total,0).toLocaleString()}</span>
-          </div>
         </div>
-
-        {/* NAV BAR */}
-        <div className="flex bg-slate-100 p-1 rounded-xl justify-between">
-          {[
-            { id: 'quote', icon: Calculator, label: 'Cotizar' },
-            { id: 'catalog', icon: Library, label: 'Packs' },
-            { id: 'history', icon: History, label: 'Historial' },
-            { id: 'settings', icon: Settings, label: 'Ajustes' }
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 p-2 rounded-lg transition-all flex justify-center ${activeTab === tab.id ? 'bg-white shadow text-blue-700' : 'text-slate-400'}`}>
-              <tab.icon size={20} />
-            </button>
-          ))}
+        <div className="flex gap-2">
+          <button onClick={() => setDarkMode(!darkMode)} className={`p-2.5 rounded-full transition-all border ${darkMode ? 'bg-white/5 border-white/10 text-[#D4AF37]' : 'bg-white border-stone-200 text-stone-500 shadow-sm'}`}>
+            {darkMode ? <Sun size={18}/> : <Moon size={18}/>}
+          </button>
+          <button onClick={() => setActiveTab('settings')} className={`p-2.5 rounded-full transition-all border ${darkMode ? 'bg-white/5 border-white/10 text-[#D4AF37]' : 'bg-white border-stone-200 text-stone-500 shadow-sm'}`}>
+            <Settings size={18}/>
+          </button>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto p-4 mt-2 animate-in fade-in duration-500">
+      <div className="max-w-md mx-auto p-5 space-y-8 animate-in fade-in duration-700">
         
-        {/* --- 1. COTIZADOR --- */}
+        {/* === DASHBOARD === */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            <Card noBorder darkMode={darkMode} className={`relative overflow-hidden min-h-[200px] flex flex-col justify-between ${goldGradient} shadow-[#D4AF37]/20`}>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-10 -mt-20 mix-blend-overlay"></div>
+              <div className="relative z-10">
+                <p className="text-amber-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-2 flex items-center gap-2"><Cloud size={12}/> Flujo de Caja</p>
+                <h2 className="text-5xl font-black text-white tracking-tighter drop-shadow-md">${totalIncome.toLocaleString('es-CL')}</h2>
+              </div>
+              <Button darkMode={darkMode} variant="secondary" className="relative z-10 !bg-white/20 !text-white !border-none backdrop-blur-md hover:!bg-white/30 w-full mt-4 !shadow-none" onClick={() => setActiveTab('quote')}>
+                <Plus size={18}/> Nuevo Presupuesto
+              </Button>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Card darkMode={darkMode} className="flex flex-col items-center justify-center gap-2 py-8">
+                <History size={24} className={darkMode ? 'text-[#D4AF37]' : 'text-stone-400'}/>
+                <span className="text-3xl font-black tracking-tight">{history.length}</span>
+                <span className={`text-[10px] uppercase tracking-widest font-bold ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Pacientes</span>
+              </Card>
+              <Card darkMode={darkMode} className="flex flex-col items-center justify-center gap-2 py-8">
+                <Library size={24} className={darkMode ? 'text-[#D4AF37]' : 'text-stone-400'}/>
+                <span className="text-3xl font-black tracking-tight">{protocols.length}</span>
+                <span className={`text-[10px] uppercase tracking-widest font-bold ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Packs</span>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* === COTIZADOR === */}
         {activeTab === 'quote' && (
-          <div className="space-y-4">
-            <button onClick={() => setLoadProtocolOpen(true)} className="w-full bg-blue-50 border border-blue-200 text-blue-700 font-bold p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-blue-100">
-              <Library size={18} /> Cargar Protocolo
-            </button>
+          <div className="space-y-6">
+            <Button darkMode={darkMode} variant="secondary" className="w-full !py-4" onClick={() => setModal({ type: 'loadProtocol' })}>
+              <Library size={18}/> Cargar desde Catálogo
+            </Button>
 
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-              <div className="relative">
-                  <User className="absolute left-3 top-3.5 text-slate-300" size={18} />
-                  <input name="patientName" type="text" placeholder="Nombre Paciente" className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={session.patientName} onChange={handleSessionChange}/>
+            <Card darkMode={darkMode} className="space-y-5">
+              <div className="space-y-4">
+                <InputField darkMode={darkMode} icon={User} label="Paciente" placeholder="Nombre Completo" value={session.patientName} onChange={e => setSession({...session, patientName: e.target.value})}/>
+                <InputField darkMode={darkMode} label="Tratamiento" placeholder="Ej. Carillas" value={session.treatmentName} onChange={e => setSession({...session, treatmentName: e.target.value})}/>
               </div>
-              <input name="treatmentName" type="text" placeholder="Tratamiento" className="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={session.treatmentName} onChange={handleSessionChange}/>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-2 gap-3">
-                <div>
-                  <span className="text-xs text-slate-500 block mb-1">Tiempo (min)</span>
-                  <input name="clinicalTime" type="number" className="w-full p-3 bg-blue-50 text-blue-900 font-bold rounded-xl text-center text-lg outline-none" value={session.clinicalTime} onChange={handleSessionChange}/>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-500 block mb-1">Insumos ($)</span>
-                  <input name="baseCost" type="number" className="w-full p-3 bg-slate-50 font-bold rounded-xl text-center text-lg outline-none" value={session.baseCost} onChange={handleSessionChange}/>
-                </div>
-            </div>
-
-            <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden text-center">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-green-400 to-blue-500"></div>
-              <p className="text-slate-400 text-xs uppercase tracking-widest mb-2">Total a Cobrar</p>
-              <div className="text-5xl font-black text-white mb-6">${total.toLocaleString('es-CL')}</div>
-              
-              <div className="grid grid-cols-3 gap-2">
-                <button onClick={saveToHistory} className="col-span-1 bg-slate-700 hover:bg-slate-600 p-3 rounded-xl flex flex-col items-center justify-center gap-1 font-medium text-xs">
-                  <Save size={18} className="text-green-400"/> Guardar
-                </button>
-                <button onClick={generatePDF} className="col-span-1 bg-slate-700 hover:bg-slate-600 p-3 rounded-xl flex flex-col items-center justify-center gap-1 font-medium text-xs">
-                  <Download size={18}/> PDF
-                </button>
-                <button onClick={() => setPaymentModalOpen(true)} className="col-span-1 bg-blue-600 hover:bg-blue-500 p-3 rounded-xl flex flex-col items-center justify-center gap-1 font-bold text-xs shadow-lg shadow-blue-900/40">
-                  <Share2 size={18}/> Cobrar
-                </button>
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <InputField darkMode={darkMode} label="Minutos" type="number" placeholder="Min" value={session.clinicalTime} onChange={e => setSession({...session, clinicalTime: e.target.value})}/>
+                <InputField darkMode={darkMode} label="Insumos ($)" type="number" placeholder="$" value={session.baseCost} onChange={e => setSession({...session, baseCost: e.target.value})}/>
               </div>
+            </Card>
+
+            <div className="relative group">
+              <div className={`absolute inset-0 ${goldGradient} rounded-[2rem] blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-700`}></div>
+              <Card darkMode={darkMode} className="relative text-center !py-10 overflow-hidden border-[#D4AF37]/30">
+                 <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-4 ${darkMode ? 'text-[#D4AF37]':'text-stone-400'}`}>Valor Sugerido</p>
+                 <h2 className={`text-6xl font-black mb-8 tracking-tighter ${goldText} drop-shadow-sm`}>${currentTotal.toLocaleString('es-CL')}</h2>
+                 <div className="grid grid-cols-3 gap-3 px-2">
+                   <Button darkMode={darkMode} variant="secondary" onClick={handleSaveHistory}><Save size={20}/></Button>
+                   <Button darkMode={darkMode} variant="secondary" onClick={generatePDF} className="flex flex-col items-center"><span className="text-[9px] font-black uppercase">PDF</span></Button>
+                   <Button darkMode={darkMode} onClick={() => setModal({ type: 'payment' })}><Share2 size={20}/></Button>
+                 </div>
+              </Card>
             </div>
           </div>
         )}
 
-        {/* --- 2. CATÁLOGO --- */}
-        {activeTab === 'catalog' && (
-          <div className="space-y-4 animate-in slide-in-from-right-5">
-            <div className="bg-white p-4 rounded-2xl shadow-md border border-slate-200">
-              <h3 className="font-bold text-blue-800 flex items-center gap-2 mb-3"><Plus size={18}/> Nuevo Protocolo</h3>
-              <div className="space-y-2 mb-3">
-                <input type="text" placeholder="Nombre Pack" className="w-full p-2 bg-slate-50 border rounded-lg text-sm" value={newProtocolName} onChange={(e) => setNewProtocolName(e.target.value)}/>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">Minutos:</span>
-                  <input type="number" className="flex-1 p-2 bg-slate-50 border rounded-lg text-sm font-bold" value={newProtocolTime} onChange={(e) => setNewProtocolTime(e.target.value)}/>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
-                <div className="space-y-2 mb-2">
-                  {newProtocolItems.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center bg-white p-2 rounded border border-slate-100 text-xs">
-                      <span>{item.name}</span>
-                      <div className="flex gap-2"><b>${item.cost}</b> <button onClick={() => removeItemFromProtocol(index)} className="text-red-400"><X size={14}/></button></div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input type="text" placeholder="Material" className="flex-1 p-2 text-xs border rounded-lg" value={newItemName} onChange={(e) => setNewItemName(e.target.value)}/>
-                  <input type="number" placeholder="$" className="w-16 p-2 text-xs border rounded-lg" value={newItemCost} onChange={(e) => setNewItemCost(e.target.value)}/>
-                  <button onClick={addItemToProtocol} className="bg-green-100 text-green-700 p-2 rounded-lg"><Plus size={16}/></button>
-                </div>
-              </div>
-              <button onClick={saveProtocol} className="w-full bg-blue-600 text-white font-bold p-2 rounded-xl text-sm">Guardar Protocolo</button>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-bold text-slate-400 text-xs uppercase px-2">Mis Packs</h3>
-              {protocols.map((p) => (
-                <div key={p.id} className="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
-                  <div><h4 className="font-bold text-sm text-slate-800">{p.name}</h4><p className="text-[10px] text-slate-500">{p.time} min | Materiales: ${p.totalCost}</p></div>
-                  <button onClick={() => deleteProtocol(p.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
-                </div>
-              ))}
-            </div>
-            <div className="h-10"></div>
-          </div>
-        )}
-
-        {/* --- 3. HISTORIAL (MEJORADO V5) --- */}
+        {/* === HISTORIAL === */}
         {activeTab === 'history' && (
-          <div className="space-y-4 animate-in slide-in-from-right-5">
-            
-            {/* BUSCADOR Y EXPORTAR */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 text-slate-400" size={18}/>
-                <input 
-                  type="text" 
-                  placeholder="Buscar paciente..." 
-                  className="w-full pl-10 p-2 bg-white border border-slate-200 rounded-xl text-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <button onClick={exportToCSV} className="bg-green-600 text-white p-2 rounded-xl shadow-md active:scale-95">
-                <FileSpreadsheet size={20}/>
-              </button>
-            </div>
-
-            <div className="flex justify-between items-end px-2">
-               <h3 className="font-bold text-slate-700">Pacientes</h3>
-               <span className="text-xs text-slate-400">{filteredHistory.length} registros</span>
-            </div>
-
-            {filteredHistory.length === 0 ? (
-              <div className="text-center py-10 text-slate-400">
-                <FileText size={48} className="mx-auto mb-2 opacity-20"/>
-                <p>No se encontraron pacientes.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredHistory.map((record) => (
-                  <div key={record.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 group relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-2 relative z-10">
+           <div className="space-y-6">
+             <div className="flex gap-2">
+                <div className="flex-1"><InputField darkMode={darkMode} icon={Search} placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}/></div>
+                <Button darkMode={darkMode} variant="secondary" onClick={exportToExcel}><FileSpreadsheet size={20}/></Button>
+             </div>
+             
+             <div className="space-y-4">
+               {history.filter(h => h.patientName.toLowerCase().includes(searchTerm.toLowerCase())).map(h => (
+                 <Card darkMode={darkMode} key={h.id} className="!p-5 group hover:border-[#D4AF37]/40 transition-all">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h4 className="font-bold text-lg text-slate-800">{record.patientName}</h4>
-                        <p className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-md inline-block">{record.treatmentName}</p>
+                        <h4 className="font-bold text-lg leading-tight">{h.patientName}</h4>
+                        <p className={`text-xs font-bold mt-1 ${darkMode ? 'text-[#D4AF37]' : 'text-stone-500'}`}>{h.treatmentName}</p>
                       </div>
-                      <div className="text-right">
-                        <span className="block font-black text-lg text-slate-700">${record.total.toLocaleString()}</span>
-                        <span className="text-[10px] text-slate-400">{record.date}</span>
-                      </div>
+                      <span className={`block font-black text-xl ${goldText}`}>${h.total.toLocaleString()}</span>
                     </div>
-                    
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-slate-50 relative z-10">
-                      <button onClick={() => loadFromHistory(record)} className="flex-1 bg-slate-50 text-slate-600 text-xs font-bold p-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center gap-2">
-                        <RefreshCw size={14}/> Recotizar
+                    <div className={`flex gap-3 pt-4 border-t ${darkMode ? 'border-white/5' : 'border-stone-100'}`}>
+                      <button onClick={() => { setSession(h.details); setActiveTab('quote'); notify("Cargado"); }} className={`flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all ${darkMode ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-stone-50 text-stone-600 hover:bg-stone-100'}`}>
+                        Recotizar
                       </button>
-                      <button onClick={() => deleteFromHistory(record.id)} className="px-3 bg-red-50 text-red-500 rounded-lg hover:bg-red-100">
-                        <Trash2 size={14}/>
-                      </button>
+                      <button className="px-4 text-red-400/50 hover:text-red-500 transition-all" onClick={() => setHistory(history.filter(x=>x.id!==h.id))}><Trash2 size={18}/></button>
                     </div>
-                  </div>
+                 </Card>
+               ))}
+             </div>
+           </div>
+        )}
+
+        {/* === AJUSTES === */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6 animate-in slide-in-from-right-10">
+            <Card darkMode={darkMode} className="space-y-5">
+              <h3 className={`font-bold flex items-center gap-2 ${goldText}`}><Settings size={20}/> Configuración Clínica</h3>
+              <InputField darkMode={darkMode} label="Tu Valor Hora Estimado" type="number" value={config.hourlyRate} onChange={e => setConfig({...config, hourlyRate: e.target.value})}/>
+              <div className="pt-2">
+                <label className={`text-[10px] font-bold uppercase tracking-widest mb-3 block opacity-60 ml-2 ${darkMode ? 'text-white' : 'text-stone-800'}`}>Margen de Ganancia: {config.profitMargin}%</label>
+                <input type="range" min="10" max="90" className="w-full h-1.5 bg-gray-300 rounded-lg accent-[#D4AF37] cursor-pointer" value={config.profitMargin} onChange={e => setConfig({...config, profitMargin: e.target.value})}/>
+              </div>
+            </Card>
+
+            <Card darkMode={darkMode} className="space-y-5">
+              <h3 className={`font-bold flex items-center gap-2 ${goldText}`}><Landmark size={20}/> Datos de Cobro</h3>
+              <div className="grid grid-cols-2 gap-4">
+                 <InputField darkMode={darkMode} label="Banco" placeholder="Banco Estado" value={config.bankName} onChange={e => setConfig({...config, bankName: e.target.value})}/>
+                 <InputField darkMode={darkMode} label="Tipo Cta" placeholder="Cta RUT" value={config.accountType} onChange={e => setConfig({...config, accountType: e.target.value})}/>
+              </div>
+              <InputField darkMode={darkMode} label="Número Cuenta" placeholder="12345678" value={config.accountNumber} onChange={e => setConfig({...config, accountNumber: e.target.value})}/>
+              <InputField darkMode={darkMode} label="RUT" placeholder="11.222.333-k" value={config.rut} onChange={e => setConfig({...config, rut: e.target.value})}/>
+              <InputField darkMode={darkMode} label="Nombre Titular" placeholder="Dr. Juan Pérez" value={config.name} onChange={e => setConfig({...config, name: e.target.value})}/>
+              <InputField darkMode={darkMode} label="Link MP" placeholder="https://link..." value={config.mpLink} onChange={e => setConfig({...config, mpLink: e.target.value})}/>
+            </Card>
+            <p className="text-center text-xs opacity-30 pb-24">ShiningCloud v4.0 - CEO Edition</p>
+          </div>
+        )}
+
+        {/* === CATÁLOGO === */}
+        {activeTab === 'catalog' && (
+          <div className="space-y-6">
+            <Card darkMode={darkMode}>
+              <h3 className="font-bold mb-4 flex items-center gap-2"><Plus size={18} className="text-[#D4AF37]"/> Nuevo Pack</h3>
+              <InputField darkMode={darkMode} placeholder="Nombre Pack" value={newProtocol.name} onChange={e => setNewProtocol({...newProtocol, name: e.target.value})}/>
+              
+              <div className="space-y-2 my-4">
+                {newProtocol.items.map((item, i) => (
+                  <div key={i} className={`flex justify-between text-sm p-3 rounded-xl ${darkMode ? 'bg-white/5 text-white/80' : 'bg-stone-50 text-stone-600'}`}><span>{item.name}</span> <span>${item.cost}</span></div>
                 ))}
               </div>
-            )}
-            <div className="h-10"></div>
-          </div>
-        )}
 
-        {/* --- 4. AJUSTES --- */}
-        {activeTab === 'settings' && (
-          <div className="space-y-4 animate-in slide-in-from-right-5">
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-              <h3 className="font-bold text-slate-700 text-sm">Parámetros</h3>
-              <div><label className="text-xs font-bold text-slate-500 block">Valor Hora ($)</label><input name="hourlyRate" type="number" className="w-full p-2 bg-slate-50 border rounded-xl" value={config.hourlyRate} onChange={handleConfigChange}/></div>
-              <div><label className="text-xs font-bold text-slate-500 block">Margen: {config.profitMargin}%</label><input name="profitMargin" type="range" min="10" max="90" className="w-full h-2 bg-slate-200 rounded-lg accent-blue-600" value={config.profitMargin} onChange={handleConfigChange}/></div>
-            </div>
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-               <h3 className="font-bold text-slate-700 text-sm">Datos Bancarios</h3>
-               <input name="bankName" type="text" placeholder="Banco" className="w-full p-2 bg-slate-50 border rounded-xl text-sm" value={config.bankName} onChange={handleConfigChange}/>
-               <input name="accountNumber" type="text" placeholder="N° Cuenta" className="w-full p-2 bg-slate-50 border rounded-xl text-sm" value={config.accountNumber} onChange={handleConfigChange}/>
-               <input name="rut" type="text" placeholder="RUT" className="w-full p-2 bg-slate-50 border rounded-xl text-sm" value={config.rut} onChange={handleConfigChange}/>
-               <input name="name" type="text" placeholder="Nombre" className="w-full p-2 bg-slate-50 border rounded-xl text-sm" value={config.name} onChange={handleConfigChange}/>
-               <input name="email" type="text" placeholder="Email" className="w-full p-2 bg-slate-50 border rounded-xl text-sm" value={config.email} onChange={handleConfigChange}/>
-               <input name="mpLink" type="text" placeholder="Link MP" className="w-full p-2 bg-slate-50 border rounded-xl text-sm" value={config.mpLink} onChange={handleConfigChange}/>
-            </div>
-            <div className="h-10"></div>
-          </div>
-        )}
-      </div>
-
-      {/* MODALES FLOTANTES */}
-      {isLoadProtocolOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 h-3/4 flex flex-col">
-            <div className="flex justify-between items-center mb-4"><h3 className="font-bold">Cargar Pack</h3><button onClick={() => setLoadProtocolOpen(false)}><X size={20}/></button></div>
-            <div className="flex-1 overflow-y-auto space-y-2">
-              {protocols.map((p) => (
-                <button key={p.id} onClick={() => loadProtocolToSession(p)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:bg-blue-50 group">
-                  <div className="flex justify-between"><span className="font-bold text-sm text-slate-800">{p.name}</span><ChevronRight size={16} className="text-slate-300"/></div>
-                  <div className="text-xs text-slate-500">${p.totalCost} insumos</div>
-                </button>
+              <div className="flex gap-2 mb-4">
+                 <div className="flex-1"><InputField darkMode={darkMode} placeholder="Insumo" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})}/></div>
+                 <div className="w-24"><InputField darkMode={darkMode} type="number" placeholder="$" value={newItem.cost} onChange={e => setNewItem({...newItem, cost: e.target.value})}/></div>
+                 <button onClick={() => { if(newItem.name && newItem.cost) { setNewProtocol({...newProtocol, items: [...newProtocol.items, {name: newItem.name, cost: Number(newItem.cost)}]}); setNewItem({name:'', cost:''}); }}} className="bg-[#D4AF37] text-white p-3 rounded-xl mt-[22px] shadow-lg shadow-[#D4AF37]/30"><Plus size={20}/></button>
+              </div>
+              <Button darkMode={darkMode} className="w-full" onClick={() => { if(!newProtocol.name) return notify("Falta Nombre"); const total = newProtocol.items.reduce((a,b)=>a+b.cost,0); setProtocols([...protocols, { ...newProtocol, id: Date.now(), totalCost: total }]); setNewProtocol({ name:'', time:30, items:[] }); notify("Pack Guardado"); }}>Guardar Pack</Button>
+            </Card>
+            <div className="space-y-3">
+              {protocols.map(p => (
+                <Card darkMode={darkMode} key={p.id} className="!p-5 flex justify-between items-center group">
+                  <div><h4 className="font-bold">{p.name}</h4><p className="text-xs opacity-50 font-bold tracking-wide">${p.totalCost} insumos</p></div>
+                  <button onClick={() => setProtocols(protocols.filter(x=>x.id!==p.id))} className="text-red-400 opacity-50 hover:opacity-100 p-2"><Trash2 size={18}/></button>
+                </Card>
               ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {isPaymentModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative animate-in slide-in-from-bottom-10">
-            <button onClick={() => setPaymentModalOpen(false)} className="absolute top-4 right-4"><X size={20}/></button>
-            <h2 className="text-lg font-bold mb-4">Enviar cobro</h2>
-            
-            {/* NUEVO BOTÓN WHATSAPP */}
-            <button onClick={sendWhatsApp} className="w-full flex justify-between items-center p-3 bg-green-500 text-white rounded-xl mb-3 shadow-lg hover:bg-green-600 transition-all">
-               <div className="flex gap-2 items-center"><MessageCircle size={20}/> <span className="font-bold">Enviar por WhatsApp</span></div>
-               <ChevronRight size={20}/>
-            </button>
+      </div>
 
-            <div className="flex gap-2">
-                <button onClick={() => copyData('transfer')} className="flex-1 flex justify-center p-3 bg-slate-100 rounded-xl text-xs font-bold text-slate-600 border border-slate-200 hover:bg-slate-200">
-                   Copiar Datos
-                </button>
-                <button onClick={() => copyData('mp')} className="flex-1 flex justify-center p-3 bg-blue-50 rounded-xl text-xs font-bold text-blue-600 border border-blue-100 hover:bg-blue-100">
-                   Copiar Link
-                </button>
+      {/* MENU INFERIOR */}
+      <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 flex p-1.5 rounded-full shadow-2xl border backdrop-blur-xl z-30 transition-all duration-500 ${darkMode ? 'bg-black/60 border-white/10 shadow-black/80' : 'bg-white/80 border-white/50 shadow-stone-300/50'}`}>
+        {['dashboard', 'quote', 'catalog', 'history'].map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className="relative p-4 rounded-full transition-all duration-300 group">
+            {activeTab === tab && <div className={`absolute inset-0 rounded-full opacity-20 blur-lg ${goldGradient}`}></div>}
+            <div className={`relative z-10 transition-transform duration-300 ${activeTab === tab ? '-translate-y-1 scale-110' : 'opacity-40 hover:opacity-100'}`}>
+              <div className={activeTab === tab ? (darkMode ? 'text-[#D4AF37]' : 'text-amber-500') : (darkMode ? 'text-white' : 'text-stone-500')}>
+                {tab === 'dashboard' && <TrendingUp size={24}/>}
+                {tab === 'quote' && <Calculator size={24}/>}
+                {tab === 'catalog' && <Library size={24}/>}
+                {tab === 'history' && <History size={24}/>}
+              </div>
             </div>
-          </div>
+          </button>
+        ))}
+      </div>
+      
+       {/* MODALES */}
+       {modal.type === 'loadProtocol' && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card darkMode={darkMode} className="w-full max-w-sm h-3/4 flex flex-col border-[#D4AF37]/30 !bg-[#0f0f0f] text-white">
+            <div className="flex justify-between items-center mb-6"><h3 className={`font-bold text-xl ${goldText}`}>Seleccionar Pack</h3><button onClick={() => setModal({type:null})}><X className="text-white/50"/></button></div>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+              {protocols.map(p => (
+                <button key={p.id} onClick={() => { setSession({...session, treatmentName: p.name, baseCost: p.totalCost, clinicalTime: p.time}); setModal({type:null}); notify("Cargado"); }} className="w-full text-left p-4 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-[#D4AF37]/50 transition-all group">
+                  <span className="font-bold block text-lg mb-1">{p.name}</span> <span className="text-xs font-bold text-[#D4AF37] tracking-wider">${p.totalCost} insumos</span>
+                </button>
+              ))}
+            </div>
+          </Card>
         </div>
       )}
+
+      {modal.type === 'payment' && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+          <Card darkMode={darkMode} className="w-full max-w-sm animate-in slide-in-from-bottom-10 border-[#D4AF37]/30 !bg-[#0f0f0f]">
+            <div className="flex justify-between mb-8 items-center"><h3 className={`font-bold text-xl ${goldText}`}>Finalizar Atención</h3><button onClick={() => setModal({type:null})}><X className="text-white/50"/></button></div>
+            <Button darkMode={darkMode} className="w-full !bg-emerald-600 !shadow-emerald-500/20 mb-4 !text-white !py-4" onClick={sendWhatsApp}>
+               <MessageCircle size={22}/> Enviar por WhatsApp
+            </Button>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+               <Button darkMode={darkMode} variant="secondary" onClick={() => { navigator.clipboard.writeText(config.accountNumber); notify("Copiado"); }}><Landmark size={18}/> Banco</Button>
+               <Button darkMode={darkMode} variant="secondary" onClick={() => { navigator.clipboard.writeText(config.mpLink); notify("Copiado"); }}><CreditCard size={18}/> Link</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
     </div>
   );
 }
-
 export default App;
