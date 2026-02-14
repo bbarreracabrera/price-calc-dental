@@ -3,14 +3,15 @@
   "name": "ShiningCloud Dental",
   "icons": [
     {
-      "src": "logo-gold.svg",
-      "sizes": "any",
+      "src": "/logo-gold.svg",
       "type": "image/svg+xml",
+      "sizes": "any",
       "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
+  "scope": "/",
   "theme_color": "#090909",
   "background_color": "#090909"
 }
