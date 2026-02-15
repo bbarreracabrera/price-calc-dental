@@ -35,66 +35,46 @@ const SignaturePad = ({ onSave, onCancel, theme }) => {
   const startDrawing = (e) => { const ctx = canvasRef.current.getContext('2d'); ctx.beginPath(); const { x, y } = getCoords(e); ctx.moveTo(x, y); setIsDrawing(true); };
   const draw = (e) => { if (!isDrawing) return; const ctx = canvasRef.current.getContext('2d'); const { x, y } = getCoords(e); ctx.lineTo(x, y); ctx.stroke(); };
   const getCoords = (e) => { const rect = canvasRef.current.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
-  return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
+  return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none text-white">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
 };
 
-// COMPONENTE DE CARAS DE DIENTE (NUEVO)
 const ToothFacesControl = ({ faces, onChange, theme }) => {
-    // Ciclo de estados: null (Sano) -> 'caries' (Rojo) -> 'filled' (Azul) -> 'crown' (Dorado)
-    const cycleStatus = (current) => {
-        if (!current) return 'caries';
-        if (current === 'caries') return 'filled';
-        if (current === 'filled') return 'crown';
-        return null; // Vuelta a sano
-    };
-
-    const getColor = (status) => {
-        if (status === 'caries') return 'bg-red-500 border-red-500';
-        if (status === 'filled') return 'bg-blue-500 border-blue-500';
-        if (status === 'crown') return 'bg-yellow-500 border-yellow-500';
-        return 'bg-white/5 border-white/10 hover:bg-white/10';
-    };
-
-    return (
-        <div className="flex flex-col items-center gap-1 my-4">
-            {/* Vestibular (Arriba) */}
-            <button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all ${getColor(faces.v)}`}></button>
-            <div className="flex gap-1">
-                {/* Mesial (Izquierda) */}
-                <button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all ${getColor(faces.m)}`}></button>
-                {/* Oclusal (Centro) */}
-                <button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all ${getColor(faces.o)}`}></button>
-                {/* Distal (Derecha) */}
-                <button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all ${getColor(faces.d)}`}></button>
-            </div>
-            {/* Lingual/Palatino (Abajo) */}
-            <button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all ${getColor(faces.l)}`}></button>
-            <p className="text-[10px] opacity-50 mt-2">Click para cambiar estado</p>
-        </div>
-    );
+    const cycleStatus = (current) => { if (!current) return 'caries'; if (current === 'caries') return 'filled'; if (current === 'filled') return 'crown'; return null; };
+    const getColor = (status) => { if (status === 'caries') return 'bg-red-500 border-red-500'; if (status === 'filled') return 'bg-blue-500 border-blue-500'; if (status === 'crown') return 'bg-yellow-500 border-yellow-500'; return 'bg-white/5 border-white/10 hover:bg-white/10'; };
+    return (<div className="flex flex-col items-center gap-1 my-4"><button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all ${getColor(faces.v)}`}></button><div className="flex gap-1"><button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all ${getColor(faces.m)}`}></button><button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all ${getColor(faces.o)}`}></button><button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all ${getColor(faces.d)}`}></button></div><button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all ${getColor(faces.l)}`}></button></div>);
 };
 
-const Tooth = ({ number, data, onClick, theme, isPerioMode, perioData }) => {
+const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data }) => {
   const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
   const hasPus = perioData?.pus;
   const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
   
-  // En la vista general, si alguna cara tiene problema, pintamos el diente entero simplificado
+  // Lógica de color simplificada para la vista general
   const getSimpleColor = () => {
-      if (data?.status === 'missing') return '#000000';
+      // Si el diente viene del odontograma (data.status) o del modo simple (status)
+      const currentStatus = data?.status || status;
+      if (currentStatus === 'missing') return '#000000';
+      
       const faces = data?.faces || {};
+      // Prioridad de colores si hay caras marcadas
       if (Object.values(faces).some(s => s === 'caries')) return '#ef4444';
       if (Object.values(faces).some(s => s === 'filled')) return '#3b82f6';
       if (Object.values(faces).some(s => s === 'crown')) return '#eab308';
+      
+      // Fallback a estados simples
+      if (currentStatus === 'caries') return '#ef4444';
+      if (currentStatus === 'filled') return '#3b82f6';
+      if (currentStatus === 'crown') return '#eab308';
+
       return theme === 'light' ? '#333' : '#fff';
   };
 
-  if (isPerioMode && data?.status === 'missing') return <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/></svg><span className="text-[8px] font-bold">AUS</span></div>;
+  if (isPerioMode && (status === 'missing' || data?.status === 'missing')) return <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/></svg><span className="text-[8px] font-bold">AUS</span></div>;
 
   return (
     <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative">
       <svg width="35" height="45" viewBox="0 0 100 120">
-          <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill={getSimpleColor()} fillOpacity={data?.status === 'missing' || Object.values(data?.faces||{}).some(v=>v) ? 1 : 0.15} stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/>
+          <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill={getSimpleColor()} fillOpacity={status === 'missing' || data?.status === 'missing' || Object.values(data?.faces||{}).some(v=>v) ? 1 : 0.15} stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/>
       </svg>
       {isPerioMode && (<div className="absolute -top-2 flex gap-1">{hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>}{hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400"/>}{hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500"/>}</div>)}
       <span className="text-[9px] font-bold opacity-50">{number}</span>
@@ -176,7 +156,6 @@ export default function App() {
 
   // TITLE FIX
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
-
   useEffect(() => { supabase.auth.getSession().then(({ data: { session } }) => setSession(session)); supabase.auth.onAuthStateChange((_e, s) => setSession(s)); }, []);
   
   // DATA LOADING
@@ -209,7 +188,6 @@ export default function App() {
   const savePatientData = async (id, d) => { setPatientRecords(prev => ({...prev, [id]: d})); await saveToSupabase('patients', id, d); };
   const handleLogoUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { const newConfig = { ...config, logo: reader.result }; setConfigLocal(newConfig); saveToSupabase('settings', 'general', newConfig); notify("Logo Actualizado"); }; reader.readAsDataURL(file); };
 
-  // CALCULOS
   const currentTotal = useMemo(() => { const time = parseFloat(sessionData.clinicalTime) || 0; const base = parseFloat(sessionData.baseCost) || 0; const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0; return Math.round(((hourly / 60) * time + base) / (1 - margin / 100)); }, [sessionData, config]);
   const incomeRecords = financialRecords.filter(f => !f.type || f.type === 'income');
   const expenseRecords = financialRecords.filter(f => f.type === 'expense');
@@ -219,9 +197,7 @@ export default function App() {
   const todaysAppointments = appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).sort((a,b) => a.time.localeCompare(b.time));
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !selectedPatientId) return;
-    setUploading(true);
+    const file = e.target.files[0]; if (!file || !selectedPatientId) return; setUploading(true);
     try {
         const fileName = `${selectedPatientId}_${Date.now()}.${file.name.split('.').pop()}`;
         const { error: uploadError } = await supabase.storage.from('patient-images').upload(fileName, file);
@@ -234,24 +210,49 @@ export default function App() {
     } catch (err) { alert(`Error: ${err.message}`); } finally { setUploading(false); }
   };
 
+  // --- PDF GENERATOR BLINDADO (V54 FIX) ---
   const generatePDF = (type, data = null) => {
-    const doc = new jsPDF();
-    const primaryColor = themeMode === 'light' ? [217, 119, 6] : (themeMode === 'blue' ? [6, 182, 212] : [212, 175, 55]);
-    doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 5, 'F');
-    if (config.logo) doc.addImage(config.logo, 'PNG', 15, 15, 25, 25);
-    doc.setFontSize(18); doc.text(config.name?.toUpperCase() || "DOCTOR", 200, 25, { align: 'right' });
-    const pData = (type === 'consent') ? getPatient(selectedPatientId) : (data || (sessionData.patientId ? patientRecords[sessionData.patientId] : null));
-    const pName = pData ? pData.personal.legalName : (sessionData.patientName || '...');
-    doc.setFontSize(10); doc.text(`PACIENTE: ${pName}`, 20, 50);
-    
-    if (type === 'rx') { autoTable(doc, { startY: 60, head: [['MEDICAMENTO', 'DOSIS']], body: prescription.map(p => [p.name, p.dosage]) }); } 
-    else if (type === 'quote') { autoTable(doc, { startY: 60, head: [['ITEM', 'VALOR']], body: [[sessionData.treatmentName || 'Tratamiento', `$${currentTotal.toLocaleString()}`]] }); }
-    else if (type === 'consent' && data) { 
-        doc.setFontSize(14); doc.text(data.type, 105, 70, { align: 'center' });
-        doc.setFontSize(10); doc.text(doc.splitTextToSize(data.text, 170), 20, 90);
-        if(data.signature) doc.addImage(data.signature, 'PNG', 80, 200, 50, 30);
+    try {
+      const doc = new jsPDF();
+      const primaryColor = themeMode === 'light' ? [217, 119, 6] : (themeMode === 'blue' ? [6, 182, 212] : [212, 175, 55]);
+      doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 5, 'F');
+      
+      // LOGO SAFE LOAD
+      if (config.logo) {
+          try {
+             // Intentamos agregar el logo. Si falla (por formato incorrecto), no rompe el PDF
+             doc.addImage(config.logo, 'PNG', 15, 15, 25, 25);
+          } catch (e) {
+             // Fallback: Si no es PNG, intentamos como JPEG
+             try { doc.addImage(config.logo, 'JPEG', 15, 15, 25, 25); } catch(err) { console.warn("Logo incompatible", err); }
+          }
+      }
+
+      doc.setFontSize(18); doc.text(config.name?.toUpperCase() || "DOCTOR", 200, 25, { align: 'right' });
+      const pData = (type === 'consent') ? getPatient(selectedPatientId) : (data || (sessionData.patientId ? patientRecords[sessionData.patientId] : null));
+      const pName = pData?.personal?.legalName || (sessionData.patientName || 'Paciente...');
+      
+      doc.setFontSize(10); doc.text(`PACIENTE: ${pName}`, 20, 50);
+      
+      if (type === 'rx') {
+          if (prescription.length === 0) { notify("Receta vacía"); return; }
+          autoTable(doc, { startY: 60, head: [['MEDICAMENTO', 'DOSIS']], body: prescription.map(p => [p.name, p.dosage]) });
+      } 
+      else if (type === 'quote') {
+          autoTable(doc, { startY: 60, head: [['ITEM', 'VALOR']], body: [[sessionData.treatmentName || 'Tratamiento', `$${currentTotal.toLocaleString()}`]] });
+      }
+      else if (type === 'consent' && data) { 
+          doc.setFontSize(14); doc.text(data.type, 105, 70, { align: 'center' });
+          doc.setFontSize(10); doc.text(doc.splitTextToSize(data.text || '', 170), 20, 90);
+          if(data.signature) {
+              try { doc.addImage(data.signature, 'PNG', 80, 200, 50, 30); } catch(e) { console.warn("Firma error", e); }
+          }
+      }
+      doc.save(`${type}.pdf`); notify("PDF Generado"); 
+    } catch (e) {
+      console.error(e);
+      alert("Error generando PDF. Revisa consola.");
     }
-    doc.save(`${type}.pdf`); notify("PDF Generado"); 
   };
 
   const getPerioStats = () => {
