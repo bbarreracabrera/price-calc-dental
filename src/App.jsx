@@ -9,10 +9,9 @@ import {
   Stethoscope, ClipboardList, FileText, ShieldCheck,
   CalendarClock, Clock, FileBarChart, Menu, ArrowLeft,
   MapPin, Phone, Mail, Upload, Image as ImageIcon, Wallet, 
-  Activity, Droplets, Check, FileQuestion, Camera, Lock, KeyRound, Printer
+  Activity, Droplets, Check, FileQuestion, Camera, Lock, KeyRound, Printer, LogOut
 } from 'lucide-react';
 
-// --- IMPORTAR SUPABASE (NUEVO MOTOR) ---
 import { supabase } from './supabase';
 
 // --- CONFIGURACIÓN DE TEMAS ---
@@ -71,28 +70,65 @@ const SelectField = ({ label, options, theme, ...props }) => (
   <div className="w-full">
     {label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1.5 block ml-1 ${THEMES[theme].accent}`}>{label}</label>}
     <div className={`flex items-center p-3 rounded-xl border transition-all ${THEMES[theme].inputBg}`}>
-      <select {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${THEMES[theme].text} appearance-none cursor-pointer`}>
-        {options.map(opt => <option key={opt} value={opt} className="bg-black text-white">{opt}</option>)}
-      </select>
+      {options.map(opt => <option key={opt} value={opt} className="bg-black text-white">{opt}</option>)}
     </div>
   </div>
 );
 
-// --- PANTALLA DE LOGIN ---
-const LoginScreen = ({ onLogin }) => {
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState(false);
-  const handleSubmit = (e) => { e.preventDefault(); if (pin === '0000') { onLogin(); } else { setError(true); setTimeout(() => setError(false), 500); setPin(''); } };
+// --- PANTALLA DE LOGIN/REGISTRO (SAAS REAL) ---
+const AuthScreen = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false); // Toggle entre Login y Registro
+  const [msg, setMsg] = useState('');
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true); setMsg('');
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        setMsg('¡Cuenta creada! Revisa tu correo o inicia sesión.');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (error) {
+      setMsg(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-[#090909] flex flex-col items-center justify-center p-6 z-[100]">
       <div className="animate-in fade-in zoom-in duration-500 flex flex-col items-center w-full max-w-xs">
         <div className="mb-10 relative"><div className="absolute inset-0 bg-[#D4AF37] blur-3xl opacity-20 rounded-full animate-pulse"></div><Cloud size={80} className="text-[#D4AF37] relative z-10 drop-shadow-2xl" fill="currentColor" fillOpacity={0.1} /></div>
         <h1 className="text-3xl font-black text-white mb-2 tracking-tight">ShiningCloud</h1>
-        <p className="text-[#D4AF37] text-xs uppercase tracking-[0.3em] mb-10 font-bold">Supabase Edition</p>
-        <form onSubmit={handleSubmit} className="w-full space-y-6">
-          <div className={`transition-all duration-200 ${error ? 'animate-shake' : ''}`}><div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-4 focus-within:border-[#D4AF37] transition-colors"><Lock className="text-[#D4AF37] mr-3 opacity-80" size={20}/><input type="password" inputMode="numeric" pattern="[0-9]*" maxLength="4" placeholder="PIN" className="bg-transparent outline-none text-white text-center font-bold text-xl w-full tracking-[0.5em]" value={pin} onChange={(e) => setPin(e.target.value)} autoFocus /></div></div>
-          <button type="submit" className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B69121] text-white p-4 rounded-2xl font-black shadow-lg shadow-amber-900/20 active:scale-95 flex items-center justify-center gap-2"><KeyRound size={18} /> ENTRAR</button>
+        <p className="text-[#D4AF37] text-xs uppercase tracking-[0.3em] mb-10 font-bold">SaaS Edition</p>
+        
+        <form onSubmit={handleAuth} className="w-full space-y-4">
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-4 focus-within:border-[#D4AF37] transition-colors">
+             <Mail className="text-[#D4AF37] mr-3 opacity-80" size={20}/>
+             <input type="email" placeholder="Correo" className="bg-transparent outline-none text-white w-full text-sm font-bold" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-4 focus-within:border-[#D4AF37] transition-colors">
+             <Lock className="text-[#D4AF37] mr-3 opacity-80" size={20}/>
+             <input type="password" placeholder="Contraseña" className="bg-transparent outline-none text-white w-full text-sm font-bold" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </div>
+          
+          {msg && <p className="text-red-400 text-xs text-center font-bold">{msg}</p>}
+
+          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B69121] text-white p-4 rounded-2xl font-black shadow-lg shadow-amber-900/20 active:scale-95 flex items-center justify-center gap-2">
+            {loading ? 'Cargando...' : (isSignUp ? 'CREAR CUENTA' : 'INICIAR SESIÓN')}
+          </button>
         </form>
+
+        <button onClick={() => setIsSignUp(!isSignUp)} className="mt-6 text-xs text-white/40 hover:text-[#D4AF37] font-bold transition-colors">
+          {isSignUp ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate'}
+        </button>
       </div>
     </div>
   );
@@ -100,21 +136,21 @@ const LoginScreen = ({ onLogin }) => {
 
 // --- APP PRINCIPAL ---
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [session, setSession] = useState(null);
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('sc_theme_mode') || 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [quoteMode, setQuoteMode] = useState('calc'); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // --- ESTADOS DE DATOS (SUPABASE) ---
+  // Datos
   const [config, setConfigLocal] = useState({ logo: null, hourlyRate: 25000, profitMargin: 30, bankName: "", accountType: "", accountNumber: "", rut: "", name: "Dr. Benjamín", mpLink: "", phone: "", email: "", address: "" });
   const [protocols, setProtocols] = useState([]);
   const [history, setHistory] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [patientRecords, setPatientRecords] = useState({});
 
-  // --- ESTADOS UI ---
-  const [session, setSession] = useState({ patientName: '', treatmentName: '', clinicalTime: 60, baseCost: 0 });
+  // UI
+  const [sessionData, setSessionData] = useState({ patientName: '', treatmentName: '', clinicalTime: 60, baseCost: 0 });
   const [prescription, setPrescription] = useState([]);
   const [medInput, setMedInput] = useState({ name: '', dosage: '' });
   const [newAppt, setNewAppt] = useState({ name: '', treatment: '', date: '', time: '' });
@@ -135,27 +171,27 @@ export default function App() {
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
 
-  // --- CARGA DE DATOS DESDE SUPABASE ---
+  // --- SESIÓN Y CARGA DE DATOS ---
   useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    // Función auxiliar para cargar
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
     const fetchData = async () => {
-      // 1. Config
+      // 1. Config (Intentar cargar la del usuario)
       const { data: settings } = await supabase.from('settings').select('*').eq('id', 'general').single();
       if (settings?.data) setConfigLocal(settings.data);
 
-      // 2. Pacientes
+      // 2. Pacientes (RLS filtra solo los míos)
       const { data: patients } = await supabase.from('patients').select('*');
-      if (patients) {
-        const pMap = {};
-        patients.forEach(row => { pMap[row.id] = row.data; });
-        setPatientRecords(pMap);
-      }
+      if (patients) { const pMap = {}; patients.forEach(row => { pMap[row.id] = row.data; }); setPatientRecords(pMap); }
 
       // 3. Citas
       const { data: appts } = await supabase.from('appointments').select('*');
-      if (appts) setAppointments(appts.map(row => ({ ...row.data, id: row.id }))); // Usar el ID de la fila o del JSON
+      if (appts) setAppointments(appts.map(row => ({ ...row.data, id: row.id })));
 
       // 4. Finanzas
       const { data: fins } = await supabase.from('financials').select('*');
@@ -165,28 +201,20 @@ export default function App() {
       const { data: packs } = await supabase.from('packs').select('*');
       if (packs) setProtocols(packs.map(row => ({ ...row.data, id: row.id })));
     };
-
     fetchData();
-
-    // Suscripción en tiempo real (opcional, por ahora carga manual al inicio para simplicidad)
-    // Supabase Realtime requiere configuración extra, por ahora usaremos "refetch" al guardar
-  }, [isAuthenticated]);
+  }, [session]);
 
   const notify = (msg) => { setNotification(msg); setTimeout(() => setNotification(''), 3000); };
   const toggleTheme = () => { setThemeMode(prev => { const newTheme = prev === 'dark' ? 'light' : prev === 'light' ? 'blue' : 'dark'; localStorage.setItem('sc_theme_mode', newTheme); return newTheme; }); };
+  const handleLogout = async () => { await supabase.auth.signOut(); setSession(null); };
 
-  // --- GUARDADO EN SUPABASE (Upsert: Crea o Actualiza) ---
+  // --- ESCRITURA CON SUPABASE (ID AUTOMÁTICO POR RLS) ---
   const saveToSupabase = async (table, id, dataObject) => {
-    // Guardamos el objeto completo en la columna 'data'
-    const { error } = await supabase.from(table).upsert({ id: id.toString(), data: dataObject });
-    if (error) { console.error("Error Supabase:", error); notify("Error guardando ❌"); }
+    const { error } = await supabase.from(table).upsert({ id: id.toString(), data: dataObject }); // user_id se pone solo en DB
+    if (error) { console.error(error); notify("Error guardando ❌"); }
   };
 
-  const updateConfig = async (newConfig) => {
-    setConfigLocal(newConfig);
-    await saveToSupabase('settings', 'general', newConfig);
-  };
-
+  const updateConfig = async (newConfig) => { setConfigLocal(newConfig); await saveToSupabase('settings', 'general', newConfig); };
   const getPatient = (id) => { const safeId = id || 'unknown'; return patientRecords[safeId] || { id: safeId, personal: { legalName: safeId, socialName: '', surnames: '', rut: '', email: '', phone: '', address: '', city: '', commune: '', birthDate: '', gender: 'Seleccionar', sex: 'Seleccionar', convention: 'Sin Convenio', internalNum: '', notes: '' }, anamnesis: { remote: '', recent: '', alerts: {} }, clinical: { teeth: {}, aap: { stage: '', grade: '' }, evolution: [] }, images: [] }; };
 
   const handleCreatePatient = async () => {
@@ -194,128 +222,37 @@ export default function App() {
     const id = searchTerm.trim().toLowerCase();
     if (!patientRecords[id]) {
         const newPatient = getPatient(id);
-        setPatientRecords(prev => ({...prev, [id]: newPatient})); // Actualizar UI
-        await saveToSupabase('patients', id, newPatient); // Guardar Nube
+        setPatientRecords(prev => ({...prev, [id]: newPatient}));
+        await saveToSupabase('patients', id, newPatient);
         notify("Paciente Creado ☁️");
     }
     setSelectedPatientId(id); setSearchTerm('');
   };
 
-  const savePatientData = async (id, newData) => {
-      setPatientRecords(prev => ({...prev, [id]: newData})); // UI
-      await saveToSupabase('patients', id, newData); // Nube
-  };
-
-  const updatePatientField = async (id, section, data) => {
-      const p = getPatient(id);
-      const newData = { ...p, [section]: { ...p[section], ...data } };
-      await savePatientData(id, newData);
-  };
+  const savePatientData = async (id, newData) => { setPatientRecords(prev => ({...prev, [id]: newData})); await saveToSupabase('patients', id, newData); };
+  const updatePatientField = async (id, section, data) => { const p = getPatient(id); await savePatientData(id, { ...p, [section]: { ...p[section], ...data } }); };
+  const updateAnamnesis = async (id, field, value) => { const p = getPatient(id); await savePatientData(id, { ...p, anamnesis: { ...p.anamnesis, [field]: value } }); };
+  const saveToothData = async () => { const p = getPatient(selectedPatientId); const updatedTeeth = { ...p.clinical.teeth, [toothModalData.id]: { status: toothModalData.status, history: toothModalData.history, perio: toothModalData.perio }}; await savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, teeth: updatedTeeth } }); setModal(null); notify("Diente Guardado"); };
+  const addEvolution = async () => { if(!newEvolution) return notify("Escribe una nota"); const p = getPatient(selectedPatientId); const newEntry = { id: Date.now(), date: new Date().toLocaleDateString(), text: newEvolution, tooth: toothModalData.id || 'General' }; await savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, evolution: [newEntry, ...(p.clinical.evolution || [])] } }); setNewEvolution(''); notify("Nota Guardada"); };
   
-  const updateAnamnesis = async (id, field, value) => {
-      const p = getPatient(id);
-      const newData = { ...p, anamnesis: { ...p.anamnesis, [field]: value } };
-      await savePatientData(id, newData);
-  };
-
-  const saveToothData = async () => {
-      const p = getPatient(selectedPatientId);
-      const updatedTeeth = { ...p.clinical.teeth, [toothModalData.id]: { status: toothModalData.status, history: toothModalData.history, perio: toothModalData.perio }};
-      const newData = { ...p, clinical: { ...p.clinical, teeth: updatedTeeth } };
-      await savePatientData(selectedPatientId, newData);
-      setModal(null); notify("Diente Guardado");
-  };
-
-  const addEvolution = async () => {
-      if(!newEvolution) return notify("Escribe una nota");
-      const p = getPatient(selectedPatientId);
-      const newEntry = { id: Date.now(), date: new Date().toLocaleDateString(), text: newEvolution, tooth: toothModalData.id || 'General' };
-      const newData = { ...p, clinical: { ...p.clinical, evolution: [newEntry, ...(p.clinical.evolution || [])] } };
-      await savePatientData(selectedPatientId, newData);
-      setNewEvolution(''); notify("Nota Guardada");
-  };
-
   const handleFileUpload = async (e) => {
       const file = e.target.files[0]; if (!file) return;
       const reader = new FileReader();
-      reader.onloadend = async () => {
-          const p = getPatient(selectedPatientId);
-          const newImg = { id: Date.now(), url: reader.result, name: file.name, date: new Date().toLocaleDateString() };
-          const newData = { ...p, images: [newImg, ...(p.images || [])] };
-          await savePatientData(selectedPatientId, newData);
-          notify("Imagen Subida");
-      };
+      reader.onloadend = async () => { const p = getPatient(selectedPatientId); const newImg = { id: Date.now(), url: reader.result, name: file.name, date: new Date().toLocaleDateString() }; await savePatientData(selectedPatientId, { ...p, images: [newImg, ...(p.images || [])] }); notify("Imagen Subida"); };
       reader.readAsDataURL(file);
   };
 
-  const saveBudgetToHistory = async () => {
-      if (!session.patientName) return notify("Falta nombre");
-      const id = Date.now().toString();
-      const newRecord = { id: id, date: new Date().toLocaleDateString(), patientName: session.patientName, treatmentName: session.treatmentName, total: currentTotal, paid: 0, payments: [], status: 'pending' };
-      setHistory([newRecord, ...history]);
-      await saveToSupabase('financials', id, newRecord);
-      notify("Deuda en Nube"); setActiveTab('history');
-  };
+  const saveBudgetToHistory = async () => { if (!sessionData.patientName) return notify("Falta nombre"); const id = Date.now().toString(); const newRecord = { id: id, date: new Date().toLocaleDateString(), patientName: sessionData.patientName, treatmentName: sessionData.treatmentName, total: currentTotal, paid: 0, payments: [], status: 'pending' }; setHistory([newRecord, ...history]); await saveToSupabase('financials', id, newRecord); notify("Deuda en Nube"); setActiveTab('history'); };
+  const registerPayment = async () => { const amount = parseInt(paymentAmount); if (!amount || amount <= 0) return notify("Monto inválido"); const rec = selectedFinancialRecord; const newPaid = (rec.paid || 0) + amount; const newRecord = { ...rec, paid: newPaid, status: newPaid >= rec.total ? 'paid' : 'partial', payments: [...(rec.payments || []), { date: new Date().toLocaleDateString(), amount: amount }] }; setHistory(history.map(h => h.id === rec.id ? newRecord : h)); await saveToSupabase('financials', rec.id, newRecord); setPaymentAmount(''); setModal(null); notify("Pago Registrado 💰"); };
+  const addAppointment = async () => { if(newAppt.name){ const id = Date.now().toString(); const apptData = { ...newAppt, id }; setAppointments([...appointments, apptData]); await saveToSupabase('appointments', id, apptData); setModal(null); notify("Cita Agendada"); } };
+  const deleteAppointment = async (id) => { setAppointments(appointments.filter(a => a.id !== id)); await supabase.from('appointments').delete().eq('id', id); notify("Cita Borrada"); };
+  const savePack = async () => { if(newPack.name){ const id = Date.now().toString(); const packData = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)}; setProtocols([...protocols, packData]); await saveToSupabase('packs', id, packData); notify("Pack Guardado"); } };
+  const handleLogoUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { updateConfig({ ...config, logo: reader.result }); notify("Logo Subido"); }; reader.readAsDataURL(file); };
 
-  const registerPayment = async () => {
-      const amount = parseInt(paymentAmount); if (!amount || amount <= 0) return notify("Monto inválido");
-      const rec = selectedFinancialRecord;
-      const newPaid = (rec.paid || 0) + amount;
-      const newRecord = { ...rec, paid: newPaid, status: newPaid >= rec.total ? 'paid' : 'partial', payments: [...(rec.payments || []), { date: new Date().toLocaleDateString(), amount: amount }] };
-      
-      // Actualizar local
-      setHistory(history.map(h => h.id === rec.id ? newRecord : h));
-      // Actualizar nube
-      await saveToSupabase('financials', rec.id, newRecord);
-      
-      setPaymentAmount(''); setModal(null); notify("Pago Registrado 💰");
-  };
-
-  const addAppointment = async () => {
-      if(newAppt.name){
-          const id = Date.now().toString();
-          const apptData = { ...newAppt, id };
-          setAppointments([...appointments, apptData]);
-          await saveToSupabase('appointments', id, apptData);
-          setModal(null); notify("Cita Agendada");
-      }
-  };
-  
-  const deleteAppointment = async (id) => { 
-      setAppointments(appointments.filter(a => a.id !== id));
-      await supabase.from('appointments').delete().eq('id', id);
-      notify("Cita Borrada");
-  };
-
-  const savePack = async () => {
-      if(newPack.name){
-          const id = Date.now().toString();
-          const packData = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)};
-          setProtocols([...protocols, packData]);
-          await saveToSupabase('packs', id, packData);
-          notify("Pack Guardado");
-      }
-  };
-
-  // --- LOGO CONFIG ---
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => { updateConfig({ ...config, logo: reader.result }); notify("Logo Subido"); };
-    reader.readAsDataURL(file);
-  };
-
-  // --- CÁLCULOS AUXILIARES ---
-  const currentTotal = useMemo(() => {
-    const time = parseFloat(session.clinicalTime) || 0; const base = parseFloat(session.baseCost) || 0;
-    const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0;
-    const costLabor = (hourly / 60) * time; const totalCost = costLabor + base; const marginDecimal = margin / 100;
-    return isFinite(totalCost / (1 - marginDecimal)) ? Math.round(totalCost / (1 - marginDecimal)) : 0;
-  }, [session, config]);
+  const currentTotal = useMemo(() => { const time = parseFloat(sessionData.clinicalTime) || 0; const base = parseFloat(sessionData.baseCost) || 0; const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0; const costLabor = (hourly / 60) * time; const totalCost = costLabor + base; const marginDecimal = margin / 100; return isFinite(totalCost / (1 - marginDecimal)) ? Math.round(totalCost / (1 - marginDecimal)) : 0; }, [sessionData, config]);
   const totalInvoiced = history.reduce((a, b) => a + (Number(b.total) || 0), 0);
   const totalCollected = history.reduce((a, b) => a + (Number(b.paid) || 0), 0);
 
-  // --- PDF GENERATOR ---
   const generatePDF = (type) => {
     const doc = new jsPDF(); const primaryColor = [212, 175, 55]; const blackColor = [20, 20, 20];
     doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 5, 'F');
@@ -328,31 +265,33 @@ export default function App() {
     doc.setFontSize(18); doc.setTextColor(...primaryColor); doc.setFont("helvetica", "bold"); const title = type === 'rx' ? 'RECETA MÉDICA' : 'PRESUPUESTO DENTAL'; doc.text(title, 105, 70, { align: 'center' });
     doc.setFillColor(245, 245, 245); doc.rect(15, 80, 180, 25, 'F');
     doc.setFontSize(11); doc.setTextColor(50, 50, 50); doc.setFont("helvetica", "bold"); doc.text("PACIENTE:", 20, 90); doc.text("FECHA:", 130, 90);
-    doc.setFont("helvetica", "normal"); doc.text(session.patientName || "Paciente General", 20, 97); doc.text(new Date().toLocaleDateString(), 130, 97);
+    doc.setFont("helvetica", "normal"); doc.text(sessionData.patientName || "Paciente General", 20, 97); doc.text(new Date().toLocaleDateString(), 130, 97);
     if (type === 'rx') {
         const bodyData = prescription.map(p => [p.name, p.dosage]);
         autoTable(doc, { startY: 115, head: [['MEDICAMENTO', 'INDICACIÓN']], body: bodyData, theme: 'plain', headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, bodyStyles: { textColor: 50 }, columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } }, margin: { top: 115, left: 15, right: 15 } });
     } else {
-        const bodyData = [[session.treatmentName || 'Consulta General', `$${currentTotal.toLocaleString()}`]];
+        const bodyData = [[sessionData.treatmentName || 'Consulta General', `$${currentTotal.toLocaleString()}`]];
         autoTable(doc, { startY: 115, head: [['TRATAMIENTO', 'VALOR']], body: bodyData, theme: 'grid', headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold' }, bodyStyles: { textColor: 50 }, columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'right' } }, margin: { top: 115, left: 15, right: 15 } });
         const finalY = doc.lastAutoTable.finalY + 10; doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(...blackColor); doc.text(`TOTAL: $${currentTotal.toLocaleString()}`, 195, finalY, { align: 'right' });
     }
     const pageHeight = doc.internal.pageSize.height; doc.setDrawColor(150); doc.line(75, pageHeight - 40, 135, pageHeight - 40); doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(100); doc.text("Firma y Timbre", 105, pageHeight - 35, { align: 'center' }); doc.setFontSize(8); doc.setTextColor(180); doc.text("Documento generado por ShiningCloud Dental Software", 105, pageHeight - 10, { align: 'center' });
-    doc.save(`${type === 'rx' ? 'Receta' : 'Presupuesto'}_${session.patientName || 'Doc'}.pdf`); notify("PDF Generado");
+    doc.save(`${type === 'rx' ? 'Receta' : 'Presupuesto'}_${sessionData.patientName || 'Doc'}.pdf`); notify("PDF Generado");
   };
 
   const menuItems = [ { id: 'dashboard', label: 'Resumen', icon: TrendingUp }, { id: 'agenda', label: 'Agenda', icon: CalendarClock }, { id: 'ficha', label: 'Pacientes', icon: User }, { id: 'quote', label: 'Cotizador', icon: Calculator }, { id: 'history', label: 'Caja', icon: Wallet }, { id: 'clinical', label: 'Recetas', icon: Stethoscope }, { id: 'settings', label: 'Ajustes', icon: Settings } ];
 
-  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  if (!session) return <AuthScreen />;
 
   return (
     <div className={`min-h-screen flex ${THEMES[themeMode].bg} ${THEMES[themeMode].text} transition-colors duration-500`}>
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform ${themeMode === 'dark' ? 'bg-black/95 border-white/5' : 'bg-white border-slate-200'} border-r backdrop-blur-2xl`}>
-        <div className={`p-8 border-b flex items-center gap-2 ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>{config.logo ? <img src={config.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg bg-white/10"/> : <Cloud className={`${THEMES[themeMode].accent} fill-current opacity-20`} size={32}/>}<h1 className={`text-xl font-black ${themeMode === 'dark' ? 'text-white' : 'text-slate-800'}`}>ShiningCloud<span className={`block text-[10px] tracking-widest uppercase ${THEMES[themeMode].accent}`}>| Supabase</span></h1></div>
+        <div className={`p-8 border-b flex items-center gap-2 ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>{config.logo ? <img src={config.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg bg-white/10"/> : <Cloud className={`${THEMES[themeMode].accent} fill-current opacity-20`} size={32}/>}<h1 className={`text-xl font-black ${themeMode === 'dark' ? 'text-white' : 'text-slate-800'}`}>ShiningCloud<span className={`block text-[10px] tracking-widest uppercase ${THEMES[themeMode].accent}`}>| SaaS</span></h1></div>
         <nav className="p-4 mt-4 space-y-1">{menuItems.map(item => (<button key={item.id} onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); setSelectedPatientId(null); }} className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all font-bold text-sm ${activeTab === item.id ? `${THEMES[themeMode].accentBg} text-white shadow-lg` : `${THEMES[themeMode].subText} hover:bg-black/5`}`}><item.icon size={20}/> {item.label}</button>))}</nav>
-        <div className={`absolute bottom-0 w-full p-6 border-t flex items-center justify-between ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}`}><div className="flex items-center gap-2"><div className={`w-8 h-8 rounded-full ${THEMES[themeMode].accentBg} flex items-center justify-center text-white font-bold`}>{config.name?.[0]}</div><p className="text-xs font-bold truncate w-24">{config.name}</p></div><button onClick={toggleTheme} className={`p-2 rounded-full hover:bg-black/5 ${THEMES[themeMode].accent}`}>{themeMode==='dark'?<Moon size={18}/>: (themeMode==='light'?<Sun size={18}/>:<Droplets size={18}/>)}</button></div>
+        <div className={`absolute bottom-0 w-full p-6 border-t ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
+            <button onClick={handleLogout} className="w-full mb-4 flex items-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 text-xs font-bold justify-center"><LogOut size={16}/> CERRAR SESIÓN</button>
+            <div className="flex items-center justify-between"><div className="flex items-center gap-2"><div className={`w-8 h-8 rounded-full ${THEMES[themeMode].accentBg} flex items-center justify-center text-white font-bold`}>{config.name?.[0]}</div><p className="text-xs font-bold truncate w-24">{session.user.email}</p></div><button onClick={toggleTheme} className={`p-2 rounded-full hover:bg-black/5 ${THEMES[themeMode].accent}`}>{themeMode==='dark'?<Moon size={18}/>: (themeMode==='light'?<Sun size={18}/>:<Droplets size={18}/>)}</button></div>
+        </div>
       </aside>
-
       <main className="flex-1 md:ml-64 p-4 md:p-10 h-screen overflow-y-auto">
         <div className="md:hidden flex justify-between items-center mb-8"><button onClick={() => setMobileMenuOpen(true)} className="p-2 bg-black/5 rounded-xl"><Menu/></button><span className="font-black">ShiningCloud</span><div className="w-8"></div></div>
         {notification && <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[60] px-8 py-3 rounded-full shadow-2xl flex items-center gap-3 font-bold animate-bounce ${themeMode === 'dark' ? 'bg-black border border-amber-400 text-amber-400' : 'bg-white border border-slate-200 text-slate-800'}`}><Diamond size={18}/> {notification}</div>}
@@ -366,16 +305,15 @@ export default function App() {
         {patientTab === 'perio' && <Card theme={themeMode} className="space-y-4"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest`}>Diagnóstico AAP</h3><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Estadio" placeholder="I - IV" value={getPatient(selectedPatientId).clinical.aap.stage} onChange={e => updatePatientField(selectedPatientId, 'clinical', { aap: { ...getPatient(selectedPatientId).clinical.aap, stage: e.target.value } })}/><InputField theme={themeMode} label="Grado" placeholder="A - C" value={getPatient(selectedPatientId).clinical.aap.grade} onChange={e => updatePatientField(selectedPatientId, 'clinical', { aap: { ...getPatient(selectedPatientId).clinical.aap, grade: e.target.value } })}/></div></Card>}
         {patientTab === 'evolution' && <div className="space-y-4"><Card theme={themeMode} className="space-y-2"><InputField theme={themeMode} textarea label="Nueva Evolución" placeholder="Describa el procedimiento..." value={newEvolution} onChange={e => setNewEvolution(e.target.value)}/><Button theme={themeMode} className="w-full" onClick={addEvolution}>Guardar</Button></Card><div className="space-y-3">{getPatient(selectedPatientId).clinical.evolution?.map(evo => (<div key={evo.id} className={`p-4 rounded-xl text-sm relative pl-6 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}><div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${THEMES[themeMode].accentBg}`}></div><div className="flex justify-between mb-1"><span className={`font-bold text-xs ${THEMES[themeMode].accent}`}>{evo.date}</span><span className="text-xs opacity-50 font-bold">Diente: {evo.tooth}</span></div><p>{evo.text}</p></div>))}</div></div>}
         {patientTab === 'images' && <div className="space-y-6"><Card theme={themeMode} className="text-center border-dashed border-2 !bg-transparent opacity-60 hover:opacity-100 cursor-pointer" onClick={() => fileInputRef.current.click()}><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/><Upload className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold uppercase">Subir Documento</p></Card><div className="grid grid-cols-2 gap-4">{getPatient(selectedPatientId).images?.map(img => (<div key={img.id} className="relative group"><img src={img.url} alt="doc" className="rounded-xl w-full h-32 object-cover border border-white/10"/><div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition-all"><span className="text-[10px] text-white font-bold">{img.name}</span></div></div>))}</div></div>}</>)}</div>}
-        {activeTab === 'quote' && <div className="space-y-6"><div className={`flex p-1 rounded-2xl ${themeMode==='dark'?'bg-white/5':'bg-black/5'}`}><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='calc'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='packs'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Packs</button></div>{quoteMode==='calc'?(<><Button theme={themeMode} variant="secondary" className="w-full" onClick={()=>setModal('loadPack')}>Cargar Pack</Button><Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Paciente" value={session.patientName} onChange={e=>setSession({...session, patientName:e.target.value})}/><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Min" type="number" value={session.clinicalTime} onChange={e=>setSession({...session, clinicalTime:e.target.value})}/><InputField theme={themeMode} label="Insumos" type="number" value={session.baseCost} onChange={e=>setSession({...session, baseCost:e.target.value})}/></div></Card><Card theme={themeMode} className={`text-center py-10 border ${THEMES[themeMode].accentBorder}`}><h2 className={`text-6xl font-black ${THEMES[themeMode].textGradient}`}>${currentTotal.toLocaleString()}</h2><div className="grid grid-cols-3 gap-2 mt-4 px-4"><Button theme={themeMode} variant="secondary" onClick={saveBudgetToHistory}><Save/> Guardar</Button><Button theme={themeMode} variant="secondary" onClick={() => generatePDF('quote')}><Printer/> PDF</Button><Button theme={themeMode} onClick={()=>setModal('pay')}><Share2/> Cobrar</Button></div></Card></>):(<Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})}/><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><button onClick={()=>{if(newPackItem.name){setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}} className={`p-4 rounded-xl text-white ${THEMES[themeMode].accentBg}`}><Plus/></button></div><Button theme={themeMode} className="w-full" onClick={savePack}>Guardar</Button></Card>)}</div>}
+        {activeTab === 'quote' && <div className="space-y-6"><div className={`flex p-1 rounded-2xl ${themeMode==='dark'?'bg-white/5':'bg-black/5'}`}><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='calc'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='packs'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Packs</button></div>{quoteMode==='calc'?(<><Button theme={themeMode} variant="secondary" className="w-full" onClick={()=>setModal('loadPack')}>Cargar Pack</Button><Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Paciente" value={sessionData.patientName} onChange={e=>setSessionData({...sessionData, patientName:e.target.value})}/><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Min" type="number" value={sessionData.clinicalTime} onChange={e=>setSessionData({...sessionData, clinicalTime:e.target.value})}/><InputField theme={themeMode} label="Insumos" type="number" value={sessionData.baseCost} onChange={e=>setSessionData({...sessionData, baseCost:e.target.value})}/></div></Card><Card theme={themeMode} className={`text-center py-10 border ${THEMES[themeMode].accentBorder}`}><h2 className={`text-6xl font-black ${THEMES[themeMode].textGradient}`}>${currentTotal.toLocaleString()}</h2><div className="grid grid-cols-3 gap-2 mt-4 px-4"><Button theme={themeMode} variant="secondary" onClick={saveBudgetToHistory}><Save/> Guardar</Button><Button theme={themeMode} variant="secondary" onClick={() => generatePDF('quote')}><Printer/> PDF</Button><Button theme={themeMode} onClick={()=>setModal('pay')}><Share2/> Cobrar</Button></div></Card></>):(<Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})}/><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><button onClick={()=>{if(newPackItem.name){setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}} className={`p-4 rounded-xl text-white ${THEMES[themeMode].accentBg}`}><Plus/></button></div><Button theme={themeMode} className="w-full" onClick={savePack}>Guardar</Button></Card>)}</div>}
         {activeTab === 'history' && <div className="space-y-6"><div className="flex justify-between"><h2 className="text-3xl font-black">Caja</h2><Button theme={themeMode} variant="secondary" onClick={() => {const ws=XLSX.utils.json_to_sheet(history); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Caja"); XLSX.writeFile(wb,"Reporte.xlsx");}}><FileSpreadsheet/></Button></div><InputField theme={themeMode} icon={Search} placeholder="Buscar..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="space-y-3">{history.filter(h=>h.patientName?.toLowerCase().includes(searchTerm.toLowerCase())).map(h=>(<Card key={h.id} theme={themeMode} className="flex justify-between items-center cursor-pointer border-l-4 hover:opacity-80" style={{borderLeftColor: (h.total-(h.paid||0))<=0 ? '#10b981':'#ef4444'}} onClick={()=>{setSelectedFinancialRecord(h); setModal('abono');}}><div><h4 className="font-bold">{h.patientName}</h4><p className="text-xs opacity-50">{h.treatmentName}</p></div><div className="text-right"><p className={`font-black ${THEMES[themeMode].accent}`}>${h.total?.toLocaleString()}</p></div></Card>))}</div></div>}
         {activeTab === 'clinical' && <div className="space-y-6"><h2 className="text-3xl font-black">Recetario</h2><Card theme={themeMode} className="space-y-4"><div className="flex gap-2"><Button theme={themeMode} variant="secondary" className="flex-1 text-xs" onClick={()=>setPrescription([...prescription, {name:'Amoxicilina 500', dosage:'c/8h'}])}>Infección</Button><Button theme={themeMode} variant="secondary" className="flex-1 text-xs" onClick={()=>setPrescription([...prescription, {name:'Ketorolaco', dosage:'c/8h'}])}>Dolor</Button></div><div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><button onClick={()=>{if(medInput.name){setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}} className={`p-4 rounded-xl text-white ${THEMES[themeMode].accentBg}`}><Plus/></button></div><div className="space-y-2">{prescription.map((p,i)=>(<div key={i} className={`p-2 rounded flex justify-between text-xs ${themeMode==='dark'?'bg-white/5':'bg-black/5'}`}><span>{p.name}</span><button onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}><X size={12}/></button></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx')}>PDF</Button></Card></div>}
         {activeTab === 'agenda' && <div className="space-y-6"><div className="flex justify-between"><h2 className="text-3xl font-black">Agenda</h2><Button theme={themeMode} onClick={()=>setModal('appt')}><Plus/></Button></div>{appointments.map(a=>(<Card key={a.id} theme={themeMode} className="flex justify-between items-center"><div className="flex gap-4"><div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${THEMES[themeMode].accentBg} bg-opacity-10 ${THEMES[themeMode].accent}`}>{a.time}</div><div><h4 className="font-bold">{a.name}</h4><p className="text-xs opacity-50">{a.treatment}</p></div></div><button onClick={()=>deleteAppointment(a.id)} className="text-red-500 bg-red-500/10 p-2 rounded"><Trash2/></button></Card>))}</div>}
-
       </main>
 
       {/* --- MODALES --- */}
       {modal === 'appt' && <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className={`w-full max-w-sm border ${THEMES[themeMode].accentBorder}`}><h3 className={`text-xl font-bold mb-4 ${THEMES.dark.accent}`}>Nueva Cita</h3><div className="space-y-4"><InputField theme="dark" placeholder="Paciente" value={newAppt.name} onChange={e=>setNewAppt({...newAppt, name:e.target.value})}/><div className="flex gap-2"><input type="date" className="flex-1 bg-white/5 p-3 rounded-xl border border-white/10 text-white" value={newAppt.date} onChange={e=>setNewAppt({...newAppt, date:e.target.value})}/><input type="time" className="w-24 bg-white/5 p-3 rounded-xl border border-white/10 text-white" value={newAppt.time} onChange={e=>setNewAppt({...newAppt, time:e.target.value})}/></div><Button theme="dark" className="w-full" onClick={addAppointment}>Agendar</Button><button className="w-full text-xs text-white/30 mt-2" onClick={()=>setModal(null)}>CANCELAR</button></div></Card></div>}
-      {modal === 'loadPack' && <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm h-96 flex flex-col border-white/20"><h3 className={`text-xl font-bold mb-4 ${THEMES.dark.accent}`}>Packs</h3><div className="flex-1 overflow-y-auto space-y-2">{protocols.map(p=>(<button key={p.id} onClick={()=>{setSession({...session, treatmentName:p.name, baseCost:p.totalCost}); setModal(null); notify("Cargado");}} className="w-full text-left p-4 bg-white/5 rounded-xl border border-white/5 hover:border-amber-400 transition-all"><span className="font-bold text-white">{p.name}</span> <span className="text-amber-400 block">${p.totalCost.toLocaleString()}</span></button>))}</div><button className="mt-4 text-xs text-white/30" onClick={()=>setModal(null)}>CERRAR</button></Card></div>}
+      {modal === 'loadPack' && <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm h-96 flex flex-col border-white/20"><h3 className={`text-xl font-bold mb-4 ${THEMES.dark.accent}`}>Packs</h3><div className="flex-1 overflow-y-auto space-y-2">{protocols.map(p=>(<button key={p.id} onClick={()=>{setSessionData({...sessionData, treatmentName:p.name, baseCost:p.totalCost}); setModal(null); notify("Cargado");}} className="w-full text-left p-4 bg-white/5 rounded-xl border border-white/5 hover:border-amber-400 transition-all"><span className="font-bold text-white">{p.name}</span> <span className="text-amber-400 block">${p.totalCost.toLocaleString()}</span></button>))}</div><button className="mt-4 text-xs text-white/30" onClick={()=>setModal(null)}>CERRAR</button></Card></div>}
       {modal === 'tooth' && <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className={`w-full max-w-sm border ${THEMES[themeMode].accentBorder} max-h-[90vh] overflow-y-auto`}><h3 className="text-2xl font-bold mb-4 text-white text-center">Diente {toothModalData.id}</h3><div className="mb-6"><p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-2">Estado</p><div className="grid grid-cols-2 gap-2"><button onClick={() => setToothModalData({...toothModalData, status: 'caries'})} className={`p-3 rounded-xl border font-bold text-xs ${toothModalData.status === 'caries' ? 'bg-red-500 border-red-500 text-white' : 'bg-white/5 border-white/10 text-white'}`}>Caries</button><button onClick={() => setToothModalData({...toothModalData, status: 'filled'})} className={`p-3 rounded-xl border font-bold text-xs ${toothModalData.status === 'filled' ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-white'}`}>Obturado</button></div></div><div className="mb-6"><p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-2">Historial</p><div className="flex gap-2 mb-2"><input placeholder="Ej: Resina..." className="flex-1 bg-white/5 p-2 rounded-lg text-sm outline-none text-white" value={newTreatment} onChange={e => setNewTreatment(e.target.value)}/><button onClick={() => { if(newTreatment) setToothModalData(prev => ({...prev, history: [...(prev.history || []), newTreatment] })); setNewTreatment(''); }} className="bg-amber-400 p-2 rounded-lg text-black font-bold">+</button></div><div className="space-y-1 max-h-24 overflow-y-auto">{toothModalData.history?.map((t, i) => <div key={i} className="text-xs bg-white/5 p-2 rounded text-white">{t}</div>)}</div></div><Button theme="dark" className="w-full" onClick={saveToothData}>Guardar</Button><button className="w-full mt-2 text-xs text-white/30" onClick={() => setModal(null)}>Cerrar</button></Card></div>}
       {modal === 'abono' && selectedFinancialRecord && (<div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm border-white/20"><h3 className="text-xl font-bold mb-2 text-white">Abonar</h3><div className="bg-white/5 p-4 rounded-xl mb-4"><p className="text-xs font-bold text-amber-400">DEUDA</p><p className="text-2xl font-black text-white">${(selectedFinancialRecord.total - (selectedFinancialRecord.paid || 0)).toLocaleString()}</p></div><InputField theme="dark" placeholder="Monto..." type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)}/><Button theme="dark" className="w-full !mt-4" onClick={registerPayment}>Pagar</Button><button className="w-full mt-4 text-xs text-white/30" onClick={() => setModal(null)}>CANCELAR</button></Card></div>)}
       {modal === 'pay' && <div className="fixed inset-0 z-50 bg-black/90 flex items-end justify-center p-4"><Card theme="dark" className="w-full max-w-sm border-white/20"><h3 className="text-xl font-bold mb-6 text-white">Cobrar</h3><Button theme="dark" className="w-full !bg-emerald-600 !py-4 mb-4" onClick={()=>window.open(`https://wa.me/?text=Total: $${currentTotal}`)}>Enviar WhatsApp</Button><button className="w-full text-xs text-white/30" onClick={()=>setModal(null)}>CERRAR</button></Card></div>}
