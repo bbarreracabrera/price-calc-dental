@@ -10,7 +10,7 @@ import {
   Mail, Upload, Image as ImageIcon, Wallet, 
   Activity, Check, FileQuestion, Camera, Lock, Printer, LogOut,
   ArrowRight, Star, Droplets, FileBarChart, MapPin, Phone, AlertCircle,
-  ChevronLeft, ChevronRight, Users, Clock, DollarSign, PenTool, FileSignature, Edit3, Loader, TrendingDown, CreditCard, Banknote
+  ChevronLeft, ChevronRight, Users, Clock, DollarSign, PenTool, FileSignature, Edit3, Loader, TrendingDown, CreditCard, Banknote, Box, Minus, AlertTriangle
 } from 'lucide-react';
 import { supabase } from './supabase';
 
@@ -35,7 +35,7 @@ const SignaturePad = ({ onSave, onCancel, theme }) => {
   const startDrawing = (e) => { const ctx = canvasRef.current.getContext('2d'); ctx.beginPath(); const { x, y } = getCoords(e); ctx.moveTo(x, y); setIsDrawing(true); };
   const draw = (e) => { if (!isDrawing) return; const ctx = canvasRef.current.getContext('2d'); const { x, y } = getCoords(e); ctx.lineTo(x, y); ctx.stroke(); };
   const getCoords = (e) => { const rect = canvasRef.current.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
-  return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none text-white">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
+  return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
 };
 
 const ToothFacesControl = ({ faces, onChange, theme }) => {
@@ -108,6 +108,7 @@ export default function App() {
   const [appointments, setAppointments] = useState([]);
   const [financialRecords, setFinancialRecords] = useState([]); 
   const [protocols, setProtocols] = useState([]);
+  const [inventory, setInventory] = useState([]); 
 
   // UI STATES
   const [selectedPatientId, setSelectedPatientId] = useState(null);
@@ -134,7 +135,11 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: new Date().toISOString().split('T')[0] });
   
-  // --- LÓGICA DE ABONOS ---
+  // --- INVENTARIO AVANZADO ---
+  const [inventorySearch, setInventorySearch] = useState('');
+  const [newItem, setNewItem] = useState({ name: '', stock: 0, min: 5, unit: 'u', id: null });
+  
+  // --- PAGOS ---
   const [paymentInput, setPaymentInput] = useState({ amount: '', method: 'Efectivo', date: new Date().toISOString().split('T')[0] });
   const [selectedFinancialRecord, setSelectedFinancialRecord] = useState(null);
   const [historyMode, setHistoryMode] = useState('income'); 
@@ -157,6 +162,8 @@ export default function App() {
       if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id })));
       const { data: pk } = await supabase.from('packs').select('*');
       if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
+      const { data: i, error } = await supabase.from('inventory').select('*');
+      if (!error && i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
     };
     load();
   }, [session]);
@@ -175,18 +182,17 @@ export default function App() {
 
   const currentTotal = useMemo(() => { const time = parseFloat(sessionData.clinicalTime) || 0; const base = parseFloat(sessionData.baseCost) || 0; const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0; return Math.round(((hourly / 60) * time + base) / (1 - margin / 100)); }, [sessionData, config]);
   
-  // LOGICA FINANCIERA MEJORADA
   const incomeRecords = financialRecords.filter(f => !f.type || f.type === 'income');
   const expenseRecords = financialRecords.filter(f => f.type === 'expense');
-  
-  const totalCollected = incomeRecords.reduce((acc, rec) => {
-      const paymentsSum = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0);
-      return acc + (paymentsSum > 0 ? paymentsSum : (Number(rec.paid) || 0));
-  }, 0);
-
+  const totalCollected = incomeRecords.reduce((acc, rec) => { const paymentsSum = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0); return acc + (paymentsSum > 0 ? paymentsSum : (Number(rec.paid) || 0)); }, 0);
   const totalExpenses = expenseRecords.reduce((a, b) => a + (Number(b.amount) || 0), 0);
   const netProfit = totalCollected - totalExpenses;
   const todaysAppointments = appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).sort((a,b) => a.time.localeCompare(b.time));
+
+  const filteredInventory = useMemo(() => {
+      if(!inventorySearch) return inventory;
+      return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase()));
+  }, [inventory, inventorySearch]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]; if (!file || !selectedPatientId) return; setUploading(true);
@@ -244,7 +250,7 @@ export default function App() {
       
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform ${t.card} border-r`}>
         <div className="p-8 border-b border-white/5 flex items-center gap-2 relative"><button onClick={()=>setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 opacity-50"><X/></button>{config.logo ? <img src={config.logo} className="w-8 h-8 rounded bg-white/10 object-contain"/> : <Cloud className={t.accent} size={24}/>}<h1 className="text-xl font-black">ShiningCloud | Dental</h1></div>
-        <nav className="p-4 space-y-1">{[{ id: 'dashboard', label: 'Inicio', icon: TrendingUp }, { id: 'agenda', label: 'Agenda', icon: CalendarClock }, { id: 'ficha', label: 'Pacientes', icon: User }, { id: 'quote', label: 'Cotizador', icon: Calculator }, { id: 'history', label: 'Caja & Gastos', icon: Wallet }, { id: 'clinical', label: 'Recetas', icon: Stethoscope }, { id: 'settings', label: 'Ajustes', icon: Settings }].map(item => (<button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedPatientId(null); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase ${activeTab === item.id ? `${t.accentBg} text-white` : 'opacity-50 hover:opacity-100'}`}><item.icon size={18}/> {item.label}</button>))}</nav>
+        <nav className="p-4 space-y-1">{[{ id: 'dashboard', label: 'Inicio', icon: TrendingUp }, { id: 'agenda', label: 'Agenda', icon: CalendarClock }, { id: 'ficha', label: 'Pacientes', icon: User }, { id: 'quote', label: 'Cotizador', icon: Calculator }, { id: 'history', label: 'Caja & Gastos', icon: Wallet }, { id: 'inventory', label: 'Insumos', icon: Box }, { id: 'clinical', label: 'Recetas', icon: Stethoscope }, { id: 'settings', label: 'Ajustes', icon: Settings }].map(item => (<button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedPatientId(null); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase ${activeTab === item.id ? `${t.accentBg} text-white` : 'opacity-50 hover:opacity-100'}`}><item.icon size={18}/> {item.label}</button>))}</nav>
         <div className="absolute bottom-4 w-full px-4 space-y-2"><button onClick={toggleTheme} className="w-full p-3 rounded-xl bg-white/5 flex items-center justify-center gap-2 text-xs font-bold">{themeMode==='dark'?<Moon size={14}/>:themeMode==='light'?<Sun size={14}/>:<Droplets size={14}/>} TEMA</button><button onClick={()=>supabase.auth.signOut()} className="w-full p-3 rounded-xl bg-red-500/10 text-red-400 font-bold text-xs"><LogOut size={14} className="inline mr-2"/> SALIR</button></div>
       </aside>
 
@@ -267,28 +273,35 @@ export default function App() {
 
         {activeTab === 'history' && <div className="space-y-6 animate-in slide-in-from-right">
            <div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setHistoryMode('income')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all ${historyMode==='income'?t.accentBg:'opacity-50'}`}>Ingresos</button><button onClick={()=>setHistoryMode('expense')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all ${historyMode==='expense'?t.accentBg:'opacity-50'}`}>Gastos</button></div>
-           
-           {historyMode === 'income' ? (
-               <div className="space-y-4">
-                   <div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Ingresos</h2><Button theme={themeMode} variant="secondary" onClick={()=>{const ws=XLSX.utils.json_to_sheet(financialRecords); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Finanzas"); XLSX.writeFile(wb, "Reporte.xlsx");}}><FileSpreadsheet/> Excel</Button></div>
-                   {incomeRecords.map(h=>{
-                       const totalPaidRec = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
-                       const pending = (h.total || 0) - totalPaidRec;
-                       const statusColor = pending <= 0 ? 'text-emerald-500' : 'text-red-500';
-                       return (
-                           <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: new Date().toISOString().split('T')[0]}); setModal('abono');}} className={`flex justify-between items-center cursor-pointer border-l-4 ${pending<=0?'border-emerald-500':'border-red-500'} hover:scale-[1.01] transition-transform`}>
-                               <div><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Total: ${h.total?.toLocaleString()}</p></div>
-                               <div className="text-right"><p className={`font-black ${statusColor}`}>${pending <= 0 ? 'PAGADO' : `DEBE $${pending.toLocaleString()}`}</p><p className="text-[10px] opacity-50">Abonado: ${totalPaidRec.toLocaleString()}</p></div>
-                           </Card>
-                       )
-                   })}
-               </div>
-           ) : (
-               <div className="space-y-4">
-                   <Card theme={themeMode} className="space-y-4 border-l-4 border-red-500 bg-red-500/5"><h3 className="font-bold text-red-500">Registrar Nuevo Gasto</h3><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} placeholder="Descripción (ej: Luz)" value={newExpense.description} onChange={e=>setNewExpense({...newExpense, description:e.target.value})}/><select className={`bg-transparent border border-white/10 rounded-xl px-3 text-xs font-bold outline-none ${t.text}`} value={newExpense.category} onChange={e=>setNewExpense({...newExpense, category:e.target.value})}><option className="bg-[#121212] text-white">Insumos</option><option className="bg-[#121212] text-white">Laboratorio</option><option className="bg-[#121212] text-white">Arriendo</option><option className="bg-[#121212] text-white">Marketing</option><option className="bg-[#121212] text-white">Otros</option></select><InputField theme={themeMode} type="number" placeholder="$ Monto" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> <Button theme={themeMode} onClick={async()=>{ if(newExpense.description && newExpense.amount){ const id = Date.now().toString(); const expenseData = { ...newExpense, id, type: 'expense' }; setFinancialRecords([expenseData, ...financialRecords]); await saveToSupabase('financials', id, expenseData); setNewExpense({description:'', amount:'', category:'Insumos', date: new Date().toISOString().split('T')[0]}); notify("Gasto Guardado"); } }}>Guardar Gasto</Button></div></Card>
-                   <div className="space-y-2">{expenseRecords.map(ex => (<div key={ex.id} className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"><div className="flex items-center gap-3"><div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={16}/></div><div><p className="font-bold text-sm">{ex.description}</p><p className="text-[10px] opacity-50">{ex.date} • {ex.category}</p></div></div><div className="flex items-center gap-4"><span className="font-black text-red-400">-${Number(ex.amount).toLocaleString()}</span><button onClick={async()=>{ const filtered = financialRecords.filter(f=>f.id!==ex.id); setFinancialRecords(filtered); await supabase.from('financials').delete().eq('id', ex.id); }} className="text-xs opacity-30 hover:opacity-100 hover:text-red-500"><Trash2 size={14}/></button></div></div>))}</div>
-               </div>
-           )}
+           {historyMode === 'income' ? (<div className="space-y-4"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Ingresos</h2><Button theme={themeMode} variant="secondary" onClick={()=>{const ws=XLSX.utils.json_to_sheet(financialRecords); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Finanzas"); XLSX.writeFile(wb, "Reporte.xlsx");}}><FileSpreadsheet/> Excel</Button></div>{incomeRecords.map(h=>{ const totalPaidRec = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0); const pending = (h.total || 0) - totalPaidRec; return (<Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: new Date().toISOString().split('T')[0]}); setModal('abono');}} className={`flex justify-between items-center cursor-pointer border-l-4 ${pending<=0?'border-emerald-500':'border-red-500'} hover:scale-[1.01] transition-transform`}><div><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Total: ${h.total?.toLocaleString()}</p></div><div className="text-right"><p className={`font-black ${pending<=0?'text-emerald-500':'text-red-500'}`}>{pending <= 0 ? 'PAGADO' : `DEBE $${pending.toLocaleString()}`}</p><p className="text-[10px] opacity-50">Abonado: ${totalPaidRec.toLocaleString()}</p></div></Card>)})}</div>) : (<div className="space-y-4"><Card theme={themeMode} className="space-y-4 border-l-4 border-red-500 bg-red-500/5"><h3 className="font-bold text-red-500">Registrar Nuevo Gasto</h3><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} placeholder="Descripción (ej: Luz)" value={newExpense.description} onChange={e=>setNewExpense({...newExpense, description:e.target.value})}/><select className={`bg-transparent border border-white/10 rounded-xl px-3 text-xs font-bold outline-none ${t.text}`} value={newExpense.category} onChange={e=>setNewExpense({...newExpense, category:e.target.value})}><option className="bg-[#121212] text-white">Insumos</option><option className="bg-[#121212] text-white">Laboratorio</option><option className="bg-[#121212] text-white">Arriendo</option><option className="bg-[#121212] text-white">Marketing</option><option className="bg-[#121212] text-white">Otros</option></select><InputField theme={themeMode} type="number" placeholder="$ Monto" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> <Button theme={themeMode} onClick={async()=>{ if(newExpense.description && newExpense.amount){ const id = Date.now().toString(); const expenseData = { ...newExpense, id, type: 'expense' }; setFinancialRecords([expenseData, ...financialRecords]); await saveToSupabase('financials', id, expenseData); setNewExpense({description:'', amount:'', category:'Insumos', date: new Date().toISOString().split('T')[0]}); notify("Gasto Guardado"); } }}>Guardar Gasto</Button></div></Card><div className="space-y-2">{expenseRecords.map(ex => (<div key={ex.id} className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"><div className="flex items-center gap-3"><div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={16}/></div><div><p className="font-bold text-sm">{ex.description}</p><p className="text-[10px] opacity-50">{ex.date} • {ex.category}</p></div></div><div className="flex items-center gap-4"><span className="font-black text-red-400">-${Number(ex.amount).toLocaleString()}</span><button onClick={async()=>{ const filtered = financialRecords.filter(f=>f.id!==ex.id); setFinancialRecords(filtered); await supabase.from('financials').delete().eq('id', ex.id); }} className="text-xs opacity-30 hover:opacity-100 hover:text-red-500"><Trash2 size={14}/></button></div></div>))}</div></div>)}
+        </div>}
+
+        {/* --- INVENTARIO (V57: LIST & EDIT) --- */}
+        {activeTab === 'inventory' && <div className="space-y-6 animate-in fade-in">
+            <div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Inventario</h2><Button theme={themeMode} onClick={()=>{setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); setModal('addItem');}}><Plus/> Nuevo Item</Button></div>
+            <div className="relative"><InputField theme={themeMode} icon={Search} placeholder="Buscar insumo..." value={inventorySearch} onChange={e=>setInventorySearch(e.target.value)} /></div>
+            <div className="space-y-2">
+                {filteredInventory.map(item => {
+                    const isLow = (item.stock || 0) <= (item.min || 5);
+                    return (
+                        <div key={item.id} className={`flex justify-between items-center p-4 rounded-xl border transition-all ${isLow ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-lg ${isLow ? 'bg-red-500 text-white' : 'bg-white/10'}`}>{isLow ? <AlertTriangle size={20}/> : <Box size={20}/>}</div>
+                                <div><h4 className="font-bold">{item.name}</h4><p className="text-xs opacity-50">Mínimo: {item.min} {item.unit}</p></div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 bg-black/20 rounded-lg p-1">
+                                    <button onClick={async()=>{ const n = Math.max(0, (item.stock||0)-1); const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Minus size={14}/></button>
+                                    <span className={`w-8 text-center font-bold ${isLow?'text-red-500':''}`}>{item.stock}</span>
+                                    <button onClick={async()=>{ const n = (item.stock||0)+1; const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Plus size={14}/></button>
+                                </div>
+                                <button onClick={()=>{setNewItem(item); setModal('addItem');}} className="p-2 text-white/50 hover:text-cyan-400"><Edit3 size={18}/></button>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+            {filteredInventory.length === 0 && <p className="text-center opacity-30 py-8">No se encontraron insumos.</p>}
         </div>}
 
         {/* --- RESTO DE TABS (COTIZADOR, AGENDA, FICHA) --- */}
@@ -346,9 +359,7 @@ export default function App() {
                       <Button theme="dark" className="w-full" onClick={async ()=>{
                           if(!paymentInput.amount) return;
                           const newPayment = { amount: Number(paymentInput.amount), method: paymentInput.method, date: new Date().toLocaleDateString() };
-                          // Migración de datos antiguos si no existe array payments
                           const currentPayments = selectedFinancialRecord.payments || [];
-                          // Si había un 'paid' antiguo sin historial, lo convertimos en el primer pago histórico
                           if (!selectedFinancialRecord.payments && selectedFinancialRecord.paid > 0) {
                               currentPayments.push({ amount: selectedFinancialRecord.paid, method: 'Legacy', date: selectedFinancialRecord.date });
                           }
@@ -357,7 +368,6 @@ export default function App() {
                           
                           const nr = {...selectedFinancialRecord, paid: newTotalPaid, payments: updatedPayments}; 
                           
-                          // FIX: Usar setFinancialRecords en vez de setHistory
                           setFinancialRecords(prev => prev.map(h => h.id === nr.id ? nr : h));
                           
                           await saveToSupabase('financials', nr.id, nr); 
@@ -386,6 +396,14 @@ export default function App() {
       {modal === 'appt' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm space-y-4"><h3 className="font-bold">Nueva Cita</h3><PatientSelect theme="dark" patients={patientRecords} onSelect={(p)=>setNewAppt({...newAppt, name: p.personal.legalName})} placeholder="Buscar Paciente..." /><InputField theme="dark" label="Tratamiento" value={newAppt.treatment} onChange={e=>setNewAppt({...newAppt, treatment:e.target.value})}/><div className="flex gap-2"><input type="date" className="bg-white/5 p-3 rounded-xl text-white outline-none flex-1" value={newAppt.date} onChange={e=>setNewAppt({...newAppt, date:e.target.value})}/><input type="time" className="bg-white/5 p-3 rounded-xl text-white outline-none w-24" value={newAppt.time} onChange={e=>setNewAppt({...newAppt, time:e.target.value})}/></div><Button theme="dark" className="w-full" onClick={async ()=>{ if(newAppt.name){ const id=Date.now().toString(); const nd={...newAppt, id}; setAppointments([...appointments, nd]); await saveToSupabase('appointments', id, nd); setModal(null); setNewAppt({name:'', treatment:'', date:'', time:''}); notify("Cita Agendada"); }}}>AGENDAR</Button><button onClick={()=>setModal(null)} className="w-full text-center text-xs opacity-50">Cancelar</button></Card></div>}
       {modal === 'loadPack' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm h-96 flex flex-col"><h3 className="font-bold mb-4">Cargar Protocolo</h3><div className="flex-1 overflow-y-auto space-y-2">{protocols.map(pr=>(<div key={pr.id} onClick={()=>{setSessionData({...sessionData, treatmentName:pr.name, baseCost:pr.totalCost}); setModal(null); notify("Pack Cargado");}} className="p-4 bg-white/5 rounded-xl cursor-pointer hover:border-cyan-400 border border-transparent"><p className="font-bold">{pr.name}</p><p className="text-cyan-400">${pr.totalCost}</p></div>))}</div><button onClick={()=>setModal(null)} className="mt-4 text-xs opacity-50">Cerrar</button></Card></div>}
       
+      {/* MODAL INVENTARIO (V57) */}
+      {modal === 'addItem' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm space-y-4"><div className="flex justify-between items-center"><h3 className="font-bold text-xl">{newItem.id ? 'Editar Insumo' : 'Nuevo Insumo'}</h3><button onClick={()=>{setModal(null); if(newItem.id) setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); }}><X/></button></div><InputField theme="dark" placeholder="Nombre (ej: Anestesia)" value={newItem.name} onChange={e=>setNewItem({...newItem, name:e.target.value})}/><div className="flex gap-2"><InputField theme="dark" label="Stock" type="number" value={newItem.stock} onChange={e=>setNewItem({...newItem, stock:Number(e.target.value)})}/><InputField theme="dark" label="Mínimo" type="number" value={newItem.min} onChange={e=>setNewItem({...newItem, min:Number(e.target.value)})}/></div><div className="flex gap-2"><Button theme="dark" className="flex-1" onClick={async()=>{ if(newItem.name){ const id = newItem.id || Date.now().toString(); const itemData = { ...newItem, id }; 
+      let updatedInventory;
+      if (newItem.id) { updatedInventory = inventory.map(i => i.id === id ? itemData : i); } else { updatedInventory = [...inventory, itemData]; }
+      setInventory(updatedInventory); await saveToSupabase('inventory', id, itemData); setModal(null); setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); notify("Guardado"); }}}>GUARDAR</Button>
+      {newItem.id && <button onClick={async()=>{ const filtered = inventory.filter(i=>i.id!==newItem.id); setInventory(filtered); await supabase.from('inventory').delete().eq('id', newItem.id); setModal(null); notify("Eliminado"); }} className="p-3 bg-red-500/10 text-red-500 rounded-xl"><Trash2 size={20}/></button>}
+      </div></Card></div>}
+
       {selectedImg && <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-4" onClick={()=>setSelectedImg(null)}><img src={selectedImg} className="max-w-full max-h-[85%] rounded-xl shadow-2xl animate-in zoom-in"/><span className="mt-4 text-white font-bold opacity-50">CLICK PARA CERRAR</span></div>}
     </div>
   );
