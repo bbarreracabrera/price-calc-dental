@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from './supabase';
 
-// --- TEMAS VISUALES ---
+// --- TEMAS ---
 const THEMES = {
   dark: {
     bg: 'bg-[#050505]', text: 'text-white', card: 'bg-[#121212]/90 border border-white/10 shadow-2xl',
@@ -37,33 +37,15 @@ const THEMES = {
 const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData }) => {
   const currentTheme = THEMES[theme] ? theme : 'dark';
   const isMissing = status === 'missing';
-
   if (isPerioMode && isMissing) return <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/></svg><span className="text-[9px] font-bold">AUS</span></div>;
-
-  const getColor = () => {
-    if (status === 'caries') return '#ef4444'; 
-    if (status === 'filled') return '#3b82f6'; 
-    if (status === 'missing') return '#000000'; 
-    if (status === 'crown') return '#eab308'; 
-    return currentTheme === 'light' ? '#333' : '#fff'; 
-  };
-
+  const getColor = () => { if (status === 'caries') return '#ef4444'; if (status === 'filled') return '#3b82f6'; if (status === 'missing') return '#000000'; if (status === 'crown') return '#eab308'; return currentTheme === 'light' ? '#333' : '#fff'; };
   const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
   const hasPus = perioData?.pus;
   const hasAlert = (perioData?.mobility > 1) || (perioData?.furcation > 1);
-
   return (
     <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative">
-      <svg width="35" height="45" viewBox="0 0 100 120">
-          <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill={getColor()} fillOpacity={status ? 1 : 0.15} stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/>
-      </svg>
-      {isPerioMode && (
-          <div className="absolute -top-2 flex gap-1">
-              {hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-red-500/50 shadow-lg" title="Sangrado activo"/>}
-              {hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400 shadow-yellow-400/50 shadow-lg" title="Supuración"/>}
-              {hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500 shadow-purple-500/50 shadow-lg" title="Movilidad/Furca Avanzada"/>}
-          </div>
-      )}
+      <svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill={getColor()} fillOpacity={status ? 1 : 0.15} stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/></svg>
+      {isPerioMode && (<div className="absolute -top-2 flex gap-1">{hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>}{hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400"/>}{hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500"/>}</div>)}
       <span className="text-[9px] font-bold opacity-50">{number}</span>
     </div>
   );
@@ -71,7 +53,7 @@ const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData }) => {
 
 const HygieneCell = ({ tooth, data, onChange, status }) => {
     if (status === 'missing') return null;
-    return (<div className="flex flex-col items-center gap-1 bg-white/5 p-2 rounded-xl"><span className="text-[10px] font-bold opacity-70">{tooth}</span><div className="grid grid-cols-2 gap-1 w-12 h-12">{['v', 'd', 'l', 'm'].map(f => (<div key={f} onClick={() => onChange(f)} className={`rounded-sm cursor-pointer border border-white/10 transition-colors ${data?.[f] ? 'bg-red-500 border-red-500' : 'hover:bg-white/10'}`} title={`Cara ${f.toUpperCase()}`}></div>))}</div></div>);
+    return (<div className="flex flex-col items-center gap-1 bg-white/5 p-2 rounded-xl"><span className="text-[10px] font-bold opacity-70">{tooth}</span><div className="grid grid-cols-2 gap-1 w-12 h-12">{['v', 'd', 'l', 'm'].map(f => (<div key={f} onClick={() => onChange(f)} className={`rounded-sm cursor-pointer border border-white/10 transition-colors ${data?.[f] ? 'bg-red-500 border-red-500' : 'hover:bg-white/10'}`}></div>))}</div></div>);
 };
 
 const Card = ({ children, className = "", theme, ...props }) => {
@@ -87,97 +69,31 @@ const Button = ({ onClick, children, variant = "primary", className = "", theme 
 
 const InputField = ({ label, icon: Icon, theme, textarea, ...props }) => {
   const t = THEMES[theme] || THEMES.dark;
-  return (
-    <div className="w-full">
-      {label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 ${t.subText}`}>{label}</label>}
-      <div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>
-        {Icon && <Icon size={16} className={`mr-2 mt-0.5 ${t.subText}`}/>}
-        {textarea ? <textarea {...props} rows="3" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`}/> : <input {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${t.text}`}/>}
-      </div>
-    </div>
-  );
+  return (<div className="w-full">{label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 ${t.subText}`}>{label}</label>}<div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>{Icon && <Icon size={16} className={`mr-2 mt-0.5 ${t.subText}`}/>}{textarea ? <textarea {...props} rows="3" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`}/> : <input {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${t.text}`}/>}</div></div>);
 };
 
-// --- COMPONENTE BUSCADOR DE PACIENTES (NUEVO) ---
 const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Paciente..." }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
-    
-    // Filtrar pacientes
-    const results = useMemo(() => {
-        if (!query) return [];
-        return Object.values(patients).filter(p => 
-            p.personal?.legalName?.toLowerCase().includes(query.toLowerCase()) || 
-            p.personal?.rut?.includes(query)
-        );
-    }, [query, patients]);
-
+    const results = useMemo(() => { if (!query) return []; return Object.values(patients).filter(p => p.personal?.legalName?.toLowerCase().includes(query.toLowerCase()) || p.personal?.rut?.includes(query)); }, [query, patients]);
     const t = THEMES[theme] || THEMES.dark;
-
     return (
         <div className="relative w-full z-20">
-            <InputField 
-                theme={theme} 
-                icon={Search} 
-                placeholder={placeholder} 
-                value={query} 
-                onChange={e => { setQuery(e.target.value); setShowResults(true); }} 
-                onFocus={() => setShowResults(true)} 
-            />
-            {showResults && query && (
-                <div className={`absolute left-0 right-0 top-full mt-2 rounded-xl border max-h-48 overflow-y-auto shadow-xl ${t.card}`}>
-                    {results.length > 0 ? results.map(p => (
-                        <div 
-                            key={p.id} 
-                            onClick={() => { 
-                                onSelect(p); 
-                                setQuery(p.personal.legalName); 
-                                setShowResults(false); 
-                            }} 
-                            className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0"
-                        >
-                            <p className="font-bold text-sm">{p.personal.legalName}</p>
-                            <p className="text-[10px] opacity-50 font-mono">{p.personal.rut}</p>
-                        </div>
-                    )) : (
-                        <div className="p-3 text-xs opacity-50">
-                            No encontrado. <span className="underline cursor-pointer font-bold" onClick={()=>{
-                                const newP = {id:'new', personal:{legalName:query}};
-                                onSelect(newP); 
-                                setShowResults(false);
-                            }}>Crear nuevo "{query}"</span>
-                        </div>
-                    )}
-                </div>
-            )}
+            <InputField theme={theme} icon={Search} placeholder={placeholder} value={query} onChange={e => { setQuery(e.target.value); setShowResults(true); }} onFocus={() => setShowResults(true)} />
+            {showResults && query && (<div className={`absolute left-0 right-0 top-full mt-2 rounded-xl border max-h-48 overflow-y-auto shadow-xl ${t.card}`}>{results.length > 0 ? results.map(p => (<div key={p.id} onClick={() => { onSelect(p); setQuery(p.personal.legalName); setShowResults(false); }} className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0"><p className="font-bold text-sm">{p.personal.legalName}</p><p className="text-[10px] opacity-50 font-mono">{p.personal.rut}</p></div>)) : (<div className="p-3 text-xs opacity-50">No encontrado. <span className="underline cursor-pointer font-bold" onClick={()=>{const newP = {id:'new', personal:{legalName:query}}; onSelect(newP); setShowResults(false);}}>Crear nuevo "{query}"</span></div>)}</div>)}
         </div>
     );
 };
 
-// --- AUTH ---
 const AuthScreen = () => {
   const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [loading, setLoading] = useState(false); const [isSignUp, setIsSignUp] = useState(false); const [msg, setMsg] = useState('');
   const handleAuth = async (e) => { e.preventDefault(); setLoading(true); setMsg(''); try { if (isSignUp) { const { error } = await supabase.auth.signUp({ email, password }); if (error) throw error; setMsg('Cuenta creada.'); } else { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; } } catch (error) { setMsg(error.message); } finally { setLoading(false); } };
-  return (
-    <div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]">
-      <div className="w-full max-w-sm flex flex-col items-center">
-        <Cloud size={60} className="text-cyan-400 mb-4" />
-        <h1 className="text-3xl font-black text-white mb-8">ShiningCloud</h1>
-        <form onSubmit={handleAuth} className="w-full space-y-4 p-6 bg-white/5 rounded-3xl border border-white/10">
-          <input type="email" placeholder="Email" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={email} onChange={e=>setEmail(e.target.value)} required />
-          <input type="password" placeholder="Clave" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={password} onChange={e=>setPassword(e.target.value)} required />
-          <button className="w-full p-4 bg-cyan-500 text-white rounded-xl font-bold uppercase tracking-widest">{loading ? '...' : (isSignUp ? 'Registrar' : 'Entrar')}</button>
-        </form>
-        <button onClick={()=>setIsSignUp(!isSignUp)} className="mt-4 text-xs text-white/40 uppercase">{isSignUp ? 'Login' : 'Crear Cuenta'}</button>
-      </div>
-    </div>
-  );
+  return (<div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]"><div className="w-full max-w-sm flex flex-col items-center"><Cloud size={60} className="text-cyan-400 mb-4" /><h1 className="text-3xl font-black text-white mb-8">ShiningCloud</h1><form onSubmit={handleAuth} className="w-full space-y-4 p-6 bg-white/5 rounded-3xl border border-white/10"><input type="email" placeholder="Email" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={email} onChange={e=>setEmail(e.target.value)} required /><input type="password" placeholder="Clave" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={password} onChange={e=>setPassword(e.target.value)} required /><button className="w-full p-4 bg-cyan-500 text-white rounded-xl font-bold uppercase tracking-widest">{loading ? '...' : (isSignUp ? 'Registrar' : 'Entrar')}</button></form><button onClick={()=>setIsSignUp(!isSignUp)} className="mt-4 text-xs text-white/40 uppercase">{isSignUp ? 'Login' : 'Crear Cuenta'}</button></div></div>);
 };
 
 const TEETH_UPPER = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
 const TEETH_LOWER = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
 
-// --- APP PRINCIPAL ---
 export default function App() {
   const [session, setSession] = useState(null);
   const [themeMode, setThemeMode] = useState(() => THEMES[localStorage.getItem('sc_theme_mode')] ? localStorage.getItem('sc_theme_mode') : 'dark');
@@ -203,21 +119,12 @@ export default function App() {
   const [patientTab, setPatientTab] = useState('personal');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [selectedFinancialRecord, setSelectedFinancialRecord] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date()); 
   
-  // CALENDAR STATE
-  const [currentDate, setCurrentDate] = useState(new Date());
-
   // MODAL STATES
   const [toothModalData, setToothModalData] = useState({ id: null, status: null, history: [], notes: '' });
-  const [perioData, setPerioData] = useState({ 
-    pd: { vd:'', v:'', vm:'', ld:'', l:'', lm:'' }, 
-    bop: { vd:false, v:false, vm:false, ld:false, l:false, lm:false },
-    pus: false, mobility: 0, furcation: 0
-  }); 
-
-  // RECETA PACIENTE STATE
+  const [perioData, setPerioData] = useState({ pd: { vd:'', v:'', vm:'', ld:'', l:'', lm:'' }, bop: { vd:false, v:false, vm:false, ld:false, l:false, lm:false }, pus: false, mobility: 0, furcation: 0 }); 
   const [rxPatient, setRxPatient] = useState(null);
-
   const [newEvolution, setNewEvolution] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [modal, setModal] = useState(null);
@@ -241,131 +148,49 @@ export default function App() {
   const notify = (m) => { setNotification(m); setTimeout(() => setNotification(''), 3000); };
   const toggleTheme = () => { const n = themeMode === 'dark' ? 'light' : themeMode === 'light' ? 'blue' : 'dark'; setThemeMode(n); localStorage.setItem('sc_theme_mode', n); };
   const saveToSupabase = async (t, id, d) => { await supabase.from(t).upsert({ id: id.toString(), data: d }); };
-  
-  const getPatient = (id) => patientRecords[id] || { 
-      id, 
-      personal: { legalName: id, socialName: '', rut: '', birthDate: '', email: '', phone: '', address: '', city: '', commune: '', occupation: '', convention: 'Particular', guardian: '' }, 
-      anamnesis: { recent: '', remote: '', alerts: {} }, 
-      clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, 
-      images: [] 
-  };
+  const getPatient = (id) => patientRecords[id] || { id, personal: { legalName: id }, anamnesis: {}, clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, images: [] };
   const savePatientData = async (id, d) => { setPatientRecords(prev => ({...prev, [id]: d})); await saveToSupabase('patients', id, d); };
-  
-  // Calcular Edad
-  const getAge = (dateString) => {
-      if(!dateString) return 'S/I';
-      const today = new Date();
-      const birthDate = new Date(dateString);
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-      return age;
-  };
-
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => { const newConfig = { ...config, logo: reader.result }; setConfigLocal(newConfig); saveToSupabase('settings', 'general', newConfig); notify("Logo Actualizado"); };
-    reader.readAsDataURL(file);
-  };
-
-  const currentTotal = useMemo(() => {
-    const time = parseFloat(sessionData.clinicalTime) || 0; const base = parseFloat(sessionData.baseCost) || 0;
-    const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0;
-    const cost = (hourly / 60) * time + base; return Math.round(cost / (1 - margin / 100));
-  }, [sessionData, config]);
+  const getAge = (dateString) => { if(!dateString) return 'S/I'; const today = new Date(); const birthDate = new Date(dateString); let age = today.getFullYear() - birthDate.getFullYear(); const m = today.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--; return age; };
+  const handleLogoUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { const newConfig = { ...config, logo: reader.result }; setConfigLocal(newConfig); saveToSupabase('settings', 'general', newConfig); notify("Logo Actualizado"); }; reader.readAsDataURL(file); };
+  const currentTotal = useMemo(() => { const time = parseFloat(sessionData.clinicalTime) || 0; const base = parseFloat(sessionData.baseCost) || 0; const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0; const cost = (hourly / 60) * time + base; return Math.round(cost / (1 - margin / 100)); }, [sessionData, config]);
   const totalInvoiced = history.reduce((a, b) => a + (Number(b.total) || 0), 0);
   const totalCollected = history.reduce((a, b) => a + (Number(b.paid) || 0), 0);
-
-  // --- CALENDAR LOGIC ---
-  const getDaysInWeek = (date) => {
-    const start = new Date(date);
-    start.setDate(start.getDate() - start.getDay() + 1); // Empezar lunes
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        days.push(d);
-    }
-    return days;
-  };
-  
-  const weekDays = getDaysInWeek(currentDate);
-  const hours = Array.from({ length: 11 }, (_, i) => 8 + i); // 8:00 a 18:00
-  
-  // Dashboard Metrics
+  const getPerioStats = () => { if (!selectedPatientId) return { bop: 0, plaque: 0, totalTeeth: 0 }; const p = getPatient(selectedPatientId); let totalSites = 0; let bopSites = 0; let totalHygieneFaces = 0; let plaqueFaces = 0; [...TEETH_UPPER, ...TEETH_LOWER].forEach(t => { if (p.clinical.teeth[t]?.status !== 'missing') { totalSites += 6; const toothPerio = p.clinical.perio?.[t] || {}; if (toothPerio.bop) Object.values(toothPerio.bop).forEach(v => { if(v) bopSites++; }); totalHygieneFaces += 4; const toothHygiene = p.clinical.hygiene?.[t] || {}; Object.values(toothHygiene).forEach(v => { if(v) plaqueFaces++; }); } }); return { bop: totalSites > 0 ? Math.round((bopSites / totalSites) * 100) : 0, plaque: totalHygieneFaces > 0 ? Math.round((plaqueFaces / totalHygieneFaces) * 100) : 0, totalTeeth: totalSites / 6 }; };
+  const generatePDF = (type, patientOverride = null) => { const doc = new jsPDF(); const primaryColor = themeMode === 'blue' ? [6, 182, 212] : [212, 175, 55]; doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 5, 'F'); if (config.logo) doc.addImage(config.logo, 'PNG', 15, 15, 25, 25); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(config.name?.toUpperCase() || "DOCTOR", 200, 25, { align: 'right' }); doc.setFontSize(10); doc.setFont("helvetica", "normal"); const info = [`RUT: ${config.rut || ''}`, config.specialty || '', config.email || '', config.phone || '', config.address || ''].filter(Boolean); let y = 32; info.forEach(l => { doc.text(l, 200, y, { align: 'right' }); y += 5; }); doc.setDrawColor(...primaryColor); doc.line(15, 55, 195, 55); doc.setFontSize(16); doc.setTextColor(...primaryColor); doc.setFont("helvetica", "bold"); doc.text(type === 'rx' ? 'RECETA MÉDICA' : 'PRESUPUESTO DENTAL', 105, 70, { align: 'center' }); const pData = patientOverride || (sessionData.patientId ? patientRecords[sessionData.patientId] : null); const pName = pData ? pData.personal.legalName : (sessionData.patientName || selectedPatientId || '...'); const pRut = pData ? pData.personal.rut : ''; const pAge = pData ? getAge(pData.personal.birthDate) + ' años' : ''; const pAddress = pData ? pData.personal.address : ''; doc.setFillColor(245, 245, 245); doc.rect(15, 80, 180, 25, 'F'); doc.setFontSize(10); doc.setTextColor(50); doc.text(`PACIENTE: ${pName}`, 20, 90); doc.text(`RUT: ${pRut}`, 120, 90); doc.text(`EDAD: ${pAge}`, 20, 98); doc.text(`FECHA: ${new Date().toLocaleDateString()}`, 120, 98); if(pAddress) doc.text(`DIRECCIÓN: ${pAddress}`, 20, 106, { maxWidth: 160 }); if (type === 'rx') { autoTable(doc, { startY: 115, head: [['MEDICAMENTO', 'INDICACIÓN']], body: prescription.map(p => [p.name, p.dosage]), theme: 'grid', headStyles: { fillColor: primaryColor } }); } else { autoTable(doc, { startY: 115, head: [['TRATAMIENTO', 'VALOR']], body: [[sessionData.treatmentName || 'Tratamiento', `$${currentTotal.toLocaleString()}`]], theme: 'grid', headStyles: { fillColor: primaryColor } }); doc.setFontSize(14); doc.text(`TOTAL: $${currentTotal.toLocaleString()}`, 195, doc.lastAutoTable.finalY + 15, { align: 'right' }); } doc.setFontSize(8); doc.setTextColor(150); doc.text("Generado por ShiningCloud", 105, 280, { align: 'center' }); doc.save(`${type}_${pName.replace(/\s/g,'_')}.pdf`); notify("PDF Generado"); };
+  const downloadExcel = () => { const ws = XLSX.utils.json_to_sheet(history); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Caja"); XLSX.writeFile(wb, "Reporte_Caja.xlsx"); notify("Excel Descargado"); };
+  const getDaysInWeek = (date) => { const s=new Date(date); s.setDate(s.getDate()-s.getDay()+1); return Array.from({length:7}, (_,i)=>{const d=new Date(s); d.setDate(s.getDate()+i); return d;}); };
+  const weekDays = getDaysInWeek(currentDate); const hours = Array.from({ length: 11 }, (_, i) => 8 + i);
+  // DASHBOARD METRICS
   const today = new Date().toISOString().split('T')[0];
   const todaysAppointments = appointments.filter(a => a.date === today).sort((a,b) => a.time.localeCompare(b.time));
-  const todaysIncome = history.filter(h => h.payments?.some(p => p.date === new Date().toLocaleDateString())).reduce((acc, h) => {
-      const dailyPay = h.payments.filter(p => p.date === new Date().toLocaleDateString()).reduce((s, p) => s + p.amount, 0);
-      return acc + dailyPay;
-  }, 0);
-
-  // LOGICA PERIO
-  const getPerioStats = () => {
-    if (!selectedPatientId) return { bop: 0, plaque: 0, totalTeeth: 0 };
-    const p = getPatient(selectedPatientId);
-    let totalSites = 0; let bopSites = 0; let totalHygieneFaces = 0; let plaqueFaces = 0;
-    [...TEETH_UPPER, ...TEETH_LOWER].forEach(t => {
-        if (p.clinical.teeth[t]?.status !== 'missing') {
-            totalSites += 6;
-            const toothPerio = p.clinical.perio?.[t] || {};
-            if (toothPerio.bop) Object.values(toothPerio.bop).forEach(v => { if(v) bopSites++; });
-            totalHygieneFaces += 4;
-            const toothHygiene = p.clinical.hygiene?.[t] || {};
-            Object.values(toothHygiene).forEach(v => { if(v) plaqueFaces++; });
-        }
-    });
-    return { bop: totalSites > 0 ? Math.round((bopSites / totalSites) * 100) : 0, plaque: totalHygieneFaces > 0 ? Math.round((plaqueFaces / totalHygieneFaces) * 100) : 0, totalTeeth: totalSites / 6 };
-  };
-
-  const generatePDF = (type, patientOverride = null) => {
-    const doc = new jsPDF();
-    const primaryColor = themeMode === 'blue' ? [6, 182, 212] : [212, 175, 55];
-    doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 5, 'F');
-    if (config.logo) doc.addImage(config.logo, 'PNG', 15, 15, 25, 25);
-    doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(config.name?.toUpperCase() || "DOCTOR", 200, 25, { align: 'right' });
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    const info = [`RUT: ${config.rut || ''}`, config.specialty || '', config.email || '', config.phone || '', config.address || ''].filter(Boolean);
-    let y = 32; info.forEach(l => { doc.text(l, 200, y, { align: 'right' }); y += 5; });
-    doc.setDrawColor(...primaryColor); doc.line(15, 55, 195, 55);
-    
-    doc.setFontSize(16); doc.setTextColor(...primaryColor); doc.setFont("helvetica", "bold"); doc.text(type === 'rx' ? 'RECETA MÉDICA' : 'PRESUPUESTO DENTAL', 105, 70, { align: 'center' });
-    
-    // DATOS PACIENTE (INTELIGENTE)
-    const pData = patientOverride || (sessionData.patientId ? patientRecords[sessionData.patientId] : null);
-    const pName = pData ? pData.personal.legalName : (sessionData.patientName || selectedPatientId || '...');
-    const pRut = pData ? pData.personal.rut : '';
-    const pAge = pData ? getAge(pData.personal.birthDate) + ' años' : '';
-    const pAddress = pData ? pData.personal.address : '';
-
-    doc.setFillColor(245, 245, 245); doc.rect(15, 80, 180, 25, 'F');
-    doc.setFontSize(10); doc.setTextColor(50);
-    doc.text(`PACIENTE: ${pName}`, 20, 90);
-    doc.text(`RUT: ${pRut}`, 120, 90);
-    doc.text(`EDAD: ${pAge}`, 20, 98);
-    doc.text(`FECHA: ${new Date().toLocaleDateString()}`, 120, 98);
-    if(pAddress) doc.text(`DIRECCIÓN: ${pAddress}`, 20, 106, { maxWidth: 160 });
-
-    if (type === 'rx') { autoTable(doc, { startY: 115, head: [['MEDICAMENTO', 'INDICACIÓN']], body: prescription.map(p => [p.name, p.dosage]), theme: 'grid', headStyles: { fillColor: primaryColor } }); } 
-    else { autoTable(doc, { startY: 115, head: [['TRATAMIENTO', 'VALOR']], body: [[sessionData.treatmentName || 'Tratamiento', `$${currentTotal.toLocaleString()}`]], theme: 'grid', headStyles: { fillColor: primaryColor } }); doc.setFontSize(14); doc.text(`TOTAL: $${currentTotal.toLocaleString()}`, 195, doc.lastAutoTable.finalY + 15, { align: 'right' }); }
-    doc.setFontSize(8); doc.setTextColor(150); doc.text("Generado por ShiningCloud", 105, 280, { align: 'center' }); doc.save(`${type}_${Date.now()}.pdf`); notify("PDF Generado");
-  };
-
-  const downloadExcel = () => { const ws = XLSX.utils.json_to_sheet(history); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Caja"); XLSX.writeFile(wb, "Reporte_Caja.xlsx"); notify("Excel Descargado"); };
+  const todaysIncome = history.filter(h => h.payments?.some(p => p.date === new Date().toLocaleDateString())).reduce((acc, h) => { const dailyPay = h.payments.filter(p => p.date === new Date().toLocaleDateString()).reduce((s, p) => s + p.amount, 0); return acc + dailyPay; }, 0);
 
   if (!session) return <AuthScreen />;
   const t = THEMES[themeMode] || THEMES.dark;
 
   return (
     <div className={`min-h-screen flex ${t.bg} ${t.text} transition-all font-sans`}>
+      
+      {/* MOBILE BACKDROP */}
+      {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={()=>setMobileMenuOpen(false)}></div>}
+
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform ${t.card} border-r`}>
-        <div className="p-8 border-b border-white/5 flex items-center gap-2">{config.logo ? <img src={config.logo} className="w-8 h-8 rounded bg-white/10 object-contain"/> : <Cloud className={t.accent} size={24}/>}<h1 className="text-xl font-black">ShiningCloud</h1></div>
-        <nav className="p-4 space-y-1">{[{ id: 'dashboard', label: 'Inicio', icon: TrendingUp }, { id: 'agenda', label: 'Agenda', icon: CalendarClock }, { id: 'ficha', label: 'Pacientes', icon: User }, { id: 'quote', label: 'Cotizador', icon: Calculator }, { id: 'history', label: 'Caja', icon: Wallet }, { id: 'clinical', label: 'Recetas', icon: Stethoscope }, { id: 'settings', label: 'Ajustes', icon: Settings }].map(item => (<button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedPatientId(null); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase ${activeTab === item.id ? `${t.accentBg} text-white` : 'opacity-50 hover:opacity-100'}`}><item.icon size={18}/> {item.label}</button>))}</nav>
+        <div className="p-8 border-b border-white/5 flex items-center gap-2 relative">
+            <button onClick={()=>setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 opacity-50"><X/></button>
+            {config.logo ? <img src={config.logo} className="w-8 h-8 rounded bg-white/10 object-contain"/> : <Cloud className={t.accent} size={24}/>}<h1 className="text-xl font-black">ShiningCloud</h1>
+        </div>
+        <nav className="p-4 space-y-1">{[{ id: 'dashboard', label: 'Inicio', icon: TrendingUp }, { id: 'agenda', label: 'Agenda', icon: CalendarClock }, { id: 'ficha', label: 'Pacientes', icon: User }, { id: 'quote', label: 'Cotizador', icon: Calculator }, { id: 'history', label: 'Caja', icon: Wallet }, { id: 'clinical', label: 'Recetas', icon: Stethoscope }, { id: 'settings', label: 'Ajustes', icon: Settings }].map(item => (<button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedPatientId(null); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase ${activeTab === item.id ? `${t.accentBg} text-white` : 'opacity-50 hover:opacity-100'}`}><item.icon size={18}/> {item.label}</button>))}</nav>
         <div className="absolute bottom-4 w-full px-4 space-y-2"><button onClick={toggleTheme} className="w-full p-3 rounded-xl bg-white/5 flex items-center justify-center gap-2 text-xs font-bold">{themeMode==='dark'?<Moon size={14}/>:themeMode==='light'?<Sun size={14}/>:<Droplets size={14}/>} TEMA</button><button onClick={()=>supabase.auth.signOut()} className="w-full p-3 rounded-xl bg-red-500/10 text-red-400 font-bold text-xs"><LogOut size={14} className="inline mr-2"/> SALIR</button></div>
       </aside>
 
       <main className="flex-1 md:ml-64 p-4 md:p-10 h-screen overflow-y-auto">
+        {/* MOBILE HEADER */}
+        <div className="md:hidden flex items-center justify-between mb-6">
+           <button onClick={()=>setMobileMenuOpen(true)} className={`p-2 rounded-xl ${t.inputBg}`}><Menu/></button>
+           <span className="font-black text-lg">ShiningCloud</span>
+           <div className="w-8"></div>
+        </div>
+
         {notification && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-cyan-500 text-white px-6 py-2 rounded-full font-bold animate-bounce">{notification}</div>}
 
         {/* DASHBOARD COCKPIT */}
