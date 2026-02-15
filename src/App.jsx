@@ -9,7 +9,7 @@ import {
   Stethoscope, ClipboardList, FileText, ShieldCheck,
   CalendarClock, Clock, FileBarChart, Menu, ArrowLeft,
   MapPin, Phone, Mail, Upload, Image as ImageIcon, Wallet, 
-  Activity, Droplets, Check, FileQuestion, Camera
+  Activity, Droplets, Check, FileQuestion, Camera, Lock, KeyRound
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE TEMAS ---
@@ -97,14 +97,79 @@ const SelectField = ({ label, options, theme, ...props }) => (
   </div>
 );
 
+// --- PANTALLA DE LOGIN (v24) ---
+const LoginScreen = ({ onLogin }) => {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // CLAVE POR DEFECTO: 0000
+    if (pin === '0000') {
+      onLogin();
+    } else {
+      setError(true);
+      setTimeout(() => setError(false), 500);
+      setPin('');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-[#090909] flex flex-col items-center justify-center p-6 z-[100]">
+      <div className="animate-in fade-in zoom-in duration-500 flex flex-col items-center w-full max-w-xs">
+        {/* LOGO ANIMADO */}
+        <div className="mb-10 relative">
+          <div className="absolute inset-0 bg-[#D4AF37] blur-3xl opacity-20 rounded-full animate-pulse"></div>
+          <Cloud size={80} className="text-[#D4AF37] relative z-10 drop-shadow-2xl" fill="currentColor" fillOpacity={0.1} />
+        </div>
+
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tight">ShiningCloud</h1>
+        <p className="text-[#D4AF37] text-xs uppercase tracking-[0.3em] mb-10 font-bold">Acceso Seguro</p>
+
+        <form onSubmit={handleSubmit} className="w-full space-y-6">
+          <div className={`transition-all duration-200 ${error ? 'animate-shake' : ''}`}>
+             <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-4 focus-within:border-[#D4AF37] transition-colors">
+               <Lock className="text-[#D4AF37] mr-3 opacity-80" size={20}/>
+               <input 
+                 type="password" 
+                 inputMode="numeric" 
+                 pattern="[0-9]*" 
+                 maxLength="4"
+                 placeholder="PIN de Acceso" 
+                 className="bg-transparent outline-none text-white text-center font-bold text-xl w-full tracking-[0.5em] placeholder:text-stone-600 placeholder:tracking-normal placeholder:text-sm"
+                 value={pin}
+                 onChange={(e) => setPin(e.target.value)}
+                 autoFocus
+               />
+             </div>
+          </div>
+
+          <button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B69121] text-white p-4 rounded-2xl font-black shadow-lg shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <KeyRound size={18} />
+            ENTRAR
+          </button>
+        </form>
+        
+        <p className="mt-10 text-[10px] text-white/20 font-mono">v24.0 Secure Edition</p>
+      </div>
+    </div>
+  );
+};
+
 // --- APP PRINCIPAL ---
 export default function App() {
+  // --- ESTADO DE AUTENTICACIÓN ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('sc_theme_mode') || 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [quoteMode, setQuoteMode] = useState('calc'); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // --- DATOS PERSISTENTES (v23 - Con Logo) ---
+  // --- DATOS PERSISTENTES ---
   const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('sc_v23_cfg')) || { logo: null, hourlyRate: 25000, profitMargin: 30, bankName: "", accountType: "", accountNumber: "", rut: "", name: "Dr. Benjamín", mpLink: "" });
   const [protocols, setProtocols] = useState(() => JSON.parse(localStorage.getItem('sc_v23_pks')) || []);
   const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('sc_v23_hst')) || []);
@@ -267,6 +332,11 @@ export default function App() {
     { id: 'clinical', label: 'Recetas', icon: Stethoscope },
     { id: 'settings', label: 'Ajustes', icon: Settings },
   ];
+
+  // --- RENDERIZADO CONDICIONAL: LOGIN O APP ---
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className={`min-h-screen flex ${THEMES[themeMode].bg} ${THEMES[themeMode].text} transition-colors duration-500`}>
