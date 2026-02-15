@@ -9,7 +9,7 @@ import {
   Stethoscope, ClipboardList, FileText, ShieldCheck,
   CalendarClock, Clock, FileBarChart, Menu, ArrowLeft,
   MapPin, Phone, Mail, Upload, Image as ImageIcon, Wallet, 
-  Activity, Droplets, Check, FileQuestion, Camera, Lock, KeyRound
+  Activity, Droplets, Check, FileQuestion, Camera, Lock, KeyRound, Printer
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE TEMAS ---
@@ -97,14 +97,13 @@ const SelectField = ({ label, options, theme, ...props }) => (
   </div>
 );
 
-// --- PANTALLA DE LOGIN (v24) ---
+// --- PANTALLA DE LOGIN ---
 const LoginScreen = ({ onLogin }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // CLAVE POR DEFECTO: 0000
     if (pin === '0000') {
       onLogin();
     } else {
@@ -117,43 +116,22 @@ const LoginScreen = ({ onLogin }) => {
   return (
     <div className="fixed inset-0 bg-[#090909] flex flex-col items-center justify-center p-6 z-[100]">
       <div className="animate-in fade-in zoom-in duration-500 flex flex-col items-center w-full max-w-xs">
-        {/* LOGO ANIMADO */}
         <div className="mb-10 relative">
           <div className="absolute inset-0 bg-[#D4AF37] blur-3xl opacity-20 rounded-full animate-pulse"></div>
           <Cloud size={80} className="text-[#D4AF37] relative z-10 drop-shadow-2xl" fill="currentColor" fillOpacity={0.1} />
         </div>
-
         <h1 className="text-3xl font-black text-white mb-2 tracking-tight">ShiningCloud</h1>
         <p className="text-[#D4AF37] text-xs uppercase tracking-[0.3em] mb-10 font-bold">Acceso Seguro</p>
-
         <form onSubmit={handleSubmit} className="w-full space-y-6">
           <div className={`transition-all duration-200 ${error ? 'animate-shake' : ''}`}>
              <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-4 focus-within:border-[#D4AF37] transition-colors">
                <Lock className="text-[#D4AF37] mr-3 opacity-80" size={20}/>
-               <input 
-                 type="password" 
-                 inputMode="numeric" 
-                 pattern="[0-9]*" 
-                 maxLength="4"
-                 placeholder="PIN de Acceso" 
-                 className="bg-transparent outline-none text-white text-center font-bold text-xl w-full tracking-[0.5em] placeholder:text-stone-600 placeholder:tracking-normal placeholder:text-sm"
-                 value={pin}
-                 onChange={(e) => setPin(e.target.value)}
-                 autoFocus
-               />
+               <input type="password" inputMode="numeric" pattern="[0-9]*" maxLength="4" placeholder="PIN de Acceso" className="bg-transparent outline-none text-white text-center font-bold text-xl w-full tracking-[0.5em] placeholder:text-stone-600 placeholder:tracking-normal placeholder:text-sm" value={pin} onChange={(e) => setPin(e.target.value)} autoFocus />
              </div>
           </div>
-
-          <button 
-            type="submit" 
-            className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B69121] text-white p-4 rounded-2xl font-black shadow-lg shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-          >
-            <KeyRound size={18} />
-            ENTRAR
-          </button>
+          <button type="submit" className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B69121] text-white p-4 rounded-2xl font-black shadow-lg shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"><KeyRound size={18} /> ENTRAR</button>
         </form>
-        
-        <p className="mt-10 text-[10px] text-white/20 font-mono">v24.0 Secure Edition</p>
+        <p className="mt-10 text-[10px] text-white/20 font-mono">v24.2 Corporate Docs</p>
       </div>
     </div>
   );
@@ -161,22 +139,20 @@ const LoginScreen = ({ onLogin }) => {
 
 // --- APP PRINCIPAL ---
 export default function App() {
-  // --- ESTADO DE AUTENTICACIÓN ---
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('sc_theme_mode') || 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [quoteMode, setQuoteMode] = useState('calc'); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // --- DATOS PERSISTENTES ---
-  const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('sc_v23_cfg')) || { logo: null, hourlyRate: 25000, profitMargin: 30, bankName: "", accountType: "", accountNumber: "", rut: "", name: "Dr. Benjamín", mpLink: "" });
+  const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('sc_v23_cfg')) || { logo: null, hourlyRate: 25000, profitMargin: 30, bankName: "", accountType: "", accountNumber: "", rut: "", name: "Dr. Benjamín", mpLink: "", phone: "", email: "", address: "" });
   const [protocols, setProtocols] = useState(() => JSON.parse(localStorage.getItem('sc_v23_pks')) || []);
   const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('sc_v23_hst')) || []);
   const [appointments, setAppointments] = useState(() => JSON.parse(localStorage.getItem('sc_v23_apt')) || []);
   const [patientRecords, setPatientRecords] = useState(() => JSON.parse(localStorage.getItem('sc_v23_rec')) || {});
 
-  // --- ESTADOS TEMPORALES ---
+  // --- ESTADOS ---
   const [session, setSession] = useState({ patientName: '', treatmentName: '', clinicalTime: 60, baseCost: 0 });
   const [prescription, setPrescription] = useState([]);
   const [medInput, setMedInput] = useState({ name: '', dosage: '' });
@@ -199,7 +175,6 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [notification, setNotification] = useState('');
 
-  // --- EFECTOS ---
   useEffect(() => { 
     localStorage.setItem('sc_theme_mode', themeMode);
     localStorage.setItem('sc_v23_cfg', JSON.stringify(config));
@@ -212,7 +187,6 @@ export default function App() {
   const notify = (msg) => { setNotification(msg); setTimeout(() => setNotification(''), 3000); };
   const toggleTheme = () => { setThemeMode(prev => prev === 'dark' ? 'light' : prev === 'light' ? 'blue' : 'dark'); };
 
-  // --- CÁLCULOS ---
   const currentTotal = useMemo(() => {
     const time = parseFloat(session.clinicalTime) || 0;
     const base = parseFloat(session.baseCost) || 0;
@@ -227,144 +201,106 @@ export default function App() {
   const totalInvoiced = history.reduce((a, b) => a + (Number(b.total) || 0), 0);
   const totalCollected = history.reduce((a, b) => a + (Number(b.paid) || 0), 0);
 
-  // --- LÓGICA LOGO ---
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setConfig({ ...config, logo: reader.result });
-      notify("Logo Actualizado 🎨");
-    };
-    reader.readAsDataURL(file);
-  };
+  const handleLogoUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { setConfig({ ...config, logo: reader.result }); notify("Logo Actualizado 🎨"); }; reader.readAsDataURL(file); };
 
-  // --- LÓGICA PACIENTES ---
-  const getPatient = (id) => {
-    const safeId = id || 'unknown';
-    const emptyPatient = { 
-      id: safeId, 
-      personal: { 
-        legalName: safeId, socialName: '', surnames: '', rut: '', email: '', phone: '', 
-        address: '', city: '', commune: '', birthDate: '', gender: 'Seleccionar', sex: 'Seleccionar', 
-        convention: 'Sin Convenio', internalNum: '', notes: '' 
-      },
-      anamnesis: { remote: '', recent: '', alerts: {} }, 
-      clinical: { teeth: {}, aap: { stage: '', grade: '' }, evolution: [] }, 
-      images: [] 
-    };
-    return patientRecords[safeId] || emptyPatient;
-  };
-
-  const handleCreatePatient = () => {
-    if (!searchTerm.trim()) { notify("Escribe un nombre"); return; }
-    const id = searchTerm.trim();
-    if (!patientRecords[id]) { setPatientRecords(prev => ({ ...prev, [id]: getPatient(id) })); notify("Paciente Creado"); }
-    setSelectedPatientId(id); setSearchTerm('');
-  };
-  
+  const getPatient = (id) => { const safeId = id || 'unknown'; return patientRecords[safeId] || { id: safeId, personal: { legalName: safeId, socialName: '', surnames: '', rut: '', email: '', phone: '', address: '', city: '', commune: '', birthDate: '', gender: 'Seleccionar', sex: 'Seleccionar', convention: 'Sin Convenio', internalNum: '', notes: '' }, anamnesis: { remote: '', recent: '', alerts: {} }, clinical: { teeth: {}, aap: { stage: '', grade: '' }, evolution: [] }, images: [] }; };
+  const handleCreatePatient = () => { if (!searchTerm.trim()) { notify("Escribe un nombre"); return; } const id = searchTerm.trim(); if (!patientRecords[id]) { setPatientRecords(prev => ({ ...prev, [id]: getPatient(id) })); notify("Paciente Creado"); } setSelectedPatientId(id); setSearchTerm(''); };
   const updatePatient = (id, section, data) => setPatientRecords(prev => ({ ...prev, [id]: { ...prev[id], [section]: { ...prev[id][section], ...data } } }));
   const updateAnamnesis = (id, field, value) => setPatientRecords(prev => ({ ...prev, [id]: { ...prev[id], anamnesis: { ...prev[id].anamnesis, [field]: value } } }));
   const updateImages = (id, newImage) => setPatientRecords(prev => ({ ...prev, [id]: { ...prev[id], images: [newImage, ...(prev[id].images || [])] } }));
   
   const openToothModal = (toothNum) => { const p = getPatient(selectedPatientId); const tData = p.clinical.teeth[toothNum] || { status: null, history: [], perio: { pd: '', bop: false, mobility: 0, furcation: 0 } }; setToothModalData({ id: toothNum, ...tData }); setModal('tooth'); };
-  
-  const saveToothData = () => { 
-    const p = getPatient(selectedPatientId); 
-    const updatedTeeth = { ...p.clinical.teeth, [toothModalData.id]: { status: toothModalData.status, history: toothModalData.history, perio: toothModalData.perio }};
-    setPatientRecords(prev => ({...prev, [selectedPatientId]: { ...prev[selectedPatientId], clinical: { ...prev[selectedPatientId].clinical, teeth: updatedTeeth } }}));
-    setModal(null); notify("Diente Actualizado"); 
-  };
-
+  const saveToothData = () => { const p = getPatient(selectedPatientId); const updatedTeeth = { ...p.clinical.teeth, [toothModalData.id]: { status: toothModalData.status, history: toothModalData.history, perio: toothModalData.perio }}; setPatientRecords(prev => ({...prev, [selectedPatientId]: { ...prev[selectedPatientId], clinical: { ...prev[selectedPatientId].clinical, teeth: updatedTeeth } }})); setModal(null); notify("Diente Actualizado"); };
   const addTreatmentToTooth = () => { if(!newTreatment) return; setToothModalData(prev => ({...prev, history: [...(prev.history || []), newTreatment] })); setNewTreatment(''); };
-  
-  const addEvolution = () => {
-    if(!newEvolution) return notify("Escribe una nota");
-    const p = getPatient(selectedPatientId);
-    const newEntry = { id: Date.now(), date: new Date().toLocaleDateString(), text: newEvolution, tooth: toothModalData.id || 'General' };
-    setPatientRecords(prev => ({...prev, [selectedPatientId]: { ...prev[selectedPatientId], clinical: { ...prev[selectedPatientId].clinical, evolution: [newEntry, ...(p.clinical.evolution || [])] } }}));
-    setNewEvolution(''); notify("Evolución Guardada");
-  };
-
+  const addEvolution = () => { if(!newEvolution) return notify("Escribe una nota"); const p = getPatient(selectedPatientId); const newEntry = { id: Date.now(), date: new Date().toLocaleDateString(), text: newEvolution, tooth: toothModalData.id || 'General' }; setPatientRecords(prev => ({...prev, [selectedPatientId]: { ...prev[selectedPatientId], clinical: { ...prev[selectedPatientId].clinical, evolution: [newEntry, ...(p.clinical.evolution || [])] } }})); setNewEvolution(''); notify("Evolución Guardada"); };
   const handleFileUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { updateImages(selectedPatientId, { id: Date.now(), url: reader.result, name: file.name, date: new Date().toLocaleDateString() }); notify("Imagen subida"); }; reader.readAsDataURL(file); };
-  
   const saveBudgetToHistory = () => { if (!session.patientName) return notify("Falta nombre"); const newRecord = { id: Date.now(), date: new Date().toLocaleDateString(), patientName: session.patientName, treatmentName: session.treatmentName, total: currentTotal, paid: 0, payments: [], status: 'pending' }; setHistory([newRecord, ...history]); notify("Deuda Creada"); setActiveTab('history'); };
-  
   const registerPayment = () => { const amount = parseInt(paymentAmount); if (!amount || amount <= 0) return notify("Monto inválido"); const updatedHistory = history.map(record => { if (record.id === selectedFinancialRecord.id) { const newPaid = (record.paid || 0) + amount; return { ...record, paid: newPaid, status: newPaid >= record.total ? 'paid' : 'partial', payments: [...(record.payments || []), { date: new Date().toLocaleDateString(), amount: amount }] }; } return record; }); setHistory(updatedHistory); setPaymentAmount(''); setModal(null); notify("Pago Registrado 💰"); };
 
-  // --- PDF GENERATOR (CON LOGO) ---
+  // --- PDF GENERATOR PROFESIONAL ---
   const generatePDF = (type) => {
     const doc = new jsPDF();
-    
-    // Header con Logo
+    const primaryColor = [212, 175, 55]; // Dorado #D4AF37
+    const blackColor = [20, 20, 20];
+
+    // 1. Cabecera
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 210, 5, 'F');
+
     if (config.logo) {
-      doc.addImage(config.logo, 'PNG', 15, 10, 25, 25);
-      doc.setFontSize(22); doc.text(config.name, 45, 20);
-      doc.setFontSize(10); doc.text(`RUT: ${config.rut}`, 45, 28);
+      doc.addImage(config.logo, 'PNG', 15, 15, 30, 30);
     } else {
-      doc.setFontSize(22); doc.text(config.name, 15, 20);
-      doc.setFontSize(10); doc.text(`RUT: ${config.rut}`, 15, 28);
+      doc.setFillColor(...blackColor); doc.circle(30, 30, 15, 'F');
+      doc.setTextColor(255, 255, 255); doc.setFontSize(10); doc.text("LOGO", 30, 30, { align: 'center', baseline: 'middle' });
     }
 
-    doc.line(15, 40, 195, 40);
+    doc.setTextColor(...blackColor); doc.setFont("helvetica", "bold"); doc.setFontSize(24);
+    doc.text(config.name.toUpperCase(), 200, 25, { align: 'right' });
+    
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(80, 80, 80);
+    const contactInfo = [`RUT: ${config.rut || 'Sin Información'}`, config.email || '', config.phone || '', config.address || ''].filter(Boolean);
+    let yPos = 32; contactInfo.forEach(line => { doc.text(line, 200, yPos, { align: 'right' }); yPos += 5; });
 
+    doc.setDrawColor(...primaryColor); doc.setLineWidth(0.5); doc.line(15, 55, 195, 55);
+
+    // 2. Título
+    doc.setFontSize(18); doc.setTextColor(...primaryColor); doc.setFont("helvetica", "bold");
+    const title = type === 'rx' ? 'RECETA MÉDICA' : 'PRESUPUESTO DENTAL';
+    doc.text(title, 105, 70, { align: 'center' });
+
+    // 3. Datos
+    doc.setFillColor(245, 245, 245); doc.rect(15, 80, 180, 25, 'F');
+    doc.setFontSize(11); doc.setTextColor(50, 50, 50); doc.setFont("helvetica", "bold");
+    doc.text("PACIENTE:", 20, 90); doc.text("FECHA:", 130, 90);
+    doc.setFont("helvetica", "normal");
+    doc.text(session.patientName || "Paciente General", 20, 97); doc.text(new Date().toLocaleDateString(), 130, 97);
+
+    // 4. Tablas
     if (type === 'rx') {
-        doc.setFontSize(16); doc.text(`RECETA MÉDICA`, 105, 55, {align:'center'});
-        doc.setFontSize(12); doc.text(`Paciente: ${session.patientName}`, 15, 65);
-        autoTable(doc, { startY: 75, head: [['Medicamento', 'Indicación']], body: prescription.map(p => [p.name, p.dosage]), theme: 'grid', headStyles:{fillColor:[212, 175, 55]} });
-        doc.save("Receta.pdf");
+        const bodyData = prescription.map(p => [p.name, p.dosage]);
+        autoTable(doc, {
+            startY: 115, head: [['MEDICAMENTO', 'INDICACIÓN']], body: bodyData, theme: 'plain',
+            headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+            bodyStyles: { textColor: 50 }, columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } }, margin: { top: 115, left: 15, right: 15 }
+        });
     } else {
-        doc.setFontSize(16); doc.text(`PRESUPUESTO DENTAL`, 105, 55, {align:'center'});
-        doc.setFontSize(12); doc.text(`Paciente: ${session.patientName}`, 15, 65);
-        autoTable(doc, { startY: 75, head: [['Tratamiento', 'Valor']], body: [[session.treatmentName, `$${currentTotal.toLocaleString()}`]], theme: 'grid', headStyles:{fillColor:[212, 175, 55]} });
-        doc.text(`Total: $${currentTotal.toLocaleString()}`, 150, doc.lastAutoTable.finalY + 15);
-        doc.save("Presupuesto.pdf");
+        const bodyData = [[session.treatmentName || 'Consulta General', `$${currentTotal.toLocaleString()}`]];
+        autoTable(doc, {
+            startY: 115, head: [['TRATAMIENTO', 'VALOR']], body: bodyData, theme: 'grid',
+            headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold' },
+            bodyStyles: { textColor: 50 }, columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'right' } }, margin: { top: 115, left: 15, right: 15 }
+        });
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(...blackColor);
+        doc.text(`TOTAL: $${currentTotal.toLocaleString()}`, 195, finalY, { align: 'right' });
     }
+
+    // 5. Pie
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setDrawColor(150); doc.line(75, pageHeight - 40, 135, pageHeight - 40);
+    doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+    doc.text("Firma y Timbre", 105, pageHeight - 35, { align: 'center' });
+    doc.setFontSize(8); doc.setTextColor(180);
+    doc.text("Documento generado por ShiningCloud Dental Software", 105, pageHeight - 10, { align: 'center' });
+
+    doc.save(`${type === 'rx' ? 'Receta' : 'Presupuesto'}_${session.patientName || 'Doc'}.pdf`);
     notify("Documento Generado 📄");
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Resumen', icon: TrendingUp },
-    { id: 'agenda', label: 'Agenda', icon: CalendarClock },
-    { id: 'ficha', label: 'Pacientes', icon: User },
-    { id: 'quote', label: 'Cotizador', icon: Calculator },
-    { id: 'history', label: 'Caja', icon: Wallet },
-    { id: 'clinical', label: 'Recetas', icon: Stethoscope },
-    { id: 'settings', label: 'Ajustes', icon: Settings },
-  ];
+  const menuItems = [ { id: 'dashboard', label: 'Resumen', icon: TrendingUp }, { id: 'agenda', label: 'Agenda', icon: CalendarClock }, { id: 'ficha', label: 'Pacientes', icon: User }, { id: 'quote', label: 'Cotizador', icon: Calculator }, { id: 'history', label: 'Caja', icon: Wallet }, { id: 'clinical', label: 'Recetas', icon: Stethoscope }, { id: 'settings', label: 'Ajustes', icon: Settings } ];
 
-  // --- RENDERIZADO CONDICIONAL: LOGIN O APP ---
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
-  }
+  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
 
   return (
     <div className={`min-h-screen flex ${THEMES[themeMode].bg} ${THEMES[themeMode].text} transition-colors duration-500`}>
-      
       {/* SIDEBAR */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform ${themeMode === 'dark' ? 'bg-black/95 border-white/5' : 'bg-white border-slate-200'} border-r backdrop-blur-2xl`}>
         <div className={`p-8 border-b flex items-center gap-2 ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
-          {/* LOGO DINÁMICO */}
-          {config.logo ? 
-            <img src={config.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg bg-white/10"/> : 
-            <Cloud className={`${THEMES[themeMode].accent} fill-current opacity-20`} size={32}/>
-          }
-          <h1 className={`text-xl font-black ${themeMode === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-            ShiningCloud
-            <span className={`block text-[10px] tracking-widest uppercase ${THEMES[themeMode].accent}`}>| Dental</span>
-          </h1>
+          {config.logo ? <img src={config.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg bg-white/10"/> : <Cloud className={`${THEMES[themeMode].accent} fill-current opacity-20`} size={32}/>}
+          <h1 className={`text-xl font-black ${themeMode === 'dark' ? 'text-white' : 'text-slate-800'}`}>ShiningCloud<span className={`block text-[10px] tracking-widest uppercase ${THEMES[themeMode].accent}`}>| Dental</span></h1>
         </div>
-        <nav className="p-4 mt-4 space-y-1">
-          {menuItems.map(item => (
-            <button key={item.id} onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); setSelectedPatientId(null); }} className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all font-bold text-sm ${activeTab === item.id ? `${THEMES[themeMode].accentBg} text-white shadow-lg` : `${THEMES[themeMode].subText} hover:bg-black/5`}`}>
-              <item.icon size={20}/> {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className={`absolute bottom-0 w-full p-6 border-t flex items-center justify-between ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
-           <div className="flex items-center gap-2"><div className={`w-8 h-8 rounded-full ${THEMES[themeMode].accentBg} flex items-center justify-center text-white font-bold`}>{config.name?.[0]}</div><p className="text-xs font-bold truncate w-24">{config.name}</p></div>
-           <button onClick={toggleTheme} className={`p-2 rounded-full hover:bg-black/5 ${THEMES[themeMode].accent}`}>{themeMode==='dark'?<Moon size={18}/>: (themeMode==='light'?<Sun size={18}/>:<Droplets size={18}/>)}</button>
-        </div>
+        <nav className="p-4 mt-4 space-y-1">{menuItems.map(item => (<button key={item.id} onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); setSelectedPatientId(null); }} className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all font-bold text-sm ${activeTab === item.id ? `${THEMES[themeMode].accentBg} text-white shadow-lg` : `${THEMES[themeMode].subText} hover:bg-black/5`}`}><item.icon size={20}/> {item.label}</button>))}</nav>
+        <div className={`absolute bottom-0 w-full p-6 border-t flex items-center justify-between ${themeMode === 'dark' ? 'border-white/5' : 'border-slate-100'}`}><div className="flex items-center gap-2"><div className={`w-8 h-8 rounded-full ${THEMES[themeMode].accentBg} flex items-center justify-center text-white font-bold`}>{config.name?.[0]}</div><p className="text-xs font-bold truncate w-24">{config.name}</p></div><button onClick={toggleTheme} className={`p-2 rounded-full hover:bg-black/5 ${THEMES[themeMode].accent}`}>{themeMode==='dark'?<Moon size={18}/>: (themeMode==='light'?<Sun size={18}/>:<Droplets size={18}/>)}</button></div>
       </aside>
 
       <main className="flex-1 md:ml-64 p-4 md:p-10 h-screen overflow-y-auto">
@@ -372,96 +308,10 @@ export default function App() {
         {notification && <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[60] px-8 py-3 rounded-full shadow-2xl flex items-center gap-3 font-bold animate-bounce ${themeMode === 'dark' ? 'bg-black border border-amber-400 text-amber-400' : 'bg-white border border-slate-200 text-slate-800'}`}><Diamond size={18}/> {notification}</div>}
 
         {/* --- VISTAS --- */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-8 animate-in fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card theme={themeMode} className={`${THEMES[themeMode].gradient} !border-none !text-white`}>
-                <p className="text-[10px] font-bold uppercase opacity-80">Por Cobrar</p>
-                <h2 className="text-5xl font-black">${(totalInvoiced - totalCollected).toLocaleString()}</h2>
-              </Card>
-              <Card theme={themeMode} className="!bg-emerald-500 !border-none !text-white">
-                <p className="text-[10px] font-bold uppercase opacity-80">Recaudado</p>
-                <h2 className="text-5xl font-black">${totalCollected.toLocaleString()}</h2>
-              </Card>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-               <Card theme={themeMode} className="text-center"><History size={32} className={`mx-auto mb-2 ${THEMES[themeMode].accent}`}/><span className="text-4xl font-black">{Object.keys(patientRecords).length}</span><p className="text-[10px] opacity-40 uppercase">Pacientes</p></Card>
-               <Card theme={themeMode} className="text-center"><Library size={32} className={`mx-auto mb-2 ${THEMES[themeMode].accent}`}/><span className="text-4xl font-black">{protocols.length}</span><p className="text-[10px] opacity-40 uppercase">Packs</p></Card>
-            </div>
-          </div>
-        )}
-
-        {/* --- AJUSTES (AQUÍ ESTÁ EL LOGO) --- */}
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-black">Ajustes</h2>
-            <Card theme={themeMode} className="space-y-6">
-              <div className={`p-6 rounded-2xl border-2 border-dashed text-center cursor-pointer hover:opacity-80 transition-all ${themeMode==='dark'?'border-white/10':'border-black/10'}`} onClick={()=>logoInputRef.current.click()}>
-                 <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload}/>
-                 {config.logo ? <img src={config.logo} className="h-16 mx-auto mb-2 object-contain bg-white/5 rounded"/> : <Camera className={`mx-auto mb-2 opacity-50 ${THEMES[themeMode].accent}`}/>}
-                 <p className="text-xs font-bold uppercase">Toca para subir tu Logo</p>
-              </div>
-              <InputField theme={themeMode} label="Valor Hora" type="number" value={config.hourlyRate} onChange={e=>setConfig({...config, hourlyRate:e.target.value})}/>
-              <InputField theme={themeMode} label="Margen %" type="number" value={config.profitMargin} onChange={e=>setConfig({...config, profitMargin:e.target.value})}/>
-              <InputField theme={themeMode} label="Nombre" value={config.name} onChange={e=>setConfig({...config, name:e.target.value})}/>
-              <InputField theme={themeMode} label="Banco" value={config.bankName} onChange={e=>setConfig({...config, bankName:e.target.value})}/>
-              <InputField theme={themeMode} label="Cuenta" value={config.accountNumber} onChange={e=>setConfig({...config, accountNumber:e.target.value})}/>
-            </Card>
-          </div>
-        )}
-
-        {/* --- FICHA PACIENTE --- */}
-        {activeTab === 'ficha' && (
-          <div className="space-y-6 animate-in slide-in-from-right-5">
-            {!selectedPatientId ? (
-              <>
-                <h2 className="text-3xl font-black">Pacientes</h2>
-                <div className="flex gap-2"><InputField theme={themeMode} icon={Search} placeholder="Buscar o crear..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}/><Button theme={themeMode} onClick={handleCreatePatient}><Plus/> Crear/Abrir</Button></div>
-                <div className="grid gap-3">{Object.keys(patientRecords).filter(k => k.toLowerCase().includes(searchTerm.toLowerCase())).map(key => ( <Card key={key} theme={themeMode} className={`flex justify-between items-center cursor-pointer hover:border-current ${THEMES[themeMode].accentBorder}`} onClick={() => setSelectedPatientId(key)}><div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-full ${THEMES[themeMode].accentBg} text-white flex items-center justify-center font-bold`}>{key[0].toUpperCase()}</div><span className="font-bold capitalize">{key}</span></div><span className="text-xs opacity-40">Ver Ficha →</span></Card> ))}</div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-4 mb-4"><button onClick={() => setSelectedPatientId(null)} className={`p-2 rounded-full ${themeMode === 'dark' ? 'bg-white/5' : 'bg-black/5'}`}><ArrowLeft/></button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2></div>
-                <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
-                  {[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion}, {id:'clinical', label:'Clínica', icon: Activity}, {id:'perio', label:'Periodoncia', icon: FileBarChart}, {id:'evolution', label:'Evolución', icon: FileText}, {id:'images', label:'Galería', icon: ImageIcon}].map(tab => (
-                    <button key={tab.id} onClick={() => setPatientTab(tab.id)} className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${patientTab === tab.id ? `${THEMES[themeMode].accentBg} text-white` : 'bg-black/5 opacity-60'}`}><tab.icon size={14}/> {tab.label}</button>
-                  ))}
-                </div>
-                
-                {patientTab === 'personal' && (
-                  <Card theme={themeMode} className="space-y-4 animate-in fade-in">
-                    <h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest mb-2`}>Identificación</h3>
-                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Legal" value={getPatient(selectedPatientId).personal.legalName} onChange={e => updatePatient(selectedPatientId, 'personal', {legalName: e.target.value})}/><InputField theme={themeMode} label="Nombre Social" value={getPatient(selectedPatientId).personal.socialName} onChange={e => updatePatient(selectedPatientId, 'personal', {socialName: e.target.value})}/></div>
-                    <InputField theme={themeMode} label="Apellidos" value={getPatient(selectedPatientId).personal.surnames} onChange={e => updatePatient(selectedPatientId, 'personal', {surnames: e.target.value})}/>
-                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="RUT" value={getPatient(selectedPatientId).personal.rut} onChange={e => updatePatient(selectedPatientId, 'personal', {rut: e.target.value})}/><InputField theme={themeMode} label="Email" value={getPatient(selectedPatientId).personal.email} onChange={e => updatePatient(selectedPatientId, 'personal', {email: e.target.value})}/></div>
-                    <div className="grid grid-cols-2 gap-4"><SelectField theme={themeMode} label="Convenio" options={['Sin Convenio', 'Fonasa', 'Isapre', 'Particular']} value={getPatient(selectedPatientId).personal.convention} onChange={e => updatePatient(selectedPatientId, 'personal', {convention: e.target.value})}/><InputField theme={themeMode} label="N° Interno" value={getPatient(selectedPatientId).personal.internalNum} onChange={e => updatePatient(selectedPatientId, 'personal', {internalNum: e.target.value})}/></div>
-                    <div className="grid grid-cols-2 gap-4"><SelectField theme={themeMode} label="Sexo" options={['Seleccionar', 'Masculino', 'Femenino', 'Intersexual']} value={getPatient(selectedPatientId).personal.sex} onChange={e => updatePatient(selectedPatientId, 'personal', {sex: e.target.value})}/><SelectField theme={themeMode} label="Género" options={['Seleccionar', 'Masculino', 'Femenino', 'No Binario', 'Otro']} value={getPatient(selectedPatientId).personal.gender} onChange={e => updatePatient(selectedPatientId, 'personal', {gender: e.target.value})}/></div>
-                    <InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e => updatePatient(selectedPatientId, 'personal', {birthDate: e.target.value})}/>
-                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e => updatePatient(selectedPatientId, 'personal', {city: e.target.value})}/><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e => updatePatient(selectedPatientId, 'personal', {commune: e.target.value})}/></div>
-                    <InputField theme={themeMode} label="Dirección" value={getPatient(selectedPatientId).personal.address} onChange={e => updatePatient(selectedPatientId, 'personal', {address: e.target.value})}/>
-                    <InputField theme={themeMode} label="Anotaciones" textarea value={getPatient(selectedPatientId).personal.notes} onChange={e => updatePatient(selectedPatientId, 'personal', {notes: e.target.value})}/>
-                  </Card>
-                )}
-
-                {patientTab === 'anamnesis' && (
-                  <div className="space-y-4 animate-in fade-in">
-                    <Card theme={themeMode} className="space-y-4"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest`}>Alertas Médicas</h3><div className="grid grid-cols-2 gap-2">{['Alergias', 'Diabetes', 'Hipertensión', 'Fumador', 'Cardiopatía', 'Embarazo'].map(tag => { const active = getPatient(selectedPatientId).anamnesis.alerts?.[tag]; return ( <button key={tag} onClick={() => updateAnamnesis(selectedPatientId, 'alerts', {...getPatient(selectedPatientId).anamnesis.alerts, [tag]: !active})} className={`p-3 rounded-xl text-xs font-bold border ${active ? 'bg-red-500 border-red-500 text-white' : (themeMode==='dark'?'opacity-30 border-white/10':'bg-stone-100 border-stone-200 text-stone-500')}`}>{tag} {active && '⚠️'}</button>) })}</div></Card>
-                    <Card theme={themeMode} className="space-y-4"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest`}>Historia Clínica</h3><InputField theme={themeMode} textarea label="Anamnesis Próxima" placeholder="Motivo de consulta..." value={getPatient(selectedPatientId).anamnesis.recent} onChange={e => updateAnamnesis(selectedPatientId, 'recent', e.target.value)}/><InputField theme={themeMode} textarea label="Anamnesis Remota" placeholder="Antecedentes..." value={getPatient(selectedPatientId).anamnesis.remote} onChange={e => updateAnamnesis(selectedPatientId, 'remote', e.target.value)}/></Card>
-                  </div>
-                )}
-
-                {patientTab === 'clinical' && <Card theme={themeMode} className="text-center overflow-x-auto"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest mb-4`}>Odontograma</h3><div className="flex flex-col gap-4 min-w-[500px]"><div className="flex gap-1 justify-center">{TEETH_UPPER.map(t => <button key={t} onClick={() => openToothModal(t)} className={`w-8 h-10 rounded border text-[10px] font-bold ${getPatient(selectedPatientId).clinical.teeth[t]?.status ? 'bg-red-500 text-white border-red-500' : (themeMode==='dark'?'bg-white/5 border-white/10':'bg-slate-100 border-slate-200 text-slate-500')}`}>{t}</button>)}</div><div className="flex gap-1 justify-center">{TEETH_LOWER.map(t => <button key={t} onClick={() => openToothModal(t)} className={`w-8 h-10 rounded border text-[10px] font-bold ${getPatient(selectedPatientId).clinical.teeth[t]?.status ? 'bg-red-500 text-white border-red-500' : (themeMode==='dark'?'bg-white/5 border-white/10':'bg-slate-100 border-slate-200 text-slate-500')}`}>{t}</button>)}</div></div></Card>}
-                {patientTab === 'perio' && <Card theme={themeMode} className="space-y-4"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest`}>Diagnóstico AAP</h3><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Estadio" placeholder="I - IV" value={getPatient(selectedPatientId).clinical.aap.stage} onChange={e => updatePatient(selectedPatientId, 'clinical', { aap: { ...getPatient(selectedPatientId).clinical.aap, stage: e.target.value } })}/><InputField theme={themeMode} label="Grado" placeholder="A - C" value={getPatient(selectedPatientId).clinical.aap.grade} onChange={e => updatePatient(selectedPatientId, 'clinical', { aap: { ...getPatient(selectedPatientId).clinical.aap, grade: e.target.value } })}/></div></Card>}
-                {patientTab === 'evolution' && <div className="space-y-4"><Card theme={themeMode} className="space-y-2"><InputField theme={themeMode} textarea label="Nueva Evolución" placeholder="Describa el procedimiento..." value={newEvolution} onChange={e => setNewEvolution(e.target.value)}/><Button theme={themeMode} className="w-full" onClick={addEvolution}>Guardar</Button></Card><div className="space-y-3">{getPatient(selectedPatientId).clinical.evolution?.map(evo => (<div key={evo.id} className={`p-4 rounded-xl text-sm relative pl-6 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}><div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${THEMES[themeMode].accentBg}`}></div><div className="flex justify-between mb-1"><span className={`font-bold text-xs ${THEMES[themeMode].accent}`}>{evo.date}</span><span className="text-xs opacity-50 font-bold">Diente: {evo.tooth}</span></div><p>{evo.text}</p></div>))}</div></div>}
-                {patientTab === 'images' && <div className="space-y-6"><Card theme={themeMode} className="text-center border-dashed border-2 !bg-transparent opacity-60 hover:opacity-100 cursor-pointer" onClick={() => fileInputRef.current.click()}><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/><Upload className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold uppercase">Subir Documento</p></Card><div className="grid grid-cols-2 gap-4">{getPatient(selectedPatientId).images?.map(img => (<div key={img.id} className="relative group"><img src={img.url} alt="doc" className="rounded-xl w-full h-32 object-cover border border-white/10"/><div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition-all"><span className="text-[10px] text-white font-bold">{img.name}</span></div></div>))}</div></div>}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* --- OTRAS SECCIONES --- */}
-        {activeTab === 'history' && <div className="space-y-6"><div className="flex justify-between"><h2 className="text-3xl font-black">Caja</h2><Button theme={themeMode} variant="secondary" onClick={() => {const ws=XLSX.utils.json_to_sheet(history); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Caja"); XLSX.writeFile(wb,"Reporte.xlsx");}}><FileSpreadsheet/></Button></div><InputField theme={themeMode} icon={Search} placeholder="Buscar..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="space-y-3">{history.filter(h=>h.patientName?.toLowerCase().includes(searchTerm.toLowerCase())).map(h=>(<Card key={h.id} theme={themeMode} className="flex justify-between items-center cursor-pointer border-l-4 hover:opacity-80" style={{borderLeftColor: (h.total-(h.paid||0))<=0 ? '#10b981':'#ef4444'}} onClick={()=>{setSelectedFinancialRecord(h); setModal('abono');}}><div><h4 className="font-bold">{h.patientName}</h4><p className="text-xs opacity-50">{h.treatmentName}</p></div><div className="text-right"><p className={`font-black ${THEMES[themeMode].accent}`}>${h.total?.toLocaleString()}</p></div></Card>))}</div></div>}
-        {activeTab === 'quote' && <div className="space-y-6"><div className={`flex p-1 rounded-2xl ${themeMode==='dark'?'bg-white/5':'bg-black/5'}`}><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='calc'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='packs'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Packs</button></div>{quoteMode==='calc'?(<><Button theme={themeMode} variant="secondary" className="w-full" onClick={()=>setModal('loadPack')}>Cargar Pack</Button><Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Paciente" value={session.patientName} onChange={e=>setSession({...session, patientName:e.target.value})}/><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Min" type="number" value={session.clinicalTime} onChange={e=>setSession({...session, clinicalTime:e.target.value})}/><InputField theme={themeMode} label="Insumos" type="number" value={session.baseCost} onChange={e=>setSession({...session, baseCost:e.target.value})}/></div></Card><Card theme={themeMode} className={`text-center py-10 border ${THEMES[themeMode].accentBorder}`}><h2 className={`text-6xl font-black ${THEMES[themeMode].textGradient}`}>${currentTotal.toLocaleString()}</h2><div className="grid grid-cols-2 gap-2 mt-4 px-4"><Button theme={themeMode} variant="secondary" onClick={saveBudgetToHistory}><Save/> Guardar</Button><Button theme={themeMode} onClick={()=>setModal('pay')}><Share2/> Cobrar</Button></div></Card></>):(<Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})}/><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><button onClick={()=>{if(newPackItem.name){setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}} className={`p-4 rounded-xl text-white ${THEMES[themeMode].accentBg}`}><Plus/></button></div><Button theme={themeMode} className="w-full" onClick={()=>{if(newPack.name){setProtocols([...protocols, {...newPack, id:Date.now(), totalCost:newPack.items.reduce((a,b)=>a+b.cost,0)}]); notify("Pack OK");}}}>Guardar</Button></Card>)}</div>}
+        {activeTab === 'dashboard' && <div className="space-y-8 animate-in fade-in"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><Card theme={themeMode} className={`${THEMES[themeMode].gradient} !border-none !text-white`}><p className="text-[10px] font-bold uppercase opacity-80">Por Cobrar</p><h2 className="text-5xl font-black">${(totalInvoiced - totalCollected).toLocaleString()}</h2></Card><Card theme={themeMode} className="!bg-emerald-500 !border-none !text-white"><p className="text-[10px] font-bold uppercase opacity-80">Recaudado</p><h2 className="text-5xl font-black">${totalCollected.toLocaleString()}</h2></Card></div><div className="grid grid-cols-2 gap-4"><Card theme={themeMode} className="text-center"><History size={32} className={`mx-auto mb-2 ${THEMES[themeMode].accent}`}/><span className="text-4xl font-black">{Object.keys(patientRecords).length}</span><p className="text-[10px] opacity-40 uppercase">Pacientes</p></Card><Card theme={themeMode} className="text-center"><Library size={32} className={`mx-auto mb-2 ${THEMES[themeMode].accent}`}/><span className="text-4xl font-black">{protocols.length}</span><p className="text-[10px] opacity-40 uppercase">Packs</p></Card></div></div>}
+        {activeTab === 'settings' && <div className="space-y-6"><h2 className="text-3xl font-black">Ajustes</h2><Card theme={themeMode} className="space-y-6"><div className={`p-6 rounded-2xl border-2 border-dashed text-center cursor-pointer hover:opacity-80 transition-all ${themeMode==='dark'?'border-white/10':'border-black/10'}`} onClick={()=>logoInputRef.current.click()}><input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload}/>{config.logo ? <img src={config.logo} className="h-16 mx-auto mb-2 object-contain bg-white/5 rounded"/> : <Camera className={`mx-auto mb-2 opacity-50 ${THEMES[themeMode].accent}`}/>}<p className="text-xs font-bold uppercase">Subir tu Logo</p></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Dr/Clínica" value={config.name} onChange={e=>setConfig({...config, name:e.target.value})}/><InputField theme={themeMode} label="RUT Profesional" value={config.rut} onChange={e=>setConfig({...config, rut:e.target.value})}/></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Teléfono" value={config.phone} onChange={e=>setConfig({...config, phone:e.target.value})}/><InputField theme={themeMode} label="Email" value={config.email} onChange={e=>setConfig({...config, email:e.target.value})}/></div><InputField theme={themeMode} label="Dirección Consulta" value={config.address} onChange={e=>setConfig({...config, address:e.target.value})}/><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Valor Hora" type="number" value={config.hourlyRate} onChange={e=>setConfig({...config, hourlyRate:e.target.value})}/><InputField theme={themeMode} label="Margen %" type="number" value={config.profitMargin} onChange={e=>setConfig({...config, profitMargin:e.target.value})}/></div></Card></div>}
+        {activeTab === 'ficha' && <div className="space-y-6 animate-in slide-in-from-right-5">{!selectedPatientId ? (<><h2 className="text-3xl font-black">Pacientes</h2><div className="flex gap-2"><InputField theme={themeMode} icon={Search} placeholder="Buscar o crear..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}/><Button theme={themeMode} onClick={handleCreatePatient}><Plus/> Crear/Abrir</Button></div><div className="grid gap-3">{Object.keys(patientRecords).filter(k => k.toLowerCase().includes(searchTerm.toLowerCase())).map(key => ( <Card key={key} theme={themeMode} className={`flex justify-between items-center cursor-pointer hover:border-current ${THEMES[themeMode].accentBorder}`} onClick={() => setSelectedPatientId(key)}><div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-full ${THEMES[themeMode].accentBg} text-white flex items-center justify-center font-bold`}>{key[0].toUpperCase()}</div><span className="font-bold capitalize">{key}</span></div><span className="text-xs opacity-40">Ver Ficha →</span></Card> ))}</div></>) : (<><div className="flex items-center gap-4 mb-4"><button onClick={() => setSelectedPatientId(null)} className={`p-2 rounded-full ${themeMode === 'dark' ? 'bg-white/5' : 'bg-black/5'}`}><ArrowLeft/></button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2></div><div className="flex gap-2 overflow-x-auto pb-2 mb-2">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion}, {id:'clinical', label:'Clínica', icon: Activity}, {id:'perio', label:'Periodoncia', icon: FileBarChart}, {id:'evolution', label:'Evolución', icon: FileText}, {id:'images', label:'Galería', icon: ImageIcon}].map(tab => (<button key={tab.id} onClick={() => setPatientTab(tab.id)} className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${patientTab === tab.id ? `${THEMES[themeMode].accentBg} text-white` : 'bg-black/5 opacity-60'}`}><tab.icon size={14}/> {tab.label}</button>))}</div>{patientTab === 'personal' && <Card theme={themeMode} className="space-y-4 animate-in fade-in"><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Legal" value={getPatient(selectedPatientId).personal.legalName} onChange={e => updatePatient(selectedPatientId, 'personal', {legalName: e.target.value})}/><InputField theme={themeMode} label="Nombre Social" value={getPatient(selectedPatientId).personal.socialName} onChange={e => updatePatient(selectedPatientId, 'personal', {socialName: e.target.value})}/></div><InputField theme={themeMode} label="Apellidos" value={getPatient(selectedPatientId).personal.surnames} onChange={e => updatePatient(selectedPatientId, 'personal', {surnames: e.target.value})}/><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="RUT" value={getPatient(selectedPatientId).personal.rut} onChange={e => updatePatient(selectedPatientId, 'personal', {rut: e.target.value})}/><InputField theme={themeMode} label="Email" value={getPatient(selectedPatientId).personal.email} onChange={e => updatePatient(selectedPatientId, 'personal', {email: e.target.value})}/></div><div className="grid grid-cols-2 gap-4"><SelectField theme={themeMode} label="Convenio" options={['Sin Convenio', 'Fonasa', 'Isapre', 'Particular']} value={getPatient(selectedPatientId).personal.convention} onChange={e => updatePatient(selectedPatientId, 'personal', {convention: e.target.value})}/><InputField theme={themeMode} label="N° Interno" value={getPatient(selectedPatientId).personal.internalNum} onChange={e => updatePatient(selectedPatientId, 'personal', {internalNum: e.target.value})}/></div><div className="grid grid-cols-2 gap-4"><SelectField theme={themeMode} label="Sexo" options={['Seleccionar', 'Masculino', 'Femenino', 'Intersexual']} value={getPatient(selectedPatientId).personal.sex} onChange={e => updatePatient(selectedPatientId, 'personal', {sex: e.target.value})}/><SelectField theme={themeMode} label="Género" options={['Seleccionar', 'Masculino', 'Femenino', 'No Binario', 'Otro']} value={getPatient(selectedPatientId).personal.gender} onChange={e => updatePatient(selectedPatientId, 'personal', {gender: e.target.value})}/></div><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e => updatePatient(selectedPatientId, 'personal', {birthDate: e.target.value})}/><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e => updatePatient(selectedPatientId, 'personal', {city: e.target.value})}/><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e => updatePatient(selectedPatientId, 'personal', {commune: e.target.value})}/></div><InputField theme={themeMode} label="Dirección" value={getPatient(selectedPatientId).personal.address} onChange={e => updatePatient(selectedPatientId, 'personal', {address: e.target.value})}/><InputField theme={themeMode} label="Anotaciones" textarea value={getPatient(selectedPatientId).personal.notes} onChange={e => updatePatient(selectedPatientId, 'personal', {notes: e.target.value})}/></Card>}{patientTab === 'anamnesis' && <div className="space-y-4 animate-in fade-in"><Card theme={themeMode} className="space-y-4"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest`}>Alertas Médicas</h3><div className="grid grid-cols-2 gap-2">{['Alergias', 'Diabetes', 'Hipertensión', 'Fumador', 'Cardiopatía', 'Embarazo'].map(tag => { const active = getPatient(selectedPatientId).anamnesis.alerts?.[tag]; return ( <button key={tag} onClick={() => updateAnamnesis(selectedPatientId, 'alerts', {...getPatient(selectedPatientId).anamnesis.alerts, [tag]: !active})} className={`p-3 rounded-xl text-xs font-bold border ${active ? 'bg-red-500 border-red-500 text-white' : (themeMode==='dark'?'opacity-30 border-white/10':'bg-stone-100 border-stone-200 text-stone-500')}`}>{tag} {active && '⚠️'}</button>) })}</div></Card><Card theme={themeMode} className="space-y-4"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest`}>Historia Clínica</h3><InputField theme={themeMode} textarea label="Anamnesis Próxima" placeholder="Motivo de consulta..." value={getPatient(selectedPatientId).anamnesis.recent} onChange={e => updateAnamnesis(selectedPatientId, 'recent', e.target.value)}/><InputField theme={themeMode} textarea label="Anamnesis Remota" placeholder="Antecedentes..." value={getPatient(selectedPatientId).anamnesis.remote} onChange={e => updateAnamnesis(selectedPatientId, 'remote', e.target.value)}/></Card></div>}{patientTab === 'clinical' && <Card theme={themeMode} className="text-center overflow-x-auto"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest mb-4`}>Odontograma</h3><div className="flex flex-col gap-4 min-w-[500px]"><div className="flex gap-1 justify-center">{TEETH_UPPER.map(t => <button key={t} onClick={() => openToothModal(t)} className={`w-8 h-10 rounded border text-[10px] font-bold ${getPatient(selectedPatientId).clinical.teeth[t]?.status ? 'bg-red-500 text-white border-red-500' : (themeMode==='dark'?'bg-white/5 border-white/10':'bg-slate-100 border-slate-200 text-slate-500')}`}>{t}</button>)}</div><div className="flex gap-1 justify-center">{TEETH_LOWER.map(t => <button key={t} onClick={() => openToothModal(t)} className={`w-8 h-10 rounded border text-[10px] font-bold ${getPatient(selectedPatientId).clinical.teeth[t]?.status ? 'bg-red-500 text-white border-red-500' : (themeMode==='dark'?'bg-white/5 border-white/10':'bg-slate-100 border-slate-200 text-slate-500')}`}>{t}</button>)}</div></div></Card>}{patientTab === 'perio' && <Card theme={themeMode} className="space-y-4"><h3 className={`font-bold ${THEMES[themeMode].accent} text-xs uppercase tracking-widest`}>Diagnóstico AAP</h3><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Estadio" placeholder="I - IV" value={getPatient(selectedPatientId).clinical.aap.stage} onChange={e => updatePatient(selectedPatientId, 'clinical', { aap: { ...getPatient(selectedPatientId).clinical.aap, stage: e.target.value } })}/><InputField theme={themeMode} label="Grado" placeholder="A - C" value={getPatient(selectedPatientId).clinical.aap.grade} onChange={e => updatePatient(selectedPatientId, 'clinical', { aap: { ...getPatient(selectedPatientId).clinical.aap, grade: e.target.value } })}/></div></Card>}{patientTab === 'evolution' && <div className="space-y-4"><Card theme={themeMode} className="space-y-2"><InputField theme={themeMode} textarea label="Nueva Evolución" placeholder="Describa el procedimiento..." value={newEvolution} onChange={e => setNewEvolution(e.target.value)}/><Button theme={themeMode} className="w-full" onClick={addEvolution}>Guardar</Button></Card><div className="space-y-3">{getPatient(selectedPatientId).clinical.evolution?.map(evo => (<div key={evo.id} className={`p-4 rounded-xl text-sm relative pl-6 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}><div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${THEMES[themeMode].accentBg}`}></div><div className="flex justify-between mb-1"><span className={`font-bold text-xs ${THEMES[themeMode].accent}`}>{evo.date}</span><span className="text-xs opacity-50 font-bold">Diente: {evo.tooth}</span></div><p>{evo.text}</p></div>))}</div></div>}{patientTab === 'images' && <div className="space-y-6"><Card theme={themeMode} className="text-center border-dashed border-2 !bg-transparent opacity-60 hover:opacity-100 cursor-pointer" onClick={() => fileInputRef.current.click()}><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/><Upload className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold uppercase">Subir Documento</p></Card><div className="grid grid-cols-2 gap-4">{getPatient(selectedPatientId).images?.map(img => (<div key={img.id} className="relative group"><img src={img.url} alt="doc" className="rounded-xl w-full h-32 object-cover border border-white/10"/><div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition-all"><span className="text-[10px] text-white font-bold">{img.name}</span></div></div>))}</div></div>}</>)}</div>}
+        {activeTab === 'quote' && <div className="space-y-6"><div className={`flex p-1 rounded-2xl ${themeMode==='dark'?'bg-white/5':'bg-black/5'}`}><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='calc'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-3 rounded-xl font-bold text-xs ${quoteMode==='packs'?`${THEMES[themeMode].accentBg} text-white`:'opacity-40'}`}>Packs</button></div>{quoteMode==='calc'?(<><Button theme={themeMode} variant="secondary" className="w-full" onClick={()=>setModal('loadPack')}>Cargar Pack</Button><Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Paciente" value={session.patientName} onChange={e=>setSession({...session, patientName:e.target.value})}/><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Min" type="number" value={session.clinicalTime} onChange={e=>setSession({...session, clinicalTime:e.target.value})}/><InputField theme={themeMode} label="Insumos" type="number" value={session.baseCost} onChange={e=>setSession({...session, baseCost:e.target.value})}/></div></Card><Card theme={themeMode} className={`text-center py-10 border ${THEMES[themeMode].accentBorder}`}><h2 className={`text-6xl font-black ${THEMES[themeMode].textGradient}`}>${currentTotal.toLocaleString()}</h2><div className="grid grid-cols-3 gap-2 mt-4 px-4"><Button theme={themeMode} variant="secondary" onClick={saveBudgetToHistory}><Save/> Guardar</Button><Button theme={themeMode} variant="secondary" onClick={() => generatePDF('quote')}><Printer/> PDF</Button><Button theme={themeMode} onClick={()=>setModal('pay')}><Share2/> Cobrar</Button></div></Card></>):(<Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} label="Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})}/><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><button onClick={()=>{if(newPackItem.name){setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}} className={`p-4 rounded-xl text-white ${THEMES[themeMode].accentBg}`}><Plus/></button></div><Button theme={themeMode} className="w-full" onClick={()=>{if(newPack.name){setProtocols([...protocols, {...newPack, id:Date.now(), totalCost:newPack.items.reduce((a,b)=>a+b.cost,0)}]); notify("Pack OK");}}}>Guardar</Button></Card>)}</div>}
         {activeTab === 'clinical' && <div className="space-y-6"><h2 className="text-3xl font-black">Recetario</h2><Card theme={themeMode} className="space-y-4"><div className="flex gap-2"><Button theme={themeMode} variant="secondary" className="flex-1 text-xs" onClick={()=>setPrescription([...prescription, {name:'Amoxicilina 500', dosage:'c/8h'}])}>Infección</Button><Button theme={themeMode} variant="secondary" className="flex-1 text-xs" onClick={()=>setPrescription([...prescription, {name:'Ketorolaco', dosage:'c/8h'}])}>Dolor</Button></div><div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><button onClick={()=>{if(medInput.name){setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}} className={`p-4 rounded-xl text-white ${THEMES[themeMode].accentBg}`}><Plus/></button></div><div className="space-y-2">{prescription.map((p,i)=>(<div key={i} className={`p-2 rounded flex justify-between text-xs ${themeMode==='dark'?'bg-white/5':'bg-black/5'}`}><span>{p.name}</span><button onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}><X size={12}/></button></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx')}>PDF</Button></Card></div>}
         {activeTab === 'agenda' && <div className="space-y-6"><div className="flex justify-between"><h2 className="text-3xl font-black">Agenda</h2><Button theme={themeMode} onClick={()=>setModal('appt')}><Plus/></Button></div>{appointments.map(a=>(<Card key={a.id} theme={themeMode} className="flex justify-between items-center"><div className="flex gap-4"><div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${THEMES[themeMode].accentBg} bg-opacity-10 ${THEMES[themeMode].accent}`}>{a.time}</div><div><h4 className="font-bold">{a.name}</h4><p className="text-xs opacity-50">{a.treatment}</p></div></div><button onClick={()=>setAppointments(appointments.filter(x=>x.id!==a.id))} className="text-red-500 bg-red-500/10 p-2 rounded"><Trash2/></button></Card>))}</div>}
 
