@@ -10,7 +10,8 @@ import {
   Mail, Upload, Image as ImageIcon, Wallet, 
   Activity, Check, FileQuestion, Camera, Lock, Printer, LogOut,
   ArrowRight, Star, Droplets, FileBarChart, MapPin, Phone, AlertCircle,
-  ChevronLeft, ChevronRight, Users, Clock, DollarSign, PenTool, FileSignature, Edit3, Loader, TrendingDown, CreditCard, Banknote, Box, Minus, AlertTriangle, Shield, Mic, MicOff, MessageCircle
+  ChevronLeft, ChevronRight, Users, Clock, DollarSign, PenTool, FileSignature, Edit3, Loader, TrendingDown, CreditCard, Banknote, Box, Minus, AlertTriangle, Shield, Mic, MicOff, MessageCircle,
+  BarChart2, PieChart
 } from 'lucide-react';
 import { supabase } from './supabase';
 
@@ -21,175 +22,76 @@ const CONSENT_TEMPLATES = {
   endo: { title: "Consentimiento Endodoncia", text: "Entiendo que el tratamiento de conducto busca salvar el diente, pero puede fallar, requerir retratamiento o cirugía. Conozco los riesgos de fractura instrumental o perforación. Acepto el procedimiento." }
 };
 
+const ANAMNESIS_TAGS = ['Diabetes', 'Hipertensión', 'Cardiopatía', 'Alergias', 'Asma', 'Embarazo', 'Fumador', 'Coagulopatía', 'Epilepsia', 'Toma Medicamentos'];
+
 const THEMES = {
   dark: { bg: 'bg-[#050505]', text: 'text-white', card: 'bg-[#121212]/90 border border-white/10 shadow-2xl', accent: 'text-[#D4AF37]', accentBg: 'bg-[#D4AF37]', inputBg: 'bg-white/5 border-white/5 focus-within:border-[#D4AF37]', subText: 'text-stone-400', gradient: 'bg-gradient-to-br from-[#D4AF37] to-[#B69121]', buttonSecondary: 'bg-white/5 border-white/10 text-white' },
   light: { bg: 'bg-[#FAFAFA]', text: 'text-stone-800', card: 'bg-white border-stone-200 shadow-xl', accent: 'text-amber-600', accentBg: 'bg-amber-500', inputBg: 'bg-stone-100 focus-within:bg-white focus-within:border-amber-500', subText: 'text-stone-500', gradient: 'bg-gradient-to-br from-amber-400 to-amber-600', buttonSecondary: 'bg-stone-100 border-stone-200 text-stone-600' },
   blue: { bg: 'bg-[#0a192f]', text: 'text-white', card: 'bg-[#112240]/90 border-cyan-500/20 shadow-cyan-900/20 shadow-2xl', accent: 'text-cyan-400', accentBg: 'bg-cyan-500', inputBg: 'bg-[#1d2d50] border-transparent focus-within:border-cyan-400', subText: 'text-slate-400', gradient: 'bg-gradient-to-br from-cyan-400 to-blue-600', buttonSecondary: 'bg-white/5 border-white/10 text-cyan-400' }
 };
 
+// --- COMPONENTES UI GRÁFICOS (V75) ---
+const SimpleLineChart = ({ data, theme }) => {
+    if (!data || data.length < 2) return <div className="h-32 flex items-center justify-center text-xs opacity-30">Faltan datos para graficar</div>;
+    const maxVal = Math.max(...data.map(d => d.value));
+    const points = data.map((d, i) => {
+        const x = (i / (data.length - 1)) * 100;
+        const y = 100 - ((d.value / maxVal) * 100);
+        return `${x},${y}`;
+    }).join(' ');
+    const t = THEMES[theme] || THEMES.dark;
+    const color = theme === 'admin' ? '#10b981' : (theme === 'blue' ? '#22d3ee' : '#fbbf24');
+    return (
+        <div className="h-32 w-full flex items-end gap-1 relative pt-4">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+                <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={color} stopOpacity="0.5" />
+                        <stop offset="100%" stopColor={color} stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+                <path d={`M0,100 ${points} 100,100`} fill="url(#chartGradient)" />
+                <polyline fill="none" stroke={color} strokeWidth="2" points={points} vectorEffect="non-scaling-stroke" />
+                {data.map((d, i) => {
+                     const x = (i / (data.length - 1)) * 100;
+                     const y = 100 - ((d.value / maxVal) * 100);
+                     return <circle key={i} cx={x} cy={y} r="1.5" fill="#fff" stroke={color} />;
+                })}
+            </svg>
+        </div>
+    );
+};
+
 // --- COMPONENTES UI ---
 const SignaturePad = ({ onSave, onCancel, theme }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  
-  useEffect(() => { 
-    const canvas = canvasRef.current; 
-    if (canvas) { 
-      canvas.width = canvas.offsetWidth; 
-      canvas.height = canvas.offsetHeight; 
-      const ctx = canvas.getContext('2d'); 
-      ctx.strokeStyle = theme === 'dark' || theme === 'blue' ? '#fff' : '#000'; 
-      ctx.lineWidth = 2; 
-      ctx.lineCap = 'round'; 
-    } 
-  }, [theme]);
-
-  const startDrawing = (e) => { 
-    const ctx = canvasRef.current.getContext('2d'); 
-    ctx.beginPath(); 
-    const { x, y } = getCoords(e); 
-    ctx.moveTo(x, y); 
-    setIsDrawing(true); 
-  };
-
-  const draw = (e) => { 
-    if (!isDrawing) return; 
-    const ctx = canvasRef.current.getContext('2d'); 
-    const { x, y } = getCoords(e); 
-    ctx.lineTo(x, y); 
-    ctx.stroke(); 
-  };
-
-  const getCoords = (e) => { 
-    const rect = canvasRef.current.getBoundingClientRect(); 
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX; 
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY; 
-    return { x: clientX - rect.left, y: clientY - rect.top }; 
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative">
-        <canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/>
-        <div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none text-white">Firme aquí</div>
-      </div>
-      <div className="flex gap-2">
-        <button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button>
-        <button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button>
-      </div>
-    </div>
-  );
+  useEffect(() => { const canvas = canvasRef.current; if (canvas) { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; const ctx = canvas.getContext('2d'); ctx.strokeStyle = theme === 'dark' || theme === 'blue' ? '#fff' : '#000'; ctx.lineWidth = 2; ctx.lineCap = 'round'; } }, [theme]);
+  const startDrawing = (e) => { const ctx = canvasRef.current.getContext('2d'); ctx.beginPath(); const { x, y } = getCoords(e); ctx.moveTo(x, y); setIsDrawing(true); };
+  const draw = (e) => { if (!isDrawing) return; const ctx = canvasRef.current.getContext('2d'); const { x, y } = getCoords(e); ctx.lineTo(x, y); ctx.stroke(); };
+  const getCoords = (e) => { const rect = canvasRef.current.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
+  return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none text-white">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
 };
 
 const ToothFacesControl = ({ faces, onChange, theme }) => {
-    const cycleStatus = (current) => { 
-      if (!current) return 'caries'; 
-      if (current === 'caries') return 'filled'; 
-      if (current === 'filled') return 'crown'; 
-      return null; 
-    };
-    const getColor = (status) => { 
-      if (status === 'caries') return 'bg-red-500 border-red-500'; 
-      if (status === 'filled') return 'bg-blue-500 border-blue-500'; 
-      if (status === 'crown') return 'bg-yellow-500 border-yellow-500'; 
-      return 'bg-white/5 border-white/10 hover:bg-white/10'; 
-    };
-    return (
-      <div className="flex flex-col items-center gap-1 my-4">
-        <button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all ${getColor(faces.v)}`}></button>
-        <div className="flex gap-1">
-          <button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all ${getColor(faces.m)}`}></button>
-          <button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all ${getColor(faces.o)}`}></button>
-          <button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all ${getColor(faces.d)}`}></button>
-        </div>
-        <button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all ${getColor(faces.l)}`}></button>
-      </div>
-    );
+    const cycleStatus = (current) => { if (!current) return 'caries'; if (current === 'caries') return 'filled'; if (current === 'filled') return 'crown'; return null; };
+    const getColor = (status) => { if (status === 'caries') return 'bg-red-500 border-red-500'; if (status === 'filled') return 'bg-blue-500 border-blue-500'; if (status === 'crown') return 'bg-yellow-500 border-yellow-500'; return 'bg-white/5 border-white/10 hover:bg-white/10'; };
+    return (<div className="flex flex-col items-center gap-1 my-4"><button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all ${getColor(faces.v)}`}></button><div className="flex gap-1"><button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all ${getColor(faces.m)}`}></button><button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all ${getColor(faces.o)}`}></button><button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all ${getColor(faces.d)}`}></button></div><button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all ${getColor(faces.l)}`}></button></div>);
 };
 
 const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data }) => {
   const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
   const hasPus = perioData?.pus;
   const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
-  
-  const getSimpleColor = () => { 
-    const currentStatus = data?.status || status; 
-    if (currentStatus === 'missing') return '#000000'; 
-    const faces = data?.faces || {}; 
-    if (Object.values(faces).some(s => s === 'caries')) return '#ef4444'; 
-    if (Object.values(faces).some(s => s === 'filled')) return '#3b82f6'; 
-    if (Object.values(faces).some(s => s === 'crown')) return '#eab308'; 
-    if (currentStatus === 'caries') return '#ef4444'; 
-    if (currentStatus === 'filled') return '#3b82f6'; 
-    if (currentStatus === 'crown') return '#eab308'; 
-    return theme === 'light' ? '#333' : '#fff'; 
-  };
-
-  if (isPerioMode && (status === 'missing' || data?.status === 'missing')) {
-    return (
-      <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale">
-        <svg width="35" height="45" viewBox="0 0 100 120">
-          <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/>
-        </svg>
-        <span className="text-[8px] font-bold">AUS</span>
-      </div>
-    );
-  }
-
-  return (
-    <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative">
-      <svg width="35" height="45" viewBox="0 0 100 120">
-        <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill={getSimpleColor()} fillOpacity={status === 'missing' || data?.status === 'missing' || Object.values(data?.faces||{}).some(v=>v) ? 1 : 0.15} stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/>
-      </svg>
-      {isPerioMode && (
-        <div className="absolute -top-2 flex gap-1">
-          {hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>}
-          {hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400"/>}
-          {hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500"/>}
-        </div>
-      )}
-      <span className="text-[9px] font-bold opacity-50">{number}</span>
-    </div>
-  );
+  const getSimpleColor = () => { const currentStatus = data?.status || status; if (currentStatus === 'missing') return '#000000'; const faces = data?.faces || {}; if (Object.values(faces).some(s => s === 'caries')) return '#ef4444'; if (Object.values(faces).some(s => s === 'filled')) return '#3b82f6'; if (Object.values(faces).some(s => s === 'crown')) return '#eab308'; if (currentStatus === 'caries') return '#ef4444'; if (currentStatus === 'filled') return '#3b82f6'; if (currentStatus === 'crown') return '#eab308'; return theme === 'light' ? '#333' : '#fff'; };
+  if (isPerioMode && (status === 'missing' || data?.status === 'missing')) return <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/></svg><span className="text-[8px] font-bold">AUS</span></div>;
+  return (<div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill={getSimpleColor()} fillOpacity={status === 'missing' || data?.status === 'missing' || Object.values(data?.faces||{}).some(v=>v) ? 1 : 0.15} stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/></svg>{isPerioMode && (<div className="absolute -top-2 flex gap-1">{hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>}{hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400"/>}{hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500"/>}</div>)}<span className="text-[9px] font-bold opacity-50">{number}</span></div>);
 };
 
-const HygieneCell = ({ tooth, data, onChange, status }) => { 
-  if (status === 'missing') return null; 
-  return (
-    <div className="flex flex-col items-center gap-1 bg-white/5 p-2 rounded-xl">
-      <span className="text-[10px] font-bold opacity-70">{tooth}</span>
-      <div className="grid grid-cols-2 gap-1 w-12 h-12">
-        {['v', 'd', 'l', 'm'].map(f => (
-          <div key={f} onClick={() => onChange(f)} className={`rounded-sm cursor-pointer border border-white/10 transition-colors ${data?.[f] ? 'bg-red-500 border-red-500' : 'hover:bg-white/10'}`} title={`Cara ${f.toUpperCase()}`}></div>
-        ))}
-      </div>
-    </div>
-  ); 
-};
-
-const Card = ({ children, className = "", theme, ...props }) => { 
-  const t = THEMES[theme] || THEMES.dark; 
-  return <div {...props} className={`p-6 rounded-3xl transition-all relative ${t.card} ${className}`}>{children}</div>; 
-};
-
-const Button = ({ onClick, children, variant = "primary", className = "", theme, disabled }) => { 
-  const t = THEMES[theme] || THEMES.dark; 
-  const styles = { primary: `${t.gradient} text-white shadow-lg`, secondary: t.buttonSecondary }; 
-  return <button disabled={disabled} onClick={onClick} className={`p-3 rounded-2xl font-bold active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 ${styles[variant]} ${className}`}>{children}</button>; 
-};
-
-const InputField = ({ label, icon: Icon, theme, textarea, ...props }) => { 
-  const t = THEMES[theme] || THEMES.dark; 
-  return (
-    <div className="w-full">
-      {label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 ${t.subText}`}>{label}</label>}
-      <div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>
-        {Icon && <Icon size={16} className={`mr-2 mt-0.5 ${t.subText}`}/>}
-        {textarea ? <textarea {...props} rows="3" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`}/> : <input {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${t.text}`}/>}
-      </div>
-    </div>
-  ); 
-};
+const HygieneCell = ({ tooth, data, onChange, status }) => { if (status === 'missing') return null; return (<div className="flex flex-col items-center gap-1 bg-white/5 p-2 rounded-xl"><span className="text-[10px] font-bold opacity-70">{tooth}</span><div className="grid grid-cols-2 gap-1 w-12 h-12">{['v', 'd', 'l', 'm'].map(f => (<div key={f} onClick={() => onChange(f)} className={`rounded-sm cursor-pointer border border-white/10 transition-colors ${data?.[f] ? 'bg-red-500 border-red-500' : 'hover:bg-white/10'}`} title={`Cara ${f.toUpperCase()}`}></div>))}</div></div>); };
+const Card = ({ children, className = "", theme, ...props }) => { const t = THEMES[theme] || THEMES.dark; return <div {...props} className={`p-6 rounded-3xl transition-all relative ${t.card} ${className}`}>{children}</div>; };
+const Button = ({ onClick, children, variant = "primary", className = "", theme, disabled }) => { const t = THEMES[theme] || THEMES.dark; const styles = { primary: `${t.gradient} text-white shadow-lg`, secondary: t.buttonSecondary }; return <button disabled={disabled} onClick={onClick} className={`p-3 rounded-2xl font-bold active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 ${styles[variant]} ${className}`}>{children}</button>; };
+const InputField = ({ label, icon: Icon, theme, textarea, ...props }) => { const t = THEMES[theme] || THEMES.dark; return (<div className="w-full">{label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 ${t.subText}`}>{label}</label>}<div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>{Icon && <Icon size={16} className={`mr-2 mt-0.5 ${t.subText}`}/>}{textarea ? <textarea {...props} rows="3" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`}/> : <input {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${t.text}`}/>}</div></div>); };
 
 const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Paciente..." }) => {
     const [query, setQuery] = useState('');
@@ -318,10 +220,15 @@ export default function App() {
   const saveToSupabase = async (t, id, d) => { await supabase.from(t).upsert({ id: id.toString(), data: d }); };
   
   const getPatient = (id) => {
-      const base = { id, personal: { legalName: id }, anamnesis: { recent: '', remote: '' }, clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, consents: [], images: [] };
+      const base = { id, personal: { legalName: id }, anamnesis: { recent: '', remote: '', conditions: {} }, clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, consents: [], images: [] };
       const existing = patientRecords[id];
       if (!existing) return base;
-      return { ...base, ...existing, anamnesis: existing.anamnesis || base.anamnesis, clinical: existing.clinical || base.clinical, personal: existing.personal || base.personal };
+      return { 
+          ...base, ...existing, 
+          anamnesis: { ...base.anamnesis, ...(existing.anamnesis || {}) }, 
+          clinical: existing.clinical || base.clinical, 
+          personal: existing.personal || base.personal 
+      };
   };
 
   const savePatientData = async (id, d) => { setPatientRecords(prev => ({...prev, [id]: d})); await saveToSupabase('patients', id, d); };
@@ -457,6 +364,19 @@ export default function App() {
       return foundEntry?.personal?.phone || '';
   };
 
+  // --- CHART DATA GENERATION (MOCK) ---
+  const getChartData = () => {
+    // Generate dummy trend data for demo purposes (last 6 months)
+    return [
+        { label: 'Sep', value: 1500000 },
+        { label: 'Oct', value: 1800000 },
+        { label: 'Nov', value: 2100000 },
+        { label: 'Dic', value: 1900000 },
+        { label: 'Ene', value: 2400000 },
+        { label: 'Feb', value: totalCollected || 2800000 }
+    ];
+  };
+
   // --- MENU LOGIC ---
   const getMenuItems = () => {
       const base = [
@@ -475,23 +395,76 @@ export default function App() {
   const t = THEMES[themeMode] || THEMES.dark;
 
   return (
-    <div className={`min-h-screen flex ${t.bg} ${t.text} transition-all font-sans`}>
+    <div className={`min-h-screen flex ${t.bg} ${t.text} transition-all duration-500 font-sans`}>
       {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={()=>setMobileMenuOpen(false)}></div>}
       
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform ${t.card} border-r flex flex-col`}>
-        <div className="p-8 border-b border-white/5 flex items-center gap-2 relative"><button onClick={()=>setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 opacity-50"><X/></button>{config.logo ? <img src={config.logo} className="w-8 h-8 rounded bg-white/10 object-contain"/> : <Cloud className={t.accent} size={24}/>}<h1 className="text-xl font-black">ShiningCloud | Dental</h1></div>
-        <div className="px-8 py-4"><span className={`text-[10px] font-bold uppercase py-1 px-2 rounded bg-white/10 ${userRole==='admin'?'text-emerald-400':userRole==='dentist'?'text-blue-400':'text-stone-400'}`}>{userRole === 'admin' ? 'Administrador' : userRole === 'dentist' ? 'Dentista' : 'Asistente'}</span></div>
-        <nav className="p-4 space-y-1 flex-1 overflow-y-auto custom-scrollbar">{getMenuItems().map(item => (<button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedPatientId(null); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase ${activeTab === item.id ? `${t.accentBg} text-white` : 'opacity-50 hover:opacity-100'}`}><item.icon size={18}/> {item.label}</button>))}</nav>
-        <div className="p-4 space-y-2 border-t border-white/5"><button onClick={toggleTheme} className="w-full p-3 rounded-xl bg-white/5 flex items-center justify-center gap-2 text-xs font-bold transition-all hover:bg-white/10">{themeMode==='dark'?<Moon size={14}/>:themeMode==='light'?<Sun size={14}/>:<Droplets size={14}/>} TEMA</button><button onClick={()=>supabase.auth.signOut()} className="w-full p-3 rounded-xl bg-red-500/10 text-red-400 font-bold text-xs transition-all hover:bg-red-500/20"><LogOut size={14} className="inline mr-2"/> SALIR</button></div>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out ${t.card} border-r flex flex-col`}>
+        <div className="p-8 border-b border-white/5 flex flex-col items-center gap-4 relative">
+            <button onClick={()=>setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 opacity-50"><X/></button>
+            <div className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl ${t.gradient}`}>
+                {config.logo ? <img src={config.logo} className="w-full h-full object-contain rounded-2xl"/> : <Cloud className="text-white" size={32}/>}
+            </div>
+            <div className="text-center">
+                <h1 className="text-xl font-black tracking-tight">ShiningCloud</h1>
+                <p className={`text-[10px] uppercase font-bold tracking-widest ${t.subText}`}>Dental OS</p>
+            </div>
+        </div>
+        
+        <div className="px-6 py-6">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${userRole==='admin'?'bg-emerald-500':userRole==='dentist'?'bg-blue-500':'bg-purple-500'}`}>
+                    {session.user.email[0].toUpperCase()}
+                </div>
+                <div className="overflow-hidden">
+                    <p className="text-xs font-bold truncate">{session.user.email.split('@')[0]}</p>
+                    <p className={`text-[9px] font-bold uppercase tracking-wider ${userRole==='admin'?'text-emerald-400':userRole==='dentist'?'text-blue-400':'text-purple-400'}`}>{userRole === 'admin' ? 'Admin' : userRole === 'dentist' ? 'Dr.' : 'Asist.'}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav className="px-4 space-y-1 flex-1 overflow-y-auto custom-scrollbar">
+            {getMenuItems().map(item => (
+                <button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedPatientId(null); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs uppercase tracking-wide transition-all duration-300 group ${activeTab === item.id ? t.activeNav : 'opacity-60 hover:opacity-100 hover:bg-white/5'}`}>
+                    <item.icon size={18} className={`transition-transform group-hover:scale-110 ${activeTab === item.id ? 'text-current' : ''}`}/> {item.label}
+                </button>
+            ))}
+        </nav>
+
+        <div className="p-4 space-y-2 border-t border-white/5">
+            <button onClick={toggleTheme} className="w-full p-3 rounded-2xl bg-white/5 flex items-center justify-center gap-2 text-xs font-bold transition-all hover:bg-white/10 hover:scale-[1.02]">
+                {themeMode==='dark'?<Moon size={14}/>:themeMode==='light'?<Sun size={14}/>:<Droplets size={14}/>} TEMA
+            </button>
+            <button onClick={()=>supabase.auth.signOut()} className="w-full p-3 rounded-2xl bg-red-500/10 text-red-400 font-bold text-xs transition-all hover:bg-red-500/20 hover:scale-[1.02]">
+                <LogOut size={14} className="inline mr-2"/> SALIR
+            </button>
+        </div>
       </aside>
 
-      <main className="flex-1 md:ml-64 p-4 md:p-10 h-screen overflow-y-auto">
+      <main className="flex-1 md:ml-64 p-6 md:p-12 h-screen overflow-y-auto">
         <div className="md:hidden flex items-center justify-between mb-6"><button onClick={()=>setMobileMenuOpen(true)} className={`p-2 rounded-xl ${t.inputBg}`}><Menu/></button><span className="font-black text-lg">ShiningCloud | Dental</span><div className="w-8"></div></div>
         {notification && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-cyan-500 text-white px-6 py-2 rounded-full font-bold animate-bounce">{notification}</div>}
 
         {activeTab === 'dashboard' && <div className="space-y-8 animate-in fade-in">
             <h1 className="text-4xl font-black">Hola, {config.name.split(' ')[0]} 👋</h1>
             {userRole === 'admin' && (<div className="grid grid-cols-1 md:grid-cols-4 gap-4"><Card theme={themeMode} className="bg-emerald-500/10 border-emerald-500/20"><div className="flex justify-between mb-4"><div className="p-3 bg-emerald-500 rounded-xl text-white"><DollarSign/></div><span className="text-xs font-bold uppercase text-emerald-500">Recaudado</span></div><h2 className="text-3xl font-black">${totalCollected.toLocaleString()}</h2></Card><Card theme={themeMode} className="bg-red-500/10 border-red-500/20"><div className="flex justify-between mb-4"><div className="p-3 bg-red-500 rounded-xl text-white"><TrendingDown/></div><span className="text-xs font-bold uppercase text-red-500">Gastos</span></div><h2 className="text-3xl font-black">${totalExpenses.toLocaleString()}</h2></Card><Card theme={themeMode} className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500 to-teal-600' : 'from-red-500 to-orange-600'} text-white col-span-2 relative overflow-hidden`}><div className="relative z-10"><span className="text-xs font-bold uppercase opacity-80">Utilidad Neta</span><h2 className="text-4xl font-black mt-2">${netProfit.toLocaleString()}</h2><p className="text-xs opacity-60 mt-1">Ganancia Real</p></div><div className="absolute -right-4 -bottom-4 opacity-20"><DollarSign size={100}/></div></Card></div>)}
+            
+            {/* V75: CHART SECTION */}
+            {userRole === 'admin' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card theme={themeMode} className="flex flex-col">
+                        <div className="flex items-center gap-2 mb-4"><BarChart2 className={t.accent} size={20}/><h3 className="font-bold">Crecimiento de Ingresos</h3></div>
+                        <SimpleLineChart data={getChartData()} theme={themeMode} />
+                        <div className="flex justify-between text-[10px] opacity-40 mt-2 px-1"><span>6 Meses</span><span>Hoy</span></div>
+                    </Card>
+                    <Card theme={themeMode} className="flex flex-col justify-center items-center text-center p-8 bg-gradient-to-br from-blue-500/5 to-purple-500/5">
+                        <PieChart size={64} className="opacity-20 mb-4"/>
+                        <h3 className="font-bold text-xl">Top Tratamientos</h3>
+                        <p className={`text-xs ${t.subText} mt-2 max-w-xs`}>El 60% de tus ingresos proviene de tratamientos de Ortodoncia y Limpiezas.</p>
+                        <button className="mt-4 text-xs font-bold text-blue-500 hover:underline">Ver Reporte Detallado</button>
+                    </Card>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-4"><h3 className="font-bold text-lg flex items-center gap-2"><Clock className={t.accent} size={20}/> Agenda de Hoy</h3><div className="space-y-2">{todaysAppointments.length === 0 ? (<div className="p-10 border border-dashed border-white/10 rounded-3xl text-center opacity-50 flex flex-col items-center gap-4"><p>No tienes pacientes hoy.</p><Button theme={themeMode} onClick={()=>setModal('appt')}>Agendar Cita</Button></div>) : (todaysAppointments.map(a => (<div key={a.id} className={`flex items-center gap-4 p-4 rounded-2xl border border-white/5 ${t.card} hover:scale-[1.01] transition-transform`}><div className={`p-4 rounded-xl font-black text-white ${t.accentBg}`}>{a.time}</div><div className="flex-1"><h4 className="font-bold text-lg">{a.name}</h4><p className="text-xs opacity-50">{a.treatment}</p></div><button className="p-3 bg-white/5 rounded-xl hover:bg-white/10"><ArrowRight size={16}/></button></div>)))}</div></div>
                 <div className="space-y-6"><h3 className="font-bold text-lg">Accesos Rápidos</h3><div className="grid grid-cols-2 gap-3"><button onClick={()=>setModal('appt')} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><CalendarClock size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Agendar</span></button><button onClick={()=>{setActiveTab('ficha'); setSelectedPatientId(null); setSearchTerm('');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><User size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Paciente</span></button>{userRole !== 'dentist' && <button onClick={()=>{setActiveTab('quote'); setQuoteMode('calc');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><Calculator size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Cotizar</span></button>}{(userRole === 'admin' || userRole === 'assistant') && <button onClick={()=>{setActiveTab('history');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><Wallet size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Caja</span></button>}</div></div>
@@ -570,13 +543,60 @@ export default function App() {
             </div>
         </div>)}{!appt && <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"><Plus size={14} className="opacity-50"/></div>}</div>) })}</React.Fragment>))}</div></div></div>}
         {activeTab === 'ficha' && !selectedPatientId && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex gap-2"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => { if(p.id==='new') { const newId = p.name.trim().toLowerCase(); savePatientData(newId, getPatient(newId)); setSelectedPatientId(newId); } else { setSelectedPatientId(p.id); } }} placeholder="Buscar o Crear Paciente..." /></div><div className="grid gap-2">{Object.keys(patientRecords).map(k=>(<Card key={k} theme={themeMode} onClick={()=>setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center"><span className="font-bold capitalize">{k}</span><ArrowRight size={14}/></Card>))}</div></div>}
-        
-        {activeTab === 'ficha' && selectedPatientId && <div className="space-y-4 animate-in slide-in-from-right"><button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart}, {id:'evolution', label:'Evolución', icon: FileText}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>(<button key={b.id} onClick={()=>setPatientTab(b.id)} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap ${patientTab===b.id?t.accentBg:'bg-white/5'}`}>{b.label}</button>))}</div>{patientTab === 'personal' && <Card theme={themeMode} className="space-y-4"><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Completo" value={getPatient(selectedPatientId).personal.legalName} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, legalName: e.target.value}})} /><InputField theme={themeMode} label="RUT / DNI" value={getPatient(selectedPatientId).personal.rut} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, rut: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Email" icon={Mail} value={getPatient(selectedPatientId).personal.email} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, email: e.target.value}})} /><div className="flex items-end gap-2"><InputField theme={themeMode} label="Teléfono" icon={Phone} value={getPatient(selectedPatientId).personal.phone} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, phone: e.target.value}})} />{getPatient(selectedPatientId).personal.phone && <button onClick={()=>sendWhatsApp(getPatient(selectedPatientId).personal.phone, "Hola, me comunico de ShiningCloud Dental.")} className="p-3 bg-emerald-500 rounded-xl text-white mb-[2px]"><MessageCircle size={18}/></button>}</div></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, birthDate: e.target.value}})} /><InputField theme={themeMode} label="Ocupación" value={getPatient(selectedPatientId).personal.occupation} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, occupation: e.target.value}})} /></div><InputField theme={themeMode} label="Dirección" icon={MapPin} value={getPatient(selectedPatientId).personal.address} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, address: e.target.value}})} /><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, city: e.target.value}})} /><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, commune: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Previsión" value={getPatient(selectedPatientId).personal.convention} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, convention: e.target.value}})} /><InputField theme={themeMode} label="Apoderado (Si aplica)" value={getPatient(selectedPatientId).personal.guardian} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, guardian: e.target.value}})} /></div></Card>}{patientTab === 'anamnesis' && <Card theme={themeMode} className="space-y-4"><InputField theme={themeMode} textarea label="Motivo Consulta" value={getPatient(selectedPatientId).anamnesis?.recent || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), anamnesis: {...getPatient(selectedPatientId).anamnesis, recent: e.target.value}})} /><InputField theme={themeMode} textarea label="Antecedentes Médicos" value={getPatient(selectedPatientId).anamnesis?.remote || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), anamnesis: {...getPatient(selectedPatientId).anamnesis, remote: e.target.value}})} /></Card>}{patientTab === 'clinical' && <Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div></Card>}{patientTab === 'perio' && <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center"><p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p><h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2><p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p></Card><Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center"><p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p><h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2><p className="text-[10px] opacity-50">O'Leary (4 caras)</p></Card></div><Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div></Card><Card theme={themeMode} className="space-y-4"><h3 className="font-bold border-b border-white/10 pb-2">Tabla de Higiene (O'Leary)</h3><div className="overflow-x-auto pb-4"><div className="flex gap-2 min-w-max">{[...TEETH_UPPER, ...TEETH_LOWER].map(t => { const p = getPatient(selectedPatientId); if(p.clinical.teeth[t]?.status === 'missing') return null; return ( <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]} onChange={(face) => { const current = p.clinical.hygiene?.[t] || {}; const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); }} /> ); })}</div></div><div className="flex gap-4 text-xs opacity-50"><span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-sm"/> Placa</span><span className="flex items-center gap-1"><div className="w-3 h-3 bg-white/10 border border-white/20 rounded-sm"/> Limpio</span></div></Card></div>}
+
+        {/* --- CONTENIDO UNIFICADO DE FICHA --- */}
+        {activeTab === 'ficha' && selectedPatientId && (
+            <div className="space-y-4 animate-in slide-in-from-right">
+                {/* 1. HEADER Y NAVEGACIÓN (Siempre visibles) */}
+                <button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button>
+                <h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2>
+                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    {[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart}, {id:'evolution', label:'Evolución', icon: FileText}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>(
+                        <button key={b.id} onClick={()=>setPatientTab(b.id)} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap ${patientTab===b.id?t.accentBg:'bg-white/5'}`}>{b.label}</button>
+                    ))}
+                </div>
+                
+                {/* 2. CONTENIDO CONDICIONAL */}
+                {patientTab === 'personal' && <Card theme={themeMode} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Completo" value={getPatient(selectedPatientId).personal.legalName} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, legalName: e.target.value}})} /><InputField theme={themeMode} label="RUT / DNI" value={getPatient(selectedPatientId).personal.rut} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, rut: e.target.value}})} /></div>
+                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Email" icon={Mail} value={getPatient(selectedPatientId).personal.email} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, email: e.target.value}})} />
+                    <div className="flex items-end gap-2">
+                        <InputField theme={themeMode} label="Teléfono" icon={Phone} value={getPatient(selectedPatientId).personal.phone} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, phone: e.target.value}})} />
+                        {getPatient(selectedPatientId).personal.phone && <button onClick={()=>sendWhatsApp(getPatient(selectedPatientId).personal.phone, "Hola, me comunico de ShiningCloud Dental.")} className="p-3 bg-emerald-500 rounded-xl text-white mb-[2px]"><MessageCircle size={18}/></button>}
+                    </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, birthDate: e.target.value}})} /><InputField theme={themeMode} label="Ocupación" value={getPatient(selectedPatientId).personal.occupation} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, occupation: e.target.value}})} /></div><InputField theme={themeMode} label="Dirección" icon={MapPin} value={getPatient(selectedPatientId).personal.address} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, address: e.target.value}})} /><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, city: e.target.value}})} /><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, commune: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Previsión" value={getPatient(selectedPatientId).personal.convention} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, convention: e.target.value}})} /><InputField theme={themeMode} label="Apoderado (Si aplica)" value={getPatient(selectedPatientId).personal.guardian} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, guardian: e.target.value}})} /></div>
+                </Card>}
+                {patientTab === 'anamnesis' && <Card theme={themeMode} className="space-y-4">
+                    {/* V75: ANAMNESIS TOGGLES */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {ANAMNESIS_TAGS.map(tag => {
+                            const isActive = getPatient(selectedPatientId).anamnesis?.conditions?.[tag];
+                            return (
+                                <button 
+                                    key={tag}
+                                    onClick={() => {
+                                        const p = getPatient(selectedPatientId);
+                                        const newConditions = { ...p.anamnesis.conditions, [tag]: !isActive };
+                                        savePatientData(selectedPatientId, { ...p, anamnesis: { ...p.anamnesis, conditions: newConditions } });
+                                    }}
+                                    className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${isActive ? 'bg-red-500 border-red-500 text-white' : 'bg-white/5 border-white/10 text-stone-400 hover:border-white/30'}`}
+                                >
+                                    {tag}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <InputField theme={themeMode} textarea label="Motivo Consulta" value={getPatient(selectedPatientId).anamnesis?.recent || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), anamnesis: {...getPatient(selectedPatientId).anamnesis, recent: e.target.value}})} />
+                    <InputField theme={themeMode} textarea label="Antecedentes Médicos" value={getPatient(selectedPatientId).anamnesis?.remote || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), anamnesis: {...getPatient(selectedPatientId).anamnesis, remote: e.target.value}})} />
+                </Card>}
+                {patientTab === 'clinical' && <Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div></Card>}
+                {patientTab === 'perio' && <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center"><p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p><h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2><p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p></Card><Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center"><p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p><h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2><p className="text-[10px] opacity-50">O'Leary (4 caras)</p></Card></div><Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div></Card><Card theme={themeMode} className="space-y-4"><h3 className="font-bold border-b border-white/10 pb-2">Tabla de Higiene (O'Leary)</h3><div className="overflow-x-auto pb-4"><div className="flex gap-2 min-w-max">{[...TEETH_UPPER, ...TEETH_LOWER].map(t => { const p = getPatient(selectedPatientId); if(p.clinical.teeth[t]?.status === 'missing') return null; return ( <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]} onChange={(face) => { const current = p.clinical.hygiene?.[t] || {}; const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); }} /> ); })}</div></div><div className="flex gap-4 text-xs opacity-50"><span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-sm"/> Placa</span><span className="flex items-center gap-1"><div className="w-3 h-3 bg-white/10 border border-white/20 rounded-sm"/> Limpio</span></div></Card></div>}
                 {patientTab === 'evolution' && <div className="space-y-2"><div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}><textarea rows="3" placeholder="Escribir evolución..." className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`} value={newEvolution} onChange={e=>setNewEvolution(e.target.value)} /><div className="flex flex-col items-center gap-1"><button onClick={toggleVoice} className={`p-2 rounded-full transition-all ${isListening ? 'bg-red-500 animate-pulse text-white' : 'text-stone-400 hover:text-cyan-400'}`}>{isListening ? <MicOff size={18}/> : <Mic size={18}/>}</button></div></div>{voiceStatus && <p className="text-[10px] text-right opacity-60 animate-pulse font-bold">{voiceStatus}</p>}<Button theme={themeMode} className="w-full" onClick={()=>{ const p=getPatient(selectedPatientId); const n={id:Date.now(), text:newEvolution, date:new Date().toLocaleDateString()}; savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, evolution: [n, ...(p.clinical.evolution||[])]}}); setNewEvolution(''); }}>GUARDAR</Button>{getPatient(selectedPatientId).clinical.evolution?.map(ev=>(<Card key={ev.id} theme={themeMode} className="py-3 text-xs"><div className="flex justify-between font-bold text-cyan-500 mb-1"><span>{ev.date}</span></div><p>{ev.text}</p></Card>))}</div>}
                 {patientTab === 'consent' && <div className="space-y-4">{modal === 'sign' ? (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">{CONSENT_TEMPLATES[consentTemplate].title}</h3><textarea className="w-full h-48 bg-black/20 p-4 rounded-xl text-sm leading-relaxed outline-none border border-white/10 focus:border-emerald-500 transition-colors resize-none text-white" value={consentText} onChange={(e)=>setConsentText(e.target.value)} /><SignaturePad theme={themeMode} onSave={(sig)=>{ const p=getPatient(selectedPatientId); savePatientData(selectedPatientId, {...p, consents:[{id:Date.now(), type:CONSENT_TEMPLATES[consentTemplate].title, text:consentText, signature:sig}, ...(p.consents||[])]}); setModal(null); }} onCancel={()=>setModal(null)}/></Card>) : (<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{Object.entries(CONSENT_TEMPLATES).map(([key, tpl]) => (<Card key={key} onClick={()=>{setConsentTemplate(key); setConsentText(tpl.text); setModal('sign');}} theme={themeMode} className="cursor-pointer hover:border-emerald-500 hover:scale-[1.02] transition-transform"><FileSignature className="text-emerald-500 mb-2"/><span className="font-bold text-sm block">{tpl.title}</span></Card>))}</div>)}<h3 className="font-bold pt-4 border-t border-white/10 mt-4">Historial</h3><div className="space-y-2">{(getPatient(selectedPatientId).consents || []).map(c => (<Card key={c.id} theme={themeMode} className="flex justify-between items-center py-3"><div><p className="font-bold text-sm">{c.type}</p><p className="text-[10px] opacity-50">{c.date}</p></div><div className="flex items-center gap-3"><div className="bg-white p-1 rounded"><img src={c.signature} className="h-8 object-contain" alt="Firma"/></div><button onClick={()=>generatePDF('consent', c)} className={`p-2 rounded-xl ${t.inputBg} hover:opacity-80`}><Printer size={16}/></button></div></Card>))}</div></div>}
                 {patientTab === 'images' && <div className="space-y-6"><div className="flex items-center justify-center border-2 border-dashed border-white/10 rounded-3xl p-10 relative group hover:bg-white/5 transition-colors cursor-pointer"><input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={handleImageUpload} disabled={uploading}/>{uploading ? <Loader className="animate-spin text-cyan-400" size={30}/> : <div className="text-center"><Upload className="mx-auto mb-2 opacity-30"/><span className="text-xs font-bold opacity-50 uppercase tracking-widest">Subir Imagen</span></div>}</div><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{getPatient(selectedPatientId).images?.map(img => (<div key={img.id} className="relative group rounded-2xl overflow-hidden aspect-square border border-white/5"><img src={img.url} className="w-full h-full object-cover cursor-pointer" onClick={()=>setSelectedImg(img.url)}/><button onClick={async()=>{ const p=getPatient(selectedPatientId); const f = p.images.filter(i=>i.id!==img.id); await savePatientData(selectedPatientId, {...p, images:f}); notify("Eliminado"); }} className="absolute top-2 right-2 p-2 bg-red-500 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14}/></button></div>))}</div></div>}
             </div>
-        }
+        )}
 
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <Card theme={themeMode} className="space-y-4"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={setRxPatient} placeholder="Seleccionar Paciente para Receta..." />{rxPatient && (<div className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 animate-in fade-in"><div className={`w-12 h-12 rounded-full ${t.accentBg} flex items-center justify-center font-bold text-white`}>{rxPatient.personal.legalName[0]}</div><div><p className="font-bold">{rxPatient.personal.legalName}</p><p className="text-xs opacity-60">RUT: {rxPatient.personal.rut}</p></div></div>)}<div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><Button theme={themeMode} onClick={()=>{setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}><Plus/></Button></div>{prescription.map((p,i)=>(<div key={i} className="p-3 bg-white/5 rounded-xl flex justify-between text-xs"><span>{p.name} - {p.dosage}</span><X size={14} onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}/></div>))}<Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx', rxPatient)}><Printer/> GENERAR PDF</Button></Card>}
