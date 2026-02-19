@@ -11,7 +11,7 @@ import {
   Activity, Check, FileQuestion, Camera, Lock, Printer, LogOut,
   ArrowRight, Star, Droplets, FileBarChart, MapPin, Phone, AlertCircle,
   ChevronLeft, ChevronRight, Users, Clock, DollarSign, PenTool, FileSignature, Edit3, Loader, TrendingDown, CreditCard, Banknote, Box, Minus, AlertTriangle, Shield, Mic, MicOff, MessageCircle,
-  BarChart2, PieChart
+  BarChart2, PieChart, EyeOff, FileLock
 } from 'lucide-react';
 import { supabase } from './supabase';
 
@@ -30,33 +30,18 @@ const THEMES = {
   blue: { bg: 'bg-[#0a192f]', text: 'text-white', card: 'bg-[#112240]/90 border-cyan-500/20 shadow-cyan-900/20 shadow-2xl', accent: 'text-cyan-400', accentBg: 'bg-cyan-500', inputBg: 'bg-[#1d2d50] border-transparent focus-within:border-cyan-400', subText: 'text-slate-400', gradient: 'bg-gradient-to-br from-cyan-400 to-blue-600', buttonSecondary: 'bg-white/5 border-white/10 text-cyan-400' }
 };
 
-// --- COMPONENTES UI GRÁFICOS (V75) ---
+// --- COMPONENTES UI GRÁFICOS ---
 const SimpleLineChart = ({ data, theme }) => {
     if (!data || data.length < 2) return <div className="h-32 flex items-center justify-center text-xs opacity-30">Faltan datos para graficar</div>;
     const maxVal = Math.max(...data.map(d => d.value));
-    const points = data.map((d, i) => {
-        const x = (i / (data.length - 1)) * 100;
-        const y = 100 - ((d.value / maxVal) * 100);
-        return `${x},${y}`;
-    }).join(' ');
-    const t = THEMES[theme] || THEMES.dark;
+    const points = data.map((d, i) => { const x = (i / (data.length - 1)) * 100; const y = 100 - ((d.value / maxVal) * 100); return `${x},${y}`; }).join(' ');
     const color = theme === 'admin' ? '#10b981' : (theme === 'blue' ? '#22d3ee' : '#fbbf24');
     return (
         <div className="h-32 w-full flex items-end gap-1 relative pt-4">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
-                <defs>
-                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={color} stopOpacity="0.5" />
-                        <stop offset="100%" stopColor={color} stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-                <path d={`M0,100 ${points} 100,100`} fill="url(#chartGradient)" />
-                <polyline fill="none" stroke={color} strokeWidth="2" points={points} vectorEffect="non-scaling-stroke" />
-                {data.map((d, i) => {
-                     const x = (i / (data.length - 1)) * 100;
-                     const y = 100 - ((d.value / maxVal) * 100);
-                     return <circle key={i} cx={x} cy={y} r="1.5" fill="#fff" stroke={color} />;
-                })}
+                <defs><linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.5" /><stop offset="100%" stopColor={color} stopOpacity="0" /></linearGradient></defs>
+                <path d={`M0,100 ${points} 100,100`} fill="url(#chartGradient)" /><polyline fill="none" stroke={color} strokeWidth="2" points={points} vectorEffect="non-scaling-stroke" />
+                {data.map((d, i) => { const x = (i / (data.length - 1)) * 100; const y = 100 - ((d.value / maxVal) * 100); return <circle key={i} cx={x} cy={y} r="1.5" fill="#fff" stroke={color} />; })}
             </svg>
         </div>
     );
@@ -215,6 +200,21 @@ export default function App() {
     load();
   }, [session]);
 
+  // --- V76: SISTEMA DE AUDITORÍA ---
+  const logAction = async (action, details, patientId = null) => {
+      try {
+          await supabase.from('audit_logs').insert({
+              user_email: session.user.email,
+              action: action,
+              patient_id: patientId,
+              details: details,
+              timestamp: new Date().toISOString()
+          });
+      } catch (error) {
+          console.error("Error creating audit log", error);
+      }
+  };
+
   const notify = (m) => { setNotification(m); setTimeout(() => setNotification(''), 3000); };
   const toggleTheme = () => { const modes = ['dark', 'light', 'blue']; const next = modes[(modes.indexOf(themeMode) + 1) % modes.length]; setThemeMode(next); localStorage.setItem('sc_theme_mode', next); };
   const saveToSupabase = async (t, id, d) => { await supabase.from(t).upsert({ id: id.toString(), data: d }); };
@@ -231,7 +231,13 @@ export default function App() {
       };
   };
 
-  const savePatientData = async (id, d) => { setPatientRecords(prev => ({...prev, [id]: d})); await saveToSupabase('patients', id, d); };
+  const savePatientData = async (id, d) => { 
+      setPatientRecords(prev => ({...prev, [id]: d})); 
+      await saveToSupabase('patients', id, d);
+      // V76: Log de auditoría
+      logAction('UPDATE_PATIENT', { patientName: d.personal.legalName }, id);
+  };
+
   const handleLogoUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { const newConfig = { ...config, logo: reader.result }; setConfigLocal(newConfig); saveToSupabase('settings', 'general', newConfig); notify("Logo Actualizado"); }; reader.readAsDataURL(file); };
 
   const currentTotal = useMemo(() => { const time = parseFloat(sessionData.clinicalTime) || 0; const base = parseFloat(sessionData.baseCost) || 0; const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0; return Math.round(((hourly / 60) * time + base) / (1 - margin / 100)); }, [sessionData, config]);
@@ -254,6 +260,7 @@ export default function App() {
         const updatedImages = [...(p.images || []), { id: Date.now(), url: publicUrl, date: new Date().toLocaleDateString() }];
         await savePatientData(selectedPatientId, { ...p, images: updatedImages });
         notify("Imagen Subida");
+        logAction('UPLOAD_IMAGE', { fileName }, selectedPatientId); // V76
     } catch (err) { alert(`Error: ${err.message}`); } finally { setUploading(false); }
   };
 
@@ -303,6 +310,7 @@ export default function App() {
           if(data.signature) { try { doc.addImage(data.signature, 'PNG', 80, 200, 50, 30); } catch(e) { console.warn("Firma error", e); } } 
       }
       doc.save(`${type}_${pName}.pdf`); notify("PDF Generado"); 
+      logAction('GENERATE_PDF', { type }, selectedPatientId); // V76
     } catch (e) { console.error(e); alert("Error generando PDF."); }
   };
 
@@ -543,47 +551,17 @@ export default function App() {
             </div>
         </div>)}{!appt && <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"><Plus size={14} className="opacity-50"/></div>}</div>) })}</React.Fragment>))}</div></div></div>}
         {activeTab === 'ficha' && !selectedPatientId && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex gap-2"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => { if(p.id==='new') { const newId = p.name.trim().toLowerCase(); savePatientData(newId, getPatient(newId)); setSelectedPatientId(newId); } else { setSelectedPatientId(p.id); } }} placeholder="Buscar o Crear Paciente..." /></div><div className="grid gap-2">{Object.keys(patientRecords).map(k=>(<Card key={k} theme={themeMode} onClick={()=>setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center"><span className="font-bold capitalize">{k}</span><ArrowRight size={14}/></Card>))}</div></div>}
-
-        {/* --- CONTENIDO UNIFICADO DE FICHA --- */}
-        {activeTab === 'ficha' && selectedPatientId && (
-            <div className="space-y-4 animate-in slide-in-from-right">
-                {/* 1. HEADER Y NAVEGACIÓN (Siempre visibles) */}
-                <button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button>
-                <h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2>
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    {[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart}, {id:'evolution', label:'Evolución', icon: FileText}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>(
-                        <button key={b.id} onClick={()=>setPatientTab(b.id)} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap ${patientTab===b.id?t.accentBg:'bg-white/5'}`}>{b.label}</button>
-                    ))}
-                </div>
-                
-                {/* 2. CONTENIDO CONDICIONAL */}
-                {patientTab === 'personal' && <Card theme={themeMode} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Completo" value={getPatient(selectedPatientId).personal.legalName} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, legalName: e.target.value}})} /><InputField theme={themeMode} label="RUT / DNI" value={getPatient(selectedPatientId).personal.rut} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, rut: e.target.value}})} /></div>
-                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Email" icon={Mail} value={getPatient(selectedPatientId).personal.email} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, email: e.target.value}})} />
-                    <div className="flex items-end gap-2">
-                        <InputField theme={themeMode} label="Teléfono" icon={Phone} value={getPatient(selectedPatientId).personal.phone} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, phone: e.target.value}})} />
-                        {getPatient(selectedPatientId).personal.phone && <button onClick={()=>sendWhatsApp(getPatient(selectedPatientId).personal.phone, "Hola, me comunico de ShiningCloud Dental.")} className="p-3 bg-emerald-500 rounded-xl text-white mb-[2px]"><MessageCircle size={18}/></button>}
-                    </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, birthDate: e.target.value}})} /><InputField theme={themeMode} label="Ocupación" value={getPatient(selectedPatientId).personal.occupation} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, occupation: e.target.value}})} /></div><InputField theme={themeMode} label="Dirección" icon={MapPin} value={getPatient(selectedPatientId).personal.address} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, address: e.target.value}})} /><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, city: e.target.value}})} /><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, commune: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Previsión" value={getPatient(selectedPatientId).personal.convention} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, convention: e.target.value}})} /><InputField theme={themeMode} label="Apoderado (Si aplica)" value={getPatient(selectedPatientId).personal.guardian} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, guardian: e.target.value}})} /></div>
-                </Card>}
+        
+        {activeTab === 'ficha' && selectedPatientId && <div className="space-y-4 animate-in slide-in-from-right"><button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion, restricted: true}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>{
+            if (userRole === 'assistant' && b.restricted) return null; // V76: Role Protection
+            return (<button key={b.id} onClick={()=>setPatientTab(b.id)} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap ${patientTab===b.id?t.accentBg:'bg-white/5'}`}>{b.label}</button>)
+        })}</div>{patientTab === 'personal' && <Card theme={themeMode} className="space-y-4"><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Completo" value={getPatient(selectedPatientId).personal.legalName} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, legalName: e.target.value}})} /><InputField theme={themeMode} label="RUT / DNI" value={getPatient(selectedPatientId).personal.rut} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, rut: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Email" icon={Mail} value={getPatient(selectedPatientId).personal.email} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, email: e.target.value}})} /><div className="flex items-end gap-2"><InputField theme={themeMode} label="Teléfono" icon={Phone} value={getPatient(selectedPatientId).personal.phone} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, phone: e.target.value}})} />{getPatient(selectedPatientId).personal.phone && <button onClick={()=>sendWhatsApp(getPatient(selectedPatientId).personal.phone, "Hola, me comunico de ShiningCloud Dental.")} className="p-3 bg-emerald-500 rounded-xl text-white mb-[2px]"><MessageCircle size={18}/></button>}</div></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, birthDate: e.target.value}})} /><InputField theme={themeMode} label="Ocupación" value={getPatient(selectedPatientId).personal.occupation} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, occupation: e.target.value}})} /></div><InputField theme={themeMode} label="Dirección" icon={MapPin} value={getPatient(selectedPatientId).personal.address} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, address: e.target.value}})} /><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, city: e.target.value}})} /><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, commune: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Previsión" value={getPatient(selectedPatientId).personal.convention} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, convention: e.target.value}})} /><InputField theme={themeMode} label="Apoderado (Si aplica)" value={getPatient(selectedPatientId).personal.guardian} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, guardian: e.target.value}})} /></div></Card>}
                 {patientTab === 'anamnesis' && <Card theme={themeMode} className="space-y-4">
-                    {/* V75: ANAMNESIS TOGGLES */}
                     <div className="flex flex-wrap gap-2 mb-4">
                         {ANAMNESIS_TAGS.map(tag => {
                             const isActive = getPatient(selectedPatientId).anamnesis?.conditions?.[tag];
                             return (
-                                <button 
-                                    key={tag}
-                                    onClick={() => {
-                                        const p = getPatient(selectedPatientId);
-                                        const newConditions = { ...p.anamnesis.conditions, [tag]: !isActive };
-                                        savePatientData(selectedPatientId, { ...p, anamnesis: { ...p.anamnesis, conditions: newConditions } });
-                                    }}
-                                    className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${isActive ? 'bg-red-500 border-red-500 text-white' : 'bg-white/5 border-white/10 text-stone-400 hover:border-white/30'}`}
-                                >
-                                    {tag}
-                                </button>
+                                <button key={tag} onClick={() => { const p = getPatient(selectedPatientId); const newConditions = { ...p.anamnesis.conditions, [tag]: !isActive }; savePatientData(selectedPatientId, { ...p, anamnesis: { ...p.anamnesis, conditions: newConditions } }); }} className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${isActive ? 'bg-red-500 border-red-500 text-white' : 'bg-white/5 border-white/10 text-stone-400 hover:border-white/30'}`}>{tag}</button>
                             );
                         })}
                     </div>
@@ -592,11 +570,48 @@ export default function App() {
                 </Card>}
                 {patientTab === 'clinical' && <Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div></Card>}
                 {patientTab === 'perio' && <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center"><p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p><h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2><p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p></Card><Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center"><p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p><h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2><p className="text-[10px] opacity-50">O'Leary (4 caras)</p></Card></div><Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div></Card><Card theme={themeMode} className="space-y-4"><h3 className="font-bold border-b border-white/10 pb-2">Tabla de Higiene (O'Leary)</h3><div className="overflow-x-auto pb-4"><div className="flex gap-2 min-w-max">{[...TEETH_UPPER, ...TEETH_LOWER].map(t => { const p = getPatient(selectedPatientId); if(p.clinical.teeth[t]?.status === 'missing') return null; return ( <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]} onChange={(face) => { const current = p.clinical.hygiene?.[t] || {}; const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); }} /> ); })}</div></div><div className="flex gap-4 text-xs opacity-50"><span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-sm"/> Placa</span><span className="flex items-center gap-1"><div className="w-3 h-3 bg-white/10 border border-white/20 rounded-sm"/> Limpio</span></div></Card></div>}
-                {patientTab === 'evolution' && <div className="space-y-2"><div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}><textarea rows="3" placeholder="Escribir evolución..." className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`} value={newEvolution} onChange={e=>setNewEvolution(e.target.value)} /><div className="flex flex-col items-center gap-1"><button onClick={toggleVoice} className={`p-2 rounded-full transition-all ${isListening ? 'bg-red-500 animate-pulse text-white' : 'text-stone-400 hover:text-cyan-400'}`}>{isListening ? <MicOff size={18}/> : <Mic size={18}/>}</button></div></div>{voiceStatus && <p className="text-[10px] text-right opacity-60 animate-pulse font-bold">{voiceStatus}</p>}<Button theme={themeMode} className="w-full" onClick={()=>{ const p=getPatient(selectedPatientId); const n={id:Date.now(), text:newEvolution, date:new Date().toLocaleDateString()}; savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, evolution: [n, ...(p.clinical.evolution||[])]}}); setNewEvolution(''); }}>GUARDAR</Button>{getPatient(selectedPatientId).clinical.evolution?.map(ev=>(<Card key={ev.id} theme={themeMode} className="py-3 text-xs"><div className="flex justify-between font-bold text-cyan-500 mb-1"><span>{ev.date}</span></div><p>{ev.text}</p></Card>))}</div>}
+                
+                {/* V76: EVOLUTION TAB - SECURE (READ ONLY HISTORY) */}
+                {patientTab === 'evolution' && <div className="space-y-2">
+                    <div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>
+                        <textarea rows="3" placeholder="Escribir nueva evolución (No editable después de guardar)..." className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`} value={newEvolution} onChange={e=>setNewEvolution(e.target.value)} />
+                        <div className="flex flex-col items-center gap-1">
+                            <button onClick={toggleVoice} className={`p-2 rounded-full transition-all ${isListening ? 'bg-red-500 animate-pulse text-white' : 'text-stone-400 hover:text-cyan-400'}`}>
+                                {isListening ? <MicOff size={18}/> : <Mic size={18}/>}
+                            </button>
+                        </div>
+                    </div>
+                    {voiceStatus && <p className="text-[10px] text-right opacity-60 animate-pulse font-bold">{voiceStatus}</p>}
+                    <Button theme={themeMode} className="w-full" onClick={()=>{ 
+                        if (!newEvolution.trim()) return;
+                        const p=getPatient(selectedPatientId); 
+                        // V76: Integridad - Nueva evolución se añade al principio, nunca se reemplaza el array
+                        const n={id:Date.now(), text:newEvolution, date:new Date().toLocaleString(), author: session.user.email}; 
+                        savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, evolution: [n, ...(p.clinical.evolution||[])]}}); 
+                        setNewEvolution(''); 
+                        logAction('ADD_EVOLUTION', { text_preview: newEvolution.substring(0,20) }, selectedPatientId);
+                    }}>GUARDAR Y BLOQUEAR</Button>
+                    
+                    <div className="space-y-2 mt-4">
+                        {getPatient(selectedPatientId).clinical.evolution?.map(ev=>(
+                            <div key={ev.id} className={`p-4 rounded-xl border border-white/5 relative ${t.card}`}>
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <FileLock size={14} className="text-emerald-500"/>
+                                        <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{ev.date}</span>
+                                    </div>
+                                    <span className="text-[9px] opacity-30">{ev.author}</span>
+                                </div>
+                                <p className="text-sm leading-relaxed">{ev.text}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>}
+
                 {patientTab === 'consent' && <div className="space-y-4">{modal === 'sign' ? (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">{CONSENT_TEMPLATES[consentTemplate].title}</h3><textarea className="w-full h-48 bg-black/20 p-4 rounded-xl text-sm leading-relaxed outline-none border border-white/10 focus:border-emerald-500 transition-colors resize-none text-white" value={consentText} onChange={(e)=>setConsentText(e.target.value)} /><SignaturePad theme={themeMode} onSave={(sig)=>{ const p=getPatient(selectedPatientId); savePatientData(selectedPatientId, {...p, consents:[{id:Date.now(), type:CONSENT_TEMPLATES[consentTemplate].title, text:consentText, signature:sig}, ...(p.consents||[])]}); setModal(null); }} onCancel={()=>setModal(null)}/></Card>) : (<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{Object.entries(CONSENT_TEMPLATES).map(([key, tpl]) => (<Card key={key} onClick={()=>{setConsentTemplate(key); setConsentText(tpl.text); setModal('sign');}} theme={themeMode} className="cursor-pointer hover:border-emerald-500 hover:scale-[1.02] transition-transform"><FileSignature className="text-emerald-500 mb-2"/><span className="font-bold text-sm block">{tpl.title}</span></Card>))}</div>)}<h3 className="font-bold pt-4 border-t border-white/10 mt-4">Historial</h3><div className="space-y-2">{(getPatient(selectedPatientId).consents || []).map(c => (<Card key={c.id} theme={themeMode} className="flex justify-between items-center py-3"><div><p className="font-bold text-sm">{c.type}</p><p className="text-[10px] opacity-50">{c.date}</p></div><div className="flex items-center gap-3"><div className="bg-white p-1 rounded"><img src={c.signature} className="h-8 object-contain" alt="Firma"/></div><button onClick={()=>generatePDF('consent', c)} className={`p-2 rounded-xl ${t.inputBg} hover:opacity-80`}><Printer size={16}/></button></div></Card>))}</div></div>}
                 {patientTab === 'images' && <div className="space-y-6"><div className="flex items-center justify-center border-2 border-dashed border-white/10 rounded-3xl p-10 relative group hover:bg-white/5 transition-colors cursor-pointer"><input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={handleImageUpload} disabled={uploading}/>{uploading ? <Loader className="animate-spin text-cyan-400" size={30}/> : <div className="text-center"><Upload className="mx-auto mb-2 opacity-30"/><span className="text-xs font-bold opacity-50 uppercase tracking-widest">Subir Imagen</span></div>}</div><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{getPatient(selectedPatientId).images?.map(img => (<div key={img.id} className="relative group rounded-2xl overflow-hidden aspect-square border border-white/5"><img src={img.url} className="w-full h-full object-cover cursor-pointer" onClick={()=>setSelectedImg(img.url)}/><button onClick={async()=>{ const p=getPatient(selectedPatientId); const f = p.images.filter(i=>i.id!==img.id); await savePatientData(selectedPatientId, {...p, images:f}); notify("Eliminado"); }} className="absolute top-2 right-2 p-2 bg-red-500 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14}/></button></div>))}</div></div>}
             </div>
-        )}
+        }
 
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <Card theme={themeMode} className="space-y-4"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={setRxPatient} placeholder="Seleccionar Paciente para Receta..." />{rxPatient && (<div className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 animate-in fade-in"><div className={`w-12 h-12 rounded-full ${t.accentBg} flex items-center justify-center font-bold text-white`}>{rxPatient.personal.legalName[0]}</div><div><p className="font-bold">{rxPatient.personal.legalName}</p><p className="text-xs opacity-60">RUT: {rxPatient.personal.rut}</p></div></div>)}<div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><Button theme={themeMode} onClick={()=>{setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}><Plus/></Button></div>{prescription.map((p,i)=>(<div key={i} className="p-3 bg-white/5 rounded-xl flex justify-between text-xs"><span>{p.name} - {p.dosage}</span><X size={14} onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}/></div>))}<Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx', rxPatient)}><Printer/> GENERAR PDF</Button></Card>}
