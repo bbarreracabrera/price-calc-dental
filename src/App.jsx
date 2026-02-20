@@ -782,6 +782,7 @@ export default function App() {
     if (p.id === 'new') {
         const newId = "pac_" + Date.now().toString();
         const newPatient = getPatient(newId);
+        newPatient.name = p.name;
         newPatient.personal.legalName = p.name;
         savePatientData(newId, newPatient);
         setSessionData({...sessionData, patientName: p.name, patientId: newId});
