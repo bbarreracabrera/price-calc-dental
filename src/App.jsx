@@ -227,12 +227,23 @@ export default function App() {
       const { data: i, error } = await supabase.from('inventory').select('*');
       if (!error && i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
       
+      // --- CARGA DE EQUIPO SEGURA (V77) ---
       const { data: t, error: tErr } = await supabase.from('team').select('*');
       if (!tErr && t) {
-          const teamData = t.map(r => ({...r.data, id: r.id}));
-          setTeam(teamData);
-          const me = teamData.find(u => u.email === session.user.email);
-          if (teamData.length === 0 || !me) setUserRole('admin'); 
+          const allTeamData = t.map(r => ({...r.data, id: r.id}));
+          
+          // 1. Ver si el usuario actual fue agregado por algún administrador
+          const me = allTeamData.find(u => u.email === session.user.email);
+          
+          // 2. Definir quién es el dueño de la clínica (Si soy admin, soy yo. Si soy asistente, es mi jefe)
+          const myClinicAdmin = me ? me.admin_email : session.user.email;
+          
+          // 3. Filtrar para ver SOLO al equipo de esta clínica específica
+          const myTeam = allTeamData.filter(u => u.admin_email === myClinicAdmin);
+          
+          setTeam(myTeam);
+          
+          if (myTeam.length === 0 || !me) setUserRole('admin'); 
           else setUserRole(me.role);
       } else { setUserRole('admin'); }
     };
@@ -657,7 +668,17 @@ export default function App() {
                                 )}
                                 
                                 <InputField theme={themeMode} type="number" placeholder="$ Monto Exacto" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> 
-                                <Button theme={themeMode} onClick={async()=>{ if(newExpense.description && newExpense.amount){ const id = Date.now().toString(); const expenseData = { ...newExpense, id, type: 'expense' }; setFinancialRecords([expenseData, ...financialRecords]); await saveToSupabase('financials', id, expenseData); setNewExpense({description:'', amount:'', category:'Insumos', date: new Date().toISOString().split('T')[0], patientRef: ''}); notify("Gasto Registrado"); } }}>GUARDAR EGRESO</Button>
+                                <Button theme={themeMode} onClick={async()=>{ 
+    if(newMember.email && newMember.name){ 
+        const id=Date.now().toString(); 
+        // Le pegamos la etiqueta de a qué clínica pertenece (el correo del admin)
+        const u={...newMember, id, admin_email: session.user.email}; 
+        setTeam([...team, u]); 
+        await saveToSupabase('team', id, u); 
+        setNewMember({name:'', email:'', role:'dentist'}); 
+        notify("Usuario Agregado"); 
+    } 
+}}><Plus/></Button>
                             </div>
                         </Card>
                         
