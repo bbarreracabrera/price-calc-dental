@@ -170,6 +170,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [quoteMode, setQuoteMode] = useState('calc');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [perioData, setPerioData] = useState({});
 
   // DATA
   const [config, setConfigLocal] = useState({ logo: null, hourlyRate: 25000, profitMargin: 30, name: "Dr. Benjamín" });
@@ -781,16 +782,23 @@ export default function App() {
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='calc'?t.accentBg:'opacity-50'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='packs'?t.accentBg:'opacity-50'}`}>Packs</button></div>{quoteMode === 'calc' ? (<Card theme={themeMode} className="space-y-4"><Button theme={themeMode} variant="secondary" onClick={()=>setModal('loadPack')}>CARGAR PACK</Button><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
     if (p.id === 'new') {
         const newId = "pac_" + Date.now().toString();
+        const nombreReal = p.name;
+        
         const newPatient = getPatient(newId);
-        newPatient.name = p.name;
-        newPatient.personal.legalName = p.name;
+        newPatient.id = newId;
+        newPatient.name = nombreReal;
+        if (!newPatient.personal) newPatient.personal = {};
+        newPatient.personal.legalName = nombreReal;
+        
         savePatientData(newId, newPatient);
-        setSessionData({...sessionData, patientName: p.name, patientId: newId});
+        setSessionData({...sessionData, patientName: nombreReal, patientId: newId});
         notify("Paciente Creado Exitosamente");
     } else {
         setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id});
     }
-}} /><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} label="Minutos" type="number" value={sessionData.clinicalTime} onChange={e=>setSessionData({...sessionData, clinicalTime:e.target.value})} /><InputField theme={themeMode} label="Costos" type="number" value={sessionData.baseCost} onChange={e=>setSessionData({...sessionData, baseCost:e.target.value})} /></div><div className="text-center py-6 border-y border-white/10 my-4"><p className="text-xs opacity-50 uppercase tracking-widest mb-2">Total Estimado</p><h3 className="text-6xl font-black text-cyan-400">${currentTotal.toLocaleString()}</h3></div><div className="grid grid-cols-2 gap-2"><Button theme={themeMode} onClick={()=>{ const id=Date.now().toString(); saveToSupabase('financials', id, {id, total:currentTotal, paid:0, payments: [], patientName:sessionData.patientName, date:new Date().toLocaleDateString(), type: 'income'}); notify("Guardado en Caja"); }}>GUARDAR EN CAJA</Button><Button theme={themeMode} variant="secondary" onClick={()=>generatePDF('quote')}><Printer/></Button></div></Card>) : (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">Crear Nuevo Pack</h3><InputField theme={themeMode} label="Nombre Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})} /><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><Button theme={themeMode} onClick={()=>{if(newPackItem.name) setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}><Plus/></Button></div><div className="bg-black/20 p-4 rounded-xl space-y-2">{newPack.items.map((it, i)=>(<div key={i} className="flex justify-between text-xs border-b border-white/5 pb-1"><span>{it.name}</span><span>${it.cost}</span></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>{ const id = Date.now().toString(); const packComplete = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)}; setProtocols([...protocols, packComplete]); saveToSupabase('packs', id, packComplete); setNewPack({name:'', items:[]}); notify("Pack Guardado"); }}>GUARDAR PACK</Button></Card>)}</div>}
+        setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id});
+    }
+} /><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} label="Minutos" type="number" value={sessionData.clinicalTime} onChange={e=>setSessionData({...sessionData, clinicalTime:e.target.value})} /><InputField theme={themeMode} label="Costos" type="number" value={sessionData.baseCost} onChange={e=>setSessionData({...sessionData, baseCost:e.target.value})} /></div><div className="text-center py-6 border-y border-white/10 my-4"><p className="text-xs opacity-50 uppercase tracking-widest mb-2">Total Estimado</p><h3 className="text-6xl font-black text-cyan-400">${currentTotal.toLocaleString()}</h3></div><div className="grid grid-cols-2 gap-2"><Button theme={themeMode} onClick={()=>{ const id=Date.now().toString(); saveToSupabase('financials', id, {id, total:currentTotal, paid:0, payments: [], patientName:sessionData.patientName, date:new Date().toLocaleDateString(), type: 'income'}); notify("Guardado en Caja"); }}>GUARDAR EN CAJA</Button><Button theme={themeMode} variant="secondary" onClick={()=>generatePDF('quote')}><Printer/></Button></div></Card>) : (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">Crear Nuevo Pack</h3><InputField theme={themeMode} label="Nombre Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})} /><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><Button theme={themeMode} onClick={()=>{if(newPackItem.name) setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}><Plus/></Button></div><div className="bg-black/20 p-4 rounded-xl space-y-2">{newPack.items.map((it, i)=>(<div key={i} className="flex justify-between text-xs border-b border-white/5 pb-1"><span>{it.name}</span><span>${it.cost}</span></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>{ const id = Date.now().toString(); const packComplete = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)}; setProtocols([...protocols, packComplete]); saveToSupabase('packs', id, packComplete); setNewPack({name:'', items:[]}); notify("Pack Guardado"); }}>GUARDAR PACK</Button></Card>)}</div>}
         {/* --- AGENDA FLEXIBLE ACTUALIZADA --- */}
 {activeTab === 'agenda' && <div className="space-y-4 h-full flex flex-col">
     <div className="flex justify-between items-center mb-2">
@@ -940,8 +948,14 @@ export default function App() {
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <Card theme={themeMode} className="space-y-4"><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
     if (p.id === 'new') {
         const newId = "pac_" + Date.now().toString();
+        const nombreReal = p.name;
+        
         const newPatient = getPatient(newId);
-        newPatient.personal.legalName = p.name;
+        newPatient.id = newId;
+        newPatient.name = nombreReal;
+        if (!newPatient.personal) newPatient.personal = {};
+        newPatient.personal.legalName = nombreReal;
+        
         savePatientData(newId, newPatient);
         setRxPatient(newPatient);
         notify("Paciente Creado Exitosamente");
@@ -1102,18 +1116,22 @@ export default function App() {
             <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100"><X size={20}/></button>
         </div>
         {!newAppt.id && <PatientSelect theme="dark" patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
-            if (p.id === 'new') {
-                // Si es nuevo, lo creamos en la base de datos inmediatamente
-                const newId = "pac_" + Date.now().toString();
-                const newPatient = getPatient(newId);
-                newPatient.personal.legalName = p.name; // Respetar mayúsculas/minúsculas
-                savePatientData(newId, newPatient);
-                setNewAppt({...newAppt, name: p.name});
-                notify("Paciente Creado Exitosamente");
-            } else {
-                // Si ya existe, lo seleccionamos normal
-                setNewAppt({...newAppt, name: p.personal.legalName});
-            }
+           if (p.id === 'new') {
+        const newId = "pac_" + Date.now().toString();
+        const nombreReal = p.name;
+        
+        const newPatient = getPatient(newId);
+        newPatient.id = newId;
+        newPatient.name = nombreReal;
+        if (!newPatient.personal) newPatient.personal = {};
+        newPatient.personal.legalName = nombreReal;
+        
+        savePatientData(newId, newPatient);
+        setNewAppt({...newAppt, name: nombreReal});
+        notify("Paciente Creado Exitosamente");
+    } else {
+        setNewAppt({...newAppt, name: p.personal.legalName});
+    }
         }} />}
         
         {newAppt.id && <p className="font-bold text-lg text-cyan-400">{newAppt.name}</p>}
