@@ -1059,8 +1059,21 @@ export default function App() {
             <h3 className="font-bold text-xl">{newAppt.id ? 'Editar Cita' : 'Agendar Cita'}</h3>
             <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100"><X size={20}/></button>
         </div>
+        {!newAppt.id && <PatientSelect theme="dark" patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+            if (p.id === 'new') {
+                // Si es nuevo, lo creamos en la base de datos inmediatamente
+                const newId = p.name.trim().toLowerCase();
+                const newPatient = getPatient(newId);
+                newPatient.personal.legalName = p.name; // Respetar mayúsculas/minúsculas
+                savePatientData(newId, newPatient);
+                setNewAppt({...newAppt, name: p.name});
+                notify("Paciente Creado Exitosamente");
+            } else {
+                // Si ya existe, lo seleccionamos normal
+                setNewAppt({...newAppt, name: p.personal.legalName});
+            }
+        }} />}
         
-        {!newAppt.id && <PatientSelect theme="dark" patients={patientRecords} onSelect={(p)=>setNewAppt({...newAppt, name: p.personal.legalName})} placeholder="Buscar Paciente..." />}
         {newAppt.id && <p className="font-bold text-lg text-cyan-400">{newAppt.name}</p>}
         
         <InputField theme="dark" label="Tratamiento" value={newAppt.treatment} onChange={e=>setNewAppt({...newAppt, treatment:e.target.value})}/>
