@@ -129,11 +129,35 @@ const Card = ({ children, className = "", theme, ...props }) => { const t = THEM
 const Button = ({ onClick, children, variant = "primary", className = "", theme, disabled }) => { const t = THEMES[theme] || THEMES.dark; const styles = { primary: `${t.gradient} text-white shadow-lg`, secondary: t.buttonSecondary }; return <button disabled={disabled} onClick={onClick} className={`p-3 rounded-2xl font-bold active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 ${styles[variant]} ${className}`}>{children}</button>; };
 const InputField = ({ label, icon: Icon, theme, textarea, ...props }) => { const t = THEMES[theme] || THEMES.dark; return (<div className="w-full">{label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 ${t.subText}`}>{label}</label>}<div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>{Icon && <Icon size={16} className={`mr-2 mt-0.5 ${t.subText}`}/>}{textarea ? <textarea {...props} rows="3" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`}/> : <input {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${t.text}`}/>}</div></div>); };
 
+// 1. LA FÁBRICA DE PACIENTES (Va separada arriba)
+const getPatient = (id) => {
+    const existing = patientRecords[id];
+    if (existing) return existing;
+
+    const base = { 
+        id, 
+        personal: { legalName: "" }, 
+        anamnesis: { recent: '', remote: '', conditions: {} }, 
+        clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, 
+        consents: [], 
+        images: [] 
+    };
+    
+    return base;
+};
+
+// 2. EL BUSCADOR (El componente visual con su return arreglado)
 const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Paciente..." }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
-    const results = useMemo(() => { if (!query) return []; return Object.values(patients).filter(p => p.personal?.legalName?.toLowerCase().includes(query.toLowerCase())); }, [query, patients]);
+    
+    const results = useMemo(() => { 
+        if (!query) return []; 
+        return Object.values(patients).filter(p => p.personal?.legalName?.toLowerCase().includes(query.toLowerCase())); 
+    }, [query, patients]);
+    
     const t = THEMES[theme] || THEMES.dark;
+    
     return (
         <div className="relative w-full z-20">
             <InputField theme={theme} icon={Search} placeholder={placeholder} value={query} onChange={e => { setQuery(e.target.value); setShowResults(true); }} onFocus={() => setShowResults(true)} />
@@ -868,7 +892,51 @@ export default function App() {
         </div>
     </div>
 </div>}
-        {activeTab === 'ficha' && !selectedPatientId && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex gap-2"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => { if(p.id==='new') { const newId = "pac_" + Date.now().toString(); savePatientData(newId, getPatient(newId)); setSelectedPatientId(newId); } else { setSelectedPatientId(p.id); } }} placeholder="Buscar o Crear Paciente..." /></div><div className="grid gap-2">{Object.keys(patientRecords).map(k=>(<Card key={k} theme={themeMode} onClick={()=>setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center"><span className="font-bold capitalize">{k}</span><ArrowRight size={14}/></Card>))}</div></div>}
+        {activeTab === 'ficha' && !selectedPatientId && (
+            <div className="space-y-4 animate-in slide-in-from-bottom">
+                <div className="flex gap-2">
+                    <PatientSelect 
+                        theme={themeMode} 
+                        patients={patientRecords} 
+                        placeholder="Buscar o Crear Paciente..." 
+                        onSelect={(p) => { 
+                            if (p.id === 'new') { 
+                                let nombreReal = p.name;
+                                
+                                // Red de seguridad por si el nombre llega vacío
+                                if (!nombreReal || nombreReal.trim() === "") {
+                                    nombreReal = window.prompt("Confirma el nombre del nuevo paciente:");
+                                    if (!nombreReal) return; 
+                                }
+
+                                const newId = "pac_" + Date.now().toString(); 
+                                
+                                const newPatient = getPatient(newId);
+                                newPatient.id = newId;
+                                newPatient.name = nombreReal;
+                                if (!newPatient.personal) newPatient.personal = {};
+                                newPatient.personal.legalName = nombreReal;
+                                
+                                savePatientData(newId, newPatient); 
+                                setSelectedPatientId(newId); 
+                                notify("Paciente Creado Exitosamente");
+                            } else { 
+                                setSelectedPatientId(p.id); 
+                            } 
+                        }} 
+                    />
+                </div>
+                <div className="grid gap-2">
+                    {Object.keys(patientRecords).map(k => (
+                        <Card key={k} theme={themeMode} onClick={() => setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center">
+                            {/* EL GRAN ARREGLO VISUAL: Ahora lee el nombre real, no el ID */}
+                            <span className="font-bold capitalize">{patientRecords[k]?.personal?.legalName || 'Paciente sin nombre'}</span>
+                            <ArrowRight size={14}/>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        )}
         
         {activeTab === 'ficha' && selectedPatientId && <div className="space-y-4 animate-in slide-in-from-right"><button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion, restricted: true}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>{
             if (userRole === 'assistant' && b.restricted) return null; // V76: Role Protection
