@@ -428,17 +428,20 @@ export default function App() {
       return foundEntry?.personal?.phone || '';
   };
 
-  // --- CHART DATA GENERATION (MOCK) ---
+// --- GRÁFICO DINÁMICO DE INGRESOS ---
   const getChartData = () => {
-    // Generate dummy trend data for demo purposes (last 6 months)
-    return [
-        { label: 'Sep', value: 1500000 },
-        { label: 'Oct', value: 1800000 },
-        { label: 'Nov', value: 2100000 },
-        { label: 'Dic', value: 1900000 },
-        { label: 'Ene', value: 2400000 },
-        { label: 'Feb', value: totalCollected || 2800000 }
-    ];
+      if (incomeRecords.length === 0) return [{label: 'Ayer', value: 0}, {label: 'Hoy', value: 0}];
+      
+      // Tomamos los últimos 6 ingresos registrados para mostrar la tendencia reciente
+      const recentIncomes = [...incomeRecords].sort((a,b) => b.id - a.id).slice(0, 6).reverse();
+      
+      return recentIncomes.map(rec => {
+          const paid = (rec.payments || []).reduce((s,p)=>s+p.amount,0) + (rec.paid && !rec.payments ? rec.paid : 0);
+          return { 
+              label: rec.patientName.split(' ')[0] || 'Pac', // Muestra el primer nombre
+              value: paid > 0 ? paid : 1000 // Valor mínimo para que el gráfico no se rompa si es 0
+          };
+      });
   };
 
   // --- MENU LOGIC ---
@@ -548,7 +551,7 @@ export default function App() {
                         <PieChart size={64} className="opacity-20 mb-4"/>
                         <h3 className="font-bold text-xl">Top Tratamientos</h3>
                         <p className={`text-xs ${t.subText} mt-2 max-w-xs`}>El 60% de tus ingresos proviene de tratamientos de Ortodoncia y Limpiezas.</p>
-                        <button className="mt-4 text-xs font-bold text-blue-500 hover:underline">Ver Reporte Detallado</button>
+                        <button onClick={() => { setActiveTab('history'); setFinanceTab('ingresos'); }} className="mt-4 text-xs font-bold text-blue-500 hover:underline flex items-center gap-1 mx-auto">Ir al Centro Financiero <ArrowRight size={12}/></button>
                     </Card>
                 </div>
             )}
@@ -759,7 +762,18 @@ export default function App() {
         </div>}
 
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
-        {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='calc'?t.accentBg:'opacity-50'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='packs'?t.accentBg:'opacity-50'}`}>Packs</button></div>{quoteMode === 'calc' ? (<Card theme={themeMode} className="space-y-4"><Button theme={themeMode} variant="secondary" onClick={()=>setModal('loadPack')}>CARGAR PACK</Button><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id})} placeholder="Buscar Paciente..." /><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} label="Minutos" type="number" value={sessionData.clinicalTime} onChange={e=>setSessionData({...sessionData, clinicalTime:e.target.value})} /><InputField theme={themeMode} label="Costos" type="number" value={sessionData.baseCost} onChange={e=>setSessionData({...sessionData, baseCost:e.target.value})} /></div><div className="text-center py-6 border-y border-white/10 my-4"><p className="text-xs opacity-50 uppercase tracking-widest mb-2">Total Estimado</p><h3 className="text-6xl font-black text-cyan-400">${currentTotal.toLocaleString()}</h3></div><div className="grid grid-cols-2 gap-2"><Button theme={themeMode} onClick={()=>{ const id=Date.now().toString(); saveToSupabase('financials', id, {id, total:currentTotal, paid:0, payments: [], patientName:sessionData.patientName, date:new Date().toLocaleDateString(), type: 'income'}); notify("Guardado en Caja"); }}>GUARDAR EN CAJA</Button><Button theme={themeMode} variant="secondary" onClick={()=>generatePDF('quote')}><Printer/></Button></div></Card>) : (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">Crear Nuevo Pack</h3><InputField theme={themeMode} label="Nombre Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})} /><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><Button theme={themeMode} onClick={()=>{if(newPackItem.name) setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}><Plus/></Button></div><div className="bg-black/20 p-4 rounded-xl space-y-2">{newPack.items.map((it, i)=>(<div key={i} className="flex justify-between text-xs border-b border-white/5 pb-1"><span>{it.name}</span><span>${it.cost}</span></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>{ const id = Date.now().toString(); const packComplete = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)}; setProtocols([...protocols, packComplete]); saveToSupabase('packs', id, packComplete); setNewPack({name:'', items:[]}); notify("Pack Guardado"); }}>GUARDAR PACK</Button></Card>)}</div>}
+        {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='calc'?t.accentBg:'opacity-50'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='packs'?t.accentBg:'opacity-50'}`}>Packs</button></div>{quoteMode === 'calc' ? (<Card theme={themeMode} className="space-y-4"><Button theme={themeMode} variant="secondary" onClick={()=>setModal('loadPack')}>CARGAR PACK</Button><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+    if (p.id === 'new') {
+        const newId = p.name.trim().toLowerCase();
+        const newPatient = getPatient(newId);
+        newPatient.personal.legalName = p.name;
+        savePatientData(newId, newPatient);
+        setSessionData({...sessionData, patientName: p.name, patientId: newId});
+        notify("Paciente Creado Exitosamente");
+    } else {
+        setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id});
+    }
+}} /><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} label="Minutos" type="number" value={sessionData.clinicalTime} onChange={e=>setSessionData({...sessionData, clinicalTime:e.target.value})} /><InputField theme={themeMode} label="Costos" type="number" value={sessionData.baseCost} onChange={e=>setSessionData({...sessionData, baseCost:e.target.value})} /></div><div className="text-center py-6 border-y border-white/10 my-4"><p className="text-xs opacity-50 uppercase tracking-widest mb-2">Total Estimado</p><h3 className="text-6xl font-black text-cyan-400">${currentTotal.toLocaleString()}</h3></div><div className="grid grid-cols-2 gap-2"><Button theme={themeMode} onClick={()=>{ const id=Date.now().toString(); saveToSupabase('financials', id, {id, total:currentTotal, paid:0, payments: [], patientName:sessionData.patientName, date:new Date().toLocaleDateString(), type: 'income'}); notify("Guardado en Caja"); }}>GUARDAR EN CAJA</Button><Button theme={themeMode} variant="secondary" onClick={()=>generatePDF('quote')}><Printer/></Button></div></Card>) : (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">Crear Nuevo Pack</h3><InputField theme={themeMode} label="Nombre Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})} /><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><Button theme={themeMode} onClick={()=>{if(newPackItem.name) setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}><Plus/></Button></div><div className="bg-black/20 p-4 rounded-xl space-y-2">{newPack.items.map((it, i)=>(<div key={i} className="flex justify-between text-xs border-b border-white/5 pb-1"><span>{it.name}</span><span>${it.cost}</span></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>{ const id = Date.now().toString(); const packComplete = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)}; setProtocols([...protocols, packComplete]); saveToSupabase('packs', id, packComplete); setNewPack({name:'', items:[]}); notify("Pack Guardado"); }}>GUARDAR PACK</Button></Card>)}</div>}
         {/* --- AGENDA FLEXIBLE ACTUALIZADA --- */}
 {activeTab === 'agenda' && <div className="space-y-4 h-full flex flex-col">
     <div className="flex justify-between items-center mb-2">
@@ -1134,7 +1148,33 @@ export default function App() {
         )}
     </Card>
 </div>}
-      {modal === 'loadPack' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm h-96 flex flex-col"><h3 className="font-bold mb-4">Cargar Protocolo</h3><div className="flex-1 overflow-y-auto space-y-2">{protocols.map(pr=>(<div key={pr.id} onClick={()=>{setSessionData({...sessionData, treatmentName:pr.name, baseCost:pr.totalCost}); setModal(null); notify("Pack Cargado");}} className="p-4 bg-white/5 rounded-xl cursor-pointer hover:border-cyan-400 border border-transparent"><p className="font-bold">{pr.name}</p><p className="text-cyan-400">${pr.totalCost}</p></div>))}</div><button onClick={()=>setModal(null)} className="mt-4 text-xs opacity-50">Cerrar</button></Card></div>}
+      {/* --- MODAL CARGAR / ELIMINAR PACKS --- */}
+      {modal === 'loadPack' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+          <Card theme="dark" className="w-full max-w-sm h-96 flex flex-col">
+              <h3 className="font-bold mb-4">Protocolos Guardados</h3>
+              <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+                  {protocols.length === 0 && <p className="text-xs opacity-50 text-center mt-10">No hay packs creados.</p>}
+                  {protocols.map(pr=>(
+                      <div key={pr.id} className="p-4 bg-white/5 rounded-xl border border-transparent hover:border-cyan-500/50 flex justify-between items-center group transition-all">
+                          <div className="cursor-pointer flex-1" onClick={()=>{setSessionData({...sessionData, treatmentName:pr.name, baseCost:pr.totalCost}); setModal(null); notify("Pack Cargado");}}>
+                              <p className="font-bold text-sm">{pr.name}</p>
+                              <p className="text-cyan-400 text-xs font-black">${pr.totalCost.toLocaleString()}</p>
+                          </div>
+                          {/* Botón de Eliminar Pack */}
+                          <button onClick={async (e)=>{
+                              e.stopPropagation(); 
+                              setProtocols(protocols.filter(p=>p.id !== pr.id)); 
+                              await supabase.from('packs').delete().eq('id', pr.id); 
+                              notify("Pack Eliminado");
+                          }} className="p-2 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded-lg transition-all">
+                              <Trash2 size={16}/>
+                          </button>
+                      </div>
+                  ))}
+              </div>
+              <button onClick={()=>setModal(null)} className="mt-4 text-xs font-bold bg-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">Cerrar</button>
+          </Card>
+      </div>}
       
       {selectedImg && <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-4" onClick={()=>setSelectedImg(null)}><img src={selectedImg} className="max-w-full max-h-[85%] rounded-xl shadow-2xl animate-in zoom-in"/><span className="mt-4 text-white font-bold opacity-50">CLICK PARA CERRAR</span></div>}
     </div>
