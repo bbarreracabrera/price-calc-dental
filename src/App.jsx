@@ -58,10 +58,26 @@ const SignaturePad = ({ onSave, onCancel, theme }) => {
   return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none text-white">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
 };
 
-const ToothFacesControl = ({ faces, onChange, theme }) => {
+// --- CONTROL DE CARAS CON LETRAS (V, M, O, D, L/P) ---
+const ToothFacesControl = ({ faces, onChange, theme, toothNumber }) => {
     const cycleStatus = (current) => { if (!current) return 'caries'; if (current === 'caries') return 'filled'; if (current === 'filled') return 'crown'; return null; };
-    const getColor = (status) => { if (status === 'caries') return 'bg-red-500 border-red-500'; if (status === 'filled') return 'bg-blue-500 border-blue-500'; if (status === 'crown') return 'bg-yellow-500 border-yellow-500'; return 'bg-white/5 border-white/10 hover:bg-white/10'; };
-    return (<div className="flex flex-col items-center gap-1 my-4"><button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all ${getColor(faces.v)}`}></button><div className="flex gap-1"><button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all ${getColor(faces.m)}`}></button><button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all ${getColor(faces.o)}`}></button><button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all ${getColor(faces.d)}`}></button></div><button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all ${getColor(faces.l)}`}></button></div>);
+    const getColor = (status) => { if (status === 'caries') return 'bg-red-500 border-red-500 text-white'; if (status === 'filled') return 'bg-blue-500 border-blue-500 text-white'; if (status === 'crown') return 'bg-yellow-500 border-yellow-500 text-black'; return 'bg-white/5 border-white/10 hover:bg-white/10 text-stone-500 hover:text-white'; };
+    
+    // Detectar si es un diente superior (empieza con 1, 2, 5 o 6)
+    const isUpper = toothNumber ? /^[1256]/.test(toothNumber.toString()) : false;
+    const innerFaceLabel = isUpper ? 'P' : 'L';
+
+    return (
+        <div className="flex flex-col items-center gap-1 my-4 text-[10px] font-black">
+            <button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all flex items-center justify-center ${getColor(faces.v)}`}>V</button>
+            <div className="flex gap-1">
+                <button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all flex items-center justify-center ${getColor(faces.m)}`}>M</button>
+                <button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all flex items-center justify-center ${getColor(faces.o)}`}>O</button>
+                <button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all flex items-center justify-center ${getColor(faces.d)}`}>D</button>
+            </div>
+            <button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all flex items-center justify-center ${getColor(faces.l)}`}>{innerFaceLabel}</button>
+        </div>
+    );
 };
 
 // --- COMPONENTE DIENTE ACTUALIZADO (Soporte Dual) ---
@@ -986,7 +1002,7 @@ export default function App() {
         {toothModalData.mode === 'hallazgos' ? (
             /* --- MODO HALLAZGOS (Lo que ya tenías) --- */
             <>
-                <ToothFacesControl theme="dark" faces={toothModalData.faces} onChange={(face, status) => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [face]: status}})} />
+                <ToothFacesControl theme="dark" faces={toothModalData.faces} onChange={(face, status) => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [face]: status}})} toothNumber={selectedTooth} />
                 <div className="grid grid-cols-2 gap-2">
                     <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className={`p-2 rounded-xl border text-[10px] font-bold uppercase ${toothModalData.status==='missing'?'border-red-500 text-red-500':'border-white/10'}`}>Ausente</button>
                     <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="p-2 bg-white/5 rounded-xl text-[10px] uppercase">Sano</button>
