@@ -193,7 +193,7 @@ export default function App() {
   // --- INVENTARIO & PAGOS ---
   const [inventorySearch, setInventorySearch] = useState('');
   const [newItem, setNewItem] = useState({ name: '', stock: 0, min: 5, unit: 'u', id: null });
-  const [paymentInput, setPaymentInput] = useState({ amount: '', method: 'Efectivo', date: new Date().toISOString().split('T')[0] });
+  const [paymentInput, setPaymentInput] = useState({ amount: '', method: 'Efectivo', date: new Date().toISOString().split('T')[0], receiptNumber: '' });
   const [selectedFinancialRecord, setSelectedFinancialRecord] = useState(null);
  // --- NUEVOS ESTADOS CENTRO FINANCIERO ---
   const [financeTab, setFinanceTab] = useState('resumen'); 
@@ -985,28 +985,42 @@ export default function App() {
                   </div>
                   <div className="space-y-3 bg-white/5 p-4 rounded-xl">
                       <h4 className="font-bold text-sm">Registrar Nuevo Abono</h4>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                           <InputField theme="dark" type="number" placeholder="$ Monto" value={paymentInput.amount} onChange={e=>setPaymentInput({...paymentInput, amount:e.target.value})} />
-                          <select className="bg-transparent border border-white/10 rounded-xl px-2 text-xs font-bold outline-none text-white w-32" value={paymentInput.method} onChange={e=>setPaymentInput({...paymentInput, method:e.target.value})}><option className="bg-[#121212]">Efectivo</option><option className="bg-[#121212]">Transferencia</option><option className="bg-[#121212]">Tarjeta</option></select>
+                          <select className="bg-[#121212] border border-white/10 rounded-xl px-2 p-3 text-xs font-bold outline-none text-white" value={paymentInput.method} onChange={e=>setPaymentInput({...paymentInput, method:e.target.value})}>
+                              <option value="Efectivo">Efectivo</option>
+                              <option value="Transferencia">Transferencia</option>
+                              <option value="Tarjeta">Tarjeta</option>
+                          </select>
+                          <InputField theme="dark" placeholder="N° Boleta (Opc.)" value={paymentInput.receiptNumber} onChange={e=>setPaymentInput({...paymentInput, receiptNumber:e.target.value})} />
                       </div>
                       <Button theme="dark" className="w-full" onClick={async ()=>{
                           if(!paymentInput.amount) return;
-                          const newPayment = { amount: Number(paymentInput.amount), method: paymentInput.method, date: new Date().toLocaleDateString() };
+                          const newPayment = { amount: Number(paymentInput.amount), method: paymentInput.method, date: new Date().toLocaleDateString(), receiptNumber: paymentInput.receiptNumber };
                           const currentPayments = selectedFinancialRecord.payments || [];
                           if (!selectedFinancialRecord.payments && selectedFinancialRecord.paid > 0) {
-                              currentPayments.push({ amount: selectedFinancialRecord.paid, method: 'Legacy', date: selectedFinancialRecord.date });
+                              currentPayments.push({ amount: selectedFinancialRecord.paid, method: 'Histórico', date: selectedFinancialRecord.date });
                           }
                           const updatedPayments = [...currentPayments, newPayment];
                           const newTotalPaid = updatedPayments.reduce((s,p)=>s+p.amount, 0);
                           const nr = {...selectedFinancialRecord, paid: newTotalPaid, payments: updatedPayments}; 
                           setFinancialRecords(prev => prev.map(h => h.id === nr.id ? nr : h));
                           await saveToSupabase('financials', nr.id, nr); 
-                          setModal(null); setPaymentInput({amount:'', method:'Efectivo', date:''}); notify("Abono Registrado");
+                          setModal(null); setPaymentInput({amount:'', method:'Efectivo', date: new Date().toISOString().split('T')[0], receiptNumber: ''}); notify("Abono Registrado");
                       }}>CONFIRMAR PAGO</Button>
                   </div>
                   <div className="max-h-32 overflow-y-auto space-y-2">
                       <p className="text-[10px] font-bold opacity-50 uppercase">Historial de Pagos</p>
-                      {(selectedFinancialRecord.payments || []).length > 0 ? (selectedFinancialRecord.payments.map((p, i) => (<div key={i} className="flex justify-between items-center text-xs p-2 border-b border-white/5 last:border-0"><div className="flex gap-2 items-center"><span className="opacity-50">{p.date}</span> <span className="font-bold">{p.method}</span></div><span className="font-bold text-emerald-400">+${p.amount.toLocaleString()}</span></div>))) : <p className="text-xs opacity-30 text-center">Sin abonos registrados.</p>}
+                      {(selectedFinancialRecord.payments || []).length > 0 ? (selectedFinancialRecord.payments.map((p, i) => (
+                          <div key={i} className="flex justify-between items-center text-xs p-2 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                              <div className="flex gap-2 items-center">
+                                  <span className="opacity-50">{p.date}</span> 
+                                  <span className="font-bold">{p.method}</span>
+                                  {p.receiptNumber && <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-stone-300 font-mono tracking-wider border border-white/10">Bol: {p.receiptNumber}</span>}
+                              </div>
+                              <span className="font-bold text-emerald-400">+${p.amount.toLocaleString()}</span>
+                          </div>
+                      ))) : <p className="text-xs opacity-30 text-center">Sin abonos registrados.</p>}
                   </div>
               </Card>
           </div>
