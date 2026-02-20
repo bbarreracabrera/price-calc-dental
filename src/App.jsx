@@ -64,13 +64,48 @@ const ToothFacesControl = ({ faces, onChange, theme }) => {
     return (<div className="flex flex-col items-center gap-1 my-4"><button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all ${getColor(faces.v)}`}></button><div className="flex gap-1"><button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all ${getColor(faces.m)}`}></button><button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all ${getColor(faces.o)}`}></button><button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all ${getColor(faces.d)}`}></button></div><button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all ${getColor(faces.l)}`}></button></div>);
 };
 
-const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data }) => {
+// --- COMPONENTE DIENTE ACTUALIZADO (Soporte Dual) ---
+const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, mode }) => {
   const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
   const hasPus = perioData?.pus;
   const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
-  const getSimpleColor = () => { const currentStatus = data?.status || status; if (currentStatus === 'missing') return '#000000'; const faces = data?.faces || {}; if (Object.values(faces).some(s => s === 'caries')) return '#ef4444'; if (Object.values(faces).some(s => s === 'filled')) return '#3b82f6'; if (Object.values(faces).some(s => s === 'crown')) return '#eab308'; if (currentStatus === 'caries') return '#ef4444'; if (currentStatus === 'filled') return '#3b82f6'; if (currentStatus === 'crown') return '#eab308'; return theme === 'light' ? '#333' : '#fff'; };
+  
+  const getSimpleColor = () => {
+    // LÓGICA NUEVA: MODO TRATAMIENTOS
+    if (mode === 'tratamientos') {
+        if (data?.treatment?.status === 'planned') return '#ef4444'; // Rojo: Presupuestado
+        if (data?.treatment?.status === 'completed') return '#10b981'; // Verde: Realizado
+        // Si no tiene tratamiento, se ve del color base (vacío)
+        return theme === 'light' ? '#e5e7eb' : '#1f2937'; 
+    }
+    // LÓGICA ANTIGUA: MODO HALLAZGOS (Se mantiene igual)
+    const currentStatus = data?.status || status;
+    if (currentStatus === 'missing') return '#000000';
+    const faces = data?.faces || {};
+    if (Object.values(faces).some(s => s === 'caries')) return '#ef4444';
+    if (Object.values(faces).some(s => s === 'filled')) return '#3b82f6';
+    if (Object.values(faces).some(s => s === 'crown')) return '#eab308';
+    if (currentStatus === 'caries') return '#ef4444';
+    if (currentStatus === 'filled') return '#3b82f6';
+    if (currentStatus === 'crown') return '#eab308';
+    return theme === 'light' ? '#333' : '#fff';
+  };
+
   if (isPerioMode && (status === 'missing' || data?.status === 'missing')) return <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/></svg><span className="text-[8px] font-bold">AUS</span></div>;
-  return (<div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill={getSimpleColor()} fillOpacity={status === 'missing' || data?.status === 'missing' || Object.values(data?.faces||{}).some(v=>v) ? 1 : 0.15} stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/></svg>{isPerioMode && (<div className="absolute -top-2 flex gap-1">{hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>}{hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400"/>}{hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500"/>}</div>)}<span className="text-[9px] font-bold opacity-50">{number}</span></div>);
+  
+  return (
+    <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative">
+        <svg width="35" height="45" viewBox="0 0 100 120">
+            <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" 
+                  fill={getSimpleColor()} 
+                  // Opacidad: Si es modo tratamiento y tiene algo planificado, se ve sólido. Si no, translúcido.
+                  fillOpacity={mode === 'tratamientos' && data?.treatment ? 1 : (status === 'missing' || data?.status === 'missing' || Object.values(data?.faces||{}).some(v=>v) ? 1 : 0.15)} 
+                  stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/>
+        </svg>
+        {isPerioMode && (<div className="absolute -top-2 flex gap-1">{hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>}{hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400"/>}{hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500"/>}</div>)}
+        <span className={`text-[9px] font-bold ${mode === 'tratamientos' && data?.treatment ? 'opacity-100' : 'opacity-50'}`}>{number}</span>
+    </div>
+  );
 };
 
 const HygieneCell = ({ tooth, data, onChange, status }) => { if (status === 'missing') return null; return (<div className="flex flex-col items-center gap-1 bg-white/5 p-2 rounded-xl"><span className="text-[10px] font-bold opacity-70">{tooth}</span><div className="grid grid-cols-2 gap-1 w-12 h-12">{['v', 'd', 'l', 'm'].map(f => (<div key={f} onClick={() => onChange(f)} className={`rounded-sm cursor-pointer border border-white/10 transition-colors ${data?.[f] ? 'bg-red-500 border-red-500' : 'hover:bg-white/10'}`} title={`Cara ${f.toUpperCase()}`}></div>))}</div></div>); };
@@ -136,16 +171,18 @@ export default function App() {
   const [sessionData, setSessionData] = useState({ patientName: '', clinicalTime: 60, baseCost: 0, patientId: null });
   const [prescription, setPrescription] = useState([]);
   const [medInput, setMedInput] = useState({ name: '', dosage: '' });
-  const [newAppt, setNewAppt] = useState({ name: '', treatment: '', date: '', time: '' });
-  const [newPack, setNewPack] = useState({ name: '', items: [] });
+// --- ESTADO DE AGENDA ACTUALIZADO ---
+  const [newAppt, setNewAppt] = useState({ name: '', treatment: '', date: '', time: '', duration: 60, status: 'agendado', id: null });  const [newPack, setNewPack] = useState({ name: '', items: [] });
   const [newPackItem, setNewPackItem] = useState({ name: '', cost: '' });
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [modal, setModal] = useState(null);
   const [notification, setNotification] = useState('');
   
   // PERIO & CONSENT & IMAGES & ODONTOGRAMA PRO
-  const [toothModalData, setToothModalData] = useState({ id: null, status: null, faces: { v: null, l: null, m: null, d: null, o: null }, notes: '' });
-  const [perioData, setPerioData] = useState({ pd: { vd:'', v:'', vm:'', ld:'', l:'', lm:'' }, bop: { vd:false, v:false, vm:false, ld:false, l:false, lm:false }, pus: false, mobility: 0, furcation: 0 }); 
+  // --- NUEVO ESTADO PARA EL MODO ODONTOGRAMA ---
+  const [odontogramMode, setOdontogramMode] = useState('hallazgos');
+  // Actualizamos toothModalData para incluir datos de tratamiento
+  const [toothModalData, setToothModalData] = useState({ id: null, status: null, faces: { v: null, l: null, m: null, d: null, o: null }, notes: '', treatment: {name: '', status: 'planned'}, mode: 'hallazgos' });
   const [consentTemplate, setConsentTemplate] = useState('general');
   const [consentText, setConsentText] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -158,9 +195,11 @@ export default function App() {
   const [newItem, setNewItem] = useState({ name: '', stock: 0, min: 5, unit: 'u', id: null });
   const [paymentInput, setPaymentInput] = useState({ amount: '', method: 'Efectivo', date: new Date().toISOString().split('T')[0] });
   const [selectedFinancialRecord, setSelectedFinancialRecord] = useState(null);
-  const [historyMode, setHistoryMode] = useState('income'); 
+ // --- NUEVOS ESTADOS CENTRO FINANCIERO ---
+  const [financeTab, setFinanceTab] = useState('resumen'); 
+  const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: new Date().toISOString().split('T')[0], patientRef: '' });
   const [newMember, setNewMember] = useState({ name: '', email: '', role: 'dentist' });
-  const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: new Date().toISOString().split('T')[0] });
+
 
   // --- VOZ A TEXTO ---
   const [isListening, setIsListening] = useState(false);
@@ -246,6 +285,12 @@ export default function App() {
   const totalCollected = incomeRecords.reduce((acc, rec) => { const paymentsSum = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0); return acc + (paymentsSum > 0 ? paymentsSum : (Number(rec.paid) || 0)); }, 0);
   const totalExpenses = expenseRecords.reduce((a, b) => a + (Number(b.amount) || 0), 0);
   const netProfit = totalCollected - totalExpenses;
+  // Calcular deuda en la calle (total de tratamientos - lo que han pagado)
+  const totalDebt = incomeRecords.reduce((acc, rec) => {
+      const paid = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0) + (rec.paid && !rec.payments ? rec.paid : 0);
+      const pending = (rec.total || 0) - paid;
+      return acc + (pending > 0 ? pending : 0);
+  }, 0);
   const todaysAppointments = appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).sort((a,b) => a.time.localeCompare(b.time));
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
 
@@ -391,6 +436,7 @@ export default function App() {
           { id: 'dashboard', label: 'Inicio', icon: TrendingUp },
           { id: 'agenda', label: 'Agenda', icon: CalendarClock },
           { id: 'ficha', label: 'Pacientes', icon: User },
+          { id: 'recalls', label: 'Retención CRM', icon: Users }, // <-- NUEVO BOTÓN
       ];
       if (userRole === 'admin' || userRole === 'assistant') { base.push({ id: 'history', label: 'Caja & Gastos', icon: Wallet }); }
       if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'quote', label: 'Cotizador', icon: Calculator }); }
@@ -398,7 +444,30 @@ export default function App() {
       if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
       return base;
   };
+// --- LÓGICA DEL CRM DE RETENCIÓN (RECALLS) ---
+  const getRecalls = useMemo(() => {
+      const now = new Date();
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(now.getMonth() - 6);
 
+      // 1. Ver quiénes ya tienen citas en el futuro (para no molestarlos)
+      const futureAppts = appointments.filter(a => new Date(a.date) >= now);
+      const futurePatientNames = new Set(futureAppts.map(a => a.name));
+
+      // 2. Buscar citas que fueron hace 6 meses o más
+      const pastAppts = appointments.filter(a => new Date(a.date) <= sixMonthsAgo);
+      
+      // 3. Agrupar por paciente para ver su ÚLTIMA cita
+      const latestAppts = {};
+      pastAppts.forEach(a => {
+          if (!latestAppts[a.name] || new Date(a.date) > new Date(latestAppts[a.name].date)) {
+              latestAppts[a.name] = a;
+          }
+      });
+
+      // 4. Filtrar: Mostrar solo a los que NO tienen citas futuras
+      return Object.values(latestAppts).filter(a => !futurePatientNames.has(a.name));
+  }, [appointments]);
   if (!session) return <AuthScreen />;
   const t = THEMES[themeMode] || THEMES.dark;
 
@@ -479,15 +548,142 @@ export default function App() {
             </div>
         </div>}
 
-        {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant') && <div className="space-y-6 animate-in slide-in-from-right">
-           <div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setHistoryMode('income')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all ${historyMode==='income'?t.accentBg:'opacity-50'}`}>Ingresos</button><button onClick={()=>setHistoryMode('expense')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all ${historyMode==='expense'?t.accentBg:'opacity-50'}`}>Gastos</button></div>
-           {historyMode === 'income' ? (<div className="space-y-4"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Ingresos</h2><Button theme={themeMode} variant="secondary" onClick={()=>{const ws=XLSX.utils.json_to_sheet(financialRecords); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Finanzas"); XLSX.writeFile(wb, "Reporte.xlsx");}}><FileSpreadsheet/> Excel</Button></div>{incomeRecords.map(h=>{ const totalPaidRec = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0); const pending = (h.total || 0) - totalPaidRec; return (<Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: new Date().toISOString().split('T')[0]}); setModal('abono');}} className={`flex justify-between items-center cursor-pointer border-l-4 ${pending<=0?'border-emerald-500':'border-red-500'} hover:scale-[1.01] transition-transform`}>
-               <div><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Total: ${h.total?.toLocaleString()}</p></div>
-               <div className="flex flex-col items-end gap-1">
-                   <p className={`font-black ${pending<=0?'text-emerald-500':'text-red-500'}`}>{pending <= 0 ? 'PAGADO' : `DEBE $${pending.toLocaleString()}`}</p>
-                   {pending > 0 && <button onClick={(e)=>{ e.stopPropagation(); sendWhatsApp(getPatientPhone(h.patientName), `Hola ${h.patientName}, le recordamos que tiene un saldo pendiente de $${pending.toLocaleString()} en ShiningCloud Dental.`); }} className="flex items-center gap-1 text-[10px] bg-green-500/20 text-green-500 px-2 py-1 rounded hover:bg-green-500/40"><MessageCircle size={12}/> COBRAR</button>}
-               </div>
-           </Card>)})}</div>) : (<div className="space-y-4"><Card theme={themeMode} className="space-y-4 border-l-4 border-red-500 bg-red-500/5"><h3 className="font-bold text-red-500">Registrar Nuevo Gasto</h3><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} placeholder="Descripción (ej: Luz)" value={newExpense.description} onChange={e=>setNewExpense({...newExpense, description:e.target.value})}/><select className={`bg-transparent border border-white/10 rounded-xl px-3 text-xs font-bold outline-none ${t.text}`} value={newExpense.category} onChange={e=>setNewExpense({...newExpense, category:e.target.value})}><option className="bg-[#121212] text-white">Insumos</option><option className="bg-[#121212] text-white">Laboratorio</option><option className="bg-[#121212] text-white">Arriendo</option><option className="bg-[#121212] text-white">Marketing</option><option className="bg-[#121212] text-white">Otros</option></select><InputField theme={themeMode} type="number" placeholder="$ Monto" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> <Button theme={themeMode} onClick={async()=>{ if(newExpense.description && newExpense.amount){ const id = Date.now().toString(); const expenseData = { ...newExpense, id, type: 'expense' }; setFinancialRecords([expenseData, ...financialRecords]); await saveToSupabase('financials', id, expenseData); setNewExpense({description:'', amount:'', category:'Insumos', date: new Date().toISOString().split('T')[0]}); notify("Gasto Guardado"); } }}>Guardar Gasto</Button></div></Card><div className="space-y-2">{expenseRecords.map(ex => (<div key={ex.id} className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"><div className="flex items-center gap-3"><div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={16}/></div><div><p className="font-bold text-sm">{ex.description}</p><p className="text-[10px] opacity-50">{ex.date} • {ex.category}</p></div></div><div className="flex items-center gap-4"><span className="font-black text-red-400">-${Number(ex.amount).toLocaleString()}</span><button onClick={async()=>{ const filtered = financialRecords.filter(f=>f.id!==ex.id); setFinancialRecords(filtered); await supabase.from('financials').delete().eq('id', ex.id); }} className="text-xs opacity-30 hover:opacity-100 hover:text-red-500"><Trash2 size={14}/></button></div></div>))}</div></div>)}
+        {/* --- CENTRO FINANCIERO ACTUALIZADO (V77) --- */}
+        {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant') && <div className="space-y-6 animate-in slide-in-from-right h-full flex flex-col">
+            <div className="flex justify-between items-center mb-2">
+                <h2 className="text-2xl font-bold flex items-center gap-2"><Wallet className={t.accent}/> Centro Financiero</h2>
+                <Button theme={themeMode} variant="secondary" onClick={()=>{const ws=XLSX.utils.json_to_sheet(financialRecords); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Finanzas"); XLSX.writeFile(wb, "Reporte_Finanzas.xlsx");}}><FileSpreadsheet/> Excel</Button>
+            </div>
+
+            <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto no-scrollbar shrink-0">
+                <button onClick={()=>setFinanceTab('resumen')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='resumen'?t.accentBg:'opacity-50'}`}>📊 Resumen</button>
+                <button onClick={()=>setFinanceTab('ingresos')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='ingresos'?t.accentBg:'opacity-50'}`}>💵 Ingresos y Caja</button>
+                <button onClick={()=>setFinanceTab('deudores')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='deudores'?'bg-red-500 text-white':'opacity-50'}`}>🚨 Por Cobrar</button>
+                <button onClick={()=>setFinanceTab('gastos')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='gastos'?t.accentBg:'opacity-50'}`}>🦷 Gastos / Lab</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar pb-10">
+                {/* --- SUB-TAB 1: RESUMEN (Dueño) --- */}
+                {financeTab === 'resumen' && (
+                    <div className="space-y-6 animate-in fade-in">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Card theme={themeMode} className="bg-emerald-500/10 border-emerald-500/20 text-center">
+                                <p className="text-emerald-500 font-bold text-xs uppercase mb-2">Recaudado (En Banco)</p>
+                                <h2 className="text-3xl font-black text-emerald-400">${totalCollected.toLocaleString()}</h2>
+                            </Card>
+                            <Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center">
+                                <p className="text-red-500 font-bold text-xs uppercase mb-2">Gastos (Operación)</p>
+                                <h2 className="text-3xl font-black text-red-400">${totalExpenses.toLocaleString()}</h2>
+                            </Card>
+                            <Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center">
+                                <p className="text-yellow-500 font-bold text-xs uppercase mb-2">En la Calle (Deudas)</p>
+                                <h2 className="text-3xl font-black text-yellow-400">${totalDebt.toLocaleString()}</h2>
+                            </Card>
+                        </div>
+                        <Card theme={themeMode} className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500 to-teal-600' : 'from-red-500 to-orange-600'} text-white text-center py-8 shadow-2xl`}>
+                            <p className="text-xs font-bold uppercase opacity-80 mb-2">Utilidad Real (Flujo de Caja)</p>
+                            <h2 className="text-5xl font-black">${netProfit.toLocaleString()}</h2>
+                        </Card>
+                    </div>
+                )}
+
+                {/* --- SUB-TAB 2: INGRESOS GENERALES --- */}
+                {financeTab === 'ingresos' && (
+                    <div className="space-y-4 animate-in fade-in">
+                        {incomeRecords.map(h=>{ 
+                            const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
+                            const pending = (h.total || 0) - paid; 
+                            return (
+                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: new Date().toISOString().split('T')[0]}); setModal('abono');}} className={`flex justify-between items-center cursor-pointer border-l-4 ${pending<=0?'border-emerald-500':'border-yellow-500'} hover:scale-[1.01] transition-transform`}>
+                                <div><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Presupuesto: ${h.total?.toLocaleString()}</p></div>
+                                <div className="flex flex-col items-end gap-1">
+                                    <p className={`font-black ${pending<=0?'text-emerald-500':'text-yellow-500'}`}>{pending <= 0 ? 'PAGADO' : `FALTA: $${pending.toLocaleString()}`}</p>
+                                </div>
+                            </Card>
+                            )
+                        })}
+                    </div>
+                )}
+
+                {/* --- SUB-TAB 3: DEUDORES (CRM Financiero) --- */}
+                {financeTab === 'deudores' && (
+                    <div className="space-y-4 animate-in fade-in">
+                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex justify-between items-center">
+                            <div><h3 className="text-red-500 font-bold">Planilla de Morosidad</h3><p className="text-[10px] text-red-400/70">Solo pacientes con saldo pendiente</p></div>
+                            <h2 className="text-2xl font-black text-red-500">${totalDebt.toLocaleString()}</h2>
+                        </div>
+                        {incomeRecords.filter(h => {
+                            const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
+                            return (h.total || 0) - paid > 0;
+                        }).map(h=>{ 
+                            const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
+                            const pending = (h.total || 0) - paid; 
+                            return (
+                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: new Date().toISOString().split('T')[0]}); setModal('abono');}} className="flex flex-col md:flex-row justify-between items-center cursor-pointer border-l-4 border-red-500 hover:scale-[1.01] transition-transform gap-4">
+                                <div className="w-full md:w-auto"><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Total tto: ${h.total?.toLocaleString()}</p></div>
+                                <div className="flex items-center gap-4 w-full md:w-auto justify-between">
+                                    <p className="font-black text-red-500 text-xl">-$ {pending.toLocaleString()}</p>
+                                    <button onClick={(e)=>{ e.stopPropagation(); sendWhatsApp(getPatientPhone(h.patientName), `Hola ${h.patientName}, me comunico de ShiningCloud Dental. Le recordamos amablemente que su ficha registra un saldo pendiente de $${pending.toLocaleString()}. ¿Gusta que le envíe los datos de transferencia para regularizarlo?`); }} className="flex items-center gap-2 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg transition-colors"><MessageCircle size={14}/> Cobrar Deuda</button>
+                                </div>
+                            </Card>
+                            )
+                        })}
+                    </div>
+                )}
+
+                {/* --- SUB-TAB 4: GASTOS Y LABORATORIO --- */}
+                {financeTab === 'gastos' && (
+                    <div className="space-y-6 animate-in fade-in">
+                        <Card theme={themeMode} className="space-y-4 border-l-4 border-stone-500">
+                            <h3 className="font-bold text-lg">Egresos / Costos Clínica</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <InputField theme={themeMode} placeholder="Ítem (ej: Coronas Zirconio, Internet...)" value={newExpense.description} onChange={e=>setNewExpense({...newExpense, description:e.target.value})}/>
+                                <select className={`bg-[#121212] border border-white/10 rounded-xl px-3 p-3 text-xs font-bold outline-none ${t.text}`} value={newExpense.category} onChange={e=>setNewExpense({...newExpense, category:e.target.value})}>
+                                    <option value="Insumos">Caja: Insumos</option>
+                                    <option value="Laboratorio">Caja: Trabajos de Laboratorio</option>
+                                    <option value="Arriendo">Caja: Arriendo / Servicios</option>
+                                    <option value="Marketing">Caja: Publicidad</option>
+                                    <option value="Sueldos">Caja: Honorarios</option>
+                                    <option value="Otros">Caja: Otros Egresos</option>
+                                </select>
+                                
+                                {/* Campo exclusivo si seleccionan Laboratorio */}
+                                {newExpense.category === 'Laboratorio' && (
+                                    <div className="col-span-1 md:col-span-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl animate-in zoom-in">
+                                        <label className="text-[10px] font-bold text-blue-400 uppercase tracking-widest block mb-2">Asociar Costo a un Paciente</label>
+                                        <PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => setNewExpense({...newExpense, patientRef: p.personal.legalName})} placeholder="Buscar paciente..." />
+                                        {newExpense.patientRef && <p className="text-[10px] mt-2 font-bold bg-blue-500 text-white inline-block px-2 py-1 rounded">Costo asignado a: {newExpense.patientRef}</p>}
+                                    </div>
+                                )}
+                                
+                                <InputField theme={themeMode} type="number" placeholder="$ Monto Exacto" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> 
+                                <Button theme={themeMode} onClick={async()=>{ if(newExpense.description && newExpense.amount){ const id = Date.now().toString(); const expenseData = { ...newExpense, id, type: 'expense' }; setFinancialRecords([expenseData, ...financialRecords]); await saveToSupabase('financials', id, expenseData); setNewExpense({description:'', amount:'', category:'Insumos', date: new Date().toISOString().split('T')[0], patientRef: ''}); notify("Gasto Registrado"); } }}>GUARDAR EGRESO</Button>
+                            </div>
+                        </Card>
+                        
+                        <div className="space-y-2">
+                            {expenseRecords.map(ex => (
+                                <div key={ex.id} className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-3 rounded-xl ${ex.category==='Laboratorio' ? 'bg-blue-500/20 text-blue-400' : 'bg-stone-500/20 text-stone-400'}`}>
+                                            {ex.category==='Laboratorio' ? <Box size={18}/> : <TrendingDown size={18}/>}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold">{ex.description}</p>
+                                            <p className="text-[10px] opacity-60 mt-1">{ex.date} • {ex.category}</p>
+                                            {ex.patientRef && <span className="text-[9px] bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded ml-1 font-bold">Pac: {ex.patientRef}</span>}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className="font-black text-red-500 text-lg">-${Number(ex.amount).toLocaleString()}</span>
+                                        <button onClick={async()=>{ const filtered = financialRecords.filter(f=>f.id!==ex.id); setFinancialRecords(filtered); await supabase.from('financials').delete().eq('id', ex.id); notify("Egreso Eliminado"); }} className="p-2 bg-black/40 rounded-lg text-stone-500 hover:text-red-500 hover:bg-red-500/20 transition-all"><Trash2 size={16}/></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>}
 
         {activeTab === 'inventory' && userRole === 'admin' && <div className="space-y-6 animate-in fade-in"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Inventario</h2><Button theme={themeMode} onClick={()=>{setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); setModal('addItem');}}><Plus/> Nuevo Item</Button></div><div className="relative"><InputField theme={themeMode} icon={Search} placeholder="Buscar insumo..." value={inventorySearch} onChange={e=>setInventorySearch(e.target.value)} /></div><div className="space-y-2">{filteredInventory.map(item => { const isLow = (item.stock || 0) <= (item.min || 5); return (<div key={item.id} className={`flex justify-between items-center p-4 rounded-xl border transition-all ${isLow ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}><div className="flex items-center gap-4"><div className={`p-3 rounded-lg ${isLow ? 'bg-red-500 text-white' : 'bg-white/10'}`}>{isLow ? <AlertTriangle size={20}/> : <Box size={20}/>}</div><div><h4 className="font-bold">{item.name}</h4><p className="text-xs opacity-50">Mínimo: {item.min} {item.unit}</p></div></div><div className="flex items-center gap-4"><div className="flex items-center gap-2 bg-black/20 rounded-lg p-1"><button onClick={async()=>{ const n = Math.max(0, (item.stock||0)-1); const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Minus size={14}/></button><span className={`w-8 text-center font-bold ${isLow?'text-red-500':''}`}>{item.stock}</span><button onClick={async()=>{ const n = (item.stock||0)+1; const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Plus size={14}/></button></div><button onClick={()=>{setNewItem(item); setModal('addItem');}} className="p-2 text-white/50 hover:text-cyan-400"><Edit3 size={18}/></button></div></div>)})}</div></div>}
@@ -543,13 +739,75 @@ export default function App() {
 
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='calc'?t.accentBg:'opacity-50'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='packs'?t.accentBg:'opacity-50'}`}>Packs</button></div>{quoteMode === 'calc' ? (<Card theme={themeMode} className="space-y-4"><Button theme={themeMode} variant="secondary" onClick={()=>setModal('loadPack')}>CARGAR PACK</Button><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id})} placeholder="Buscar Paciente..." /><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} label="Minutos" type="number" value={sessionData.clinicalTime} onChange={e=>setSessionData({...sessionData, clinicalTime:e.target.value})} /><InputField theme={themeMode} label="Costos" type="number" value={sessionData.baseCost} onChange={e=>setSessionData({...sessionData, baseCost:e.target.value})} /></div><div className="text-center py-6 border-y border-white/10 my-4"><p className="text-xs opacity-50 uppercase tracking-widest mb-2">Total Estimado</p><h3 className="text-6xl font-black text-cyan-400">${currentTotal.toLocaleString()}</h3></div><div className="grid grid-cols-2 gap-2"><Button theme={themeMode} onClick={()=>{ const id=Date.now().toString(); saveToSupabase('financials', id, {id, total:currentTotal, paid:0, payments: [], patientName:sessionData.patientName, date:new Date().toLocaleDateString(), type: 'income'}); notify("Guardado en Caja"); }}>GUARDAR EN CAJA</Button><Button theme={themeMode} variant="secondary" onClick={()=>generatePDF('quote')}><Printer/></Button></div></Card>) : (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">Crear Nuevo Pack</h3><InputField theme={themeMode} label="Nombre Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})} /><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><Button theme={themeMode} onClick={()=>{if(newPackItem.name) setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}><Plus/></Button></div><div className="bg-black/20 p-4 rounded-xl space-y-2">{newPack.items.map((it, i)=>(<div key={i} className="flex justify-between text-xs border-b border-white/5 pb-1"><span>{it.name}</span><span>${it.cost}</span></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>{ const id = Date.now().toString(); const packComplete = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)}; setProtocols([...protocols, packComplete]); saveToSupabase('packs', id, packComplete); setNewPack({name:'', items:[]}); notify("Pack Guardado"); }}>GUARDAR PACK</Button></Card>)}</div>}
-        {activeTab === 'agenda' && <div className="space-y-4 h-full flex flex-col"><div className="flex justify-between items-center mb-2"><div className="flex items-center gap-4"><h2 className="text-2xl font-bold">Agenda Semanal</h2><div className="flex items-center gap-2 bg-white/5 rounded-xl p-1"><button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d)}} className="p-2 hover:bg-white/10 rounded"><ChevronLeft size={16}/></button><button onClick={()=>setCurrentDate(new Date())} className="text-xs font-bold px-2">HOY</button><button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d)}} className="p-2 hover:bg-white/10 rounded"><ChevronRight size={16}/></button></div></div><Button theme={themeMode} onClick={()=>setModal('appt')}><Plus/> Agendar</Button></div><div className="flex-1 overflow-auto bg-white/5 rounded-2xl border border-white/5"><div className="grid grid-cols-8 min-w-[800px]"><div className="p-4 border-b border-r border-white/5 text-xs font-bold text-center opacity-50">HORA</div>{Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => (<div key={d} className={`p-4 border-b border-white/5 text-center ${d.toDateString()===new Date().toDateString() ? t.accent : ''}`}><p className="text-xs font-bold opacity-70">{['LUN','MAR','MIE','JUE','VIE','SAB','DOM'][d.getDay()===0?6:d.getDay()-1]}</p><p className="text-xl font-black">{d.getDate()}</p></div>))}{Array.from({length:11}, (_,i)=>8+i).map(h => (<React.Fragment key={h}><div className="p-2 border-r border-b border-white/5 text-xs font-bold opacity-50 text-center h-24">{h}:00</div>{Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => { const dateStr = d.toISOString().split('T')[0]; const appt = appointments.find(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); return (<div key={d+h} className={`border-b border-white/5 relative group h-24 transition-all hover:bg-white/5 ${appt ? 'p-1' : 'cursor-pointer'}`} onClick={()=>{if(!appt) { setNewAppt({...newAppt, date: dateStr, time: `${h}:00`}); setModal('appt'); }}}>{appt && (<div className={`w-full h-full rounded-xl ${t.accentBg} p-2 shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-transform`}>
-            <div><p className="text-xs font-black text-white truncate">{appt.name}</p><p className="text-[10px] text-white/80 truncate">{appt.treatment}</p></div>
-            <div className="flex gap-1 justify-end">
-                <button onClick={(e)=>{ e.stopPropagation(); sendWhatsApp(getPatientPhone(appt.name), `Hola ${appt.name}, confirmamos su cita en ShiningCloud Dental para mañana a las ${appt.time}.`); }} className="text-[10px] bg-white/20 px-2 rounded hover:bg-white/30 text-white flex items-center gap-1"><MessageCircle size={10}/> Confirmar</button>
-                <button onClick={(e)=>{e.stopPropagation(); supabase.from('appointments').delete().eq('id', appt.id).then(()=>setAppointments(appointments.filter(a=>a.id!==appt.id)))}} className="text-[10px] bg-black/20 px-2 rounded hover:bg-red-500 text-white">X</button>
+        {/* --- AGENDA FLEXIBLE ACTUALIZADA --- */}
+{activeTab === 'agenda' && <div className="space-y-4 h-full flex flex-col">
+    <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold">Agenda Semanal</h2>
+            <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1">
+                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d)}} className="p-2 hover:bg-white/10 rounded"><ChevronLeft size={16}/></button>
+                <button onClick={()=>setCurrentDate(new Date())} className="text-xs font-bold px-2">HOY</button>
+                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d)}} className="p-2 hover:bg-white/10 rounded"><ChevronRight size={16}/></button>
             </div>
-        </div>)}{!appt && <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"><Plus size={14} className="opacity-50"/></div>}</div>) })}</React.Fragment>))}</div></div></div>}
+        </div>
+        <div className="hidden md:flex gap-2 text-[9px] font-bold uppercase opacity-60">
+            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-stone-500"></div>Agendado</span>
+            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div>Confirmado</span>
+            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-500"></div>En Espera</span>
+            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div>Atendiendo</span>
+        </div>
+        <Button theme={themeMode} onClick={()=>{setNewAppt({name: '', treatment: '', date: '', time: '', duration: 60, status: 'agendado', id: null}); setModal('appt');}}><Plus/> Agendar</Button>
+    </div>
+    
+    <div className="flex-1 overflow-auto bg-white/5 rounded-2xl border border-white/5 custom-scrollbar">
+        <div className="grid grid-cols-8 min-w-[800px]">
+            <div className="p-4 border-b border-r border-white/5 text-xs font-bold text-center opacity-50 sticky top-0 bg-[#050505] z-20">HORA</div>
+            {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => (
+                <div key={d} className={`p-4 border-b border-white/5 text-center sticky top-0 bg-[#050505] z-20 ${d.toDateString()===new Date().toDateString() ? t.accent : ''}`}>
+                    <p className="text-xs font-bold opacity-70">{['LUN','MAR','MIE','JUE','VIE','SAB','DOM'][d.getDay()===0?6:d.getDay()-1]}</p>
+                    <p className="text-xl font-black">{d.getDate()}</p>
+                </div>
+            ))}
+            
+            {Array.from({length:12}, (_,i)=>8+i).map(h => (
+                <React.Fragment key={h}>
+                    <div className="p-2 border-r border-b border-white/5 text-xs font-bold opacity-50 text-center h-24">{h}:00</div>
+                    {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => { 
+                        const dateStr = d.toISOString().split('T')[0]; 
+                        const appt = appointments.find(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
+                        
+                        // Diccionario de colores según estado
+                        const statusColors = {
+                            agendado: 'border-stone-500 bg-stone-500/20 text-stone-300',
+                            confirmado: 'border-emerald-500 bg-emerald-500/20 text-emerald-300',
+                            espera: 'border-yellow-500 bg-yellow-500/20 text-yellow-300',
+                            atendiendo: 'border-blue-500 bg-blue-500/20 text-blue-300',
+                            no_asistio: 'border-red-500 bg-red-500/20 text-red-300'
+                        };
+
+                        return (
+                            <div key={d+h} className={`border-b border-white/5 border-r relative group h-24 transition-all hover:bg-white/5 ${!appt ? 'cursor-pointer' : ''}`} onClick={()=>{if(!appt) { setNewAppt({name: '', treatment: '', date: dateStr, time: `${h.toString().padStart(2, '0')}:00`, duration: 60, status: 'agendado', id: null}); setModal('appt'); }}}>
+                                {appt && (
+                                    <div 
+                                        onClick={(e)=>{e.stopPropagation(); setNewAppt(appt); setModal('appt');}}
+                                        className={`absolute top-0 left-0 w-full rounded-xl border-l-4 shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-all p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
+                                        style={{ height: `${(appt.duration || 60) / 60 * 100}%`, minHeight: '60px' }}
+                                    >
+                                        <div>
+                                            <p className="text-xs font-black truncate leading-tight">{appt.name}</p>
+                                            <p className="text-[9px] opacity-80 truncate">{appt.time} • {appt.treatment}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {!appt && <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"><Plus size={14} className="opacity-50"/></div>}
+                            </div>
+                        ) 
+                    })}
+                </React.Fragment>
+            ))}
+        </div>
+    </div>
+</div>}
         {activeTab === 'ficha' && !selectedPatientId && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex gap-2"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => { if(p.id==='new') { const newId = p.name.trim().toLowerCase(); savePatientData(newId, getPatient(newId)); setSelectedPatientId(newId); } else { setSelectedPatientId(p.id); } }} placeholder="Buscar o Crear Paciente..." /></div><div className="grid gap-2">{Object.keys(patientRecords).map(k=>(<Card key={k} theme={themeMode} onClick={()=>setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center"><span className="font-bold capitalize">{k}</span><ArrowRight size={14}/></Card>))}</div></div>}
         
         {activeTab === 'ficha' && selectedPatientId && <div className="space-y-4 animate-in slide-in-from-right"><button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion, restricted: true}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>{
@@ -568,7 +826,20 @@ export default function App() {
                     <InputField theme={themeMode} textarea label="Motivo Consulta" value={getPatient(selectedPatientId).anamnesis?.recent || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), anamnesis: {...getPatient(selectedPatientId).anamnesis, recent: e.target.value}})} />
                     <InputField theme={themeMode} textarea label="Antecedentes Médicos" value={getPatient(selectedPatientId).anamnesis?.remote || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), anamnesis: {...getPatient(selectedPatientId).anamnesis, remote: e.target.value}})} />
                 </Card>}
-                {patientTab === 'clinical' && <Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}}); setModal('tooth');}} theme={themeMode}/>)}</div></Card>}
+                {/* --- ODONTOGRAMA DUAL ACTUALIZADO --- */}
+{patientTab === 'clinical' && <Card theme={themeMode} className="flex flex-col items-center gap-8">
+    <div className="flex bg-white/5 p-1 rounded-xl w-full max-w-md mx-auto mb-2">
+        <button onClick={()=>setOdontogramMode('hallazgos')} className={`flex-1 p-2 rounded-lg text-xs font-bold transition-all ${odontogramMode==='hallazgos'?t.accentBg:'opacity-50'}`}>🔍 Hallazgos (Diagnóstico)</button>
+        <button onClick={()=>setOdontogramMode('tratamientos')} className={`flex-1 p-2 rounded-lg text-xs font-bold transition-all ${odontogramMode==='tratamientos'?'bg-emerald-500 text-white':'opacity-50'}`}>🛠️ Plan de Tratamiento</button>
+    </div>
+    
+    <div className="flex gap-2 flex-wrap justify-center">
+        {TEETH_UPPER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
+    </div>
+    <div className="flex gap-2 flex-wrap justify-center">
+        {TEETH_LOWER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
+    </div>
+</Card>}
                 {patientTab === 'perio' && <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center"><p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p><h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2><p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p></Card><Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center"><p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p><h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2><p className="text-[10px] opacity-50">O'Leary (4 caras)</p></Card></div><Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div></Card><Card theme={themeMode} className="space-y-4"><h3 className="font-bold border-b border-white/10 pb-2">Tabla de Higiene (O'Leary)</h3><div className="overflow-x-auto pb-4"><div className="flex gap-2 min-w-max">{[...TEETH_UPPER, ...TEETH_LOWER].map(t => { const p = getPatient(selectedPatientId); if(p.clinical.teeth[t]?.status === 'missing') return null; return ( <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]} onChange={(face) => { const current = p.clinical.hygiene?.[t] || {}; const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); }} /> ); })}</div></div><div className="flex gap-4 text-xs opacity-50"><span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-sm"/> Placa</span><span className="flex items-center gap-1"><div className="w-3 h-3 bg-white/10 border border-white/20 rounded-sm"/> Limpio</span></div></Card></div>}
                 
                 {/* V76: EVOLUTION TAB - SECURE (READ ONLY HISTORY) */}
@@ -615,26 +886,89 @@ export default function App() {
 
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <Card theme={themeMode} className="space-y-4"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={setRxPatient} placeholder="Seleccionar Paciente para Receta..." />{rxPatient && (<div className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 animate-in fade-in"><div className={`w-12 h-12 rounded-full ${t.accentBg} flex items-center justify-center font-bold text-white`}>{rxPatient.personal.legalName[0]}</div><div><p className="font-bold">{rxPatient.personal.legalName}</p><p className="text-xs opacity-60">RUT: {rxPatient.personal.rut}</p></div></div>)}<div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><Button theme={themeMode} onClick={()=>{setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}><Plus/></Button></div>{prescription.map((p,i)=>(<div key={i} className="p-3 bg-white/5 rounded-xl flex justify-between text-xs"><span>{p.name} - {p.dosage}</span><X size={14} onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}/></div>))}<Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx', rxPatient)}><Printer/> GENERAR PDF</Button></Card>}
+        {/* --- PESTAÑA DE RETENCIÓN (CRM) --- */}
+        {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <div className="space-y-6 animate-in slide-in-from-bottom">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2"><Users className={t.accent}/> CRM de Retención</h2>
+                    <p className="text-xs opacity-50 mt-1">Pacientes inactivos por más de 6 meses sin citas futuras.</p>
+                </div>
+                <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl font-bold">
+                    {getRecalls.length} Pacientes para recuperar
+                </div>
+            </div>
+
+            {getRecalls.length === 0 ? (
+                <div className="p-10 border border-dashed border-white/10 rounded-3xl text-center opacity-50 flex flex-col items-center gap-4">
+                    <Star size={40} className="opacity-30"/>
+                    <p>¡Excelente! No tienes pacientes inactivos o atrasados en sus controles.</p>
+                </div>
+            ) : (
+                <div className="grid gap-3">
+                    {getRecalls.map(appt => (
+                        <Card key={appt.id} theme={themeMode} className="flex flex-col md:flex-row justify-between items-center p-4 hover:border-emerald-500/50 transition-colors">
+                            <div className="flex items-center gap-4 mb-4 md:mb-0">
+                                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center font-bold text-lg opacity-50">
+                                    {appt.name[0]}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-lg">{appt.name}</h4>
+                                    <p className="text-xs text-red-400">Última visita: {appt.date.split('-').reverse().join('/')} ({appt.treatment})</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 w-full md:w-auto">
+                                <button onClick={()=>{setActiveTab('ficha'); setSelectedPatientId(Object.keys(patientRecords).find(k => patientRecords[k].personal?.legalName === appt.name));}} className="flex-1 md:flex-none p-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-colors">
+                                    Ver Ficha
+                                </button>
+                                <button onClick={()=>sendWhatsApp(getPatientPhone(appt.name), `Hola ${appt.name}, nos comunicamos de ShiningCloud Dental. Vemos que han pasado más de 6 meses desde tu última atención (${appt.treatment}). Nos encantaría agendar un control preventivo gratuito para ver cómo estás. ¿Te gustaría ver horarios disponibles?`)} className="flex-1 md:flex-none p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
+                                    <MessageCircle size={16}/> Recuperar por WhatsApp
+                                </button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>}
       </main>
 
       {/* MODAL DIENTE ODONTOGRAMA (5 CARAS) */}
-      {modal === 'tooth' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-          <Card theme="dark" className="w-full max-w-sm space-y-4">
-              <h3 className="text-2xl font-black text-center">Diente {toothModalData.id}</h3>
-              <ToothFacesControl theme="dark" faces={toothModalData.faces} onChange={(face, status) => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [face]: status}})} />
-              <div className="grid grid-cols-2 gap-2">
-                  <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className={`p-2 rounded-xl border text-[10px] font-bold uppercase ${toothModalData.status==='missing'?'border-red-500 text-red-500':'border-white/10'}`}>Ausente</button>
-                  <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="p-2 bg-white/5 rounded-xl text-[10px] uppercase">Sano</button>
-              </div>
-              <InputField theme="dark" textarea label="Observaciones" placeholder="Ej: Fractura, mancha..." value={toothModalData.notes || ''} onChange={e=>setToothModalData({...toothModalData, notes: e.target.value})}/>
-              <Button theme="dark" className="w-full" onClick={()=>{ 
-                  const p = getPatient(selectedPatientId); 
-                  const ut = {...p.clinical.teeth, [toothModalData.id]: {status: toothModalData.status, faces: toothModalData.faces, notes: toothModalData.notes}}; 
-                  savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, teeth: ut}}); 
-                  setModal(null); notify("Diente Guardado"); 
-              }}>GUARDAR DATOS</Button>
-          </Card>
-      </div>}
+      {/* --- MODAL DIENTE DUAL ACTUALIZADO --- */}
+{modal === 'tooth' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+    <Card theme="dark" className="w-full max-w-sm space-y-4">
+        <h3 className="text-2xl font-black text-center">Diente {toothModalData.id}</h3>
+        
+        {toothModalData.mode === 'hallazgos' ? (
+            /* --- MODO HALLAZGOS (Lo que ya tenías) --- */
+            <>
+                <ToothFacesControl theme="dark" faces={toothModalData.faces} onChange={(face, status) => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [face]: status}})} />
+                <div className="grid grid-cols-2 gap-2">
+                    <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className={`p-2 rounded-xl border text-[10px] font-bold uppercase ${toothModalData.status==='missing'?'border-red-500 text-red-500':'border-white/10'}`}>Ausente</button>
+                    <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="p-2 bg-white/5 rounded-xl text-[10px] uppercase">Sano</button>
+                </div>
+                <InputField theme="dark" textarea label="Observaciones" placeholder="Ej: Fractura, mancha..." value={toothModalData.notes || ''} onChange={e=>setToothModalData({...toothModalData, notes: e.target.value})}/>
+            </>
+        ) : (
+            /* --- MODO TRATAMIENTOS (Nuevo) --- */
+            <div className="space-y-4 animate-in fade-in">
+                <p className="text-xs text-center opacity-50 uppercase tracking-widest">Planificar Tratamiento</p>
+                <InputField theme="dark" label="Procedimiento" placeholder="Ej: Resina Oclusal, Endodoncia..." value={toothModalData.treatment?.name || ''} onChange={e=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, name: e.target.value}})} />
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                    <button onClick={()=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'planned'}})} className={`p-3 rounded-xl border text-[10px] font-bold uppercase transition-all ${toothModalData.treatment?.status==='planned' ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-white/10'}`}>Por Hacer (Presupuesto)</button>
+                    <button onClick={()=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'completed'}})} className={`p-3 rounded-xl border text-[10px] font-bold uppercase transition-all ${toothModalData.treatment?.status==='completed' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'border-white/10'}`}>Realizado (Listo)</button>
+                </div>
+                <button onClick={()=>setToothModalData({...toothModalData, treatment: null})} className="w-full mt-2 p-2 text-xs text-red-400 opacity-50 hover:opacity-100">Eliminar Tratamiento</button>
+            </div>
+        )}
+
+        <Button theme="dark" className="w-full mt-4" onClick={()=>{ 
+            const p = getPatient(selectedPatientId); 
+            // Guardamos TANTO los hallazgos COMO el tratamiento en el objeto del diente
+            const ut = {...p.clinical.teeth, [toothModalData.id]: {status: toothModalData.status, faces: toothModalData.faces, notes: toothModalData.notes, treatment: toothModalData.treatment}}; 
+            savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, teeth: ut}}); 
+            setModal(null); notify("Diente Guardado"); 
+        }}>GUARDAR DATOS</Button>
+    </Card>
+</div>}
 
       {/* MODAL DE ABONOS */}
       {modal === 'abono' && selectedFinancialRecord && (
@@ -683,7 +1017,75 @@ export default function App() {
       
       {/* OTROS MODALES DE SIEMPRE */}
       {modal === 'perio' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-md space-y-4"><h3 className="font-bold text-xl">Diente {toothModalData.id} (Perio)</h3><div className="grid grid-cols-2 gap-4"><InputField theme="dark" label="Movilidad (0-3)" value={perioData.mobility} onChange={e=>setPerioData({...perioData, mobility: e.target.value})}/><InputField theme="dark" label="Furca (I-III)" value={perioData.furcation} onChange={e=>setPerioData({...perioData, furcation: e.target.value})}/></div><div className="space-y-2"><p className="text-[10px] font-bold uppercase opacity-50 text-center">Vestibular</p><div className="grid grid-cols-3 gap-2 text-center">{['D', 'C', 'M'].map((pos, i) => { const k = ['vd','v','vm'][i]; return (<div key={k} className="space-y-1"><input className="w-full bg-white/5 rounded text-center text-xs p-2" placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} /><div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer ${perioData.bop[k]?'bg-red-500':'bg-white/10'}`} title="Sangrado"></div></div>)})}</div></div><div className="space-y-2"><p className="text-[10px] font-bold uppercase opacity-50 text-center">{toothModalData.id < 30 ? 'Palatino' : 'Lingual'}</p><div className="grid grid-cols-3 gap-2 text-center">{['D', 'C', 'M'].map((pos, i) => { const k = ['ld','l','lm'][i]; return (<div key={k} className="space-y-1"><input className="w-full bg-white/5 rounded text-center text-xs p-2" placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} /><div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer ${perioData.bop[k]?'bg-red-500':'bg-white/10'}`} title="Sangrado"></div></div>)})}</div></div><div onClick={()=>setPerioData({...perioData, pus: !perioData.pus})} className={`p-3 rounded-xl border text-center font-bold text-xs cursor-pointer ${perioData.pus ? 'bg-yellow-500 text-black border-yellow-500' : 'border-white/10'}`}>{perioData.pus ? 'SUPURACIÓN (PUS)' : 'SIN PUS'}</div><Button theme="dark" className="w-full" onClick={()=>{ const p = getPatient(selectedPatientId); const newPerio = { ...p.clinical.perio, [toothModalData.id]: perioData }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: newPerio }}); setModal(null); notify("Datos Perio Guardados"); }}>GUARDAR DATOS</Button></Card></div>}
-      {modal === 'appt' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm space-y-4"><h3 className="font-bold">Nueva Cita</h3><PatientSelect theme="dark" patients={patientRecords} onSelect={(p)=>setNewAppt({...newAppt, name: p.personal.legalName})} placeholder="Buscar Paciente..." /><InputField theme="dark" label="Tratamiento" value={newAppt.treatment} onChange={e=>setNewAppt({...newAppt, treatment:e.target.value})}/><div className="flex gap-2"><input type="date" className="bg-white/5 p-3 rounded-xl text-white outline-none flex-1" value={newAppt.date} onChange={e=>setNewAppt({...newAppt, date:e.target.value})}/><input type="time" className="bg-white/5 p-3 rounded-xl text-white outline-none w-24" value={newAppt.time} onChange={e=>setNewAppt({...newAppt, time:e.target.value})}/></div><Button theme="dark" className="w-full" onClick={async ()=>{ if(newAppt.name){ const id=Date.now().toString(); const nd={...newAppt, id}; setAppointments([...appointments, nd]); await saveToSupabase('appointments', id, nd); setModal(null); setNewAppt({name:'', treatment:'', date:'', time:''}); notify("Cita Agendada"); }}}>AGENDAR</Button><button onClick={()=>setModal(null)} className="w-full text-center text-xs opacity-50">Cancelar</button></Card></div>}
+      {/* --- MODAL AGENDAR CITA ACTUALIZADO --- */}
+{modal === 'appt' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+    <Card theme="dark" className="w-full max-w-sm space-y-4">
+        <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xl">{newAppt.id ? 'Editar Cita' : 'Agendar Cita'}</h3>
+            <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100"><X size={20}/></button>
+        </div>
+        
+        {!newAppt.id && <PatientSelect theme="dark" patients={patientRecords} onSelect={(p)=>setNewAppt({...newAppt, name: p.personal.legalName})} placeholder="Buscar Paciente..." />}
+        {newAppt.id && <p className="font-bold text-lg text-cyan-400">{newAppt.name}</p>}
+        
+        <InputField theme="dark" label="Tratamiento" value={newAppt.treatment} onChange={e=>setNewAppt({...newAppt, treatment:e.target.value})}/>
+        
+        <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Fecha y Hora</label>
+                <input type="date" className="w-full bg-white/5 p-3 rounded-xl text-white outline-none text-xs" value={newAppt.date} onChange={e=>setNewAppt({...newAppt, date:e.target.value})}/>
+                <input type="time" className="w-full bg-white/5 p-3 rounded-xl text-white outline-none text-xs" value={newAppt.time} onChange={e=>setNewAppt({...newAppt, time:e.target.value})}/>
+            </div>
+            <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Detalles</label>
+                <select className="w-full bg-[#121212] border border-white/10 p-3 rounded-xl text-white outline-none text-xs" value={newAppt.duration} onChange={e=>setNewAppt({...newAppt, duration: Number(e.target.value)})}>
+                    <option value={15}>15 minutos</option>
+                    <option value={30}>30 minutos</option>
+                    <option value={45}>45 minutos</option>
+                    <option value={60}>1 Hora</option>
+                    <option value={90}>1.5 Horas</option>
+                    <option value={120}>2 Horas</option>
+                </select>
+                <select className={`w-full border border-white/10 p-3 rounded-xl text-white outline-none text-xs font-bold bg-[#121212] ${newAppt.status==='agendado'?'text-stone-400':newAppt.status==='confirmado'?'text-emerald-400':newAppt.status==='espera'?'text-yellow-400':newAppt.status==='atendiendo'?'text-blue-400':'text-red-400'}`} value={newAppt.status} onChange={e=>setNewAppt({...newAppt, status:e.target.value})}>
+                    <option value="agendado">⚪ Por Confirmar</option>
+                    <option value="confirmado">🟢 Confirmado</option>
+                    <option value="espera">🟡 En Sala Espera</option>
+                    <option value="atendiendo">🔵 En Box (Atendiendo)</option>
+                    <option value="no_asistio">🔴 No Asistió</option>
+                </select>
+            </div>
+        </div>
+
+        <div className="flex gap-2 pt-2">
+            {newAppt.id && (
+                <button onClick={(e)=>{e.stopPropagation(); supabase.from('appointments').delete().eq('id', newAppt.id).then(()=>{setAppointments(appointments.filter(a=>a.id!==newAppt.id)); setModal(null); notify("Cita Eliminada");})}} className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl">
+                    <Trash2 size={20}/>
+                </button>
+            )}
+            <Button theme="dark" className="flex-1" onClick={async ()=>{ 
+                if(newAppt.name){ 
+                    const id = newAppt.id || Date.now().toString(); 
+                    const nd = {...newAppt, id}; 
+                    if (newAppt.id) {
+                        setAppointments(appointments.map(a => a.id === id ? nd : a));
+                    } else {
+                        setAppointments([...appointments, nd]); 
+                    }
+                    await saveToSupabase('appointments', id, nd); 
+                    setModal(null); 
+                    notify(newAppt.id ? "Cita Actualizada" : "Cita Agendada"); 
+                }
+            }}>{newAppt.id ? 'ACTUALIZAR' : 'AGENDAR'}</Button>
+        </div>
+        
+        {/* Atajo de WhatsApp para confirmar rápido */}
+        {newAppt.id && (
+            <button onClick={(e)=>{ e.stopPropagation(); sendWhatsApp(getPatientPhone(newAppt.name), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`); }} className="w-full flex items-center justify-center gap-2 text-[10px] bg-white/5 py-2 rounded-xl hover:bg-white/10 text-stone-400 transition-colors uppercase font-bold tracking-widest mt-2">
+                <MessageCircle size={14} className="text-emerald-400"/> Enviar WhatsApp de Confirmación
+            </button>
+        )}
+    </Card>
+</div>}
       {modal === 'loadPack' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm h-96 flex flex-col"><h3 className="font-bold mb-4">Cargar Protocolo</h3><div className="flex-1 overflow-y-auto space-y-2">{protocols.map(pr=>(<div key={pr.id} onClick={()=>{setSessionData({...sessionData, treatmentName:pr.name, baseCost:pr.totalCost}); setModal(null); notify("Pack Cargado");}} className="p-4 bg-white/5 rounded-xl cursor-pointer hover:border-cyan-400 border border-transparent"><p className="font-bold">{pr.name}</p><p className="text-cyan-400">${pr.totalCost}</p></div>))}</div><button onClick={()=>setModal(null)} className="mt-4 text-xs opacity-50">Cerrar</button></Card></div>}
       
       {selectedImg && <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-4" onClick={()=>setSelectedImg(null)}><img src={selectedImg} className="max-w-full max-h-[85%] rounded-xl shadow-2xl animate-in zoom-in"/><span className="mt-4 text-white font-bold opacity-50">CLICK PARA CERRAR</span></div>}
