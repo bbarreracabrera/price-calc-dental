@@ -780,7 +780,7 @@ export default function App() {
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='calc'?t.accentBg:'opacity-50'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='packs'?t.accentBg:'opacity-50'}`}>Packs</button></div>{quoteMode === 'calc' ? (<Card theme={themeMode} className="space-y-4"><Button theme={themeMode} variant="secondary" onClick={()=>setModal('loadPack')}>CARGAR PACK</Button><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
     if (p.id === 'new') {
-        const newId = p.name.trim().toLowerCase();
+        const newId = "pac_" + Date.now().toString();
         const newPatient = getPatient(newId);
         newPatient.personal.legalName = p.name;
         savePatientData(newId, newPatient);
@@ -859,7 +859,7 @@ export default function App() {
         </div>
     </div>
 </div>}
-        {activeTab === 'ficha' && !selectedPatientId && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex gap-2"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => { if(p.id==='new') { const newId = p.name.trim().toLowerCase(); savePatientData(newId, getPatient(newId)); setSelectedPatientId(newId); } else { setSelectedPatientId(p.id); } }} placeholder="Buscar o Crear Paciente..." /></div><div className="grid gap-2">{Object.keys(patientRecords).map(k=>(<Card key={k} theme={themeMode} onClick={()=>setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center"><span className="font-bold capitalize">{k}</span><ArrowRight size={14}/></Card>))}</div></div>}
+        {activeTab === 'ficha' && !selectedPatientId && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex gap-2"><PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => { if(p.id==='new') { const newId = "pac_" + Date.now().toString(); savePatientData(newId, getPatient(newId)); setSelectedPatientId(newId); } else { setSelectedPatientId(p.id); } }} placeholder="Buscar o Crear Paciente..." /></div><div className="grid gap-2">{Object.keys(patientRecords).map(k=>(<Card key={k} theme={themeMode} onClick={()=>setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center"><span className="font-bold capitalize">{k}</span><ArrowRight size={14}/></Card>))}</div></div>}
         
         {activeTab === 'ficha' && selectedPatientId && <div className="space-y-4 animate-in slide-in-from-right"><button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion, restricted: true}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>{
             if (userRole === 'assistant' && b.restricted) return null; // V76: Role Protection
@@ -938,7 +938,7 @@ export default function App() {
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <Card theme={themeMode} className="space-y-4"><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
     if (p.id === 'new') {
-        const newId = p.name.trim().toLowerCase();
+        const newId = "pac_" + Date.now().toString();
         const newPatient = getPatient(newId);
         newPatient.personal.legalName = p.name;
         savePatientData(newId, newPatient);
@@ -1103,7 +1103,7 @@ export default function App() {
         {!newAppt.id && <PatientSelect theme="dark" patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
             if (p.id === 'new') {
                 // Si es nuevo, lo creamos en la base de datos inmediatamente
-                const newId = p.name.trim().toLowerCase();
+                const newId = "pac_" + Date.now().toString();
                 const newPatient = getPatient(newId);
                 newPatient.personal.legalName = p.name; // Respetar mayúsculas/minúsculas
                 savePatientData(newId, newPatient);
