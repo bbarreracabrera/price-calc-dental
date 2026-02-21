@@ -198,6 +198,8 @@ export default function App() {
   // --- NUEVOS ESTADOS DEL COTIZADOR ---
   const [quoteItems, setQuoteItems] = useState([]);
   const [newQuoteItem, setNewQuoteItem] = useState({ name: '', price: '', tooth: '' });
+  const [catalog, setCatalog] = useState([]);
+  const [newCatalogItem, setNewCatalogItem] = useState({ name: '', price: '', id: null });
 
   // DATA
   const [config, setConfigLocal] = useState({ logo: null, hourlyRate: 25000, profitMargin: 30, name: "Dr. Benjamín" });
@@ -207,7 +209,8 @@ export default function App() {
   const [protocols, setProtocols] = useState([]);
   const [inventory, setInventory] = useState([]); 
   const [team, setTeam] = useState([]); 
-  const [userRole, setUserRole] = useState('admin'); 
+  const [userRole, setUserRole] = useState('admin');
+  const [clinicOwner, setClinicOwner] = useState('');
 
   // UI STATES
   const [selectedPatientId, setSelectedPatientId] = useState(null);
@@ -271,16 +274,19 @@ export default function App() {
       const { data: i, error } = await supabase.from('inventory').select('*');
       if (!error && i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
       
-      // --- CARGA DE EQUIPO SEGURA (V77) ---
+      // --- CARGA DE EQUIPO SEGURA (V77) Y CATÁLOGO ---
       const { data: t, error: tErr } = await supabase.from('team').select('*');
+      
+      let myClinicAdmin = session.user.email; // Por defecto, asume que tú eres el dueño
+
       if (!tErr && t) {
           const allTeamData = t.map(r => ({...r.data, id: r.id}));
           
           // 1. Ver si el usuario actual fue agregado por algún administrador
           const me = allTeamData.find(u => u.email === session.user.email);
           
-          // 2. Definir quién es el dueño de la clínica (Si soy admin, soy yo. Si soy asistente, es mi jefe)
-          const myClinicAdmin = me ? me.admin_email : session.user.email;
+          // 2. Definir quién es el dueño de la clínica
+          if (me) myClinicAdmin = me.admin_email;
           
           // 3. Filtrar para ver SOLO al equipo de esta clínica específica
           const myTeam = allTeamData.filter(u => u.admin_email === myClinicAdmin);
@@ -289,7 +295,19 @@ export default function App() {
           
           if (myTeam.length === 0 || !me) setUserRole('admin'); 
           else setUserRole(me.role);
-      } else { setUserRole('admin'); }
+      } else { 
+          setUserRole('admin'); 
+      }
+
+      // <-- PASO B: Guardamos al dueño en memoria y cargamos SU catálogo
+      setClinicOwner(myClinicAdmin);
+
+      const { data: catData } = await supabase.from('catalog').select('*');
+      if (catData) {
+          const allCatalog = catData.map(r => ({ ...r.data, id: r.id }));
+          // Filtramos: Solo muestra los de esta clínica (o los viejos sin etiqueta para no perderlos)
+          setCatalog(allCatalog.filter(c => c.admin_email === myClinicAdmin || !c.admin_email));
+      }
     };
     load();
   }, [session]);
@@ -508,6 +526,7 @@ export default function App() {
       if (userRole === 'admin' || userRole === 'assistant') { base.push({ id: 'history', label: 'Caja & Gastos', icon: Wallet }); }
       if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'quote', label: 'Cotizador', icon: Calculator }); }
       if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'clinical', label: 'Recetas', icon: Stethoscope }); }
+      if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'catalog', label: 'Arancel', icon: Library }); }
       if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
       return base;
   };
@@ -763,6 +782,42 @@ export default function App() {
             </div>
         </div>}
 
+{/* --- PESTAÑA ARANCEL / CATÁLOGO --- */}
+        {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && (
+            <div className="space-y-6 animate-in fade-in h-full flex flex-col">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Library className={t.accent}/> Arancel de Prestaciones</h2>
+                        <p className="text-xs opacity-50 mt-1">Administra tus tratamientos y precios fijos.</p>
+                    </div>
+                    <Button theme={themeMode} onClick={() => { setNewCatalogItem({name:'', price:'', id:null}); setModal('catalogItem'); }}><Plus/> Nuevo Tratamiento</Button>
+                </div>
+                <div className="grid gap-2 overflow-y-auto custom-scrollbar pb-10">
+                    {catalog.length === 0 ? (
+                        <div className="p-10 border border-dashed border-white/10 rounded-3xl text-center opacity-50">
+                            <Library size={40} className="mx-auto mb-4 opacity-30"/>
+                            <p>Tu arancel está vacío.</p>
+                            <p className="text-[10px] mt-2">Agrega tus prestaciones para usarlas en el cotizador.</p>
+                        </div>
+                    ) : (
+                        catalog.sort((a,b)=>a.name.localeCompare(b.name)).map(item => (
+                            <Card key={item.id} theme={themeMode} className="flex justify-between items-center p-4 hover:border-cyan-500/50 transition-colors">
+                                <div><h4 className="font-bold">{item.name}</h4></div>
+                                <div className="flex items-center gap-4">
+                                    <span className="font-black text-emerald-400">${Number(item.price).toLocaleString()}</span>
+                                    <button onClick={() => { setNewCatalogItem(item); setModal('catalogItem'); }} className="p-2 text-stone-400 hover:text-cyan-400 transition-colors"><Edit3 size={16}/></button>
+                                    <button onClick={async () => {
+                                        setCatalog(catalog.filter(c => c.id !== item.id));
+                                        await supabase.from('catalog').delete().eq('id', item.id);
+                                        notify("Tratamiento eliminado");
+                                    }} className="p-2 text-stone-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                                </div>
+                            </Card>
+                        ))
+                    )}
+                </div>
+            </div>
+        )}
         {activeTab === 'inventory' && userRole === 'admin' && <div className="space-y-6 animate-in fade-in"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Inventario</h2><Button theme={themeMode} onClick={()=>{setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); setModal('addItem');}}><Plus/> Nuevo Item</Button></div><div className="relative"><InputField theme={themeMode} icon={Search} placeholder="Buscar insumo..." value={inventorySearch} onChange={e=>setInventorySearch(e.target.value)} /></div><div className="space-y-2">{filteredInventory.map(item => { const isLow = (item.stock || 0) <= (item.min || 5); return (<div key={item.id} className={`flex justify-between items-center p-4 rounded-xl border transition-all ${isLow ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}><div className="flex items-center gap-4"><div className={`p-3 rounded-lg ${isLow ? 'bg-red-500 text-white' : 'bg-white/10'}`}>{isLow ? <AlertTriangle size={20}/> : <Box size={20}/>}</div><div><h4 className="font-bold">{item.name}</h4><p className="text-xs opacity-50">Mínimo: {item.min} {item.unit}</p></div></div><div className="flex items-center gap-4"><div className="flex items-center gap-2 bg-black/20 rounded-lg p-1"><button onClick={async()=>{ const n = Math.max(0, (item.stock||0)-1); const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Minus size={14}/></button><span className={`w-8 text-center font-bold ${isLow?'text-red-500':''}`}>{item.stock}</span><button onClick={async()=>{ const n = (item.stock||0)+1; const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Plus size={14}/></button></div><button onClick={()=>{setNewItem(item); setModal('addItem');}} className="p-2 text-white/50 hover:text-cyan-400"><Edit3 size={18}/></button></div></div>)})}</div></div>}
 
         {/* --- SETTINGS (V58 CON EQUIPO) --- */}
@@ -848,7 +903,24 @@ export default function App() {
                         <div className="animate-in fade-in space-y-4 border-t border-white/10 pt-4">
                             <h3 className="font-bold">2. Agregar Procedimientos</h3>
                             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                                <div className="md:col-span-2"><InputField theme={themeMode} placeholder="Procedimiento (Ej: Resina Simple)" value={newQuoteItem.name} onChange={e=>setNewQuoteItem({...newQuoteItem, name:e.target.value})}/></div>
+                                <div className="md:col-span-2 relative">
+                                    <input 
+                                        list="arancel-options"
+                                        className={`w-full bg-transparent outline-none font-bold text-sm ${t.text} ${t.inputBg} p-3 rounded-2xl`}
+                                        placeholder="Procedimiento (Busca o escribe)"
+                                        value={newQuoteItem.name}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            const found = catalog.find(c => c.name === val);
+                                            // Si encuentra el tratamiento en el arancel, auto-completa el precio
+                                            if (found) { setNewQuoteItem({...newQuoteItem, name: val, price: found.price}); } 
+                                            else { setNewQuoteItem({...newQuoteItem, name: val}); }
+                                        }}
+                                    />
+                                    <datalist id="arancel-options">
+                                        {catalog.map(c => <option key={c.id} value={c.name} />)}
+                                    </datalist>
+                                </div>
                                 <div><InputField theme={themeMode} placeholder="N° Diente (Opcional)" value={newQuoteItem.tooth} onChange={e=>setNewQuoteItem({...newQuoteItem, tooth:e.target.value})}/></div>
                                 <div className="md:col-span-2 flex gap-2">
                                     <InputField theme={themeMode} type="number" placeholder="$ Valor" value={newQuoteItem.price} onChange={e=>setNewQuoteItem({...newQuoteItem, price:e.target.value})}/>
@@ -1336,7 +1408,30 @@ export default function App() {
 
       {/* MODAL INVENTARIO */}
       {modal === 'addItem' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm space-y-4"><div className="flex justify-between items-center"><h3 className="font-bold text-xl">{newItem.id ? 'Editar Insumo' : 'Nuevo Insumo'}</h3><button onClick={()=>{setModal(null); if(newItem.id) setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); }}><X/></button></div><InputField theme="dark" placeholder="Nombre (ej: Anestesia)" value={newItem.name} onChange={e=>setNewItem({...newItem, name:e.target.value})}/><div className="flex gap-2"><InputField theme="dark" label="Stock" type="number" value={newItem.stock} onChange={e=>setNewItem({...newItem, stock:Number(e.target.value)})}/><InputField theme="dark" label="Mínimo" type="number" value={newItem.min} onChange={e=>setNewItem({...newItem, min:Number(e.target.value)})}/></div><div className="flex gap-2"><Button theme="dark" className="flex-1" onClick={async()=>{ if(newItem.name){ const id = newItem.id || Date.now().toString(); const itemData = { ...newItem, id }; let updatedInventory; if (newItem.id) { updatedInventory = inventory.map(i => i.id === id ? itemData : i); } else { updatedInventory = [...inventory, itemData]; } setInventory(updatedInventory); await saveToSupabase('inventory', id, itemData); setModal(null); setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); notify("Guardado"); }}}>GUARDAR</Button>{newItem.id && <button onClick={async()=>{ const filtered = inventory.filter(i=>i.id!==newItem.id); setInventory(filtered); await supabase.from('inventory').delete().eq('id', newItem.id); setModal(null); notify("Eliminado"); }} className="p-3 bg-red-500/10 text-red-500 rounded-xl"><Trash2 size={20}/></button>}</div></Card></div>}
-      
+      {/* MODAL ARANCEL */}
+      {modal === 'catalogItem' && (
+          <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+              <Card theme="dark" className="w-full max-w-sm space-y-4">
+                  <div className="flex justify-between items-center">
+                      <h3 className="font-bold text-xl">{newCatalogItem.id ? 'Editar Tratamiento' : 'Nuevo Tratamiento'}</h3>
+                      <button onClick={()=>setModal(null)}><X/></button>
+                  </div>
+                  <InputField theme="dark" placeholder="Nombre (Ej: Endodoncia Birradicular)" value={newCatalogItem.name} onChange={e=>setNewCatalogItem({...newCatalogItem, name:e.target.value})}/>
+                  <InputField theme="dark" type="number" placeholder="$ Precio Fijo" value={newCatalogItem.price} onChange={e=>setNewCatalogItem({...newCatalogItem, price:e.target.value})}/>
+                  <Button theme="dark" className="w-full" onClick={async()=>{
+                      if(newCatalogItem.name && newCatalogItem.price){
+                          const id = newCatalogItem.id || Date.now().toString();
+                          const itemData = { ...newCatalogItem, price: Number(newCatalogItem.price), id, admin_email: clinicOwner };
+                          if (newCatalogItem.id) { setCatalog(catalog.map(c => c.id === id ? itemData : c)); } 
+                          else { setCatalog([...catalog, itemData]); }
+                          await saveToSupabase('catalog', id, itemData);
+                          setModal(null); setNewCatalogItem({name:'', price:'', id:null}); notify("Guardado en Arancel");
+                      }
+                  }}>GUARDAR EN ARANCEL</Button>
+              </Card>
+          </div>
+      )}
+
       {/* OTROS MODALES DE SIEMPRE */}
       {modal === 'perio' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-md space-y-4"><h3 className="font-bold text-xl">Diente {toothModalData.id} (Perio)</h3><div className="grid grid-cols-2 gap-4"><InputField theme="dark" label="Movilidad (0-3)" value={perioData.mobility} onChange={e=>setPerioData({...perioData, mobility: e.target.value})}/><InputField theme="dark" label="Furca (I-III)" value={perioData.furcation} onChange={e=>setPerioData({...perioData, furcation: e.target.value})}/></div><div className="space-y-2"><p className="text-[10px] font-bold uppercase opacity-50 text-center">Vestibular</p><div className="grid grid-cols-3 gap-2 text-center">{['D', 'C', 'M'].map((pos, i) => { const k = ['vd','v','vm'][i]; return (<div key={k} className="space-y-1"><input className="w-full bg-white/5 rounded text-center text-xs p-2" placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} /><div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer ${perioData.bop[k]?'bg-red-500':'bg-white/10'}`} title="Sangrado"></div></div>)})}</div></div><div className="space-y-2"><p className="text-[10px] font-bold uppercase opacity-50 text-center">{toothModalData.id < 30 ? 'Palatino' : 'Lingual'}</p><div className="grid grid-cols-3 gap-2 text-center">{['D', 'C', 'M'].map((pos, i) => { const k = ['ld','l','lm'][i]; return (<div key={k} className="space-y-1"><input className="w-full bg-white/5 rounded text-center text-xs p-2" placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} /><div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer ${perioData.bop[k]?'bg-red-500':'bg-white/10'}`} title="Sangrado"></div></div>)})}</div></div><div onClick={()=>setPerioData({...perioData, pus: !perioData.pus})} className={`p-3 rounded-xl border text-center font-bold text-xs cursor-pointer ${perioData.pus ? 'bg-yellow-500 text-black border-yellow-500' : 'border-white/10'}`}>{perioData.pus ? 'SUPURACIÓN (PUS)' : 'SIN PUS'}</div><Button theme="dark" className="w-full" onClick={()=>{ const p = getPatient(selectedPatientId); const newPerio = { ...p.clinical.perio, [toothModalData.id]: perioData }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: newPerio }}); setModal(null); notify("Datos Perio Guardados"); }}>GUARDAR DATOS</Button></Card></div>}
       {/* --- MODAL AGENDAR CITA ACTUALIZADO --- */}
