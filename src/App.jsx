@@ -195,6 +195,9 @@ export default function App() {
   const [quoteMode, setQuoteMode] = useState('calc');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [perioData, setPerioData] = useState({});
+  // --- NUEVOS ESTADOS DEL COTIZADOR ---
+  const [quoteItems, setQuoteItems] = useState([]);
+  const [newQuoteItem, setNewQuoteItem] = useState({ name: '', price: '', tooth: '' });
 
   // DATA
   const [config, setConfigLocal] = useState({ logo: null, hourlyRate: 25000, profitMargin: 30, name: "Dr. Benjamín" });
@@ -377,7 +380,16 @@ export default function App() {
           autoTable(doc, { startY: 60, head: [['MEDICAMENTO', 'DOSIS']], body: prescription.map(p => [p.name, p.dosage]) }); 
       } 
       else if (type === 'quote') { 
-          autoTable(doc, { startY: 60, head: [['ITEM', 'VALOR']], body: [[sessionData.treatmentName || 'Tratamiento', `$${currentTotal.toLocaleString()}`]] }); 
+          const qItems = data || []; // Recibe la lista de tratamientos
+          const totalQ = qItems.reduce((sum, item) => sum + Number(item.price), 0);
+          autoTable(doc, { 
+              startY: 60, 
+              head: [['TRATAMIENTO', 'DIENTE', 'VALOR']], 
+              body: qItems.map(it => [it.name, it.tooth || '-', `$${Number(it.price).toLocaleString()}`]),
+              foot: [['', 'TOTAL:', `$${totalQ.toLocaleString()}`]],
+              theme: 'striped'
+          }); 
+          
           if (pData && pData.clinical && pData.clinical.teeth) {
               const startY = doc.lastAutoTable.finalY + 20;
               doc.setFontSize(12); doc.setTextColor(0,0,0);
@@ -803,26 +815,100 @@ export default function App() {
         </div>}
 
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
-        {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <div className="space-y-4 animate-in slide-in-from-bottom"><div className="flex bg-white/5 p-1 rounded-xl mb-4"><button onClick={()=>setQuoteMode('calc')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='calc'?t.accentBg:'opacity-50'}`}>Calculadora</button><button onClick={()=>setQuoteMode('packs')} className={`flex-1 p-2 rounded-lg text-xs font-bold ${quoteMode==='packs'?t.accentBg:'opacity-50'}`}>Packs</button></div>{quoteMode === 'calc' ? (<Card theme={themeMode} className="space-y-4"><Button theme={themeMode} variant="secondary" onClick={()=>setModal('loadPack')}>CARGAR PACK</Button><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
-    if (p.id === 'new') {
-        const newId = "pac_" + Date.now().toString();
-        const nombreReal = p.name;
-        
-        const newPatient = getPatient(newId);
-        newPatient.id = newId;
-        newPatient.name = nombreReal;
-        if (!newPatient.personal) newPatient.personal = {};
-        newPatient.personal.legalName = nombreReal;
-        
-        savePatientData(newId, newPatient);
-        setSessionData({...sessionData, patientName: nombreReal, patientId: newId});
-        notify("Paciente Creado Exitosamente");
-    } else {
-        setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id});
-    }
-        setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id});
-    }
-} /><div className="grid grid-cols-2 gap-2"><InputField theme={themeMode} label="Minutos" type="number" value={sessionData.clinicalTime} onChange={e=>setSessionData({...sessionData, clinicalTime:e.target.value})} /><InputField theme={themeMode} label="Costos" type="number" value={sessionData.baseCost} onChange={e=>setSessionData({...sessionData, baseCost:e.target.value})} /></div><div className="text-center py-6 border-y border-white/10 my-4"><p className="text-xs opacity-50 uppercase tracking-widest mb-2">Total Estimado</p><h3 className="text-6xl font-black text-cyan-400">${currentTotal.toLocaleString()}</h3></div><div className="grid grid-cols-2 gap-2"><Button theme={themeMode} onClick={()=>{ const id=Date.now().toString(); saveToSupabase('financials', id, {id, total:currentTotal, paid:0, payments: [], patientName:sessionData.patientName, date:new Date().toLocaleDateString(), type: 'income'}); notify("Guardado en Caja"); }}>GUARDAR EN CAJA</Button><Button theme={themeMode} variant="secondary" onClick={()=>generatePDF('quote')}><Printer/></Button></div></Card>) : (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">Crear Nuevo Pack</h3><InputField theme={themeMode} label="Nombre Pack" value={newPack.name} onChange={e=>setNewPack({...newPack, name:e.target.value})} /><div className="flex gap-2"><InputField theme={themeMode} placeholder="Item" value={newPackItem.name} onChange={e=>setNewPackItem({...newPackItem, name:e.target.value})}/><InputField theme={themeMode} placeholder="$" type="number" value={newPackItem.cost} onChange={e=>setNewPackItem({...newPackItem, cost:e.target.value})}/><Button theme={themeMode} onClick={()=>{if(newPackItem.name) setNewPack({...newPack, items:[...newPack.items, {name:newPackItem.name, cost:Number(newPackItem.cost)}]}); setNewPackItem({name:'', cost:''});}}><Plus/></Button></div><div className="bg-black/20 p-4 rounded-xl space-y-2">{newPack.items.map((it, i)=>(<div key={i} className="flex justify-between text-xs border-b border-white/5 pb-1"><span>{it.name}</span><span>${it.cost}</span></div>))}</div><Button theme={themeMode} className="w-full" onClick={()=>{ const id = Date.now().toString(); const packComplete = {...newPack, id, totalCost: newPack.items.reduce((a,b)=>a+b.cost,0)}; setProtocols([...protocols, packComplete]); saveToSupabase('packs', id, packComplete); setNewPack({name:'', items:[]}); notify("Pack Guardado"); }}>GUARDAR PACK</Button></Card>)}</div>}
+       {/* --- NUEVO COTIZADOR CLINICO (ARANCEL) --- */}
+        {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && (
+            <div className="space-y-6 animate-in slide-in-from-bottom h-full">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Calculator className={t.accent}/> Creador de Presupuestos</h2>
+                        <p className="text-xs opacity-50 mt-1">Arma presupuestos de forma rápida y envíalos directo a caja.</p>
+                    </div>
+                    <Button theme={themeMode} variant="secondary" onClick={() => setQuoteItems([])}>Limpiar Lista</Button>
+                </div>
+                
+                <Card theme={themeMode} className="space-y-6">
+                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="1. Buscar o Crear Paciente..." onSelect={(p) => {
+                        if (p.id === 'new') {
+                            let nombreReal = p.name;
+                            if (!nombreReal || nombreReal.trim() === "") { nombreReal = window.prompt("Confirma el nombre:"); if (!nombreReal) return; }
+                            const newId = "pac_" + Date.now().toString();
+                            const newPatient = getPatient(newId);
+                            newPatient.id = newId; newPatient.name = nombreReal;
+                            if (!newPatient.personal) newPatient.personal = {};
+                            newPatient.personal.legalName = nombreReal;
+                            savePatientData(newId, newPatient);
+                            setSessionData({...sessionData, patientName: nombreReal, patientId: newId});
+                            notify("Paciente Creado");
+                        } else {
+                            setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id});
+                        }
+                    }} />
+                    
+                    {sessionData.patientId && (
+                        <div className="animate-in fade-in space-y-4 border-t border-white/10 pt-4">
+                            <h3 className="font-bold">2. Agregar Procedimientos</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                                <div className="md:col-span-2"><InputField theme={themeMode} placeholder="Procedimiento (Ej: Resina Simple)" value={newQuoteItem.name} onChange={e=>setNewQuoteItem({...newQuoteItem, name:e.target.value})}/></div>
+                                <div><InputField theme={themeMode} placeholder="N° Diente (Opcional)" value={newQuoteItem.tooth} onChange={e=>setNewQuoteItem({...newQuoteItem, tooth:e.target.value})}/></div>
+                                <div className="md:col-span-2 flex gap-2">
+                                    <InputField theme={themeMode} type="number" placeholder="$ Valor" value={newQuoteItem.price} onChange={e=>setNewQuoteItem({...newQuoteItem, price:e.target.value})}/>
+                                    <Button theme={themeMode} onClick={()=>{
+                                        if(newQuoteItem.name && newQuoteItem.price) {
+                                            setQuoteItems([...quoteItems, { id: Date.now(), name: newQuoteItem.name, tooth: newQuoteItem.tooth, price: Number(newQuoteItem.price) }]);
+                                            setNewQuoteItem({name:'', price:'', tooth:''});
+                                        }
+                                    }}><Plus/></Button>
+                                </div>
+                            </div>
+
+                            <div className="bg-black/20 rounded-xl p-4 space-y-2 mt-4 max-h-48 overflow-y-auto">
+                                {quoteItems.length === 0 ? <p className="text-center text-xs opacity-50 py-4">El presupuesto está vacío.</p> : (
+                                    quoteItems.map((item) => (
+                                        <div key={item.id} className="flex justify-between items-center text-sm border-b border-white/5 pb-2 last:border-0 hover:bg-white/5 transition-colors p-1 rounded">
+                                            <div>
+                                                <span className="font-bold">{item.name}</span>
+                                                {item.tooth && <span className="ml-2 text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full font-bold border border-cyan-500/20">Diente {item.tooth}</span>}
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <span className="font-black text-emerald-400">${item.price.toLocaleString()}</span>
+                                                <button onClick={()=>setQuoteItems(quoteItems.filter(i=>i.id !== item.id))} className="text-red-500 opacity-50 hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="flex justify-between items-center py-4 border-t border-b border-white/10 my-4">
+                                <span className="text-sm font-bold opacity-50 uppercase tracking-widest">Total Presupuesto</span>
+                                <h3 className="text-4xl font-black text-cyan-400">${quoteItems.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Button theme={themeMode} disabled={quoteItems.length===0} onClick={async ()=>{ 
+                                    const total = quoteItems.reduce((acc, item) => acc + item.price, 0);
+                                    const id = Date.now().toString(); 
+                                    // Guardamos el detalle como texto para que quede en el registro de caja
+                                    const detalle = quoteItems.map(i => `${i.name}${i.tooth ? ` (D${i.tooth})` : ''}`).join(' + ');
+                                    
+                                    await saveToSupabase('financials', id, {
+                                        id, total: total, paid: 0, payments: [], patientName: sessionData.patientName, 
+                                        date: new Date().toISOString().split('T')[0], type: 'income', description: detalle
+                                    }); 
+                                    
+                                    notify("Aprobado y enviado a Caja"); 
+                                    setQuoteItems([]);
+                                    setActiveTab('history'); // Lo llevamos automáticamente a la caja para ver la deuda
+                                }}>✅ APROBAR Y ENVIAR A CAJA</Button>
+                                
+                                <Button theme={themeMode} variant="secondary" disabled={quoteItems.length===0} onClick={()=>generatePDF('quote', quoteItems)}>
+                                    <Printer/> IMPRIMIR / PDF
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </Card>
+            </div>
+        )}
         {/* --- AGENDA FLEXIBLE ACTUALIZADA --- */}
 {activeTab === 'agenda' && <div className="space-y-4 h-full flex flex-col">
     <div className="flex justify-between items-center mb-2">
