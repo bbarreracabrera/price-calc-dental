@@ -967,6 +967,72 @@ export default function App() {
     <div className="flex gap-2 flex-wrap justify-center">
         {TEETH_LOWER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
     </div>
+    {/* --- LISTA DE RESUMEN Y ATAJO AL COTIZADOR --- */}
+        <div className="w-full mt-6 space-y-4">
+            <h3 className="font-bold border-b border-white/10 pb-3 flex justify-between items-center">
+                <span>📋 Resumen del Odontograma</span>
+                {/* Botón Mágico que lleva los datos al cotizador */}
+                {(userRole === 'admin' || userRole === 'dentist') && (
+                    <button onClick={() => {
+                        setActiveTab('quote');
+                        setSessionData({...sessionData, patientName: getPatient(selectedPatientId).personal.legalName, patientId: selectedPatientId});
+                    }} className="text-[10px] bg-emerald-500 text-white px-4 py-2 rounded-xl uppercase tracking-widest font-bold shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform">
+                        Generar Presupuesto 💰
+                    </button>
+                )}
+            </h3>
+            
+            <div className="max-h-64 overflow-y-auto custom-scrollbar pr-2 space-y-2">
+                {/* Filtramos y mostramos solo los dientes que tienen algún dato */}
+                {[...TEETH_UPPER, ...TEETH_LOWER].map(n => {
+                    const toothData = getPatient(selectedPatientId).clinical.teeth[n];
+                    if (!toothData) return null;
+                    
+                    const hasFaces = toothData.faces && Object.values(toothData.faces).some(v => v);
+                    const hasNotes = toothData.notes && toothData.notes.trim() !== '';
+                    const hasTreatment = toothData.treatment && toothData.treatment.name;
+                    
+                    if (toothData.status || hasFaces || hasNotes || hasTreatment) {
+                        return (
+                            <div key={n} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...toothData, faces: toothData.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: toothData.treatment || {name:'', status:'planned'}}); setModal('tooth');}} className="flex flex-col md:flex-row gap-3 p-3 bg-white/5 rounded-xl border border-white/5 text-xs hover:bg-white/10 transition-colors cursor-pointer group">
+                                <div className="w-10 h-10 shrink-0 rounded-full bg-black/40 flex items-center justify-center font-black text-lg text-cyan-400 group-hover:scale-110 transition-transform">{n}</div>
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <span className="font-bold text-stone-400 uppercase text-[9px] block mb-0.5">Diagnóstico</span>
+                                        <span className="font-bold">{toothData.status === 'missing' ? 'Ausente' : toothData.status === 'caries' ? 'Caries' : toothData.status === 'filled' ? 'Restauración' : toothData.status === 'crown' ? 'Corona' : 'Sano'}</span>
+                                        {hasFaces && <span className="ml-1 opacity-70">({Object.entries(toothData.faces).filter(([k,v])=>v).map(([k,v])=>k.toUpperCase()).join(', ')})</span>}
+                                    </div>
+                                    <div>
+                                        <span className="font-bold text-stone-400 uppercase text-[9px] block mb-0.5">Observaciones</span>
+                                        <span className="opacity-80">{toothData.notes || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="font-bold text-stone-400 uppercase text-[9px] block mb-0.5">Tratamiento Planificado</span>
+                                        {hasTreatment ? (
+                                            <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${toothData.treatment.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                {toothData.treatment.name} {toothData.treatment.status === 'completed' ? '(Listo)' : '(Por Hacer)'}
+                                            </span>
+                                        ) : <span className="opacity-50">-</span>}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+                    return null;
+                })}
+                
+                {/* Mensaje si el odontograma está vacío */}
+                {![...TEETH_UPPER, ...TEETH_LOWER].some(n => {
+                    const d = getPatient(selectedPatientId).clinical.teeth[n];
+                    return d && (d.status || (d.faces && Object.values(d.faces).some(v=>v)) || d.notes || d.treatment?.name);
+                }) && (
+                    <div className="text-center py-8 opacity-40 border border-dashed border-white/10 rounded-xl">
+                        <p>No hay hallazgos registrados aún.</p>
+                        <p className="text-[10px]">Haz clic en un diente para comenzar.</p>
+                    </div>
+                )}
+            </div>
+        </div>
 </Card>}
                 {patientTab === 'perio' && <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center"><p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p><h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2><p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p></Card><Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center"><p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p><h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2><p className="text-[10px] opacity-50">O'Leary (4 caras)</p></Card></div><Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div></Card><Card theme={themeMode} className="space-y-4"><h3 className="font-bold border-b border-white/10 pb-2">Tabla de Higiene (O'Leary)</h3><div className="overflow-x-auto pb-4"><div className="flex gap-2 min-w-max">{[...TEETH_UPPER, ...TEETH_LOWER].map(t => { const p = getPatient(selectedPatientId); if(p.clinical.teeth[t]?.status === 'missing') return null; return ( <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]} onChange={(face) => { const current = p.clinical.hygiene?.[t] || {}; const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); }} /> ); })}</div></div><div className="flex gap-4 text-xs opacity-50"><span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-sm"/> Placa</span><span className="flex items-center gap-1"><div className="w-3 h-3 bg-white/10 border border-white/20 rounded-sm"/> Limpio</span></div></Card></div>}
                 
