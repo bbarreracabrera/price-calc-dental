@@ -1156,7 +1156,18 @@ export default function App() {
                     <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className={`p-2 rounded-xl border text-[10px] font-bold uppercase ${toothModalData.status==='missing'?'border-red-500 text-red-500':'border-white/10'}`}>Ausente</button>
                     <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="p-2 bg-white/5 rounded-xl text-[10px] uppercase">Sano</button>
                 </div>
-                <InputField theme="dark" textarea label="Observaciones" placeholder="Ej: Fractura, mancha..." value={toothModalData.notes || ''} onChange={e=>setToothModalData({...toothModalData, notes: e.target.value})}/>
+                <div className="w-full">
+                    <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Observaciones (Voz o Texto)</label>
+                    <div className="flex items-start p-3 rounded-2xl transition-all bg-white/5 border border-white/5 focus-within:border-cyan-400">
+                        <textarea rows="3" placeholder="Ej: Fractura... (O presiona el micrófono y habla)" className="bg-transparent outline-none w-full font-bold text-sm resize-none text-white" value={toothModalData.notes || ''} onChange={e=>setToothModalData({...toothModalData, notes: e.target.value})}/>
+                        <div className="flex flex-col items-center gap-1 ml-2">
+                            <button onClick={() => toggleVoice('tooth')} className={`p-3 rounded-full transition-all shadow-lg ${isListening ? 'bg-red-500 animate-pulse text-white' : 'bg-[#121212] text-stone-400 hover:text-cyan-400'}`}>
+                                {isListening ? <MicOff size={16}/> : <Mic size={16}/>}
+                            </button>
+                        </div>
+                    </div>
+                    {voiceStatus && <p className="text-[10px] text-right mt-1 opacity-60 animate-pulse font-bold text-cyan-400">{voiceStatus}</p>}
+                </div>
             </>
         ) : (
             /* --- MODO TRATAMIENTOS (Nuevo) --- */
