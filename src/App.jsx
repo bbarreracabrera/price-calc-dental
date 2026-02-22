@@ -398,39 +398,69 @@ export default function App() {
           autoTable(doc, { startY: 60, head: [['MEDICAMENTO', 'DOSIS']], body: prescription.map(p => [p.name, p.dosage]) }); 
       } 
       else if (type === 'quote') { 
-          const qItems = data || []; // Recibe la lista de tratamientos
-          const totalQ = qItems.reduce((sum, item) => sum + Number(item.price), 0);
-          autoTable(doc, { 
-              startY: 60, 
-              head: [['TRATAMIENTO', 'DIENTE', 'VALOR']], 
-              body: qItems.map(it => [it.name, it.tooth || '-', `$${Number(it.price).toLocaleString()}`]),
-              foot: [['', 'TOTAL:', `$${totalQ.toLocaleString()}`]],
-              theme: 'striped'
-          }); 
-          
-          if (pData && pData.clinical && pData.clinical.teeth) {
-              const startY = doc.lastAutoTable.finalY + 20;
-              doc.setFontSize(12); doc.setTextColor(0,0,0);
-              doc.text("MAPA CLÍNICO (ODONTOGRAMA)", 105, startY, { align: 'center' });
-              
-              const drawTeethRow = (teethIds, yPos) => {
-                  let xPos = 20; const width = 10; const height = 10; const gap = 1;
-                  teethIds.forEach(id => {
-                      const tData = pData.clinical.teeth[id] || {};
-                      let color = [255, 255, 255]; 
-                      if (tData.status === 'missing') color = [50, 50, 50]; 
-                      else if (Object.values(tData.faces || {}).some(s => s === 'caries') || tData.status === 'caries') color = [220, 38, 38]; 
-                      else if (Object.values(tData.faces || {}).some(s => s === 'filled') || tData.status === 'filled') color = [37, 99, 235]; 
-                      else if (Object.values(tData.faces || {}).some(s => s === 'crown') || tData.status === 'crown') color = [234, 179, 8]; 
-                      doc.setFillColor(...color); doc.rect(xPos, yPos, width, height, 'F'); doc.setDrawColor(150); doc.rect(xPos, yPos, width, height, 'S'); 
-                      doc.setFontSize(7); doc.setTextColor(100); doc.text(id.toString(), xPos + width/2, yPos - 2, {align:'center'});
-                      xPos += width + gap;
-                  });
-              };
-              drawTeethRow(TEETH_UPPER, startY + 10); drawTeethRow(TEETH_LOWER, startY + 30);
-              const legY = startY + 50; doc.setFontSize(8); doc.setFillColor(220, 38, 38); doc.rect(20, legY, 3, 3, 'F'); doc.text("Caries/Tto", 25, legY+2); doc.setFillColor(37, 99, 235); doc.rect(50, legY, 3, 3, 'F'); doc.text("Restauración", 55, legY+2); doc.setFillColor(50, 50, 50); doc.rect(85, legY, 3, 3, 'F'); doc.text("Ausente", 90, legY+2);
-          }
-      }
+            const qItems = data || []; 
+            const totalQ = qItems.reduce((sum, item) => sum + Number(item.price), 0);
+            const pData = getPatient(sessionData.patientId);
+            
+            // 1. Cabecera (Ajustada a la izquierda para no chocar con tu DR. BENJAMÍN)
+            doc.setFontSize(22);
+            doc.setTextColor(45, 212, 191); // Color Cyan
+            doc.text("PRESUPUESTO DENTAL", 14, 20); 
+            
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Fecha de Emisión: ${new Date().toLocaleDateString()}`, 14, 26); 
+            
+            doc.setDrawColor(200, 200, 200);
+            doc.line(14, 32, 196, 32); // Línea separadora limpia
+            
+            // 2. Datos del Paciente 
+            // NO imprimimos "Paciente:" porque tu sistema ya lo dibuja por defecto.
+            // Solo agregamos el RUT y el Teléfono justo debajo para complementarlo.
+            doc.setFontSize(10);
+            doc.setTextColor(80, 80, 80);
+            let infoY = 58; // Empezamos a escribir más abajo para darle espacio a tu texto global
+            if (pData && pData.personal && pData.personal.documentId) {
+                doc.text(`RUT / Documento: ${pData.personal.documentId}`, 14, infoY);
+                infoY += 6;
+            }
+            if (pData && pData.personal && pData.personal.phone) {
+                doc.text(`Teléfono: ${pData.personal.phone}`, 14, infoY);
+                infoY += 6;
+            }
+
+            // 3. Tabla de Tratamientos (Se acomoda dinámicamente según el espacio)
+            autoTable(doc, { 
+                startY: infoY + 5, 
+                head: [['TRATAMIENTO', 'DIENTE', 'VALOR']], 
+                body: qItems.map(it => [it.name, it.tooth || '-', `$${Number(it.price).toLocaleString()}`]),
+                foot: [['', 'TOTAL A PAGAR:', `$${totalQ.toLocaleString()}`]],
+                theme: 'striped',
+                headStyles: { fillColor: [45, 212, 191], textColor: [255,255,255], fontStyle: 'bold' },
+                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [250, 252, 252] }
+            }); 
+            
+            // 4. Términos, Condiciones y Firmas
+            const finalY = doc.lastAutoTable.finalY + 15;
+            
+            if (finalY < 230) { // Validamos que quede espacio en la hoja para no cortar la firma
+                doc.setFontSize(9);
+                doc.setTextColor(150, 150, 150);
+                doc.text("Términos y Condiciones:", 14, finalY);
+                doc.text("1. Este presupuesto tiene una validez de 30 días desde la fecha de emisión.", 14, finalY + 6);
+                doc.text("2. Los valores indicados pueden sufrir modificaciones si se descubren nuevos hallazgos", 14, finalY + 11);
+                doc.text("   clínicos o complicaciones durante la ejecución del tratamiento planificado.", 14, finalY + 16);
+
+                doc.setDrawColor(150, 150, 150);
+                doc.line(30, finalY + 45, 85, finalY + 45); // Línea Firma Doctor
+                doc.line(125, finalY + 45, 180, finalY + 45); // Línea Firma Paciente
+                
+                doc.setTextColor(100, 100, 100);
+                doc.text("Firma Profesional Tratante", 38, finalY + 50);
+                doc.text("Firma Paciente / Apoderado", 130, finalY + 50);
+            }
+        }
       else if (type === 'consent' && data) { 
           doc.setFontSize(14); doc.text(data.type, 105, 70, { align: 'center' }); 
           doc.setFontSize(10); doc.text(doc.splitTextToSize(data.text || '', 170), 20, 90); 
