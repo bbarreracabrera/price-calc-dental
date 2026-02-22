@@ -907,8 +907,7 @@ export default function App() {
             )}
         </div>}
 
-        {/* --- TABS COMUNES (MANTENIDOS) --- */}
-       {/* --- NUEVO COTIZADOR CLINICO (ARANCEL) --- */}
+        {/* --- NUEVO COTIZADOR CLINICO (ARANCEL) --- */}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && (
             <div className="space-y-6 animate-in slide-in-from-bottom h-full">
                 <div className="flex justify-between items-center">
@@ -938,19 +937,20 @@ export default function App() {
                     }} />
                     
                     {sessionData.patientId && (
-                        <div className="animate-in fade-in space-y-4 border-t border-white/10 pt-4">
+                        /* Reemplazamos border-white/10 por t.border para la línea separadora */
+                        <div className={`animate-in fade-in space-y-4 border-t ${t.border} pt-4`}>
                             <h3 className="font-bold">Agregar Procedimientos</h3>
                             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                                 <div className="md:col-span-2 relative">
+                                    {/* AQUÍ ESTÁ EL ARREGLO DEL BUSCADOR: Agregamos border-2 y colores dinámicos forzados para que no desaparezca */}
                                     <input 
                                         list="arancel-options"
-                                        className={`w-full bg-transparent outline-none font-bold text-sm ${t.text} ${t.inputBg} p-3 rounded-2xl`}
+                                        className={`w-full outline-none font-bold text-sm p-3 rounded-2xl border-2 border-black/10 dark:border-white/10 ${t.inputBg} ${t.text} focus:border-cyan-400 transition-all`}
                                         placeholder="Procedimiento (Busca o escribe)"
                                         value={newQuoteItem.name}
                                         onChange={e => {
                                             const val = e.target.value;
                                             const found = catalog.find(c => c.name === val);
-                                            // Si encuentra el tratamiento en el arancel, auto-completa el precio
                                             if (found) { setNewQuoteItem({...newQuoteItem, name: val, price: found.price}); } 
                                             else { setNewQuoteItem({...newQuoteItem, name: val}); }
                                         }}
@@ -971,16 +971,17 @@ export default function App() {
                                 </div>
                             </div>
 
-                            <div className="bg-black/20 rounded-xl p-4 space-y-2 mt-4 max-h-48 overflow-y-auto">
+                            {/* Limpiamos el bg-black/20 y pusimos un fondo suave que se adapta al tema */}
+                            <div className={`rounded-xl p-4 space-y-2 mt-4 max-h-48 overflow-y-auto bg-black/5 dark:bg-white/5 border ${t.border}`}>
                                 {quoteItems.length === 0 ? <p className="text-center text-xs opacity-50 py-4">El presupuesto está vacío.</p> : (
                                     quoteItems.map((item) => (
-                                        <div key={item.id} className="flex justify-between items-center text-sm border-b border-white/5 pb-2 last:border-0 hover:bg-white/5 transition-colors p-1 rounded">
+                                        <div key={item.id} className={`flex justify-between items-center text-sm border-b ${t.border} pb-2 last:border-0 hover:opacity-70 transition-colors p-1 rounded`}>
                                             <div>
                                                 <span className="font-bold">{item.name}</span>
-                                                {item.tooth && <span className="ml-2 text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full font-bold border border-cyan-500/20">Diente {item.tooth}</span>}
+                                                {item.tooth && <span className="ml-2 text-[10px] bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 px-2 py-0.5 rounded-full font-bold border border-cyan-500/20">Diente {item.tooth}</span>}
                                             </div>
                                             <div className="flex items-center gap-4">
-                                                <span className="font-black text-emerald-400">${item.price.toLocaleString()}</span>
+                                                <span className="font-black text-emerald-600 dark:text-emerald-400">${item.price.toLocaleString()}</span>
                                                 <button onClick={()=>setQuoteItems(quoteItems.filter(i=>i.id !== item.id))} className="text-red-500 opacity-50 hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
                                             </div>
                                         </div>
@@ -988,16 +989,15 @@ export default function App() {
                                 )}
                             </div>
 
-                            <div className="flex justify-between items-center py-4 border-t border-b border-white/10 my-4">
+                            <div className={`flex justify-between items-center py-4 border-t border-b ${t.border} my-4`}>
                                 <span className="text-sm font-bold opacity-50 uppercase tracking-widest">Total Presupuesto</span>
-                                <h3 className="text-4xl font-black text-cyan-400">${quoteItems.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</h3>
+                                <h3 className="text-4xl font-black text-cyan-600 dark:text-cyan-400">${quoteItems.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</h3>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Button theme={themeMode} disabled={quoteItems.length===0} onClick={async ()=>{ 
                                     const total = quoteItems.reduce((acc, item) => acc + item.price, 0);
                                     const id = Date.now().toString(); 
-                                    // Guardamos el detalle como texto para que quede en el registro de caja
                                     const detalle = quoteItems.map(i => `${i.name}${i.tooth ? ` (D${i.tooth})` : ''}`).join(' + ');
                                     
                                     await saveToSupabase('financials', id, {
@@ -1007,7 +1007,7 @@ export default function App() {
                                     
                                     notify("Aprobado y enviado a Caja"); 
                                     setQuoteItems([]);
-                                    setActiveTab('history'); // Lo llevamos automáticamente a la caja para ver la deuda
+                                    setActiveTab('history');
                                 }}>✅ APROBAR Y ENVIAR A CAJA</Button>
                                 
                                 <Button theme={themeMode} variant="secondary" disabled={quoteItems.length===0} onClick={()=>generatePDF('quote', quoteItems)}>
@@ -1019,15 +1019,15 @@ export default function App() {
                 </Card>
             </div>
         )}
-        {/* --- AGENDA FLEXIBLE ACTUALIZADA --- */}
+       {/* --- AGENDA FLEXIBLE ACTUALIZADA --- */}
 {activeTab === 'agenda' && <div className="space-y-4 h-full flex flex-col">
     <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold">Agenda Semanal</h2>
-            <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1">
-                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d)}} className="p-2 hover:bg-white/10 rounded"><ChevronLeft size={16}/></button>
+            <div className={`flex items-center gap-2 rounded-xl p-1 border ${t.border} ${t.cardBg}`}>
+                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d)}} className="p-2 rounded hover:opacity-50 transition-opacity"><ChevronLeft size={16}/></button>
                 <button onClick={()=>setCurrentDate(new Date())} className="text-xs font-bold px-2">HOY</button>
-                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d)}} className="p-2 hover:bg-white/10 rounded"><ChevronRight size={16}/></button>
+                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d)}} className="p-2 rounded hover:opacity-50 transition-opacity"><ChevronRight size={16}/></button>
             </div>
         </div>
         <div className="hidden md:flex gap-2 text-[9px] font-bold uppercase opacity-60">
@@ -1039,11 +1039,12 @@ export default function App() {
         <Button theme={themeMode} onClick={()=>{setNewAppt({name: '', treatment: '', date: '', time: '', duration: 60, status: 'agendado', id: null}); setModal('appt');}}><Plus/> Agendar</Button>
     </div>
     
-    <div className="flex-1 overflow-auto bg-white/5 rounded-2xl border border-white/5 custom-scrollbar">
+    <div className={`flex-1 overflow-auto rounded-2xl border ${t.border} ${t.cardBg} custom-scrollbar`}>
         <div className="grid grid-cols-8 min-w-[800px]">
-            <div className="p-4 border-b border-r border-white/5 text-xs font-bold text-center opacity-50 sticky top-0 bg-[#050505] z-20">HORA</div>
+            {/* Usamos t.bg para que el fondo pegajoso tome el color sólido exacto de tu tema */}
+            <div className={`p-4 border-b border-r ${t.border} text-xs font-bold text-center opacity-50 sticky top-0 z-20 ${t.bg}`}>HORA</div>
             {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => (
-                <div key={d} className={`p-4 border-b border-white/5 text-center sticky top-0 bg-[#050505] z-20 ${d.toDateString()===new Date().toDateString() ? t.accent : ''}`}>
+                <div key={d} className={`p-4 border-b ${t.border} text-center sticky top-0 z-20 ${t.bg} ${d.toDateString()===new Date().toDateString() ? t.accent : ''}`}>
                     <p className="text-xs font-bold opacity-70">{['LUN','MAR','MIE','JUE','VIE','SAB','DOM'][d.getDay()===0?6:d.getDay()-1]}</p>
                     <p className="text-xl font-black">{d.getDate()}</p>
                 </div>
@@ -1368,13 +1369,13 @@ export default function App() {
       {/* MODAL DIENTE ODONTOGRAMA (5 CARAS) */}
       {/* --- MODAL DIENTE DUAL ACTUALIZADO --- */}
 {modal === 'tooth' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-    <Card theme="dark" className="w-full max-w-sm space-y-4">
+    <Card theme={themeMode} className="w-full max-w-sm space-y-4">
         <h3 className="text-2xl font-black text-center">Diente {toothModalData.id}</h3>
         
         {toothModalData.mode === 'hallazgos' ? (
             /* --- MODO HALLAZGOS (Lo que ya tenías) --- */
             <>
-                <ToothFacesControl theme="dark" faces={toothModalData.faces} onChange={(face, status) => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [face]: status}})} toothNumber={toothModalData.id} />
+                <ToothFacesControl theme={themeMode} faces={toothModalData.faces} onChange={(face, status) => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [face]: status}})} toothNumber={toothModalData.id} />
                 <div className="grid grid-cols-2 gap-2">
                     <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className={`p-2 rounded-xl border text-[10px] font-bold uppercase ${toothModalData.status==='missing'?'border-red-500 text-red-500':'border-white/10'}`}>Ausente</button>
                     <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="p-2 bg-white/5 rounded-xl text-[10px] uppercase">Sano</button>
@@ -1402,7 +1403,7 @@ export default function App() {
                     <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Tratamiento Planificado</label>
                     <input 
                         list="catalog-tooth-options"
-                        className="w-full bg-white/5 outline-none font-bold text-sm text-white p-3 rounded-2xl border border-white/5 focus:border-cyan-400 transition-all"
+                        className={`w-full outline-none font-bold text-sm p-3 rounded-2xl border ${t.border} ${t.inputBg} ${t.text} focus:border-cyan-400 transition-all`}
                         placeholder="Busca en tu arancel..."
                         value={toothModalData.treatment?.name || ''}
                         onChange={e => setToothModalData({...toothModalData, treatment: {...(toothModalData.treatment || {}), name: e.target.value, status: toothModalData.treatment?.status || 'planned'}})}
@@ -1422,7 +1423,7 @@ export default function App() {
             </div>
         )}
 
-        <Button theme="dark" className="w-full mt-4" onClick={()=>{ 
+        <Button theme={themeMode} className="w-full mt-4" onClick={()=>{ 
             const p = getPatient(selectedPatientId); 
             // Guardamos TANTO los hallazgos COMO el tratamiento en el objeto del diente
             const ut = {...p.clinical.teeth, [toothModalData.id]: {status: toothModalData.status, faces: toothModalData.faces, notes: toothModalData.notes, treatment: toothModalData.treatment}}; 
@@ -1435,7 +1436,7 @@ export default function App() {
       {/* MODAL DE ABONOS */}
       {modal === 'abono' && selectedFinancialRecord && (
           <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-              <Card theme="dark" className="w-full max-w-md space-y-6">
+              <Card  className="w-full max-w-md space-y-6">
                   <div className="flex justify-between items-center border-b border-white/10 pb-4">
                       <div><h3 className="text-xl font-bold">{selectedFinancialRecord.patientName}</h3><p className="text-xs opacity-50">{selectedFinancialRecord.date}</p></div>
                       <button onClick={()=>setModal(null)}><X/></button>
@@ -1448,15 +1449,15 @@ export default function App() {
                   <div className="space-y-3 bg-white/5 p-4 rounded-xl">
                       <h4 className="font-bold text-sm">Registrar Nuevo Abono</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                          <InputField theme="dark" type="number" placeholder="$ Monto" value={paymentInput.amount} onChange={e=>setPaymentInput({...paymentInput, amount:e.target.value})} />
+                          <InputField  type="number" placeholder="$ Monto" value={paymentInput.amount} onChange={e=>setPaymentInput({...paymentInput, amount:e.target.value})} />
                           <select className="bg-[#121212] border border-white/10 rounded-xl px-2 p-3 text-xs font-bold outline-none text-white" value={paymentInput.method} onChange={e=>setPaymentInput({...paymentInput, method:e.target.value})}>
                               <option value="Efectivo">Efectivo</option>
                               <option value="Transferencia">Transferencia</option>
                               <option value="Tarjeta">Tarjeta</option>
                           </select>
-                          <InputField theme="dark" placeholder="N° Boleta (Opc.)" value={paymentInput.receiptNumber} onChange={e=>setPaymentInput({...paymentInput, receiptNumber:e.target.value})} />
+                          <InputField  placeholder="N° Boleta (Opc.)" value={paymentInput.receiptNumber} onChange={e=>setPaymentInput({...paymentInput, receiptNumber:e.target.value})} />
                       </div>
-                      <Button theme="dark" className="w-full" onClick={async ()=>{
+                      <Button  className="w-full" onClick={async ()=>{
                           if(!paymentInput.amount) return;
                           const newPayment = { amount: Number(paymentInput.amount), method: paymentInput.method, date: new Date().toLocaleDateString(), receiptNumber: paymentInput.receiptNumber };
                           const currentPayments = selectedFinancialRecord.payments || [];
@@ -1489,18 +1490,18 @@ export default function App() {
       )}
 
       {/* MODAL INVENTARIO */}
-      {modal === 'addItem' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-sm space-y-4"><div className="flex justify-between items-center"><h3 className="font-bold text-xl">{newItem.id ? 'Editar Insumo' : 'Nuevo Insumo'}</h3><button onClick={()=>{setModal(null); if(newItem.id) setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); }}><X/></button></div><InputField theme="dark" placeholder="Nombre (ej: Anestesia)" value={newItem.name} onChange={e=>setNewItem({...newItem, name:e.target.value})}/><div className="flex gap-2"><InputField theme="dark" label="Stock" type="number" value={newItem.stock} onChange={e=>setNewItem({...newItem, stock:Number(e.target.value)})}/><InputField theme="dark" label="Mínimo" type="number" value={newItem.min} onChange={e=>setNewItem({...newItem, min:Number(e.target.value)})}/></div><div className="flex gap-2"><Button theme="dark" className="flex-1" onClick={async()=>{ if(newItem.name){ const id = newItem.id || Date.now().toString(); const itemData = { ...newItem, id }; let updatedInventory; if (newItem.id) { updatedInventory = inventory.map(i => i.id === id ? itemData : i); } else { updatedInventory = [...inventory, itemData]; } setInventory(updatedInventory); await saveToSupabase('inventory', id, itemData); setModal(null); setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); notify("Guardado"); }}}>GUARDAR</Button>{newItem.id && <button onClick={async()=>{ const filtered = inventory.filter(i=>i.id!==newItem.id); setInventory(filtered); await supabase.from('inventory').delete().eq('id', newItem.id); setModal(null); notify("Eliminado"); }} className="p-3 bg-red-500/10 text-red-500 rounded-xl"><Trash2 size={20}/></button>}</div></Card></div>}
+      {modal === 'addItem' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card  className="w-full max-w-sm space-y-4"><div className="flex justify-between items-center"><h3 className="font-bold text-xl">{newItem.id ? 'Editar Insumo' : 'Nuevo Insumo'}</h3><button onClick={()=>{setModal(null); if(newItem.id) setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); }}><X/></button></div><InputField  placeholder="Nombre (ej: Anestesia)" value={newItem.name} onChange={e=>setNewItem({...newItem, name:e.target.value})}/><div className="flex gap-2"><InputField  label="Stock" type="number" value={newItem.stock} onChange={e=>setNewItem({...newItem, stock:Number(e.target.value)})}/><InputField  label="Mínimo" type="number" value={newItem.min} onChange={e=>setNewItem({...newItem, min:Number(e.target.value)})}/></div><div className="flex gap-2"><Button  className="flex-1" onClick={async()=>{ if(newItem.name){ const id = newItem.id || Date.now().toString(); const itemData = { ...newItem, id }; let updatedInventory; if (newItem.id) { updatedInventory = inventory.map(i => i.id === id ? itemData : i); } else { updatedInventory = [...inventory, itemData]; } setInventory(updatedInventory); await saveToSupabase('inventory', id, itemData); setModal(null); setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); notify("Guardado"); }}}>GUARDAR</Button>{newItem.id && <button onClick={async()=>{ const filtered = inventory.filter(i=>i.id!==newItem.id); setInventory(filtered); await supabase.from('inventory').delete().eq('id', newItem.id); setModal(null); notify("Eliminado"); }} className="p-3 bg-red-500/10 text-red-500 rounded-xl"><Trash2 size={20}/></button>}</div></Card></div>}
       {/* MODAL ARANCEL */}
       {modal === 'catalogItem' && (
           <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-              <Card theme="dark" className="w-full max-w-sm space-y-4">
+              <Card  className="w-full max-w-sm space-y-4">
                   <div className="flex justify-between items-center">
                       <h3 className="font-bold text-xl">{newCatalogItem.id ? 'Editar Tratamiento' : 'Nuevo Tratamiento'}</h3>
                       <button onClick={()=>setModal(null)}><X/></button>
                   </div>
-                  <InputField theme="dark" placeholder="Nombre (Ej: Endodoncia Birradicular)" value={newCatalogItem.name} onChange={e=>setNewCatalogItem({...newCatalogItem, name:e.target.value})}/>
-                  <InputField theme="dark" type="number" placeholder="$ Precio Fijo" value={newCatalogItem.price} onChange={e=>setNewCatalogItem({...newCatalogItem, price:e.target.value})}/>
-                  <Button theme="dark" className="w-full" onClick={async()=>{
+                  <InputField  placeholder="Nombre (Ej: Endodoncia Birradicular)" value={newCatalogItem.name} onChange={e=>setNewCatalogItem({...newCatalogItem, name:e.target.value})}/>
+                  <InputField  type="number" placeholder="$ Precio Fijo" value={newCatalogItem.price} onChange={e=>setNewCatalogItem({...newCatalogItem, price:e.target.value})}/>
+                  <Button  className="w-full" onClick={async()=>{
                       if(newCatalogItem.name && newCatalogItem.price){
                           const id = newCatalogItem.id || Date.now().toString();
                           const itemData = { ...newCatalogItem, price: Number(newCatalogItem.price), id, admin_email: clinicOwner };
@@ -1515,15 +1516,71 @@ export default function App() {
       )}
 
       {/* OTROS MODALES DE SIEMPRE */}
-      {modal === 'perio' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card theme="dark" className="w-full max-w-md space-y-4"><h3 className="font-bold text-xl">Diente {toothModalData.id} (Perio)</h3><div className="grid grid-cols-2 gap-4"><InputField theme="dark" label="Movilidad (0-3)" value={perioData.mobility} onChange={e=>setPerioData({...perioData, mobility: e.target.value})}/><InputField theme="dark" label="Furca (I-III)" value={perioData.furcation} onChange={e=>setPerioData({...perioData, furcation: e.target.value})}/></div><div className="space-y-2"><p className="text-[10px] font-bold uppercase opacity-50 text-center">Vestibular</p><div className="grid grid-cols-3 gap-2 text-center">{['D', 'C', 'M'].map((pos, i) => { const k = ['vd','v','vm'][i]; return (<div key={k} className="space-y-1"><input className="w-full bg-white/5 rounded text-center text-xs p-2" placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} /><div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer ${perioData.bop[k]?'bg-red-500':'bg-white/10'}`} title="Sangrado"></div></div>)})}</div></div><div className="space-y-2"><p className="text-[10px] font-bold uppercase opacity-50 text-center">{toothModalData.id < 30 ? 'Palatino' : 'Lingual'}</p><div className="grid grid-cols-3 gap-2 text-center">{['D', 'C', 'M'].map((pos, i) => { const k = ['ld','l','lm'][i]; return (<div key={k} className="space-y-1"><input className="w-full bg-white/5 rounded text-center text-xs p-2" placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} /><div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer ${perioData.bop[k]?'bg-red-500':'bg-white/10'}`} title="Sangrado"></div></div>)})}</div></div><div onClick={()=>setPerioData({...perioData, pus: !perioData.pus})} className={`p-3 rounded-xl border text-center font-bold text-xs cursor-pointer ${perioData.pus ? 'bg-yellow-500 text-black border-yellow-500' : 'border-white/10'}`}>{perioData.pus ? 'SUPURACIÓN (PUS)' : 'SIN PUS'}</div><Button theme="dark" className="w-full" onClick={()=>{ const p = getPatient(selectedPatientId); const newPerio = { ...p.clinical.perio, [toothModalData.id]: perioData }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: newPerio }}); setModal(null); notify("Datos Perio Guardados"); }}>GUARDAR DATOS</Button></Card></div>}
+{modal === 'perio' && (
+          <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+              <Card theme={themeMode} className="w-full max-w-md space-y-4">
+                  <h3 className="font-bold text-xl">Diente {toothModalData.id} (Perio)</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                      {/* Agregamos theme={themeMode} a los InputField */}
+                      <InputField theme={themeMode} label="Movilidad (0-3)" value={perioData.mobility} onChange={e=>setPerioData({...perioData, mobility: e.target.value})}/>
+                      <InputField theme={themeMode} label="Furca (I-III)" value={perioData.furcation} onChange={e=>setPerioData({...perioData, furcation: e.target.value})}/>
+                  </div>
+                  
+                  <div className="space-y-2">
+                      <p className="text-[10px] font-bold uppercase opacity-50 text-center">Vestibular</p>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                          {['D', 'C', 'M'].map((pos, i) => { 
+                              const k = ['vd','v','vm'][i]; 
+                              return (
+                                  <div key={k} className="space-y-1">
+                                      {/* Usamos las variables t.inputBg, t.text y t.border */}
+                                      <input className={`w-full rounded text-center text-xs p-2 outline-none border transition-all ${t.inputBg} ${t.text} ${t.border} focus:border-cyan-400`} placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} />
+                                      <div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer border ${t.border} ${perioData.bop[k] ? 'bg-red-500 border-red-500' : t.inputBg}`} title="Sangrado"></div>
+                                  </div>
+                              )
+                          })}
+                      </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                      <p className="text-[10px] font-bold uppercase opacity-50 text-center">{toothModalData.id < 30 ? 'Palatino' : 'Lingual'}</p>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                          {['D', 'C', 'M'].map((pos, i) => { 
+                              const k = ['ld','l','lm'][i]; 
+                              return (
+                                  <div key={k} className="space-y-1">
+                                      <input className={`w-full rounded text-center text-xs p-2 outline-none border transition-all ${t.inputBg} ${t.text} ${t.border} focus:border-cyan-400`} placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} />
+                                      <div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer border ${t.border} ${perioData.bop[k] ? 'bg-red-500 border-red-500' : t.inputBg}`} title="Sangrado"></div>
+                                  </div>
+                              )
+                          })}
+                      </div>
+                  </div>
+                  
+                  <div onClick={()=>setPerioData({...perioData, pus: !perioData.pus})} className={`p-3 rounded-xl border text-center font-bold text-xs cursor-pointer transition-colors ${perioData.pus ? 'bg-yellow-500 text-black border-yellow-500' : `${t.border} hover:opacity-70`}`}>
+                      {perioData.pus ? 'SUPURACIÓN (PUS)' : 'SIN PUS'}
+                  </div>
+                  
+                  {/* Agregamos theme={themeMode} al botón */}
+                  <Button theme={themeMode} className="w-full" onClick={()=>{ 
+                      const p = getPatient(selectedPatientId); 
+                      const newPerio = { ...p.clinical.perio, [toothModalData.id]: perioData }; 
+                      savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: newPerio }}); 
+                      setModal(null); 
+                      notify("Datos Perio Guardados"); 
+                  }}>GUARDAR DATOS</Button>
+              </Card>
+          </div>
+      )}
       {/* --- MODAL AGENDAR CITA ACTUALIZADO --- */}
 {modal === 'appt' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-    <Card theme="dark" className="w-full max-w-sm space-y-4">
+    <Card  className="w-full max-w-sm space-y-4">
         <div className="flex justify-between items-center">
             <h3 className="font-bold text-xl">{newAppt.id ? 'Editar Cita' : 'Agendar Cita'}</h3>
             <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100"><X size={20}/></button>
         </div>
-        {!newAppt.id && <PatientSelect theme="dark" patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+        {!newAppt.id && <PatientSelect  patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
            if (p.id === 'new') {
         const newId = "pac_" + Date.now().toString();
         const nombreReal = p.name;
@@ -1544,7 +1601,7 @@ export default function App() {
         
         {newAppt.id && <p className="font-bold text-lg text-cyan-400">{newAppt.name}</p>}
         
-        <InputField theme="dark" label="Tratamiento" value={newAppt.treatment} onChange={e=>setNewAppt({...newAppt, treatment:e.target.value})}/>
+        <InputField  label="Tratamiento" value={newAppt.treatment} onChange={e=>setNewAppt({...newAppt, treatment:e.target.value})}/>
         
         <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
@@ -1578,7 +1635,7 @@ export default function App() {
                     <Trash2 size={20}/>
                 </button>
             )}
-            <Button theme="dark" className="flex-1" onClick={async ()=>{ 
+            <Button  className="flex-1" onClick={async ()=>{ 
                 if(newAppt.name){ 
                     const id = newAppt.id || Date.now().toString(); 
                     const nd = {...newAppt, id}; 
@@ -1604,7 +1661,7 @@ export default function App() {
 </div>}
       {/* --- MODAL CARGAR / ELIMINAR PACKS --- */}
       {modal === 'loadPack' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-          <Card theme="dark" className="w-full max-w-sm h-96 flex flex-col">
+          <Card  className="w-full max-w-sm h-96 flex flex-col">
               <h3 className="font-bold mb-4">Protocolos Guardados</h3>
               <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
                   {protocols.length === 0 && <p className="text-xs opacity-50 text-center mt-10">No hay packs creados.</p>}
