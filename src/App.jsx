@@ -912,7 +912,7 @@ export default function App() {
                 </div>
                 
                 <Card theme={themeMode} className="space-y-6">
-                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="1. Buscar o Crear Paciente..." onSelect={(p) => {
+                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
                         if (p.id === 'new') {
                             let nombreReal = p.name;
                             if (!nombreReal || nombreReal.trim() === "") { nombreReal = window.prompt("Confirma el nombre:"); if (!nombreReal) return; }
@@ -931,7 +931,7 @@ export default function App() {
                     
                     {sessionData.patientId && (
                         <div className="animate-in fade-in space-y-4 border-t border-white/10 pt-4">
-                            <h3 className="font-bold">2. Agregar Procedimientos</h3>
+                            <h3 className="font-bold">Agregar Procedimientos</h3>
                             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                                 <div className="md:col-span-2 relative">
                                     <input 
