@@ -1490,18 +1490,59 @@ export default function App() {
       )}
 
       {/* MODAL INVENTARIO */}
-      {modal === 'addItem' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><Card  className="w-full max-w-sm space-y-4"><div className="flex justify-between items-center"><h3 className="font-bold text-xl">{newItem.id ? 'Editar Insumo' : 'Nuevo Insumo'}</h3><button onClick={()=>{setModal(null); if(newItem.id) setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); }}><X/></button></div><InputField  placeholder="Nombre (ej: Anestesia)" value={newItem.name} onChange={e=>setNewItem({...newItem, name:e.target.value})}/><div className="flex gap-2"><InputField  label="Stock" type="number" value={newItem.stock} onChange={e=>setNewItem({...newItem, stock:Number(e.target.value)})}/><InputField  label="Mínimo" type="number" value={newItem.min} onChange={e=>setNewItem({...newItem, min:Number(e.target.value)})}/></div><div className="flex gap-2"><Button  className="flex-1" onClick={async()=>{ if(newItem.name){ const id = newItem.id || Date.now().toString(); const itemData = { ...newItem, id }; let updatedInventory; if (newItem.id) { updatedInventory = inventory.map(i => i.id === id ? itemData : i); } else { updatedInventory = [...inventory, itemData]; } setInventory(updatedInventory); await saveToSupabase('inventory', id, itemData); setModal(null); setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); notify("Guardado"); }}}>GUARDAR</Button>{newItem.id && <button onClick={async()=>{ const filtered = inventory.filter(i=>i.id!==newItem.id); setInventory(filtered); await supabase.from('inventory').delete().eq('id', newItem.id); setModal(null); notify("Eliminado"); }} className="p-3 bg-red-500/10 text-red-500 rounded-xl"><Trash2 size={20}/></button>}</div></Card></div>}
+      {modal === 'addItem' && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <Card theme={themeMode} className="w-full max-w-sm space-y-4">
+                  <div className="flex justify-between items-center">
+                      <h3 className="font-bold text-xl">{newItem.id ? 'Editar Insumo' : 'Nuevo Insumo'}</h3>
+                      <button onClick={()=>{setModal(null); if(newItem.id) setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); }} className="opacity-50 hover:opacity-100 transition-opacity"><X/></button>
+                  </div>
+                  <InputField theme={themeMode} placeholder="Nombre (ej: Anestesia)" value={newItem.name} onChange={e=>setNewItem({...newItem, name:e.target.value})}/>
+                  <div className="flex gap-2">
+                      <InputField theme={themeMode} label="Stock" type="number" value={newItem.stock} onChange={e=>setNewItem({...newItem, stock:Number(e.target.value)})}/>
+                      <InputField theme={themeMode} label="Mínimo" type="number" value={newItem.min} onChange={e=>setNewItem({...newItem, min:Number(e.target.value)})}/>
+                  </div>
+                  <div className="flex gap-2">
+                      <Button theme={themeMode} className="flex-1" onClick={async()=>{ 
+                          if(newItem.name){ 
+                              const id = newItem.id || Date.now().toString(); 
+                              const itemData = { ...newItem, id }; 
+                              let updatedInventory; 
+                              if (newItem.id) { updatedInventory = inventory.map(i => i.id === id ? itemData : i); } 
+                              else { updatedInventory = [...inventory, itemData]; } 
+                              setInventory(updatedInventory); 
+                              await saveToSupabase('inventory', id, itemData); 
+                              setModal(null); 
+                              setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); 
+                              notify("Guardado"); 
+                          }
+                      }}>GUARDAR</Button>
+                      
+                      {newItem.id && (
+                          <button onClick={async()=>{ 
+                              const filtered = inventory.filter(i=>i.id!==newItem.id); 
+                              setInventory(filtered); 
+                              await supabase.from('inventory').delete().eq('id', newItem.id); 
+                              setModal(null); 
+                              notify("Eliminado"); 
+                          }} className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors rounded-xl"><Trash2 size={20}/></button>
+                      )}
+                  </div>
+              </Card>
+          </div>
+      )}
+
       {/* MODAL ARANCEL */}
       {modal === 'catalogItem' && (
-          <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-              <Card  className="w-full max-w-sm space-y-4">
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <Card theme={themeMode} className="w-full max-w-sm space-y-4">
                   <div className="flex justify-between items-center">
                       <h3 className="font-bold text-xl">{newCatalogItem.id ? 'Editar Tratamiento' : 'Nuevo Tratamiento'}</h3>
-                      <button onClick={()=>setModal(null)}><X/></button>
+                      <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100 transition-opacity"><X/></button>
                   </div>
-                  <InputField  placeholder="Nombre (Ej: Endodoncia Birradicular)" value={newCatalogItem.name} onChange={e=>setNewCatalogItem({...newCatalogItem, name:e.target.value})}/>
-                  <InputField  type="number" placeholder="$ Precio Fijo" value={newCatalogItem.price} onChange={e=>setNewCatalogItem({...newCatalogItem, price:e.target.value})}/>
-                  <Button  className="w-full" onClick={async()=>{
+                  <InputField theme={themeMode} placeholder="Nombre (Ej: Endodoncia Birradicular)" value={newCatalogItem.name} onChange={e=>setNewCatalogItem({...newCatalogItem, name:e.target.value})}/>
+                  <InputField theme={themeMode} type="number" placeholder="$ Precio Fijo" value={newCatalogItem.price} onChange={e=>setNewCatalogItem({...newCatalogItem, price:e.target.value})}/>
+                  <Button theme={themeMode} className="w-full" onClick={async()=>{
                       if(newCatalogItem.name && newCatalogItem.price){
                           const id = newCatalogItem.id || Date.now().toString();
                           const itemData = { ...newCatalogItem, price: Number(newCatalogItem.price), id, admin_email: clinicOwner };
