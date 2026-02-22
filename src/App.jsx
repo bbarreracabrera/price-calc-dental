@@ -1157,13 +1157,40 @@ export default function App() {
     </div>
     {/* --- LISTA DE RESUMEN Y ATAJO AL COTIZADOR --- */}
         <div className="w-full mt-6 space-y-4">
-            <h3 className="font-bold border-b border-white/10 pb-3 flex justify-between items-center">
+           <h3 className="font-bold border-b border-white/10 pb-3 flex justify-between items-center">
                 <span>📋 Resumen del Odontograma</span>
-                {/* Botón Mágico que lleva los datos al cotizador */}
+                {/* Botón Mágico que recolecta los dientes y lleva los datos al cotizador */}
                 {(userRole === 'admin' || userRole === 'dentist') && (
                     <button onClick={() => {
+                        const pData = getPatient(selectedPatientId);
+                        const teeth = pData.clinical?.teeth || {};
+                        const newQuoteItems = [];
+                        
+                        // 1. Recorrer los 32 dientes buscando tratamientos "Por hacer"
+                        [...TEETH_UPPER, ...TEETH_LOWER].forEach(n => {
+                            const tData = teeth[n];
+                            if (tData && tData.treatment && tData.treatment.name && tData.treatment.status !== 'completed') {
+                                // Buscar el precio en el catálogo
+                                const catalogItem = catalog.find(c => c.name === tData.treatment.name);
+                                
+                                newQuoteItems.push({
+                                    id: Date.now() + Math.random(), // ID único
+                                    name: tData.treatment.name,
+                                    tooth: n.toString(),
+                                    price: catalogItem ? Number(catalogItem.price) : 0 // Si no lo encuentra en el arancel, pone $0
+                                });
+                            }
+                        });
+
+                        // 2. Si encontró tratamientos, los carga a la lista de cobro
+                        if (newQuoteItems.length > 0) {
+                            setQuoteItems(newQuoteItems);
+                            notify(`¡Magia! Se importaron ${newQuoteItems.length} tratamientos al cotizador.`);
+                        }
+
+                        // 3. Viaje a la pestaña del cotizador
                         setActiveTab('quote');
-                        setSessionData({...sessionData, patientName: getPatient(selectedPatientId).personal.legalName, patientId: selectedPatientId});
+                        setSessionData({...sessionData, patientName: pData.personal?.legalName || pData.name, patientId: selectedPatientId});
                     }} className="text-[10px] bg-emerald-500 text-white px-4 py-2 rounded-xl uppercase tracking-widest font-bold shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform">
                         Generar Presupuesto 💰
                     </button>
@@ -1358,15 +1385,32 @@ export default function App() {
                 </div>
             </>
         ) : (
-            /* --- MODO TRATAMIENTOS (Nuevo) --- */
+          /* --- MODO TRATAMIENTOS (Nuevo) --- */
             <div className="space-y-4 animate-in fade-in">
                 <p className="text-xs text-center opacity-50 uppercase tracking-widest">Planificar Tratamiento</p>
-                <InputField theme="dark" label="Procedimiento" placeholder="Ej: Resina Oclusal, Endodoncia..." value={toothModalData.treatment?.name || ''} onChange={e=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, name: e.target.value}})} />
+                
+                {/* --- NUEVO BUSCADOR CONECTADO AL ARANCEL --- */}
+                <div className="w-full">
+                    <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Tratamiento Planificado</label>
+                    <input 
+                        list="catalog-tooth-options"
+                        className="w-full bg-white/5 outline-none font-bold text-sm text-white p-3 rounded-2xl border border-white/5 focus:border-cyan-400 transition-all"
+                        placeholder="Busca en tu arancel..."
+                        value={toothModalData.treatment?.name || ''}
+                        onChange={e => setToothModalData({...toothModalData, treatment: {...(toothModalData.treatment || {}), name: e.target.value, status: toothModalData.treatment?.status || 'planned'}})}
+                    />
+                    <datalist id="catalog-tooth-options">
+                        {catalog.map(c => <option key={c.id} value={c.name} />)}
+                    </datalist>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 mt-4">
                     <button onClick={()=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'planned'}})} className={`p-3 rounded-xl border text-[10px] font-bold uppercase transition-all ${toothModalData.treatment?.status==='planned' ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-white/10'}`}>Por Hacer (Presupuesto)</button>
                     <button onClick={()=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'completed'}})} className={`p-3 rounded-xl border text-[10px] font-bold uppercase transition-all ${toothModalData.treatment?.status==='completed' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'border-white/10'}`}>Realizado (Listo)</button>
                 </div>
-                <button onClick={()=>setToothModalData({...toothModalData, treatment: null})} className="w-full mt-2 p-2 text-xs text-red-400 opacity-50 hover:opacity-100">Eliminar Tratamiento</button>
+                
+                {/* Botón correcto para limpiar el diente */}
+                <button onClick={()=>setToothModalData({...toothModalData, treatment: null})} className="w-full mt-2 p-2 text-xs text-red-400 opacity-50 hover:opacity-100 transition-opacity">Eliminar Tratamiento</button>
             </div>
         )}
 
