@@ -233,6 +233,7 @@ export default function App() {
   const [consentTemplate, setConsentTemplate] = useState('general');
   const [consentText, setConsentText] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [activeFolder, setActiveFolder] = useState('Radiografías');
   const [selectedImg, setSelectedImg] = useState(null);
   const [rxPatient, setRxPatient] = useState(null);
   const [newEvolution, setNewEvolution] = useState('');
@@ -367,19 +368,33 @@ export default function App() {
   const todaysAppointments = appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).sort((a,b) => a.time.localeCompare(b.time));
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0]; if (!file || !selectedPatientId) return; setUploading(true);
-    try {
-        const fileName = `${selectedPatientId}_${Date.now()}.${file.name.split('.').pop()}`;
-        const { error: uploadError } = await supabase.storage.from('patient-images').upload(fileName, file);
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('patient-images').getPublicUrl(fileName);
-        const p = getPatient(selectedPatientId);
-        const updatedImages = [...(p.images || []), { id: Date.now(), url: publicUrl, date: new Date().toLocaleDateString() }];
-        await savePatientData(selectedPatientId, { ...p, images: updatedImages });
-        notify("Imagen Subida");
-        logAction('UPLOAD_IMAGE', { fileName }, selectedPatientId); // V76
-    } catch (err) { alert(`Error: ${err.message}`); } finally { setUploading(false); }
+ const handleImageUpload = async (e) => {
+      const file = e.target.files[0]; 
+      if (!file || !selectedPatientId) return; 
+      setUploading(true);
+      try {
+          const fileName = `${selectedPatientId}_${Date.now()}.${file.name.split('.').pop()}`;
+          const { error: uploadError } = await supabase.storage.from('patient-images').upload(fileName, file);
+          if (uploadError) throw uploadError;
+          const { data: { publicUrl } } = supabase.storage.from('patient-images').getPublicUrl(fileName);
+          const p = getPatient(selectedPatientId);
+          
+          // LA MAGIA ESTÁ AQUÍ: Agregamos la propiedad "folder" usando la carpeta activa
+          const updatedImages = [...(p.images || []), { 
+              id: Date.now(), 
+              url: publicUrl, 
+              date: new Date().toLocaleDateString(),
+              folder: activeFolder // <--- Asigna el archivo a la carpeta actual
+          }];
+          
+          await savePatientData(selectedPatientId, { ...p, images: updatedImages });
+          notify(`Archivo guardado en ${activeFolder}`);
+          logAction('UPLOAD_IMAGE', { fileName, folder: activeFolder }, selectedPatientId); 
+      } catch (err) { 
+          alert(`Error: ${err.message}`); 
+      } finally { 
+          setUploading(false); 
+      }
   };
 
   const generatePDF = (type, data = null) => {
@@ -1298,7 +1313,75 @@ export default function App() {
                 </div>}
 
                 {patientTab === 'consent' && <div className="space-y-4">{modal === 'sign' ? (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">{CONSENT_TEMPLATES[consentTemplate].title}</h3><textarea className="w-full h-48 bg-black/20 p-4 rounded-xl text-sm leading-relaxed outline-none border border-white/10 focus:border-emerald-500 transition-colors resize-none text-white" value={consentText} onChange={(e)=>setConsentText(e.target.value)} /><SignaturePad theme={themeMode} onSave={(sig)=>{ const p=getPatient(selectedPatientId); savePatientData(selectedPatientId, {...p, consents:[{id:Date.now(), type:CONSENT_TEMPLATES[consentTemplate].title, text:consentText, signature:sig}, ...(p.consents||[])]}); setModal(null); }} onCancel={()=>setModal(null)}/></Card>) : (<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{Object.entries(CONSENT_TEMPLATES).map(([key, tpl]) => (<Card key={key} onClick={()=>{setConsentTemplate(key); setConsentText(tpl.text); setModal('sign');}} theme={themeMode} className="cursor-pointer hover:border-emerald-500 hover:scale-[1.02] transition-transform"><FileSignature className="text-emerald-500 mb-2"/><span className="font-bold text-sm block">{tpl.title}</span></Card>))}</div>)}<h3 className="font-bold pt-4 border-t border-white/10 mt-4">Historial</h3><div className="space-y-2">{(getPatient(selectedPatientId).consents || []).map(c => (<Card key={c.id} theme={themeMode} className="flex justify-between items-center py-3"><div><p className="font-bold text-sm">{c.type}</p><p className="text-[10px] opacity-50">{c.date}</p></div><div className="flex items-center gap-3"><div className="bg-white p-1 rounded"><img src={c.signature} className="h-8 object-contain" alt="Firma"/></div><button onClick={()=>generatePDF('consent', c)} className={`p-2 rounded-xl ${t.inputBg} hover:opacity-80`}><Printer size={16}/></button></div></Card>))}</div></div>}
-                {patientTab === 'images' && <div className="space-y-6"><div className="flex items-center justify-center border-2 border-dashed border-white/10 rounded-3xl p-10 relative group hover:bg-white/5 transition-colors cursor-pointer"><input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={handleImageUpload} disabled={uploading}/>{uploading ? <Loader className="animate-spin text-cyan-400" size={30}/> : <div className="text-center"><Upload className="mx-auto mb-2 opacity-30"/><span className="text-xs font-bold opacity-50 uppercase tracking-widest">Subir Imagen</span></div>}</div><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{getPatient(selectedPatientId).images?.map(img => (<div key={img.id} className="relative group rounded-2xl overflow-hidden aspect-square border border-white/5"><img src={img.url} className="w-full h-full object-cover cursor-pointer" onClick={()=>setSelectedImg(img.url)}/><button onClick={async()=>{ const p=getPatient(selectedPatientId); const f = p.images.filter(i=>i.id!==img.id); await savePatientData(selectedPatientId, {...p, images:f}); notify("Eliminado"); }} className="absolute top-2 right-2 p-2 bg-red-500 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14}/></button></div>))}</div></div>}
+                {patientTab === 'images' && (
+          <div className="space-y-6 animate-in fade-in h-full flex flex-col">
+              
+              {/* --- 1. LAS PESTAÑAS DE LAS CARPETAS --- */}
+              <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar">
+                  {['Radiografías', 'Fotos Clínicas', 'Documentos', 'Otros'].map(folder => (
+                      <button 
+                          key={folder}
+                          onClick={() => setActiveFolder(folder)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${t.border} ${activeFolder === folder ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/20' : 'opacity-50 hover:opacity-100'}`}
+                      >
+                          {folder === 'Radiografías' ? '🦴 ' : folder === 'Fotos Clínicas' ? '📸 ' : folder === 'Documentos' ? '📄 ' : '📁 '}
+                          {folder}
+                      </button>
+                  ))}
+              </div>
+
+              {/* --- 2. ZONA DE SUBIDA (Te avisa a qué carpeta va) --- */}
+              <div className={`flex items-center justify-center border-2 border-dashed ${t.border} rounded-3xl p-8 relative group hover:opacity-70 transition-colors cursor-pointer ${t.cardBg}`}>
+                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*,application/pdf" onChange={handleImageUpload} disabled={uploading}/>
+                  {uploading ? (
+                      <Loader className="animate-spin text-cyan-400" size={30}/> 
+                  ) : (
+                      <div className="text-center">
+                          <Upload className="mx-auto mb-2 opacity-30"/>
+                          <span className="text-xs font-bold opacity-50 uppercase tracking-widest">
+                              Subir archivo a <span className="text-cyan-500">{activeFolder}</span>
+                          </span>
+                      </div>
+                  )}
+              </div>
+
+              {/* --- 3. LA CUADRÍCULA DE FOTOS (Filtrada por la carpeta activa) --- */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {getPatient(selectedPatientId).images?.filter(img => (img.folder || 'Otros') === activeFolder).length === 0 ? (
+                          <div className="col-span-full py-10 text-center opacity-30 text-sm font-bold">
+                              No hay archivos en la carpeta {activeFolder}
+                          </div>
+                      ) : (
+                          getPatient(selectedPatientId).images?.filter(img => (img.folder || 'Otros') === activeFolder).map(img => (
+                              <div key={img.id} className={`relative group rounded-2xl overflow-hidden aspect-square border ${t.border} bg-black/5 dark:bg-white/5`}>
+                                  {/* Si es un PDF (Documentos), mostramos un icono en vez de romper la imagen */}
+                                  {img.url.toLowerCase().includes('.pdf') ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-black/10 dark:hover:bg-white/10" onClick={()=>window.open(img.url, '_blank')}>
+                                          <span className="text-4xl mb-2">📄</span>
+                                          <span className="text-[10px] font-bold px-2 text-center opacity-50 break-all">Ver Documento</span>
+                                      </div>
+                                  ) : (
+                                      <img src={img.url} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={()=>setSelectedImg(img.url)}/>
+                                  )}
+                                  
+                                  <button onClick={async()=>{ 
+                                      if(window.confirm("¿Seguro que deseas eliminar este archivo?")) {
+                                          const p=getPatient(selectedPatientId); 
+                                          const f = p.images.filter(i=>i.id!==img.id); 
+                                          await savePatientData(selectedPatientId, {...p, images:f}); 
+                                          notify("Eliminado"); 
+                                      }
+                                  }} className="absolute top-2 right-2 p-2 bg-red-500 shadow-lg rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                      <Trash2 size={14}/>
+                                  </button>
+                              </div>
+                          ))
+                      )}
+                  </div>
+              </div>
+          </div>
+      )}
             </div>
         }
 
