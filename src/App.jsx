@@ -300,6 +300,9 @@ export default function App() {
   const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: new Date().toISOString().split('T')[0], patientRef: '' });
   const [newMember, setNewMember] = useState({ name: '', email: '', role: 'dentist' });
 
+  // --- ESTADOS DE LABORATORIO ---
+  const [labWorks, setLabWorks] = useState([]);
+  const [newLabWork, setNewLabWork] = useState({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: new Date().toISOString().split('T')[0], expectedDate: '', status: 'sent', id: null });
 
   // --- VOZ A TEXTO ---
   const [isListening, setIsListening] = useState(false);
@@ -625,6 +628,7 @@ export default function App() {
       if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'clinical', label: 'Recetas', icon: Stethoscope }); }
       if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'catalog', label: 'Arancel', icon: Library }); }
       if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
+      if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'lab', label: 'Laboratorio', icon: () => <span className="text-lg">🧪</span> }); }
       return base;
   };
 // --- LÓGICA DEL CRM DE RETENCIÓN (RECALLS) ---
@@ -916,6 +920,83 @@ export default function App() {
             </div>
         )}
         {activeTab === 'inventory' && userRole === 'admin' && <div className="space-y-6 animate-in fade-in"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Inventario</h2><Button theme={themeMode} onClick={()=>{setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); setModal('addItem');}}><Plus/> Nuevo Item</Button></div><div className="relative"><InputField theme={themeMode} icon={Search} placeholder="Buscar insumo..." value={inventorySearch} onChange={e=>setInventorySearch(e.target.value)} /></div><div className="space-y-2">{filteredInventory.map(item => { const isLow = (item.stock || 0) <= (item.min || 5); return (<div key={item.id} className={`flex justify-between items-center p-4 rounded-xl border transition-all ${isLow ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}><div className="flex items-center gap-4"><div className={`p-3 rounded-lg ${isLow ? 'bg-red-500 text-white' : 'bg-white/10'}`}>{isLow ? <AlertTriangle size={20}/> : <Box size={20}/>}</div><div><h4 className="font-bold">{item.name}</h4><p className="text-xs opacity-50">Mínimo: {item.min} {item.unit}</p></div></div><div className="flex items-center gap-4"><div className="flex items-center gap-2 bg-black/20 rounded-lg p-1"><button onClick={async()=>{ const n = Math.max(0, (item.stock||0)-1); const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Minus size={14}/></button><span className={`w-8 text-center font-bold ${isLow?'text-red-500':''}`}>{item.stock}</span><button onClick={async()=>{ const n = (item.stock||0)+1; const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Plus size={14}/></button></div><button onClick={()=>{setNewItem(item); setModal('addItem');}} className="p-2 text-white/50 hover:text-cyan-400"><Edit3 size={18}/></button></div></div>)})}</div></div>}
+        {/* --- MÓDULO DE LABORATORIO EXTERNO --- */}
+        {activeTab === 'lab' && (
+            <div className="space-y-6 animate-in slide-in-from-bottom h-full">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-2">🧪 Control de Laboratorio</h2>
+                        <p className="text-xs opacity-50 mt-1">Gestiona los envíos y recepciones de coronas, prótesis y placas.</p>
+                    </div>
+                    <Button theme={themeMode} onClick={() => {
+                        setNewLabWork({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: new Date().toISOString().split('T')[0], expectedDate: '', status: 'sent', id: null });
+                        setModal('labWork');
+                    }}>+ Nuevo Trabajo</Button>
+                </div>
+
+                <Card theme={themeMode}>
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-sm text-left">
+                            <thead className={`text-xs uppercase opacity-50 border-b ${t.border}`}>
+                                <tr>
+                                    <th className="px-4 py-3">Paciente</th>
+                                    <th className="px-4 py-3">Trabajo</th>
+                                    <th className="px-4 py-3 text-center">Pieza</th>
+                                    <th className="px-4 py-3">Laboratorio</th>
+                                    <th className="px-4 py-3">Envío</th>
+                                    <th className="px-4 py-3">Entrega Esperada</th>
+                                    <th className="px-4 py-3 text-center">Estado</th>
+                                    <th className="px-4 py-3 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {labWorks.length === 0 ? (
+                                    <tr><td colSpan="8" className="text-center py-8 opacity-50 font-bold">No hay trabajos en curso. ¡Todo al día!</td></tr>
+                                ) : (
+                                    labWorks.sort((a,b) => new Date(a.expectedDate) - new Date(b.expectedDate)).map(work => {
+                                        // Detectamos si está atrasado
+                                        const isLate = new Date(work.expectedDate) < new Date() && work.status === 'sent';
+                                        
+                                        return (
+                                        <tr key={work.id} className={`border-b ${t.border} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}>
+                                            <td className="px-4 py-3 font-bold">{work.patientName}</td>
+                                            <td className="px-4 py-3">{work.workType}</td>
+                                            <td className="px-4 py-3 text-center font-bold text-cyan-600 dark:text-cyan-400">{work.tooth || '-'}</td>
+                                            <td className="px-4 py-3">{work.labName}</td>
+                                            <td className="px-4 py-3 text-xs opacity-70">{work.sendDate}</td>
+                                            <td className={`px-4 py-3 font-bold ${isLate ? 'text-red-500 flex items-center gap-1' : ''}`}>
+                                                {isLate && '⚠️'} {work.expectedDate}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${work.status === 'received' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'}`}>
+                                                    {work.status === 'received' ? '✅ Recibido' : '⏳ En Tránsito'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right flex justify-end gap-2">
+                                                {work.status === 'sent' && (
+                                                    <button onClick={async () => {
+                                                        const updated = { ...work, status: 'received' };
+                                                        setLabWorks(labWorks.map(w => w.id === work.id ? updated : w));
+                                                        await saveToSupabase('lab_works', work.id, updated);
+                                                        notify("Trabajo marcado como RECIBIDO");
+                                                    }} className="text-[10px] bg-emerald-500 text-white px-3 py-1.5 rounded-lg shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform font-bold">Recibir</button>
+                                                )}
+                                                <button onClick={async () => {
+                                                    if(window.confirm("¿Seguro que deseas eliminar este registro?")){
+                                                        setLabWorks(labWorks.filter(w => w.id !== work.id));
+                                                        await supabase.from('lab_works').delete().eq('id', work.id);
+                                                    }
+                                                }} className="p-1.5 text-red-500 opacity-50 hover:opacity-100 hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16}/></button>
+                                            </td>
+                                        </tr>
+                                    )})
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            </div>
+        )}
 
        {/* --- SETTINGS (ACTUALIZADO: SIN DATOS FINANCIEROS VIEJOS) --- */}
         {activeTab === 'settings' && <div className="space-y-6 animate-in slide-in-from-bottom h-full">
@@ -1601,6 +1682,75 @@ export default function App() {
         }}>GUARDAR DATOS</Button>
     </Card>
 </div>)}
+
+{/* --- MODAL NUEVO TRABAJO DE LABORATORIO (VERSIÓN BLINDADA) --- */}
+      {modal === 'labWork' && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className={`w-full max-w-md space-y-4 relative p-6 rounded-3xl border shadow-2xl ${themeMode === 'light' ? 'bg-white border-gray-200' : 'bg-[#1a1a1a] border-white/10'}`}>
+                  <button onClick={()=>setModal(null)} className="absolute top-4 right-4 opacity-50 hover:opacity-100 transition-opacity"><X size={20}/></button>
+                  <h3 className="text-xl font-bold flex items-center gap-2">🧪 Enviar a Laboratorio</h3>
+                  
+                  {/* Buscador de Paciente Básico CORREGIDO */}
+                  <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-50">Paciente</label>
+                      <select 
+                          className={`w-full p-3 rounded-xl border text-sm font-bold outline-none transition-colors ${themeMode === 'light' ? 'bg-gray-50 border-gray-200 focus:border-cyan-500 text-black' : 'bg-black/20 border-white/10 focus:border-cyan-400 text-white'}`}
+                          value={newLabWork.patientId}
+                          onChange={(e) => {
+                              const p = Object.values(patientRecords).find(pat => pat.id === e.target.value);
+                              if (p) setNewLabWork({...newLabWork, patientId: p.id, patientName: p.personal?.legalName || p.name});
+                          }}
+                      >
+                          <option value="" className={themeMode === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white'}>Selecciona un paciente...</option>
+                          {Object.values(patientRecords).map(p => (
+                              <option key={p.id} value={p.id} className={themeMode === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white'}>
+                                  {p.personal?.legalName || p.name}
+                              </option>
+                          ))}
+                      </select>
+                  </div>
+                  
+                  <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-50">Tipo de Trabajo</label>
+                      <input type="text" placeholder="Ej: Corona de Porcelana, Placa..." className={`w-full p-3 rounded-xl border text-sm font-bold outline-none transition-colors ${themeMode === 'light' ? 'bg-gray-50 border-gray-200 focus:border-cyan-500' : 'bg-black/20 border-white/10 focus:border-cyan-400 text-white'}`} value={newLabWork.workType} onChange={e=>setNewLabWork({...newLabWork, workType:e.target.value})}/>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-50">Diente (Opcional)</label>
+                          <input type="text" placeholder="N°" className={`w-full p-3 rounded-xl border text-sm font-bold outline-none transition-colors ${themeMode === 'light' ? 'bg-gray-50 border-gray-200 focus:border-cyan-500' : 'bg-black/20 border-white/10 focus:border-cyan-400 text-white'}`} value={newLabWork.tooth} onChange={e=>setNewLabWork({...newLabWork, tooth:e.target.value})}/>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-50">Laboratorio</label>
+                          <input type="text" placeholder="Nombre Lab" className={`w-full p-3 rounded-xl border text-sm font-bold outline-none transition-colors ${themeMode === 'light' ? 'bg-gray-50 border-gray-200 focus:border-cyan-500' : 'bg-black/20 border-white/10 focus:border-cyan-400 text-white'}`} value={newLabWork.labName} onChange={e=>setNewLabWork({...newLabWork, labName:e.target.value})}/>
+                      </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-50">Fecha de Envío</label>
+                          <input type="date" className={`w-full p-3 rounded-xl border text-sm font-bold outline-none transition-colors ${themeMode === 'light' ? 'bg-gray-50 border-gray-200 focus:border-cyan-500' : 'bg-black/20 border-white/10 focus:border-cyan-400 text-white'}`} value={newLabWork.sendDate} onChange={e=>setNewLabWork({...newLabWork, sendDate:e.target.value})}/>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-50">Entrega Esperada</label>
+                          <input type="date" className={`w-full p-3 rounded-xl border text-sm font-bold outline-none transition-colors ${themeMode === 'light' ? 'bg-gray-50 border-gray-200 focus:border-cyan-500' : 'bg-black/20 border-white/10 focus:border-cyan-400 text-white'}`} value={newLabWork.expectedDate} onChange={e=>setNewLabWork({...newLabWork, expectedDate:e.target.value})}/>
+                      </div>
+                  </div>
+
+                  <button className="w-full mt-4 p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-bold tracking-widest uppercase transition-colors shadow-lg shadow-cyan-500/30" onClick={()=>{
+                      if(newLabWork.patientId && newLabWork.workType && newLabWork.expectedDate){
+                          const id = newLabWork.id || Date.now().toString();
+                          const data = { ...newLabWork, id };
+                          setLabWorks([...labWorks, data]);
+                          setModal(null);
+                          if(typeof notify === 'function') notify("✅ Trabajo enviado a laboratorio exitosamente");
+                      } else {
+                          alert("Por favor selecciona un paciente, el tipo de trabajo y la fecha de entrega.");
+                      }
+                  }}>GUARDAR Y ENVIAR</button>
+              </div>
+          </div>
+      )}
 
       {/* MODAL DE ABONOS */}
       {modal === 'abono' && selectedFinancialRecord && (
