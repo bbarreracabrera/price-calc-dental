@@ -58,72 +58,124 @@ const SignaturePad = ({ onSave, onCancel, theme }) => {
   return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none text-white">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
 };
 
-// --- CONTROL DE CARAS CON LETRAS (V, M, O, D, L/P) ---
-const ToothFacesControl = ({ faces, onChange, theme, toothNumber }) => {
-    const cycleStatus = (current) => { if (!current) return 'caries'; if (current === 'caries') return 'filled'; if (current === 'filled') return 'crown'; return null; };
-    const getColor = (status) => { if (status === 'caries') return 'bg-red-500 border-red-500 text-white'; if (status === 'filled') return 'bg-blue-500 border-blue-500 text-white'; if (status === 'crown') return 'bg-yellow-500 border-yellow-500 text-black'; return 'bg-white/5 border-white/10 hover:bg-white/10 text-stone-500 hover:text-white'; };
+// --- NUEVO MOTOR GRÁFICO DEL ODONTOGRAMA (5 CARAS SVG) ---
+const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, interactive = false, activeFace = 'o', onFaceClick }) => {
+    // Colores Clínicos Reales
+    const getDiagnosticColor = (f) => {
+        if (f === 'caries') return '#ef4444'; // Rojo (Lesión)
+        if (f === 'filled') return '#3b82f6'; // Azul (Restauración)
+        return 'transparent';
+    };
+
+    // Si está en "Modo Tratamiento", pintamos las caras según el presupuesto
+    const getTreatmentColor = () => {
+        if (treatment?.status === 'planned') return '#ef4444'; // Rojo oscuro: Por hacer
+        if (treatment?.status === 'completed') return '#10b981'; // Verde: Terminado
+        return 'transparent';
+    };
+
+    const isMissing = status === 'missing';
+    const isCrown = status === 'crown';
     
-    // Detectar si es un diente superior (empieza con 1, 2, 5 o 6)
-    const isUpper = toothNumber ? /^[1256]/.test(toothNumber.toString()) : false;
-    const innerFaceLabel = isUpper ? 'P' : 'L';
+    // Asignador inteligente de colores
+    const getFaceColor = (faceId) => {
+        if (isMissing) return 'transparent';
+        if (isCrown) return '#eab308'; // Amarillo: Corona
+        if (mode === 'tratamientos' && treatment && treatment.name) return getTreatmentColor();
+        return getDiagnosticColor(faces?.[faceId]);
+    };
+
+    const strokeColor = interactive ? '#888' : '#666'; 
+
+    // Constructor de cada "Triángulo" o "Cuadrado" del diente
+    const Face = ({ id, points }) => (
+        <polygon 
+            points={points} 
+            fill={getFaceColor(id)} 
+            stroke={strokeColor} 
+            strokeWidth="4" 
+            className={`transition-all duration-300 ${interactive ? 'cursor-pointer hover:fill-black/20 dark:hover:fill-white/20' : ''} ${interactive && activeFace === id && !isMissing && !isCrown ? 'stroke-cyan-500 stroke-[8px]' : ''}`}
+            onClick={(e) => { if(interactive && onFaceClick) { e.stopPropagation(); onFaceClick(id); } }}
+            style={{ zIndex: interactive && activeFace === id ? 10 : 1 }}
+        />
+    );
 
     return (
-        <div className="flex flex-col items-center gap-1 my-4 text-[10px] font-black">
-            <button onClick={() => onChange('v', cycleStatus(faces.v))} className={`w-12 h-8 rounded-t-xl border-2 transition-all flex items-center justify-center ${getColor(faces.v)}`}>V</button>
-            <div className="flex gap-1">
-                <button onClick={() => onChange('m', cycleStatus(faces.m))} className={`w-8 h-12 rounded-l-xl border-2 transition-all flex items-center justify-center ${getColor(faces.m)}`}>M</button>
-                <button onClick={() => onChange('o', cycleStatus(faces.o))} className={`w-12 h-12 rounded-md border-2 transition-all flex items-center justify-center ${getColor(faces.o)}`}>O</button>
-                <button onClick={() => onChange('d', cycleStatus(faces.d))} className={`w-8 h-12 rounded-r-xl border-2 transition-all flex items-center justify-center ${getColor(faces.d)}`}>D</button>
-            </div>
-            <button onClick={() => onChange('l', cycleStatus(faces.l))} className={`w-12 h-8 rounded-b-xl border-2 transition-all flex items-center justify-center ${getColor(faces.l)}`}>{innerFaceLabel}</button>
+        <div className="relative flex flex-col items-center" style={{ width: size, height: size + 20 }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md overflow-visible">
+                <Face id="v" points="0,0 100,0 75,25 25,25" /> {/* Superior / Vestibular */}
+                <Face id="l" points="0,100 25,75 75,75 100,100" /> {/* Inferior / Palatino-Lingual */}
+                <Face id="m" points="0,0 25,25 25,75 0,100" /> {/* Izquierda / Mesial */}
+                <Face id="d" points="100,0 75,25 75,75 100,100" /> {/* Derecha / Distal */}
+                <Face id="o" points="25,25 75,25 75,75 25,75" /> {/* Centro / Oclusal */}
+            </svg>
+            
+            {/* Cruz grande roja si está extraído */}
+            {isMissing && <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none text-red-500 font-black text-5xl opacity-80" style={{ height: size }}>X</div>}
+            
+            {/* Número del diente abajo */}
+            <span className={`text-[11px] font-black mt-1 ${mode === 'tratamientos' && treatment?.name ? 'text-emerald-500' : 'opacity-60 text-stone-500 dark:text-white'}`}>{number}</span>
         </div>
     );
 };
 
-// --- COMPONENTE DIENTE ACTUALIZADO (Soporte Dual) ---
+// --- COMPONENTE DIENTE ACTUALIZADO (Doble Personalidad: Perio Minimalista / Clínico 5 Caras) ---
 const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, mode }) => {
-  const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
-  const hasPus = perioData?.pus;
-  const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
-  
-  const getSimpleColor = () => {
-    // LÓGICA NUEVA: MODO TRATAMIENTOS
-    if (mode === 'tratamientos') {
-        if (data?.treatment?.status === 'planned') return '#ef4444'; // Rojo: Presupuestado
-        if (data?.treatment?.status === 'completed') return '#10b981'; // Verde: Realizado
-        // Si no tiene tratamiento, se ve del color base (vacío)
-        return theme === 'light' ? '#e5e7eb' : '#1f2937'; 
+    // Alertas Perio
+    const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
+    const hasPus = perioData?.pus;
+    const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
+
+    // 1. COMPORTAMIENTO MODO PERIODONCIA (Minimalista para futuro sondaje)
+    if (isPerioMode) {
+        const isMissing = status === 'missing' || data?.status === 'missing';
+        
+        if (isMissing) {
+            return (
+                <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale relative p-1 w-[40px]">
+                    <svg width="30" height="40" viewBox="0 0 100 120">
+                        <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/>
+                    </svg>
+                    <span className="text-[9px] font-bold absolute bottom-0 bg-black text-white px-1 rounded">AUS</span>
+                </div>
+            );
+        }
+
+        return (
+            <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">
+                {/* ALERTAS PERIO FLOTANTES */}
+                <div className="absolute -top-1 flex gap-1 z-20">
+                    {hasBOP && <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_5px_red]"/>}
+                    {hasPus && <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_5px_yellow]"/>}
+                    {hasAlert && <div className="w-3 h-3 rounded-full bg-purple-500 flex items-center justify-center text-[8px] text-white font-black shadow-md">!</div>}
+                </div>
+                
+                {/* DIBUJO MINIMALISTA VIEJO */}
+                <svg width="30" height="40" viewBox="0 0 100 120" className="drop-shadow-sm mt-2">
+                    <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" 
+                          fill={theme === 'light' ? '#e5e7eb' : '#374151'} 
+                          fillOpacity={0.8}
+                          stroke="currentColor" strokeWidth="2" strokeOpacity="0.3"/>
+                </svg>
+                <span className="text-[9px] font-bold opacity-50 mt-1">{number}</span>
+            </div>
+        );
     }
-    // LÓGICA ANTIGUA: MODO HALLAZGOS (Se mantiene igual)
-    const currentStatus = data?.status || status;
-    if (currentStatus === 'missing') return '#000000';
-    const faces = data?.faces || {};
-    if (Object.values(faces).some(s => s === 'caries')) return '#ef4444';
-    if (Object.values(faces).some(s => s === 'filled')) return '#3b82f6';
-    if (Object.values(faces).some(s => s === 'crown')) return '#eab308';
-    if (currentStatus === 'caries') return '#ef4444';
-    if (currentStatus === 'filled') return '#3b82f6';
-    if (currentStatus === 'crown') return '#eab308';
-    return theme === 'light' ? '#333' : '#fff';
-  };
 
-  if (isPerioMode && (status === 'missing' || data?.status === 'missing')) return <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale"><svg width="35" height="45" viewBox="0 0 100 120"><path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/></svg><span className="text-[8px] font-bold">AUS</span></div>;
-  
-  return (
-    <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative">
-        <svg width="35" height="45" viewBox="0 0 100 120">
-            <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" 
-                  fill={getSimpleColor()} 
-                  // Opacidad: Si es modo tratamiento y tiene algo planificado, se ve sólido. Si no, translúcido.
-                  fillOpacity={mode === 'tratamientos' && data?.treatment ? 1 : (status === 'missing' || data?.status === 'missing' || Object.values(data?.faces||{}).some(v=>v) ? 1 : 0.15)} 
-                  stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/>
-        </svg>
-        {isPerioMode && (<div className="absolute -top-2 flex gap-1">{hasBOP && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>}{hasPus && <div className="w-2 h-2 rounded-full bg-yellow-400"/>}{hasAlert && <div className="w-2 h-2 rounded-full bg-purple-500"/>}</div>)}
-        <span className={`text-[9px] font-bold ${mode === 'tratamientos' && data?.treatment ? 'opacity-100' : 'opacity-50'}`}>{number}</span>
-    </div>
-  );
+    // 2. COMPORTAMIENTO MODO CLÍNICO (Nuevo Odontograma SVG 5 Caras)
+    return (
+        <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">
+            <ToothSVG 
+                number={number} 
+                faces={data?.faces} 
+                status={data?.status || status} 
+                mode={mode}
+                treatment={data?.treatment}
+                size={40} 
+            />
+        </div>
+    );
 };
-
 const HygieneCell = ({ tooth, data, onChange, status }) => { if (status === 'missing') return null; return (<div className="flex flex-col items-center gap-1 bg-white/5 p-2 rounded-xl"><span className="text-[10px] font-bold opacity-70">{tooth}</span><div className="grid grid-cols-2 gap-1 w-12 h-12">{['v', 'd', 'l', 'm'].map(f => (<div key={f} onClick={() => onChange(f)} className={`rounded-sm cursor-pointer border border-white/10 transition-colors ${data?.[f] ? 'bg-red-500 border-red-500' : 'hover:bg-white/10'}`} title={`Cara ${f.toUpperCase()}`}></div>))}</div></div>); };
 const Card = ({ children, className = "", theme, ...props }) => { const t = THEMES[theme] || THEMES.dark; return <div {...props} className={`p-6 rounded-3xl transition-all relative ${t.card} ${className}`}>{children}</div>; };
 const Button = ({ onClick, children, variant = "primary", className = "", theme, disabled }) => { const t = THEMES[theme] || THEMES.dark; const styles = { primary: `${t.gradient} text-white shadow-lg`, secondary: t.buttonSecondary }; return <button disabled={disabled} onClick={onClick} className={`p-3 rounded-2xl font-bold active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 ${styles[variant]} ${className}`}>{children}</button>; };
@@ -1449,34 +1501,68 @@ export default function App() {
         </div>}
       </main>
 
-      {/* MODAL DIENTE ODONTOGRAMA (5 CARAS) */}
-      {/* --- MODAL DIENTE DUAL ACTUALIZADO --- */}
-{modal === 'tooth' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-    <Card theme={themeMode} className="w-full max-w-sm space-y-4">
-        <h3 className="text-2xl font-black text-center">Diente {toothModalData.id}</h3>
-        
-        {toothModalData.mode === 'hallazgos' ? (
-            /* --- MODO HALLAZGOS (Lo que ya tenías) --- */
-            <>
-                <ToothFacesControl theme={themeMode} faces={toothModalData.faces} onChange={(face, status) => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [face]: status}})} toothNumber={toothModalData.id} />
-                <div className="grid grid-cols-2 gap-2">
-                    <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className={`p-2 rounded-xl border text-[10px] font-bold uppercase ${toothModalData.status==='missing'?'border-red-500 text-red-500':'border-white/10'}`}>Ausente</button>
-                    <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="p-2 bg-white/5 rounded-xl text-[10px] uppercase">Sano</button>
-                </div>
-                <div className="w-full">
-                    <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Observaciones (Voz o Texto)</label>
-                    <div className="flex items-start p-3 rounded-2xl transition-all bg-white/5 border border-white/5 focus-within:border-cyan-400">
-                        <textarea rows="3" placeholder="Ej: Fractura... (O presiona el micrófono y habla)" className="bg-transparent outline-none w-full font-bold text-sm resize-none text-white" value={toothModalData.notes || ''} onChange={e=>setToothModalData({...toothModalData, notes: e.target.value})}/>
-                        <div className="flex flex-col items-center gap-1 ml-2">
-                            <button onClick={() => toggleVoice('tooth')} className={`p-3 rounded-full transition-all shadow-lg ${isListening ? 'bg-red-500 animate-pulse text-white' : 'bg-[#121212] text-stone-400 hover:text-cyan-400'}`}>
-                                {isListening ? <MicOff size={16}/> : <Mic size={16}/>}
-                            </button>
-                        </div>
-                    </div>
-                    {voiceStatus && <p className="text-[10px] text-right mt-1 opacity-60 animate-pulse font-bold text-cyan-400">{voiceStatus}</p>}
-                </div>
-            </>
-        ) : (
+      {/* --- MODAL DIENTE DUAL ACTUALIZADO (SVG INTERACTIVO) --- */}
+      {modal === 'tooth' && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              {/* Le agregamos max-h-[90vh] y overflow-y-auto para que nunca se salga de la pantalla */}
+              <Card theme={themeMode} className="w-full max-w-sm space-y-4 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                  <button onClick={()=>setModal(null)} className="absolute top-4 right-4 opacity-50 hover:opacity-100 transition-opacity"><X size={20}/></button>
+                  <h3 className="text-2xl font-black text-center">Pieza {toothModalData.id}</h3>
+                  
+                  {toothModalData.mode === 'hallazgos' ? (
+                      <div className="space-y-4 animate-in fade-in">
+                          
+                          {/* 1. VISOR SVG INTERACTIVO (TAMAÑO CORREGIDO) */}
+                          <div className={`flex flex-col items-center p-4 rounded-3xl border transition-colors ${t.border} bg-black/5 dark:bg-white/5`}>
+                              <ToothSVG 
+                                  number=""
+                                  faces={toothModalData.faces} 
+                                  status={toothModalData.status} 
+                                  size={85} /* <--- ¡Aquí achicamos a Godzilla! Antes era 130 */
+                                  interactive={true}
+                                  activeFace={toothModalData.activeFace || 'o'}
+                                  onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})}
+                              />
+                              <p className="text-[10px] font-bold opacity-70 mt-3 uppercase tracking-widest bg-black/10 dark:bg-white/10 px-3 py-1 rounded-full">
+                                  Cara Activa: <span className="text-cyan-600 dark:text-cyan-400 font-black">{
+                                      (toothModalData.activeFace || 'o') === 'v' ? 'Vestibular' :
+                                      (toothModalData.activeFace || 'o') === 'l' ? 'Lingual/Palatino' :
+                                      (toothModalData.activeFace || 'o') === 'm' ? 'Mesial' :
+                                      (toothModalData.activeFace || 'o') === 'd' ? 'Distal' : 'Oclusal'
+                                  }</span>
+                              </p>
+                          </div>
+
+                          {/* 2. BOTONERA CLÍNICA CATEGORIZADA */}
+                          <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                  <span className="text-[10px] font-black opacity-40 uppercase tracking-widest ml-1 text-cyan-600 dark:text-cyan-400">En Cara Seleccionada</span>
+                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'caries'}, status: null})} className="w-full p-2.5 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">🔴 Caries / Lesión</button>
+                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'filled'}, status: null})} className="w-full p-2.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">🔵 Resina / Amalgama</button>
+                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: null}})} className={`w-full p-2.5 border rounded-xl text-xs font-bold transition-all ${t.border} hover:bg-black/5 dark:hover:bg-white/5`}>⚪ Limpiar Cara</button>
+                              </div>
+                              <div className="space-y-2">
+                                  <span className="text-[10px] font-black opacity-40 uppercase tracking-widest ml-1 text-emerald-600 dark:text-emerald-400">En Toda la Pieza</span>
+                                  <button onClick={()=>setToothModalData({...toothModalData, status: 'crown'})} className="w-full p-2.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500 hover:text-black border border-yellow-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">🟡 Corona</button>
+                                  <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className="w-full p-2.5 bg-stone-500/10 text-stone-600 dark:text-stone-400 hover:bg-stone-500 hover:text-white border border-stone-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">❌ Ausente</button>
+                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="w-full p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">✅ Diente Sano</button>
+                              </div>
+                          </div>
+                          
+                          {/* 3. OBSERVACIONES (Sin cambios) */}
+                          <div className="w-full pt-2">
+                              <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 opacity-50">Evolución Clínica</label>
+                              <div className={`flex items-start p-3 rounded-2xl transition-all border ${t.border} ${t.inputBg} focus-within:border-cyan-400`}>
+                                  <textarea rows="2" placeholder="Notas... (o usa el micrófono)" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`} value={toothModalData.notes || ''} onChange={e=>setToothModalData({...toothModalData, notes: e.target.value})}/>
+                                  <div className="flex flex-col items-center gap-1 ml-2">
+                                      <button onClick={() => toggleVoice('tooth')} className={`p-3 rounded-full transition-all shadow-md ${isListening ? 'bg-red-500 animate-pulse text-white' : 'bg-black/5 dark:bg-white/5 text-cyan-500 hover:scale-110'}`}>
+                                          {isListening ? <MicOff size={16}/> : <Mic size={16}/>}
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  ) : (
           /* --- MODO TRATAMIENTOS (Nuevo) --- */
             <div className="space-y-4 animate-in fade-in">
                 <p className="text-xs text-center opacity-50 uppercase tracking-widest">Planificar Tratamiento</p>
@@ -1514,7 +1600,7 @@ export default function App() {
             setModal(null); notify("Diente Guardado"); 
         }}>GUARDAR DATOS</Button>
     </Card>
-</div>}
+</div>)}
 
       {/* MODAL DE ABONOS */}
       {modal === 'abono' && selectedFinancialRecord && (
