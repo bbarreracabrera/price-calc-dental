@@ -11,7 +11,7 @@ import {
   Activity, Check, FileQuestion, Camera, Lock, Printer, LogOut,
   ArrowRight, Star, Droplets, FileBarChart, MapPin, Phone, AlertCircle,
   ChevronLeft, ChevronRight, Users, Clock, DollarSign, PenTool, FileSignature, Edit3, Loader, TrendingDown, CreditCard, Banknote, Box, Minus, AlertTriangle, Shield, Mic, MicOff, MessageCircle,
-  BarChart2, PieChart, EyeOff, FileLock
+  BarChart2, PieChart, EyeOff, FileLock , FlaskConical 
 } from 'lucide-react';
 import { supabase } from './supabase';
 
@@ -233,7 +233,9 @@ const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Pacien
 const AuthScreen = () => {
   const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [loading, setLoading] = useState(false); const [isSignUp, setIsSignUp] = useState(false); const [msg, setMsg] = useState('');
   const handleAuth = async (e) => { e.preventDefault(); setLoading(true); setMsg(''); try { if (isSignUp) { const { error } = await supabase.auth.signUp({ email, password }); if (error) throw error; setMsg('Cuenta creada.'); } else { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; } } catch (error) { setMsg(error.message); } finally { setLoading(false); } };
-  return (<div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]"><div className="w-full max-w-sm flex flex-col items-center"><Cloud size={60} className="text-cyan-400 mb-4" /><h1 className="text-3xl font-black text-white mb-8">ShiningCloud</h1><form onSubmit={handleAuth} className="w-full space-y-4 p-6 bg-white/5 rounded-3xl border border-white/10"><input type="email" placeholder="Email" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={email} onChange={e=>setEmail(e.target.value)} required /><input type="password" placeholder="Clave" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={password} onChange={e=>setPassword(e.target.value)} required /><button className="w-full p-4 bg-cyan-500 text-white rounded-xl font-bold uppercase tracking-widest">{loading ? '...' : (isSignUp ? 'Registrar' : 'Entrar')}</button></form><button onClick={()=>setIsSignUp(!isSignUp)} className="mt-4 text-xs text-white/40 uppercase">{isSignUp ? 'Login' : 'Crear Cuenta'}</button></div></div>);
+  return (<div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]"><div className="w-full max-w-sm flex flex-col items-center"><Cloud size={60} className="text-cyan-400 mb-4" /><h1 className="text-3xl font-black text-white mb-8">ShiningCloud</h1><form onSubmit={handleAuth} className="w-full space-y-4 p-6 bg-white/5 rounded-3xl border border-white/10"><input type="email" placeholder="Email" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={email} onChange={e=>setEmail(e.target.value)} required /><input type="password" placeholder="Clave" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={password} onChange={e=>setPassword(e.target.value)} required /><button className="w-full p-4 bg-cyan-500 text-white rounded-xl font-bold uppercase tracking-widest">{loading ? '...' : (isSignUp ? 'Registrar' : 'Entrar')}</button></form><button onClick={()=>setIsSignUp(!isSignUp)} className="mt-6 text-xs font-bold text-white/60 uppercase tracking-widest underline underline-offset-4 decoration-white/30 hover:text-cyan-400 hover:decoration-cyan-400 transition-all duration-300">
+    {isSignUp ? 'Ya tengo cuenta (Login)' : '¿No tienes cuenta? Crear una'}
+</button></div></div>);
 };
 
 const TEETH_UPPER = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
@@ -303,7 +305,20 @@ export default function App() {
   // --- ESTADOS DE LABORATORIO ---
   const [labWorks, setLabWorks] = useState([]);
   const [newLabWork, setNewLabWork] = useState({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: new Date().toISOString().split('T')[0], expectedDate: '', status: 'sent', id: null });
-
+ 
+  // --- CARGA INICIAL DESDE SUPABASE ---
+  useEffect(() => {
+      const fetchLabWorks = async () => {
+          try {
+              const { data, error } = await supabase.from('lab_works').select('*');
+              if (error) throw error;
+              if (data) setLabWorks(data);
+          } catch (error) {
+              console.error("Error cargando trabajos de laboratorio:", error);
+          }
+      };
+      fetchLabWorks();
+  }, []); // Se ejecuta solo una vez al abrir ShiningCloud
   // --- VOZ A TEXTO ---
   const [isListening, setIsListening] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState('');
@@ -364,9 +379,16 @@ export default function App() {
           // Filtramos: Solo muestra los de esta clínica (o los viejos sin etiqueta para no perderlos)
           setCatalog(allCatalog.filter(c => c.admin_email === myClinicAdmin || !c.admin_email));
       }
+
+      // 👇 PASO 2: CARGAMOS EL LABORATORIO FILTRADO (NUEVO) 👇
+      const { data: labData } = await supabase.from('lab_works').select('*');
+      if (labData) {
+          // Filtramos igual que el catálogo para mantener tu mismo estándar de seguridad
+          setLabWorks(labData.filter(w => w.admin_email === myClinicAdmin || !w.admin_email));
+      }
     };
     load();
-  }, [session]);
+    }, [session]);
 
   // --- V76: SISTEMA DE AUDITORÍA ---
   const logAction = async (action, details, patientId = null) => {
@@ -628,7 +650,7 @@ export default function App() {
       if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'clinical', label: 'Recetas', icon: Stethoscope }); }
       if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'catalog', label: 'Arancel', icon: Library }); }
       if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
-      if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'lab', label: 'Laboratorio', icon: () => <span className="text-lg">🧪</span> }); }
+      if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'lab', label: 'Laboratorio', icon: FlaskConical }); }
       return base;
   };
 // --- LÓGICA DEL CRM DE RETENCIÓN (RECALLS) ---
@@ -925,7 +947,7 @@ export default function App() {
             <div className="space-y-6 animate-in slide-in-from-bottom h-full">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-2">🧪 Control de Laboratorio</h2>
+                        <h2 className="text-2xl font-bold flex items-center gap-3"><FlaskConical className={t.accent} size={28}/> Control de Laboratorio</h2>
                         <p className="text-xs opacity-50 mt-1">Gestiona los envíos y recepciones de coronas, prótesis y placas.</p>
                     </div>
                     <Button theme={themeMode} onClick={() => {
@@ -935,18 +957,20 @@ export default function App() {
                 </div>
 
                 <Card theme={themeMode}>
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-sm text-left">
+    {/* Agregamos 'w-full' aquí 👇 */}
+    <div className="overflow-x-auto custom-scrollbar w-full"> 
+        {/* Agregamos 'border-collapse' aquí 👇 */}
+        <table className="w-full text-sm text-left border-collapse">
                             <thead className={`text-xs uppercase opacity-50 border-b ${t.border}`}>
                                 <tr>
-                                    <th className="px-4 py-3">Paciente</th>
-                                    <th className="px-4 py-3">Trabajo</th>
-                                    <th className="px-4 py-3 text-center">Pieza</th>
-                                    <th className="px-4 py-3">Laboratorio</th>
-                                    <th className="px-4 py-3">Envío</th>
-                                    <th className="px-4 py-3">Entrega Esperada</th>
-                                    <th className="px-4 py-3 text-center">Estado</th>
-                                    <th className="px-4 py-3 text-right">Acciones</th>
+                                    <th className="px-5 py-4">Paciente</th>
+                                    <th className="px-5 py-4">Trabajo</th>
+                                    <th className="px-5 py-4 text-center">Pieza</th>
+                                    <th className="px-5 py-4">Laboratorio</th>
+                                    <th className="px-5 py-4">Envío</th>
+                                    <th className="px-5 py-4">Entrega</th>
+                                    <th className="px-5 py-4 text-center">Estado</th>
+                                    <th className="px-5 py-4 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -954,39 +978,50 @@ export default function App() {
                                     <tr><td colSpan="8" className="text-center py-8 opacity-50 font-bold">No hay trabajos en curso. ¡Todo al día!</td></tr>
                                 ) : (
                                     labWorks.sort((a,b) => new Date(a.expectedDate) - new Date(b.expectedDate)).map(work => {
-                                        // Detectamos si está atrasado
                                         const isLate = new Date(work.expectedDate) < new Date() && work.status === 'sent';
                                         
                                         return (
                                         <tr key={work.id} className={`border-b ${t.border} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}>
-                                            <td className="px-4 py-3 font-bold">{work.patientName}</td>
-                                            <td className="px-4 py-3">{work.workType}</td>
-                                            <td className="px-4 py-3 text-center font-bold text-cyan-600 dark:text-cyan-400">{work.tooth || '-'}</td>
-                                            <td className="px-4 py-3">{work.labName}</td>
-                                            <td className="px-4 py-3 text-xs opacity-70">{work.sendDate}</td>
-                                            <td className={`px-4 py-3 font-bold ${isLate ? 'text-red-500 flex items-center gap-1' : ''}`}>
-                                                {isLate && '⚠️'} {work.expectedDate}
+                                            <td className="px-5 py-5 font-bold min-w-[150px]">{work.patientName}</td>
+                                            
+                                            {/* CORRECCIÓN: El div ahora vive dentro de la celda */}
+                                            <td className="px-5 py-5">
+                                                <div className="max-w-[180px] truncate" title={work.workType}>{work.workType}</div>
                                             </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${work.status === 'received' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'}`}>
+                                            
+                                            <td className="px-5 py-5 text-center font-bold text-cyan-600 dark:text-cyan-400">{work.tooth || '-'}</td>
+                                            <td className="px-5 py-5 whitespace-nowrap">{work.labName}</td>
+                                            <td className="px-5 py-5 text-xs opacity-70 whitespace-nowrap">{work.sendDate}</td>
+                                            <td className="px-5 py-5 font-bold whitespace-nowrap align-middle">
+    <div className={`flex items-center gap-1 ${isLate ? 'text-red-500' : ''}`}>
+        {isLate && <span>⚠️</span>} 
+        <span>{work.expectedDate}</span>
+    </div>
+</td>
+                                            <td className="px-5 py-5 text-center">
+                                                <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${work.status === 'received' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'}`}>
                                                     {work.status === 'received' ? '✅ Recibido' : '⏳ En Tránsito'}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                                {work.status === 'sent' && (
+                                            <td className="px-5 py-5 text-right">
+                                                <div className="flex justify-end gap-2 items-center">
+                                                    {work.status === 'sent' && (
+                                                        <button onClick={async () => {
+                                                            const updated = { ...work, status: 'received' };
+                                                            setLabWorks(labWorks.map(w => w.id === work.id ? updated : w));
+                                                            // ACTUALIZA EN SUPABASE
+                                                            await supabase.from('lab_works').update({ status: 'received' }).eq('id', work.id);
+                                                            if(typeof notify === 'function') notify("Trabajo marcado como RECIBIDO");
+                                                        }} className="text-[10px] bg-emerald-500 text-white px-3 py-1.5 rounded-lg shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform font-bold">Recibir</button>
+                                                    )}
                                                     <button onClick={async () => {
-                                                        const updated = { ...work, status: 'received' };
-                                                        setLabWorks(labWorks.map(w => w.id === work.id ? updated : w));
-                                                        await saveToSupabase('lab_works', work.id, updated);
-                                                        notify("Trabajo marcado como RECIBIDO");
-                                                    }} className="text-[10px] bg-emerald-500 text-white px-3 py-1.5 rounded-lg shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform font-bold">Recibir</button>
-                                                )}
-                                                <button onClick={async () => {
-                                                    if(window.confirm("¿Seguro que deseas eliminar este registro?")){
-                                                        setLabWorks(labWorks.filter(w => w.id !== work.id));
-                                                        await supabase.from('lab_works').delete().eq('id', work.id);
-                                                    }
-                                                }} className="p-1.5 text-red-500 opacity-50 hover:opacity-100 hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16}/></button>
+                                                        if(window.confirm("¿Seguro que deseas eliminar este registro?")){
+                                                            setLabWorks(labWorks.filter(w => w.id !== work.id));
+                                                            // BORRA DE SUPABASE
+                                                            await supabase.from('lab_works').delete().eq('id', work.id);
+                                                        }
+                                                    }} className="p-1.5 text-red-500 opacity-50 hover:opacity-100 hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16}/></button>
+                                                </div>
                                             </td>
                                         </tr>
                                     )})
@@ -1683,14 +1718,13 @@ export default function App() {
     </Card>
 </div>)}
 
-{/* --- MODAL NUEVO TRABAJO DE LABORATORIO (VERSIÓN BLINDADA) --- */}
+{/* --- MODAL NUEVO TRABAJO DE LABORATORIO --- */}
       {modal === 'labWork' && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
               <div className={`w-full max-w-md space-y-4 relative p-6 rounded-3xl border shadow-2xl ${themeMode === 'light' ? 'bg-white border-gray-200' : 'bg-[#1a1a1a] border-white/10'}`}>
                   <button onClick={()=>setModal(null)} className="absolute top-4 right-4 opacity-50 hover:opacity-100 transition-opacity"><X size={20}/></button>
-                  <h3 className="text-xl font-bold flex items-center gap-2">🧪 Enviar a Laboratorio</h3>
+                  <h3 className="text-xl font-bold flex items-center gap-2"><FlaskConical size={24} className="text-cyan-500"/> Enviar a Laboratorio</h3>
                   
-                  {/* Buscador de Paciente Básico CORREGIDO */}
                   <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-50">Paciente</label>
                       <select 
@@ -1737,13 +1771,25 @@ export default function App() {
                       </div>
                   </div>
 
-                  <button className="w-full mt-4 p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-bold tracking-widest uppercase transition-colors shadow-lg shadow-cyan-500/30" onClick={()=>{
+                  <button className="w-full mt-4 p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-bold tracking-widest uppercase transition-colors shadow-lg shadow-cyan-500/30" onClick={async ()=>{
                       if(newLabWork.patientId && newLabWork.workType && newLabWork.expectedDate){
                           const id = newLabWork.id || Date.now().toString();
-                          const data = { ...newLabWork, id };
-                          setLabWorks([...labWorks, data]);
-                          setModal(null);
-                          if(typeof notify === 'function') notify("✅ Trabajo enviado a laboratorio exitosamente");
+                          
+                          // --- PASO 3 APLICADO AQUÍ ---
+                          const data = { ...newLabWork, id, admin_email: clinicOwner };
+                          
+                          // GUARDA EN SUPABASE PRIMERO
+                          const { error } = await supabase.from('lab_works').insert([data]);
+                          
+                          if (error) {
+                              console.error("Error guardando en Supabase:", error);
+                              alert("Hubo un error al guardar en la nube.");
+                          } else {
+                              // SI FUE EXITOSO, ACTUALIZA LA PANTALLA
+                              setLabWorks([...labWorks, data]);
+                              setModal(null);
+                              if(typeof notify === 'function') notify("✅ Trabajo enviado y guardado en la nube");
+                          }
                       } else {
                           alert("Por favor selecciona un paciente, el tipo de trabajo y la fecha de entrega.");
                       }
