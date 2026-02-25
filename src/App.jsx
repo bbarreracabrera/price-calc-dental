@@ -509,92 +509,135 @@ export default function App() {
 
   const generatePDF = (type, data = null) => {
     try {
-      const doc = new jsPDF();
-      const primaryColor = themeMode === 'light' ? [217, 119, 6] : (themeMode === 'blue' ? [6, 182, 212] : [212, 175, 55]);
-      doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 5, 'F');
-      if (config.logo) { try { doc.addImage(config.logo, 'PNG', 15, 15, 25, 25); } catch (e) { try { doc.addImage(config.logo, 'JPEG', 15, 15, 25, 25); } catch(err) { console.warn("Logo incompatible", err); } } }
-      doc.setFontSize(18); doc.text(config.name?.toUpperCase() || "DOCTOR", 200, 25, { align: 'right' });
-      const pData = (type === 'consent') ? getPatient(selectedPatientId) : (data || (sessionData.patientId ? patientRecords[sessionData.patientId] : null));
-      const pName = pData?.personal?.legalName || (sessionData.patientName || 'Paciente...');
-      doc.setFontSize(10); doc.text(`PACIENTE: ${pName}`, 20, 50);
-      
-      if (type === 'rx') { 
-          if (prescription.length === 0) { notify("Receta vacía"); return; } 
-          autoTable(doc, { startY: 60, head: [['MEDICAMENTO', 'DOSIS']], body: prescription.map(p => [p.name, p.dosage]) }); 
-      } 
-      else if (type === 'quote') { 
+        const doc = new jsPDF();
+        // Colores según tu tema (mantenemos tu lógica de colores)
+        const primaryColor = themeMode === 'light' ? [217, 119, 6] : (themeMode === 'blue' ? [6, 182, 212] : [212, 175, 55]);
+        
+        // --- 1. ENCABEZADO PROFESIONAL (Basado en normativa chilena) ---
+        doc.setFillColor(...primaryColor); 
+        doc.rect(0, 0, 210, 3, 'F'); 
+
+        if (config.logo) {
+            try { doc.addImage(config.logo, 'PNG', 15, 10, 20, 20); } 
+            catch (e) { console.warn("Logo incompatible"); }
+        }
+
+        // Datos del Profesional (Extraídos de config/Ajustes)
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text(config.name?.toUpperCase() || "DOCTOR", 200, 15, { align: 'right' });
+        
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100);
+        doc.text(`RUT: ${config.rut || '---'}`, 200, 20, { align: 'right'});
+        doc.text(`Registro Super. de Salud: ${config.rnpi || '---'}`, 200, 24, { align: 'right' });
+        doc.text(`${config.university || ''}`, 200, 28, { align: 'right' });
+        doc.text(`${config.address || ''}`, 200, 32, { align: 'right' });
+
+        // --- 2. DATOS DEL PACIENTE ---
+        const pData = (type === 'consent') ? getPatient(selectedPatientId) : (data || (sessionData.patientId ? patientRecords[sessionData.patientId] : null));
+        const pName = pData?.personal?.legalName || (sessionData.patientName || 'Paciente...');
+        const pRut = pData?.personal?.documentId || '---';
+        const pAge = pData?.personal?.age ? `${pData.personal.age} años` : '';
+
+        doc.setDrawColor(200);
+        doc.line(15, 38, 195, 38); 
+
+        doc.setFontSize(10);
+        doc.setTextColor(0);
+        doc.setFont("helvetica", "bold");
+        doc.text("PACIENTE:", 15, 45);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${pName.toUpperCase()}`, 40, 45);
+        doc.text(`RUT: ${pRut}`, 140, 45);
+        doc.text(`EDAD: ${pAge}`, 15, 50);
+        doc.text(`FECHA: ${new Date().toLocaleDateString()}`, 140, 50);
+
+        // --- 3. LÓGICA SEGÚN TIPO DE DOCUMENTO ---
+
+        // CASO A: RECETA MÉDICA (RX)
+        if (type === 'rx') {
+            if (prescription.length === 0) { notify("Receta vacía"); return; }
+            
+            doc.setFontSize(16);
+            doc.setFont("times", "italic", "bold");
+            doc.text("RP:", 15, 65);
+
+            autoTable(doc, {
+                startY: 70,
+                head: [['FÁRMACO (DCI / PRESENTACIÓN)', 'INDICACIONES (POSOLOGÍA)']],
+                body: prescription.map(p => [p.name.toUpperCase(), p.dosage]),
+                theme: 'plain',
+                styles: { fontSize: 10, cellPadding: 5 },
+                headStyles: { fontStyle: 'bold', textColor: primaryColor, borderBottom: { width: 0.5, color: primaryColor } },
+                columnStyles: { 0: { fontStyle: 'bold', width: 80 } }
+            });
+
+            const finalY = doc.lastAutoTable.finalY + 30;
+            doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.line(70, finalY + 20, 140, finalY + 20);
+            doc.setFontSize(8);
+            doc.text("FIRMA Y TIMBRE PROFESIONAL", 105, finalY + 25, { align: 'center' });
+        } 
+
+        // CASO B: PRESUPUESTO (QUOTE) - Restaurado y Mejorado
+        else if (type === 'quote') {
             const qItems = data || []; 
             const totalQ = qItems.reduce((sum, item) => sum + Number(item.price), 0);
-            const pData = getPatient(sessionData.patientId);
             
-            // 1. Cabecera (Ajustada a la izquierda para no chocar con tu DR. BENJAMÍN)
-            doc.setFontSize(22);
-            doc.setTextColor(45, 212, 191); // Color Cyan
-            doc.text("PRESUPUESTO DENTAL", 14, 20); 
-            
-            doc.setFontSize(10);
-            doc.setTextColor(150, 150, 150);
-            doc.text(`Fecha de Emisión: ${new Date().toLocaleDateString()}`, 14, 26); 
-            
-            doc.setDrawColor(200, 200, 200);
-            doc.line(14, 32, 196, 32); // Línea separadora limpia
-            
-            // 2. Datos del Paciente 
-            // NO imprimimos "Paciente:" porque tu sistema ya lo dibuja por defecto.
-            // Solo agregamos el RUT y el Teléfono justo debajo para complementarlo.
-            doc.setFontSize(10);
-            doc.setTextColor(80, 80, 80);
-            let infoY = 58; // Empezamos a escribir más abajo para darle espacio a tu texto global
-            if (pData && pData.personal && pData.personal.documentId) {
-                doc.text(`RUT / Documento: ${pData.personal.documentId}`, 14, infoY);
-                infoY += 6;
-            }
-            if (pData && pData.personal && pData.personal.phone) {
-                doc.text(`Teléfono: ${pData.personal.phone}`, 14, infoY);
-                infoY += 6;
-            }
+            doc.setFontSize(18);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("PRESUPUESTO DENTAL", 15, 65); 
 
-            // 3. Tabla de Tratamientos (Se acomoda dinámicamente según el espacio)
             autoTable(doc, { 
-                startY: infoY + 5, 
+                startY: 70, 
                 head: [['TRATAMIENTO', 'DIENTE', 'VALOR']], 
-                body: qItems.map(it => [it.name, it.tooth || '-', `$${Number(it.price).toLocaleString()}`]),
-                foot: [['', 'TOTAL A PAGAR:', `$${totalQ.toLocaleString()}`]],
+                body: qItems.map(it => [it.name, it.tooth || '-', `$${Number(it.price).toLocaleString('es-CL')}`]),
+                foot: [['', 'TOTAL A PAGAR:', `$${totalQ.toLocaleString('es-CL')}`]],
                 theme: 'striped',
-                headStyles: { fillColor: [45, 212, 191], textColor: [255,255,255], fontStyle: 'bold' },
+                headStyles: { fillColor: primaryColor, textColor: [255,255,255], fontStyle: 'bold' },
                 footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
                 alternateRowStyles: { fillColor: [250, 252, 252] }
             }); 
-            
-            // 4. Términos, Condiciones y Firmas
-            const finalY = doc.lastAutoTable.finalY + 15;
-            
-            if (finalY < 230) { // Validamos que quede espacio en la hoja para no cortar la firma
-                doc.setFontSize(9);
-                doc.setTextColor(150, 150, 150);
-                doc.text("Términos y Condiciones:", 14, finalY);
-                doc.text("1. Este presupuesto tiene una validez de 30 días desde la fecha de emisión.", 14, finalY + 6);
-                doc.text("2. Los valores indicados pueden sufrir modificaciones si se descubren nuevos hallazgos", 14, finalY + 11);
-                doc.text("   clínicos o complicaciones durante la ejecución del tratamiento planificado.", 14, finalY + 16);
 
-                doc.setDrawColor(150, 150, 150);
-                doc.line(30, finalY + 45, 85, finalY + 45); // Línea Firma Doctor
-                doc.line(125, finalY + 45, 180, finalY + 45); // Línea Firma Paciente
-                
-                doc.setTextColor(100, 100, 100);
-                doc.text("Firma Profesional Tratante", 38, finalY + 50);
-                doc.text("Firma Paciente / Apoderado", 130, finalY + 50);
+            const finalY = doc.lastAutoTable.finalY + 15;
+            if (finalY < 230) {
+                doc.setFontSize(9);
+                doc.setTextColor(150);
+                doc.text("Términos y Condiciones:", 15, finalY);
+                doc.text("1. Este presupuesto tiene una validez de 30 días.", 15, finalY + 6);
+                doc.text("2. Los valores pueden variar según hallazgos clínicos durante el tratamiento.", 15, finalY + 11);
+
+                doc.setDrawColor(150);
+                doc.line(30, finalY + 40, 85, finalY + 40); 
+                doc.line(125, finalY + 40, 180, finalY + 40); 
+                doc.text("Firma Profesional", 45, finalY + 45);
+                doc.text("Firma Paciente", 145, finalY + 45);
             }
         }
-      else if (type === 'consent' && data) { 
-          doc.setFontSize(14); doc.text(data.type, 105, 70, { align: 'center' }); 
-          doc.setFontSize(10); doc.text(doc.splitTextToSize(data.text || '', 170), 20, 90); 
-          if(data.signature) { try { doc.addImage(data.signature, 'PNG', 80, 200, 50, 30); } catch(e) { console.warn("Firma error", e); } } 
-      }
-      doc.save(`${type}_${pName}.pdf`); notify("PDF Generado"); 
-      logAction('GENERATE_PDF', { type }, selectedPatientId); // V76
-    } catch (e) { console.error(e); alert("Error generando PDF."); }
-  };
+
+        // CASO C: CONSENTIMIENTO
+        else if (type === 'consent' && data) { 
+            doc.setFontSize(14); doc.text(data.type, 105, 70, { align: 'center' }); 
+            doc.setFontSize(10); doc.text(doc.splitTextToSize(data.text || '', 170), 20, 90); 
+            if(data.signature) { try { doc.addImage(data.signature, 'PNG', 80, 200, 50, 30); } catch(e) { console.warn("Firma error"); } } 
+        }
+
+        // Pie de página global
+        doc.setFontSize(7);
+        doc.setTextColor(180);
+        doc.text(`Documento generado por ShiningCloud - ${new Date().toLocaleString()}`, 105, 285, { align: 'center' });
+
+        doc.save(`${type}_${pName}.pdf`); 
+        notify("PDF Generado con éxito"); 
+        logAction('GENERATE_PDF', { type }, selectedPatientId);
+
+    } catch (e) { 
+        console.error(e); 
+        alert("Error generando PDF."); 
+    }
+};
 
   const getPerioStats = () => {
     if (!selectedPatientId) return { bop: 0, plaque: 0 };
@@ -1107,7 +1150,7 @@ export default function App() {
             </div>
         )}
 
-       {/* --- SETTINGS (ACTUALIZADO: SIN DATOS FINANCIEROS VIEJOS) --- */}
+      {/* --- SETTINGS (ACTUALIZADO: CON DATOS LEGALES MINSAL) --- */}
         {activeTab === 'settings' && <div className="space-y-6 animate-in slide-in-from-bottom h-full">
             <Card theme={themeMode} className="space-y-4">
                 <div onClick={()=>logoInputRef.current.click()} className="p-6 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
@@ -1116,16 +1159,34 @@ export default function App() {
                 </div>
                 {userRole === 'admin' ? (
                     <>
+                        <h3 className="text-xs font-black text-cyan-600 dark:text-cyan-500 mt-2 uppercase tracking-widest border-b border-white/10 pb-2">
+                            Datos Generales
+                        </h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <InputField theme={themeMode} label="Nombre Clínica/Dr" value={config.name} onChange={e=>setConfigLocal({...config, name:e.target.value})} />
-                            <InputField theme={themeMode} label="RUT Profesional" value={config.rut} onChange={e=>setConfigLocal({...config, rut:e.target.value})} />
+                            <InputField theme={themeMode} label="Nombre Clínica/Dr" value={config.name || ''} onChange={e=>setConfigLocal({...config, name:e.target.value})} />
+                            <InputField theme={themeMode} label="RUT Profesional" value={config.rut || ''} onChange={e=>setConfigLocal({...config, rut:e.target.value})} />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <InputField theme={themeMode} label="Especialidad" value={config.specialty} onChange={e=>setConfigLocal({...config, specialty:e.target.value})} />
-                            <InputField theme={themeMode} label="Teléfono" value={config.phone} onChange={e=>setConfigLocal({...config, phone:e.target.value})} />
+                            <InputField theme={themeMode} label="Especialidad" value={config.specialty || ''} onChange={e=>setConfigLocal({...config, specialty:e.target.value})} />
+                            <InputField theme={themeMode} label="Teléfono" value={config.phone || ''} onChange={e=>setConfigLocal({...config, phone:e.target.value})} />
                         </div>
                         
-                        <Button theme={themeMode} className="w-full mt-2" onClick={()=>{saveToSupabase('settings', 'general', config); notify("Ajustes Guardados");}}>GUARDAR DATOS</Button>
+                        {/* --- NUEVA SECCIÓN: LEGAL MINSAL --- */}
+                        <h3 className="text-xs font-black text-cyan-600 dark:text-cyan-500 mt-6 uppercase tracking-widest border-b border-white/10 pb-2">
+                            Información Legal para Recetas (MINSAL)
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputField theme={themeMode} label="Registro Minsal (RNPI)" value={config.rnpi || ''} onChange={e=>setConfigLocal({...config, rnpi:e.target.value})} />
+                            <InputField theme={themeMode} label="Universidad / Título" value={config.university || ''} onChange={e=>setConfigLocal({...config, university:e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-1 gap-4">
+                            <InputField theme={themeMode} label="Dirección Clínica" value={config.address || ''} onChange={e=>setConfigLocal({...config, address:e.target.value})} />
+                        </div>
+                        <p className="text-[10px] opacity-50 font-medium italic mb-2">
+                            * El RUT, RNPI y la Universidad son obligatorios en Chile para la validez de recetas en farmacias.
+                        </p>
+
+                        <Button theme={themeMode} className="w-full mt-4" onClick={()=>{saveToSupabase('settings', 'general', config); notify("Ajustes Guardados");}}>GUARDAR DATOS</Button>
                     </>
                 ) : <p className="text-center opacity-50 py-4">Contacta al administrador para editar datos.</p>}
             </Card>
@@ -1162,9 +1223,9 @@ export default function App() {
                     </div>
                 </Card>
             )}
-        </div>}
+        </div>}     
 
-        {/* --- NUEVO COTIZADOR CLINICO (ARANCEL) --- */}
+           {/* --- NUEVO COTIZADOR CLINICO (ARANCEL) --- */}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && (
             <div className="space-y-6 animate-in slide-in-from-bottom h-full">
                 <div className="flex justify-between items-center">
