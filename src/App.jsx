@@ -58,19 +58,19 @@ const SignaturePad = ({ onSave, onCancel, theme }) => {
   return (<div className="space-y-4"><div className="border-2 border-dashed border-white/20 rounded-xl overflow-hidden bg-black/20 touch-none h-48 relative"><canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/><div className="absolute bottom-2 right-2 text-[10px] opacity-30 pointer-events-none text-white">Firme aquí</div></div><div className="flex gap-2"><button onClick={()=>onSave(canvasRef.current.toDataURL())} className="flex-1 bg-emerald-500 text-white p-3 rounded-xl font-bold">Confirmar</button><button onClick={onCancel} className="p-3 rounded-xl bg-white/10 text-xs">Cancelar</button></div></div>);
 };
 
-// --- NUEVO MOTOR GRÁFICO DEL ODONTOGRAMA (5 CARAS SVG) ---
+// --- NUEVO MOTOR GRÁFICO DEL ODONTOGRAMA (5 CARAS SVG + LÓGICA ANATÓMICA) ---
 const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, interactive = false, activeFace = 'o', onFaceClick }) => {
     // Colores Clínicos Reales
     const getDiagnosticColor = (f) => {
-        if (f === 'caries') return '#ef4444'; // Rojo (Lesión)
-        if (f === 'filled') return '#3b82f6'; // Azul (Restauración)
+        if (f === 'caries') return '#ef4444'; 
+        if (f === 'filled') return '#3b82f6'; 
         return 'transparent';
     };
 
     // Si está en "Modo Tratamiento", pintamos las caras según el presupuesto
     const getTreatmentColor = () => {
-        if (treatment?.status === 'planned') return '#ef4444'; // Rojo oscuro: Por hacer
-        if (treatment?.status === 'completed') return '#10b981'; // Verde: Terminado
+        if (treatment?.status === 'planned') return '#ef4444'; 
+        if (treatment?.status === 'completed') return '#10b981'; 
         return 'transparent';
     };
 
@@ -80,14 +80,23 @@ const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, interacti
     // Asignador inteligente de colores
     const getFaceColor = (faceId) => {
         if (isMissing) return 'transparent';
-        if (isCrown) return '#eab308'; // Amarillo: Corona
+        if (isCrown) return '#eab308'; 
         if (mode === 'tratamientos' && treatment && treatment.name) return getTreatmentColor();
         return getDiagnosticColor(faces?.[faceId]);
     };
 
     const strokeColor = interactive ? '#888' : '#666'; 
 
-    // Constructor de cada "Triángulo" o "Cuadrado" del diente
+    // --- MAGIA ANATÓMICA: ESPEJO MESIAL/DISTAL ---
+    const num = parseInt(number, 10);
+    // Cuadrantes 1 y 4 (Derecha del paciente)
+    const isRightQuadrant = (num >= 11 && num <= 18) || (num >= 41 && num <= 48);
+    
+    // Asignación de caras físicas izquierda/derecha según el cuadrante
+    const leftFaceId = isRightQuadrant ? 'd' : 'm';
+    const rightFaceId = isRightQuadrant ? 'm' : 'd';
+
+    // Constructor de las caras del diente
     const Face = ({ id, points }) => (
         <polygon 
             points={points} 
@@ -103,17 +112,20 @@ const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, interacti
     return (
         <div className="relative flex flex-col items-center" style={{ width: size, height: size + 20 }}>
             <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md overflow-visible">
-                <Face id="v" points="0,0 100,0 75,25 25,25" /> {/* Superior / Vestibular */}
-                <Face id="l" points="0,100 25,75 75,75 100,100" /> {/* Inferior / Palatino-Lingual */}
-                <Face id="m" points="0,0 25,25 25,75 0,100" /> {/* Izquierda / Mesial */}
-                <Face id="d" points="100,0 75,25 75,75 100,100" /> {/* Derecha / Distal */}
-                <Face id="o" points="25,25 75,25 75,75 25,75" /> {/* Centro / Oclusal */}
+                <Face id="v" points="0,0 100,0 75,25 25,25" /> {/* Superior */}
+                <Face id="l" points="0,100 25,75 75,75 100,100" /> {/* Inferior */}
+                
+                {/* Caras Laterales Inteligentes */}
+                <Face id={leftFaceId} points="0,0 25,25 25,75 0,100" /> {/* Izquierda del dibujo */}
+                <Face id={rightFaceId} points="100,0 75,25 75,75 100,100" /> {/* Derecha del dibujo */}
+                
+                <Face id="o" points="25,25 75,25 75,75 25,75" /> {/* Centro */}
             </svg>
             
-            {/* Cruz grande roja si está extraído */}
+            {/* Cruz si está extraído */}
             {isMissing && <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none text-red-500 font-black text-5xl opacity-80" style={{ height: size }}>X</div>}
             
-            {/* Número del diente abajo */}
+            {/* Número del diente */}
             <span className={`text-[11px] font-black mt-1 ${mode === 'tratamientos' && treatment?.name ? 'text-emerald-500' : 'opacity-60 text-stone-500 dark:text-white'}`}>{number}</span>
         </div>
     );
@@ -163,12 +175,13 @@ const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, m
     }
 
     // 2. COMPORTAMIENTO MODO CLÍNICO (Nuevo Odontograma SVG 5 Caras)
+    // 2. COMPORTAMIENTO MODO CLÍNICO (Nuevo Odontograma SVG 5 Caras)
     return (
         <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">
             <ToothSVG 
-                number={number} 
-                faces={data?.faces} 
-                status={data?.status || status} 
+                number={number} // Usamos la variable 'number' que recibe el componente
+                faces={data?.faces} // Las caras vienen del objeto 'data'
+                status={status || data?.status} // El estado puede venir en 'status' o 'data.status'
                 mode={mode}
                 treatment={data?.treatment}
                 size={40} 
@@ -579,29 +592,70 @@ export default function App() {
     return { bop: sites>0?Math.round((bop/sites)*100):0, plaque: faces>0?Math.round((plaque/faces)*100):0 };
   };
 
-  // --- LOGICA DE VOZ ---
+// --- LOGICA DE VOZ (MULTIPLE HALLAZGOS) ---
   const toggleVoice = () => {
     if (!('webkitSpeechRecognition' in window)) {
         alert("Navegador no compatible. Por favor, usa Google Chrome.");
         return;
     }
+    
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
-      setVoiceStatus('');
     } else {
       const recognition = new window.webkitSpeechRecognition();
       recognition.lang = 'es-CL';
       recognition.continuous = true; 
       recognition.interimResults = false;
-      recognition.onstart = () => { setIsListening(true); setVoiceStatus('Escuchando... 🔴'); };
+      
+      recognition.onstart = () => { setIsListening(true); };
+
       recognition.onresult = (event) => {
-        let final = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) final += event.results[i][0].transcript; }
-        if (final) { setNewEvolution(prev => (prev ? prev.trim() + '. ' : '') + final.charAt(0).toUpperCase() + final.slice(1)); }
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) { 
+              if (event.results[i].isFinal) transcript += event.results[i][0].transcript; 
+          }
+
+          if (transcript) {
+              const text = transcript.toLowerCase();
+              
+              // 1. Detectar Caras (Anatomía)
+              const facesMap = { 'vestibular': 'v', 'lingual': 'l', 'palatina': 'l', 'mesial': 'm', 'distal': 'd', 'oclusal': 'o', 'incisal': 'o' };
+              const foundFaceKey = Object.keys(facesMap).find(f => text.includes(f));
+              const faceId = foundFaceKey ? facesMap[foundFaceKey] : null;
+
+              // 2. Detectar Diagnósticos (Comandos de Acción)
+              if (text.includes('caries') || text.includes('lesión')) {
+                  if (faceId) setToothModalData(prev => ({ ...prev, faces: { ...prev.faces, [faceId]: 'caries' }, activeFace: faceId, status: null }));
+              } 
+              else if (text.includes('resina') || text.includes('empaste') || text.includes('obturación')) {
+                  if (faceId) setToothModalData(prev => ({ ...prev, faces: { ...prev.faces, [faceId]: 'filled' }, activeFace: faceId, status: null }));
+              } 
+              else if (text.includes('corona')) {
+                  setToothModalData(prev => ({ ...prev, status: 'crown' }));
+              } 
+              else if (text.includes('ausente') || text.includes('extraído') || text.includes('extracción')) {
+                  setToothModalData(prev => ({ ...prev, status: 'missing' }));
+              } 
+              else if (text.includes('sano') || text.includes('limpiar')) {
+                  if (faceId) {
+                      setToothModalData(prev => ({ ...prev, faces: { ...prev.faces, [faceId]: null }, activeFace: faceId }));
+                  } else {
+                      setToothModalData(prev => ({ ...prev, faces: {v:null,l:null,m:null,d:null,o:null}, status: null }));
+                  }
+              }
+
+              // 3. Escribir en la Evolución
+              setToothModalData(prev => ({
+                  ...prev, 
+                  notes: (prev.notes ? prev.notes.trim() + ' ' : '') + transcript.charAt(0).toUpperCase() + transcript.slice(1) 
+              }));
+          }
       };
-      recognition.onerror = (event) => { console.error("Error Voz:", event.error); setIsListening(false); if (event.error === 'not-allowed') { setVoiceStatus('❌ Permiso denegado.'); alert("Permiso denegado. Habilita el micrófono en la barra de dirección."); } else if (event.error === 'no-speech') { setVoiceStatus('❌ No se escuchó nada.'); } else { setVoiceStatus(`❌ Error: ${event.error}`); } };
-      recognition.onend = () => { setIsListening(false); setVoiceStatus('⏹️ Detenido.'); };
+
+      recognition.onerror = () => { setIsListening(false); };
+      recognition.onend = () => { setIsListening(false); };
+
       recognitionRef.current = recognition;
       recognition.start();
     }
@@ -1616,107 +1670,138 @@ export default function App() {
             )}
         </div>}
       </main>
+{/* --- MODAL DIENTE LATERAL (CORREGIDO Y UNIFICADO) --- */}
+{modal === 'tooth' && (
+    <div className="fixed inset-0 z-[100] flex justify-end">
+        {/* Fondo sutil */}
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={() => setModal(null)} />
 
-      {/* --- MODAL DIENTE DUAL ACTUALIZADO (SVG INTERACTIVO) --- */}
-      {modal === 'tooth' && (
-          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              {/* Le agregamos max-h-[90vh] y overflow-y-auto para que nunca se salga de la pantalla */}
-              <Card theme={themeMode} className="w-full max-w-sm space-y-4 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                  <button onClick={()=>setModal(null)} className="absolute top-4 right-4 opacity-50 hover:opacity-100 transition-opacity"><X size={20}/></button>
-                  <h3 className="text-2xl font-black text-center">Pieza {toothModalData.id}</h3>
-                  
-                  {toothModalData.mode === 'hallazgos' ? (
-                      <div className="space-y-4 animate-in fade-in">
-                          
-                          {/* 1. VISOR SVG INTERACTIVO (TAMAÑO CORREGIDO) */}
-                          <div className={`flex flex-col items-center p-4 rounded-3xl border transition-colors ${t.border} bg-black/5 dark:bg-white/5`}>
-                              <ToothSVG 
-                                  number=""
-                                  faces={toothModalData.faces} 
-                                  status={toothModalData.status} 
-                                  size={85} /* <--- ¡Aquí achicamos a Godzilla! Antes era 130 */
-                                  interactive={true}
-                                  activeFace={toothModalData.activeFace || 'o'}
-                                  onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})}
-                              />
-                              <p className="text-[10px] font-bold opacity-70 mt-3 uppercase tracking-widest bg-black/10 dark:bg-white/10 px-3 py-1 rounded-full">
-                                  Cara Activa: <span className="text-cyan-600 dark:text-cyan-400 font-black">{
-                                      (toothModalData.activeFace || 'o') === 'v' ? 'Vestibular' :
-                                      (toothModalData.activeFace || 'o') === 'l' ? 'Lingual/Palatino' :
-                                      (toothModalData.activeFace || 'o') === 'm' ? 'Mesial' :
-                                      (toothModalData.activeFace || 'o') === 'd' ? 'Distal' : 'Oclusal'
-                                  }</span>
-                              </p>
-                          </div>
-
-                          {/* 2. BOTONERA CLÍNICA CATEGORIZADA */}
-                          <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-2">
-                                  <span className="text-[10px] font-black opacity-40 uppercase tracking-widest ml-1 text-cyan-600 dark:text-cyan-400">En Cara Seleccionada</span>
-                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'caries'}, status: null})} className="w-full p-2.5 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">🔴 Caries / Lesión</button>
-                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'filled'}, status: null})} className="w-full p-2.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">🔵 Resina / Amalgama</button>
-                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: null}})} className={`w-full p-2.5 border rounded-xl text-xs font-bold transition-all ${t.border} hover:bg-black/5 dark:hover:bg-white/5`}>⚪ Limpiar Cara</button>
-                              </div>
-                              <div className="space-y-2">
-                                  <span className="text-[10px] font-black opacity-40 uppercase tracking-widest ml-1 text-emerald-600 dark:text-emerald-400">En Toda la Pieza</span>
-                                  <button onClick={()=>setToothModalData({...toothModalData, status: 'crown'})} className="w-full p-2.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500 hover:text-black border border-yellow-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">🟡 Corona</button>
-                                  <button onClick={()=>setToothModalData({...toothModalData, status: 'missing'})} className="w-full p-2.5 bg-stone-500/10 text-stone-600 dark:text-stone-400 hover:bg-stone-500 hover:text-white border border-stone-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">❌ Ausente</button>
-                                  <button onClick={()=>setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="w-full p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 rounded-xl text-xs font-bold transition-all shadow-sm">✅ Diente Sano</button>
-                              </div>
-                          </div>
-                          
-                          {/* 3. OBSERVACIONES (Sin cambios) */}
-                          <div className="w-full pt-2">
-                              <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 opacity-50">Evolución Clínica</label>
-                              <div className={`flex items-start p-3 rounded-2xl transition-all border ${t.border} ${t.inputBg} focus-within:border-cyan-400`}>
-                                  <textarea rows="2" placeholder="Notas... (o usa el micrófono)" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`} value={toothModalData.notes || ''} onChange={e=>setToothModalData({...toothModalData, notes: e.target.value})}/>
-                                  <div className="flex flex-col items-center gap-1 ml-2">
-                                      <button onClick={() => toggleVoice('tooth')} className={`p-3 rounded-full transition-all shadow-md ${isListening ? 'bg-red-500 animate-pulse text-white' : 'bg-black/5 dark:bg-white/5 text-cyan-500 hover:scale-110'}`}>
-                                          {isListening ? <MicOff size={16}/> : <Mic size={16}/>}
-                                      </button>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  ) : (
-          /* --- MODO TRATAMIENTOS (Nuevo) --- */
-            <div className="space-y-4 animate-in fade-in">
-                <p className="text-xs text-center opacity-50 uppercase tracking-widest">Planificar Tratamiento</p>
-                
-                {/* --- NUEVO BUSCADOR CONECTADO AL ARANCEL --- */}
-                <div className="w-full">
-                    <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Tratamiento Planificado</label>
-                    <input 
-                        list="catalog-tooth-options"
-                        className={`w-full outline-none font-bold text-sm p-3 rounded-2xl border ${t.border} ${t.inputBg} ${t.text} focus:border-cyan-400 transition-all`}
-                        placeholder="Busca en tu arancel..."
-                        value={toothModalData.treatment?.name || ''}
-                        onChange={e => setToothModalData({...toothModalData, treatment: {...(toothModalData.treatment || {}), name: e.target.value, status: toothModalData.treatment?.status || 'planned'}})}
-                    />
-                    <datalist id="catalog-tooth-options">
-                        {catalog.map(c => <option key={c.id} value={c.name} />)}
-                    </datalist>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                    <button onClick={()=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'planned'}})} className={`p-3 rounded-xl border text-[10px] font-bold uppercase transition-all ${toothModalData.treatment?.status==='planned' ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-white/10'}`}>Por Hacer (Presupuesto)</button>
-                    <button onClick={()=>setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'completed'}})} className={`p-3 rounded-xl border text-[10px] font-bold uppercase transition-all ${toothModalData.treatment?.status==='completed' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'border-white/10'}`}>Realizado (Listo)</button>
-                </div>
-                
-                {/* Botón correcto para limpiar el diente */}
-                <button onClick={()=>setToothModalData({...toothModalData, treatment: null})} className="w-full mt-2 p-2 text-xs text-red-400 opacity-50 hover:opacity-100 transition-opacity">Eliminar Tratamiento</button>
+        <Card theme={themeMode} className="w-full max-w-sm h-full relative z-10 shadow-2xl border-l border-white/10 flex flex-col animate-in slide-in-from-right duration-300 rounded-none">
+            
+            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+                <h3 className="text-2xl font-black italic tracking-tighter">Pieza {toothModalData.id}</h3>
+                <button onClick={() => setModal(null)} className="p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
             </div>
-        )}
 
-        <Button theme={themeMode} className="w-full mt-4" onClick={()=>{ 
-            const p = getPatient(selectedPatientId); 
-            // Guardamos TANTO los hallazgos COMO el tratamiento en el objeto del diente
-            const ut = {...p.clinical.teeth, [toothModalData.id]: {status: toothModalData.status, faces: toothModalData.faces, notes: toothModalData.notes, treatment: toothModalData.treatment}}; 
-            savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, teeth: ut}}); 
-            setModal(null); notify("Diente Guardado"); 
-        }}>GUARDAR DATOS</Button>
-    </Card>
-</div>)}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                
+                {/* Selector de Modo (Hallazgos vs Tratamientos) */}
+                <div className="flex bg-black/10 dark:bg-white/5 p-1 rounded-xl">
+                    <button 
+                        onClick={() => setToothModalData({...toothModalData, mode: 'hallazgos'})}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'hallazgos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}
+                    >Hallazgos</button>
+                    <button 
+                        onClick={() => setToothModalData({...toothModalData, mode: 'tratamientos'})}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'tratamientos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}
+                    >Tratamientos</button>
+                </div>
+
+                {toothModalData.mode === 'hallazgos' ? (
+                    /* --- MODO HALLAZGOS --- */
+                    <div className="space-y-6 animate-in fade-in">
+                        <div className={`flex flex-col items-center p-6 rounded-3xl border transition-colors ${t.border} bg-black/5 dark:bg-white/5 shadow-inner`}>
+                            <ToothSVG 
+                                number={toothModalData.id}
+                                faces={toothModalData.faces} 
+                                status={toothModalData.status} 
+                                size={100} 
+                                interactive={true}
+                                activeFace={toothModalData.activeFace || 'o'}
+                                onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})}
+                            />
+                            <p className="text-[10px] font-black opacity-50 mt-4 uppercase tracking-[0.2em]">
+                                Cara: <span className="text-cyan-500">
+                                    {toothModalData.activeFace === 'v' ? 'Vestibular' :
+                                     toothModalData.activeFace === 'l' ? 'Lingual/Palatino' :
+                                     toothModalData.activeFace === 'm' ? 'Mesial' :
+                                     toothModalData.activeFace === 'd' ? 'Distal' : 'Oclusal'}
+                                </span>
+                            </p>
+                        </div>
+
+                        {/* PEGA ESTO AQUÍ - BOTONERA RESTAURADA */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <span className="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">En Cara</span>
+                                <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'caries'}, status: null})} className="w-full p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20 rounded-2xl text-[11px] font-black transition-all">🔴 CARIES</button>
+                                <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'filled'}, status: null})} className="w-full p-3 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white border border-blue-500/20 rounded-2xl text-[11px] font-black transition-all">🔵 RESINA</button>
+                                <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: null}})} className="w-full p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[11px] font-black transition-all opacity-70 hover:opacity-100">⚪ LIMPIAR CARA</button>
+                            </div>
+                            <div className="space-y-2">
+                                <span className="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">En Pieza</span>
+                                <button onClick={() => setToothModalData({...toothModalData, status: 'crown'})} className="w-full p-3 bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500 hover:text-black border border-yellow-500/20 rounded-2xl text-[11px] font-black transition-all">🟡 CORONA</button>
+                                <button onClick={() => setToothModalData({...toothModalData, status: 'missing'})} className="w-full p-3 bg-stone-500/10 text-stone-500 hover:bg-stone-500 hover:text-white border border-stone-500/20 rounded-2xl text-[11px] font-black transition-all">❌ AUSENTE</button>
+                                <button onClick={() => setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="w-full p-3 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 rounded-2xl text-[11px] font-black transition-all">✅ DIENTE SANO</button>
+                            </div>
+                        </div>
+                        
+                        <div className="pt-4">
+                            <label className="text-[10px] font-black uppercase tracking-widest mb-2 block opacity-40">Evolución Clínica</label>
+                            <div className="relative group">
+                                <textarea 
+                                    rows="4" 
+                                    placeholder="Dicta hallazgos..." 
+                                    className={`w-full p-5 rounded-3xl border ${t.border} ${t.inputBg} outline-none focus:border-cyan-500 font-bold text-sm resize-none transition-all shadow-inner`}
+                                    value={toothModalData.notes || ''} 
+                                    onChange={e => setToothModalData({...toothModalData, notes: e.target.value})}
+                                />
+                                <button onClick={() => toggleVoice()} className={`absolute bottom-4 right-4 p-4 rounded-2xl transition-all shadow-lg ${isListening ? 'bg-red-500 animate-pulse text-white scale-110' : 'bg-cyan-500 text-white shadow-cyan-500/20'}`}>
+                                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* --- MODO TRATAMIENTOS --- */
+                    <div className="space-y-6 animate-in fade-in">
+                        <div className="w-full">
+                            <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Tratamiento Planificado</label>
+                            <input 
+                                list="catalog-tooth-options"
+                                className={`w-full outline-none font-bold text-sm p-4 rounded-2xl border ${t.border} ${t.inputBg} focus:border-cyan-400 transition-all shadow-inner`}
+                                placeholder="Busca en tu arancel..."
+                                value={toothModalData.treatment?.name || ''}
+                                onChange={e => setToothModalData({...toothModalData, treatment: {...(toothModalData.treatment || {}), name: e.target.value, status: toothModalData.treatment?.status || 'planned'}})}
+                            />
+                            <datalist id="catalog-tooth-options">
+                                {catalog.map(c => <option key={c.id} value={c.name} />)}
+                            </datalist>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mt-4">
+                            <button onClick={() => setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'planned'}})} className={`p-4 rounded-2xl border text-[10px] font-black uppercase transition-all ${toothModalData.treatment?.status === 'planned' ? 'bg-red-500/20 border-red-500 text-red-500 shadow-lg shadow-red-500/10' : 'border-white/10 opacity-50'}`}>Por Hacer</button>
+                            <button onClick={() => setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'completed'}})} className={`p-4 rounded-2xl border text-[10px] font-black uppercase transition-all ${toothModalData.treatment?.status === 'completed' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-white/10 opacity-50'}`}>Realizado</button>
+                        </div>
+                        
+                        <button onClick={() => setToothModalData({...toothModalData, treatment: null})} className="w-full p-2 text-[10px] font-bold text-red-400 opacity-50 hover:opacity-100 uppercase tracking-widest transition-opacity">Eliminar Tratamiento</button>
+                    </div>
+                )}
+            </div>
+
+            <div className="p-6 border-t border-white/5 bg-black/5">
+                <button 
+                    onClick={() => {
+                        // UNIFICAMOS EL GUARDADO AQUÍ
+                        const p = getPatient(selectedPatientId); 
+                        const ut = {...p.clinical.teeth, [toothModalData.id]: {
+                            status: toothModalData.status, 
+                            faces: toothModalData.faces, 
+                            notes: toothModalData.notes, 
+                            treatment: toothModalData.treatment
+                        }}; 
+                        savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, teeth: ut}}); 
+                        setModal(null); 
+                        notify("Diente Guardado con éxito");
+                    }}
+                    className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-xl active:scale-95"
+                >
+                    GUARDAR DATOS
+                </button>
+            </div>
+        </Card>
+    </div>
+)}
 
 {/* --- MODAL NUEVO TRABAJO DE LABORATORIO --- */}
       {modal === 'labWork' && (
