@@ -30,22 +30,42 @@ const THEMES = {
   blue: { bg: 'bg-[#0a192f]', text: 'text-white', card: 'bg-[#112240]/90 border-cyan-500/20 shadow-cyan-900/20 shadow-2xl', accent: 'text-cyan-400', accentBg: 'bg-cyan-500', inputBg: 'bg-[#1d2d50] border-transparent focus-within:border-cyan-400', subText: 'text-slate-400', gradient: 'bg-gradient-to-br from-cyan-400 to-blue-600', buttonSecondary: 'bg-white/5 border-white/10 text-cyan-400' }
 };
 
-// --- COMPONENTES UI GRÁFICOS ---
-const SimpleLineChart = ({ data, theme }) => {
-    if (!data || data.length < 2) return <div className="h-32 flex items-center justify-center text-xs opacity-30">Faltan datos para graficar</div>;
-    const maxVal = Math.max(...data.map(d => d.value));
-    const points = data.map((d, i) => { const x = (i / (data.length - 1)) * 100; const y = 100 - ((d.value / maxVal) * 100); return `${x},${y}`; }).join(' ');
-    const color = theme === 'admin' ? '#10b981' : (theme === 'blue' ? '#22d3ee' : '#fbbf24');
+// --- COMPONENTE DE GRÁFICO (CON PROTECCIÓN ANTI-NaN) ---
+const SimpleLineChart = ({ data }) => {
+    // 1. EL ESCUDO: Si no hay datos, o todos los ingresos están en 0, no dibujamos el SVG
+    if (!data || data.length === 0 || data.every(d => !d.ingresos || d.ingresos === 0)) {
+        return (
+            <div className="w-full h-[250px] flex flex-col items-center justify-center text-stone-400/50 border border-white/5 rounded-3xl bg-black/5 dark:bg-white/5">
+                <span className="text-4xl mb-3 opacity-50">📊</span>
+                <p className="text-xs font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-500">Sin datos financieros</p>
+                <p className="text-[10px] mt-1 font-bold">Registra tratamientos completados para ver la gráfica</p>
+            </div>
+        );
+    }
+
+    // 2. Si hay datos reales, renderizamos el gráfico normal
     return (
-        <div className="h-32 w-full flex items-end gap-1 relative pt-4">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
-                <defs><linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.5" /><stop offset="100%" stopColor={color} stopOpacity="0" /></linearGradient></defs>
-                <path d={`M0,100 ${points} 100,100`} fill="url(#chartGradient)" /><polyline fill="none" stroke={color} strokeWidth="2" points={points} vectorEffect="non-scaling-stroke" />
-                {data.map((d, i) => { const x = (i / (data.length - 1)) * 100; const y = 100 - ((d.value / maxVal) * 100); return <circle key={i} cx={x} cy={y} r="1.5" fill="#fff" stroke={color} />; })}
-            </svg>
-        </div>
+        <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                <XAxis dataKey="name" stroke="#ffffff40" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis stroke="#ffffff40" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value/1000}k`} />
+                <Tooltip 
+                    contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #ffffff10', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}
+                    itemStyle={{ color: '#06b6d4' }}
+                />
+                <Line 
+                    type="monotone" 
+                    dataKey="ingresos" 
+                    stroke="#06b6d4" 
+                    strokeWidth={4} 
+                    dot={{ r: 4, fill: '#0a0a0a', stroke: '#06b6d4', strokeWidth: 2 }} 
+                    activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} 
+                />
+            </LineChart>
+        </ResponsiveContainer>
     );
-};
+};;
 
 // --- COMPONENTES UI ---
 const SignaturePad = ({ onSave, onCancel, theme }) => {
