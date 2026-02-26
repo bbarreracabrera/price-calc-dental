@@ -476,55 +476,79 @@ export default function App() {
           const transcript = event.results[0][0].transcript.toLowerCase();
           setVoiceFeedback(`Escuchaste: "${transcript}"`);
           
-          // 1. Convertir palabras a números y soporte para signos negativos ("menos uno")
+          // 1. Convertir palabras a números y soporte para signos negativos
           const cleanText = transcript
               .replace(/uno/g, '1').replace(/dos/g, '2').replace(/tres/g, '3')
               .replace(/cuatro/g, '4').replace(/cinco/g, '5').replace(/seis/g, '6')
               .replace(/siete/g, '7').replace(/ocho/g, '8').replace(/nueve/g, '9').replace(/cero/g, '0')
-              .replace(/menos /g, '-'); // Convierte "menos 1" en "-1"
+              .replace(/menos /g, '-');
 
           setPerioData(prev => {
-              // Hacemos una copia segura, incluyendo mg (margen)
               let newData = { ...prev, pd: { ...(prev.pd || {}) }, mg: { ...(prev.mg || {}) }, bop: { ...(prev.bop || {}) } };
               
               let pdNumbers = [];
               let mgNumbers = [];
 
-              // 2. Inteligencia de Separación: ¿Dijo la palabra "margen"?
               if (cleanText.includes('margen')) {
                   const parts = cleanText.split('margen');
-                  // Extrae números (incluyendo negativos) de la primera parte (Profundidad)
                   pdNumbers = parts[0].match(/-?\d/g) || [];
-                  // Extrae números de la segunda parte (Margen)
                   mgNumbers = parts[1].match(/-?\d/g) || [];
               } else {
-                  // Si no dijo "margen", asumimos que todo es profundidad
                   pdNumbers = cleanText.match(/-?\d/g) || [];
               }
               
-              // 3. Rellenar cajas de Profundidad (PD)
-              if (pdNumbers.length > 0) {
+              // --- NUEVA INTELIGENCIA DE CARAS ---
+              const isPalatino = cleanText.includes('palatino') || cleanText.includes('lingual');
+
+              // 2. Rellenar Profundidad (PD)
+              if (pdNumbers.length >= 6) {
+                  // Si dicta 6 números de corrido, llena toda la pieza
                   if (pdNumbers[0]) newData.pd.vd = pdNumbers[0];
                   if (pdNumbers[1]) newData.pd.v  = pdNumbers[1];
                   if (pdNumbers[2]) newData.pd.vm = pdNumbers[2];
                   if (pdNumbers[3]) newData.pd.ld = pdNumbers[3]; 
                   if (pdNumbers[4]) newData.pd.l  = pdNumbers[4];
                   if (pdNumbers[5]) newData.pd.lm = pdNumbers[5];
+              } else if (pdNumbers.length > 0) {
+                  // Si dicta 3 números o menos, revisa de qué cara está hablando
+                  if (isPalatino) {
+                      if (pdNumbers[0]) newData.pd.ld = pdNumbers[0];
+                      if (pdNumbers[1]) newData.pd.l  = pdNumbers[1];
+                      if (pdNumbers[2]) newData.pd.lm = pdNumbers[2];
+                  } else { // Por defecto va a Vestibular
+                      if (pdNumbers[0]) newData.pd.vd = pdNumbers[0];
+                      if (pdNumbers[1]) newData.pd.v  = pdNumbers[1];
+                      if (pdNumbers[2]) newData.pd.vm = pdNumbers[2];
+                  }
               }
 
-              // 4. Rellenar cajas de Margen (MG)
-              if (mgNumbers.length > 0) {
+              // 3. Rellenar Margen (MG) con la misma inteligencia
+              if (mgNumbers.length >= 6) {
                   if (mgNumbers[0]) newData.mg.vd = mgNumbers[0];
                   if (mgNumbers[1]) newData.mg.v  = mgNumbers[1];
                   if (mgNumbers[2]) newData.mg.vm = mgNumbers[2];
                   if (mgNumbers[3]) newData.mg.ld = mgNumbers[3]; 
                   if (mgNumbers[4]) newData.mg.l  = mgNumbers[4];
                   if (mgNumbers[5]) newData.mg.lm = mgNumbers[5];
+              } else if (mgNumbers.length > 0) {
+                  if (isPalatino) {
+                      if (mgNumbers[0]) newData.mg.ld = mgNumbers[0];
+                      if (mgNumbers[1]) newData.mg.l  = mgNumbers[1];
+                      if (mgNumbers[2]) newData.mg.lm = mgNumbers[2];
+                  } else {
+                      if (mgNumbers[0]) newData.mg.vd = mgNumbers[0];
+                      if (mgNumbers[1]) newData.mg.v  = mgNumbers[1];
+                      if (mgNumbers[2]) newData.mg.vm = mgNumbers[2];
+                  }
               }
 
-              // 5. Detectar palabras clave (Sangrado y Pus)
+              // 4. Detectar Sangrado y Pus direccionado
               if (cleanText.includes('sangra') || cleanText.includes('sangrado')) {
-                  newData.bop.v = true; // Marca sangrado central por defecto
+                  if (isPalatino) {
+                      newData.bop.l = true; // Sangrado palatino
+                  } else {
+                      newData.bop.v = true; // Sangrado vestibular
+                  }
               }
               if (cleanText.includes('pus') || cleanText.includes('supura')) {
                   newData.pus = true;
@@ -2577,16 +2601,25 @@ export default function App() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <div className="grid grid-cols-4 gap-1.5 items-center">
-                                <span className="text-[9px] font-bold text-right pr-1 opacity-70">Prof.</span>
+                            {/* PD Y BOP (DISEÑO ARREGLADO) */}
+                            <div className="grid grid-cols-4 gap-1.5 items-start">
+                                <span className="text-[9px] font-bold text-right pr-1 opacity-70 mt-2">Prof.</span>
                                 {faceData.keys.map(k => {
                                     const pdValue = perioData.pd?.[k] || '';
                                     const isDanger = parseInt(pdValue) >= 4;
                                     const isBOP = perioData.bop?.[k];
                                     return (
-                                        <div key={`pd-${k}`} className="relative group">
+                                        <div key={`pd-${k}`} className="flex flex-col gap-1">
+                                            {/* Input de Profundidad */}
                                             <input className={`w-full h-7 rounded text-center text-xs font-black p-0 outline-none border transition-all ${t.inputBg} ${t.text} ${isDanger ? 'border-red-500 text-red-500 bg-red-500/10' : t.border} focus:border-cyan-400`} value={pdValue} onChange={e=>setPerioData({...perioData, pd: {...(perioData.pd || {}), [k]: e.target.value}})} />
-                                            <div onClick={()=>setPerioData({...perioData, bop: {...(perioData.bop || {}), [k]: !isBOP}})} className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1.5 rounded-full cursor-pointer border transition-all ${isBOP ? 'bg-red-500 border-red-500 shadow-[0_0_5px_red]' : 'bg-black/40 border-white/10 opacity-30 hover:opacity-100'}`} title="Sangrado"></div>
+                                            {/* Botón Explícito de Sangrado (BOP) */}
+                                            <button 
+                                                onClick={()=>setPerioData({...perioData, bop: {...(perioData.bop || {}), [k]: !isBOP}})} 
+                                                className={`w-full py-0.5 rounded text-[8px] font-black uppercase tracking-widest transition-all border ${isBOP ? 'bg-red-500 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-black/20 text-white/30 border-white/10 hover:bg-white/10'}`} 
+                                                title="Sangrado (Bleeding on Probing)"
+                                            >
+                                                BOP
+                                            </button>
                                         </div>
                                     )
                                 })}
