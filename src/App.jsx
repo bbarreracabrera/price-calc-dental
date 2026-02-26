@@ -451,7 +451,102 @@ export default function App() {
       if (pd === '' || mg === '' || pd === undefined || mg === undefined || pd === '-' || mg === '-') return '-';
       return parseInt(pd) + parseInt(mg);
   };
-  
+  // --- MOTOR DE DICTADO POR VOZ (PERIODONCIA) ---
+  const [isPerioVoiceActive, setIsPerioVoiceActive] = useState(false);
+  const [voiceFeedback, setVoiceFeedback] = useState('');
+
+  const startPerioDictation = () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+          notify("Tu navegador no soporta dictado por voz (Te recomiendo Chrome).");
+          return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES'; // Configurado para español
+      recognition.continuous = false; // Se detiene al terminar la frase
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+          setIsPerioVoiceActive(true);
+          setVoiceFeedback('Escuchando (ej: "tres, dos, tres")...');
+      };
+
+      recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript.toLowerCase();
+          setVoiceFeedback(`Escuchaste: "${transcript}"`);
+          
+          // 1. Convertir palabras a números y soporte para signos negativos ("menos uno")
+          const cleanText = transcript
+              .replace(/uno/g, '1').replace(/dos/g, '2').replace(/tres/g, '3')
+              .replace(/cuatro/g, '4').replace(/cinco/g, '5').replace(/seis/g, '6')
+              .replace(/siete/g, '7').replace(/ocho/g, '8').replace(/nueve/g, '9').replace(/cero/g, '0')
+              .replace(/menos /g, '-'); // Convierte "menos 1" en "-1"
+
+          setPerioData(prev => {
+              // Hacemos una copia segura, incluyendo mg (margen)
+              let newData = { ...prev, pd: { ...(prev.pd || {}) }, mg: { ...(prev.mg || {}) }, bop: { ...(prev.bop || {}) } };
+              
+              let pdNumbers = [];
+              let mgNumbers = [];
+
+              // 2. Inteligencia de Separación: ¿Dijo la palabra "margen"?
+              if (cleanText.includes('margen')) {
+                  const parts = cleanText.split('margen');
+                  // Extrae números (incluyendo negativos) de la primera parte (Profundidad)
+                  pdNumbers = parts[0].match(/-?\d/g) || [];
+                  // Extrae números de la segunda parte (Margen)
+                  mgNumbers = parts[1].match(/-?\d/g) || [];
+              } else {
+                  // Si no dijo "margen", asumimos que todo es profundidad
+                  pdNumbers = cleanText.match(/-?\d/g) || [];
+              }
+              
+              // 3. Rellenar cajas de Profundidad (PD)
+              if (pdNumbers.length > 0) {
+                  if (pdNumbers[0]) newData.pd.vd = pdNumbers[0];
+                  if (pdNumbers[1]) newData.pd.v  = pdNumbers[1];
+                  if (pdNumbers[2]) newData.pd.vm = pdNumbers[2];
+                  if (pdNumbers[3]) newData.pd.ld = pdNumbers[3]; 
+                  if (pdNumbers[4]) newData.pd.l  = pdNumbers[4];
+                  if (pdNumbers[5]) newData.pd.lm = pdNumbers[5];
+              }
+
+              // 4. Rellenar cajas de Margen (MG)
+              if (mgNumbers.length > 0) {
+                  if (mgNumbers[0]) newData.mg.vd = mgNumbers[0];
+                  if (mgNumbers[1]) newData.mg.v  = mgNumbers[1];
+                  if (mgNumbers[2]) newData.mg.vm = mgNumbers[2];
+                  if (mgNumbers[3]) newData.mg.ld = mgNumbers[3]; 
+                  if (mgNumbers[4]) newData.mg.l  = mgNumbers[4];
+                  if (mgNumbers[5]) newData.mg.lm = mgNumbers[5];
+              }
+
+              // 5. Detectar palabras clave (Sangrado y Pus)
+              if (cleanText.includes('sangra') || cleanText.includes('sangrado')) {
+                  newData.bop.v = true; // Marca sangrado central por defecto
+              }
+              if (cleanText.includes('pus') || cleanText.includes('supura')) {
+                  newData.pus = true;
+              }
+
+              return newData;
+          });
+      };
+
+      recognition.onerror = () => {
+          setVoiceFeedback('No se escuchó bien. Intenta de nuevo.');
+          setIsPerioVoiceActive(false);
+      };
+
+      recognition.onend = () => {
+          setIsPerioVoiceActive(false);
+          // Borrar el mensaje después de 3 segundos
+          setTimeout(() => setVoiceFeedback(''), 3000); 
+      };
+
+      recognition.start();
+  };
   // --- INVENTARIO & PAGOS ---
   const [inventorySearch, setInventorySearch] = useState('');
   const [newItem, setNewItem] = useState({ name: '', stock: 0, min: 5, unit: 'u', id: null });
@@ -2400,15 +2495,31 @@ export default function App() {
     <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
         <Card theme={themeMode} className="w-full max-w-sm space-y-3 relative overflow-hidden border-t-2 border-t-cyan-500 p-5">
             
-            {/* ENCABEZADO COMPACTO */}
-            <div className="flex justify-between items-center pb-2 border-b border-white/10">
+            {/* ENCABEZADO COMPACTO CON MOTOR DE VOZ */}
+            <div className="flex justify-between items-center pb-2 border-b border-white/10 relative">
                 <button onClick={() => goToAdjacentTooth(-1)} className="p-1.5 bg-black/20 hover:bg-black/40 rounded-lg transition-all"><ChevronLeft size={18} className="text-cyan-500"/></button>
-                <div className="text-center leading-tight">
+                
+                <div className="text-center leading-tight flex flex-col items-center">
                     <h3 className="font-black text-xl tracking-tighter text-cyan-500">{toothModalData.id}</h3>
-                    <p className="text-[8px] uppercase tracking-widest opacity-50 font-bold">Registro Perio</p>
+                    {/* El Botón del Micrófono */}
+                    <button 
+                        onClick={startPerioDictation}
+                        className={`mt-1 flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-lg ${isPerioVoiceActive ? 'bg-red-500 text-white animate-pulse shadow-red-500/30' : 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white border border-cyan-500/30'}`}
+                    >
+                        {isPerioVoiceActive ? <MicOff size={10} /> : <Mic size={10} />}
+                        {isPerioVoiceActive ? 'Escuchando...' : 'Dictar'}
+                    </button>
                 </div>
+
                 <button onClick={() => goToAdjacentTooth(1)} className="p-1.5 bg-black/20 hover:bg-black/40 rounded-lg transition-all"><ChevronRight size={18} className="text-cyan-500"/></button>
             </div>
+
+            {/* FEEDBACK DE VOZ (Muestra lo que la IA entendió) */}
+            {voiceFeedback && (
+                <div className="text-center text-[10px] font-bold text-yellow-400 bg-black/40 p-1.5 rounded-lg border border-yellow-500/30 mt-1 animate-in slide-in-from-top-2">
+                    {voiceFeedback}
+                </div>
+            )}
             
             {/* GRÁFICO VISUAL EN TIEMPO REAL (EL "KILLER FEATURE") */}
             <div className="grid grid-cols-2 gap-2 mt-2">
