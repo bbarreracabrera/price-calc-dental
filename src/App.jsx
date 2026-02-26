@@ -412,20 +412,30 @@ export default function App() {
       '38','37','36','35','34','33','32','31', '41','42','43','44','45','46','47','48'
   ];
 
-  const goToAdjacentTooth = (direction) => {
+ const goToAdjacentTooth = (direction, explicitData = null) => {
       if (!toothModalData || !toothModalData.id) return;
+
+      // 1. AUTO-GUARDADO: Guardamos lo que haya en pantalla en la base de datos
+      const dataToSave = explicitData || perioData;
+      const p = getPatient(selectedPatientId);
+      const updatedPerio = { ...p.clinical.perio, [toothModalData.id]: dataToSave };
+      savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: updatedPerio } });
+
+      // 2. NAVEGACIÓN: Calculamos el diente vecino
       const currentIndex = PERIO_TOOTH_ORDER.indexOf(toothModalData.id.toString());
-      if (currentIndex === -1) return;
-      
       let nextIndex = currentIndex + direction;
+
       if (nextIndex >= 0 && nextIndex < PERIO_TOOTH_ORDER.length) {
           const nextId = PERIO_TOOTH_ORDER[nextIndex];
-          // Actualizamos el modal con el ID del diente vecino
-          setToothModalData(prev => ({ 
-              ...prev, 
-              id: nextId, 
-              perio: prev.perio || {} 
-          }));
+          const nextData = p.clinical.perio?.[nextId] || {}; // Buscamos si el nuevo diente ya tenía datos
+
+          // 3. ACTUALIZAR PANTALLA
+          setToothModalData({ id: nextId });
+          setPerioData({
+              pd: nextData.pd || {}, mg: nextData.mg || {}, bop: nextData.bop || {},
+              pus: nextData.pus || false, mobility: nextData.mobility || 0, furcation: nextData.furcation || 0
+          });
+          notify(`Avanzando a pieza ${nextId}`);
       }
   };
 
@@ -450,6 +460,46 @@ export default function App() {
   const calcNIC = (pd, mg) => {
       if (pd === '' || mg === '' || pd === undefined || mg === undefined || pd === '-' || mg === '-') return '-';
       return parseInt(pd) + parseInt(mg);
+  };
+  // --- GUARDAR SNAPSHOT PERIODONTAL (HISTORIAL) ---
+  const savePerioSnapshot = () => {
+      const p = getPatient(selectedPatientId);
+      const dateStr = new Date().toLocaleDateString('es-CL') + ' a las ' + new Date().toLocaleTimeString('es-CL', {hour: '2-digit', minute:'2-digit'});
+      
+      const newSnapshot = {
+          id: Date.now().toString(),
+          date: dateStr,
+          perio: JSON.parse(JSON.stringify(p.clinical.perio || {})), // Copia profunda exacta
+          hygiene: JSON.parse(JSON.stringify(p.clinical.hygiene || {})), // Copia profunda exacta
+          stats: getPerioStats()
+      };
+
+      const history = p.clinical.perioHistory || [];
+      savePatientData(selectedPatientId, {
+          ...p,
+          clinical: {
+              ...p.clinical,
+              perioHistory: [...history, newSnapshot]
+          }
+      });
+      notify(`Evolución Periodontal guardada con éxito (${dateStr})`);
+  };
+  // --- CARGAR SNAPSHOT PERIODONTAL EN PANTALLA ---
+  const restoreSnapshot = (snap) => {
+      if(window.confirm(`¿Estás seguro de cargar en pantalla la evolución del ${snap.date}?\n\nNota: Asegúrate de haber guardado tu trabajo actual si estabas haciendo cambios.`)) {
+          const p = getPatient(selectedPatientId);
+          
+          // Reemplazamos los datos actuales de la pantalla con los del snapshot
+          savePatientData(selectedPatientId, {
+              ...p,
+              clinical: {
+                  ...p.clinical,
+                  perio: JSON.parse(JSON.stringify(snap.perio || {})),
+                  hygiene: JSON.parse(JSON.stringify(snap.hygiene || {}))
+              }
+          });
+          notify(`Cargando evolución del ${snap.date}`);
+      }
   };
   // --- MOTOR DE DICTADO POR VOZ (PERIODONCIA) ---
   const [isPerioVoiceActive, setIsPerioVoiceActive] = useState(false);
@@ -552,6 +602,14 @@ export default function App() {
               }
               if (cleanText.includes('pus') || cleanText.includes('supura')) {
                   newData.pus = true;
+              }
+              // Si la IA escucha "Siguiente", guarda lo que dictaste y salta al próximo diente
+              if (cleanText.includes('siguiente') || cleanText.includes('próximo') || cleanText.includes('avanza')) {
+                  setTimeout(() => goToAdjacentTooth(1, newData), 100);
+              } 
+              // Si la IA escucha "Anterior" o "Atrás", retrocede
+              else if (cleanText.includes('anterior') || cleanText.includes('atrás') || cleanText.includes('vuelve')) {
+                  setTimeout(() => goToAdjacentTooth(-1, newData), 100);
               }
 
               return newData;
@@ -1824,6 +1882,19 @@ export default function App() {
 </Card>}
 {patientTab === 'perio' && (
     <div className="space-y-4">
+        {/* ENCABEZADO Y BOTÓN DE HISTORIAL */}
+        <div className="flex flex-col md:flex-row justify-between items-center bg-black/20 p-4 rounded-2xl border border-white/5 shadow-inner">
+            <div>
+                <h2 className="text-xl font-black text-cyan-500">Periodontograma Clínico</h2>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-bold">Modo Evolutivo Integrado</p>
+            </div>
+            <button 
+                onClick={savePerioSnapshot} 
+                className="mt-3 md:mt-0 px-5 py-2.5 bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] flex items-center gap-2"
+            >
+                <span className="text-sm">💾</span> Guardar Evolución
+            </button>
+        </div>
         
         {/* --- TARJETAS DE ÍNDICES (INTACTAS) --- */}
         <div className="grid grid-cols-2 gap-4">
@@ -1974,6 +2045,55 @@ export default function App() {
                     </div>
                 </div>
             </div>
+        </Card>
+        {/* --- HISTORIAL DE EVOLUCIONES PERIODONTALES --- */}
+        <Card theme={themeMode} className="space-y-4">
+            <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 className="font-bold text-cyan-500">Historial Clínico de Evoluciones</h3>
+                <span className="text-[10px] uppercase tracking-widest opacity-50 font-black">Snapshots</span>
+            </div>
+            
+            {(!getPatient(selectedPatientId).clinical.perioHistory || getPatient(selectedPatientId).clinical.perioHistory.length === 0) ? (
+                <div className="text-center py-8 bg-black/10 rounded-2xl border border-white/5 border-dashed">
+                    <p className="text-xs opacity-50 font-bold uppercase tracking-widest">No hay evoluciones guardadas aún</p>
+                    <p className="text-[10px] opacity-30 mt-1">Llena el periodontograma y haz clic en "Guardar Evolución" arriba.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Invertimos el arreglo para ver el más reciente primero */}
+                    {[...getPatient(selectedPatientId).clinical.perioHistory].reverse().map((snap, idx, arr) => (
+                        <div key={snap.id} className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col gap-3 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all cursor-pointer group">
+                            <div className="flex justify-between items-start border-b border-white/5 pb-2">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase text-cyan-400 tracking-wider">
+                                        Evolución #{arr.length - idx}
+                                    </span>
+                                    <span className="text-[9px] font-bold opacity-50 mt-0.5">{snap.date}</span>
+                                </div>
+                                {/* Botoncito de acción (AHORA SÍ FUNCIONA) */}
+                                <button 
+                                    onClick={() => restoreSnapshot(snap)}
+                                    className="p-1.5 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 hover:bg-cyan-500/20 text-[10px] font-black uppercase text-cyan-500"
+                                >
+                                    Ver Detalle
+                                </button>
+                            </div>
+                            
+                            {/* Resumen de los índices en ese momento exacto */}
+                            <div className="flex justify-between items-center bg-black/40 p-2 rounded-lg">
+                                <div className="flex flex-col items-center flex-1 border-r border-white/5">
+                                    <span className="text-[8px] uppercase tracking-widest opacity-50 font-black mb-1">BOP</span>
+                                    <span className="text-[11px] font-black text-red-400">{snap.stats?.bop || 0}%</span>
+                                </div>
+                                <div className="flex flex-col items-center flex-1">
+                                    <span className="text-[8px] uppercase tracking-widest opacity-50 font-black mb-1">Higiene</span>
+                                    <span className="text-[11px] font-black text-yellow-400">{snap.stats?.plaque || 0}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </Card>
     </div>
 )}                
