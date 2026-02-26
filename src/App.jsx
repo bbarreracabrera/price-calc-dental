@@ -151,50 +151,87 @@ const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, interacti
     );
 };
 
-// --- COMPONENTE DIENTE ACTUALIZADO (Doble Personalidad: Perio Minimalista / Clínico 5 Caras) ---
-const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, mode }) => {
+// --- COMPONENTE DIENTE ACTUALIZADO (Soporta múltiples caras en Perio) ---
+const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, mode, perioFace = 'v' }) => {
     // Alertas Perio
     const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
     const hasPus = perioData?.pus;
     const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
 
-    // 1. COMPORTAMIENTO MODO PERIODONCIA (Minimalista para futuro sondaje)
+    // 1. COMPORTAMIENTO MODO PERIODONCIA (Gráfico Continuo Multi-Cara)
     if (isPerioMode) {
         const isMissing = status === 'missing' || data?.status === 'missing';
         
         if (isMissing) {
             return (
                 <div className="flex flex-col items-center gap-1 opacity-20 pointer-events-none grayscale relative p-1 w-[40px]">
-                    <svg width="30" height="40" viewBox="0 0 100 120">
-                        <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" fill="#000" stroke="currentColor" strokeWidth="2"/>
+                    <svg viewBox="0 0 100 80" className="w-full h-12 mt-1">
+                        <path d="M 15,25 Q 50,-5 85,25 L 80,75 Q 50,90 20,75 Z" fill="#000" />
                     </svg>
                     <span className="text-[9px] font-bold absolute bottom-0 bg-black text-white px-1 rounded">AUS</span>
                 </div>
             );
         }
 
+        const getY = (val) => 30 + ((parseInt(val) || 0) * 5); 
+        const isLeftQuad = number >= 20 && number < 40; 
+        
+        // Asignación inteligente de datos según la cara
+        let kLeft, kRight, kCenter;
+        if (perioFace === 'v') {
+            kCenter = 'v';
+            kLeft = isLeftQuad ? 'vm' : 'vd';
+            kRight = isLeftQuad ? 'vd' : 'vm';
+        } else {
+            kCenter = 'l'; // Palatino o Lingual usan la misma letra en tu base de datos
+            kLeft = isLeftQuad ? 'lm' : 'ld';
+            kRight = isLeftQuad ? 'ld' : 'lm';
+        }
+
+        const mgL = getY(perioData?.mg?.[kLeft]);
+        const mgC = getY(perioData?.mg?.[kCenter]);
+        const mgR = getY(perioData?.mg?.[kRight]);
+        
+        const pdL = getY((parseInt(perioData?.mg?.[kLeft]) || 0) + (parseInt(perioData?.pd?.[kLeft]) || 0));
+        const pdC = getY((parseInt(perioData?.mg?.[kCenter]) || 0) + (parseInt(perioData?.pd?.[kCenter]) || 0));
+        const pdR = getY((parseInt(perioData?.mg?.[kRight]) || 0) + (parseInt(perioData?.pd?.[kRight]) || 0));
+
+        const hasData = perioData?.pd?.[kLeft] || perioData?.pd?.[kCenter] || perioData?.pd?.[kRight];
+
         return (
-            <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">
-                {/* ALERTAS PERIO FLOTANTES */}
-                <div className="absolute -top-1 flex gap-1 z-20">
-                    {hasBOP && <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_5px_red]"/>}
-                    {hasPus && <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_5px_yellow]"/>}
-                    {hasAlert && <div className="w-3 h-3 rounded-full bg-purple-500 flex items-center justify-center text-[8px] text-white font-black shadow-md">!</div>}
-                </div>
+            <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative p-0.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 w-[44px]">
                 
-                {/* DIBUJO MINIMALISTA VIEJO */}
-                <svg width="30" height="40" viewBox="0 0 100 120" className="drop-shadow-sm mt-2">
-                    <path d="M20 30C20 15 35 5 50 5C65 5 80 15 80 30V50C80 70 75 80 70 95C68 105 60 115 50 115C40 115 32 105 30 95C25 80 20 70 20 50V30Z" 
-                          fill={theme === 'light' ? '#e5e7eb' : '#374151'} 
-                          fillOpacity={0.8}
-                          stroke="currentColor" strokeWidth="2" strokeOpacity="0.3"/>
+                {/* Alertas flotantes (solo en Vestibular para no duplicar basura visual) */}
+                {perioFace === 'v' && (
+                    <div className="absolute -top-1 flex gap-1 z-20">
+                        {hasBOP && <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_5px_red]"/>}
+                        {hasPus && <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_5px_yellow]"/>}
+                        {hasAlert && <div className="w-3 h-3 rounded-full bg-purple-500 flex items-center justify-center text-[8px] text-white font-black shadow-md">!</div>}
+                    </div>
+                )}
+                
+                {/* Etiqueta V/P/L chiquita */}
+                <span className="text-[7px] font-black opacity-30 absolute top-0 left-0 bg-black/10 px-1 rounded">
+                    {perioFace === 'v' ? 'V' : (number < 30 ? 'P' : 'L')}
+                </span>
+
+                <svg viewBox="0 0 100 80" className="w-full h-12 drop-shadow-sm mt-2 overflow-visible">
+                    <path d="M 15,25 Q 50,-5 85,25 L 80,75 Q 50,90 20,75 Z" fill={theme === 'light' ? '#e5e7eb' : '#374151'} fillOpacity={0.6} />
+                    <line x1="0" y1="30" x2="100" y2="30" stroke="white" strokeWidth="2" strokeDasharray="4" opacity="0.3" />
+                    
+                    {hasData && (
+                        <>
+                            <polygon points={`0,${mgL} 50,${mgC} 100,${mgR} 100,${pdR} 50,${pdC} 0,${pdL}`} fill="#ef4444" fillOpacity="0.4" />
+                            <polyline points={`0,${mgL} 50,${mgC} 100,${mgR}`} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                            <polyline points={`0,${pdL} 50,${pdC} 100,${pdR}`} fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                        </>
+                    )}
                 </svg>
                 <span className="text-[9px] font-bold opacity-50 mt-1">{number}</span>
             </div>
         );
     }
-
-    // 2. COMPORTAMIENTO MODO CLÍNICO (Nuevo Odontograma SVG 5 Caras)
+    
     // 2. COMPORTAMIENTO MODO CLÍNICO (Nuevo Odontograma SVG 5 Caras)
     return (
         <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">
@@ -209,7 +246,52 @@ const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, m
         </div>
     );
 };
-const HygieneCell = ({ tooth, data, onChange, status }) => { if (status === 'missing') return null; return (<div className="flex flex-col items-center gap-1 bg-white/5 p-2 rounded-xl"><span className="text-[10px] font-bold opacity-70">{tooth}</span><div className="grid grid-cols-2 gap-1 w-12 h-12">{['v', 'd', 'l', 'm'].map(f => (<div key={f} onClick={() => onChange(f)} className={`rounded-sm cursor-pointer border border-white/10 transition-colors ${data?.[f] ? 'bg-red-500 border-red-500' : 'hover:bg-white/10'}`} title={`Cara ${f.toUpperCase()}`}></div>))}</div></div>); };
+// --- NUEVO COMPONENTE: CÉLULA DE HIGIENE O'LEARY CIRCULAR ---
+const HygieneCell = ({ tooth, data = {}, onChange }) => {
+    // Caras estándar de O'Leary: v (vestibular), l (lingual/palatino), m (mesial), d (distal)
+    const isUpper = tooth < 30;
+    
+    return (
+        <div className="flex flex-col items-center gap-1.5 p-1">
+            <span className="text-[10px] font-black opacity-50">{tooth}</span>
+            
+            {/* Contenedor circular rotado 45 grados */}
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white/10 relative transform rotate-45 shadow-inner bg-black/40 hover:border-cyan-500/50 transition-colors">
+                
+                {/* Cuadrícula 2x2 interna */}
+                <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-0.5 bg-black">
+                    {/* Top-Left (Al rotar queda Arriba = Vestibular) */}
+                    <button 
+                        onClick={() => onChange('v')} 
+                        className={`w-full h-full transition-all hover:opacity-80 ${data.v ? 'bg-red-500' : 'bg-white/10 hover:bg-white/20'}`}
+                        title="Vestibular"
+                    />
+                    {/* Top-Right (Al rotar queda a la Derecha = Mesial/Distal) */}
+                    <button 
+                        onClick={() => onChange('m')} 
+                        className={`w-full h-full transition-all hover:opacity-80 ${data.m ? 'bg-red-500' : 'bg-white/10 hover:bg-white/20'}`}
+                        title="Mesial"
+                    />
+                    {/* Bottom-Left (Al rotar queda a la Izquierda = Distal/Mesial) */}
+                    <button 
+                        onClick={() => onChange('d')} 
+                        className={`w-full h-full transition-all hover:opacity-80 ${data.d ? 'bg-red-500' : 'bg-white/10 hover:bg-white/20'}`}
+                        title="Distal"
+                    />
+                    {/* Bottom-Right (Al rotar queda Abajo = Palatino/Lingual) */}
+                    <button 
+                        onClick={() => onChange('l')} 
+                        className={`w-full h-full transition-all hover:opacity-80 ${data.l ? 'bg-red-500' : 'bg-white/10 hover:bg-white/20'}`}
+                        title={isUpper ? "Palatino" : "Lingual"}
+                    />
+                </div>
+
+                {/* Centro del diente (Punto decorativo) */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-black rounded-full z-10"></div>
+            </div>
+        </div>
+    );
+};
 const Card = ({ children, className = "", theme, ...props }) => { const t = THEMES[theme] || THEMES.dark; return <div {...props} className={`p-6 rounded-3xl transition-all relative ${t.card} ${className}`}>{children}</div>; };
 const Button = ({ onClick, children, variant = "primary", className = "", theme, disabled }) => { const t = THEMES[theme] || THEMES.dark; const styles = { primary: `${t.gradient} text-white shadow-lg`, secondary: t.buttonSecondary }; return <button disabled={disabled} onClick={onClick} className={`p-3 rounded-2xl font-bold active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 ${styles[variant]} ${className}`}>{children}</button>; };
 const InputField = ({ label, icon: Icon, theme, textarea, ...props }) => { const t = THEMES[theme] || THEMES.dark; return (<div className="w-full">{label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 ${t.subText}`}>{label}</label>}<div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>{Icon && <Icon size={16} className={`mr-2 mt-0.5 ${t.subText}`}/>}{textarea ? <textarea {...props} rows="3" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`}/> : <input {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${t.text}`}/>}</div></div>); };
@@ -324,6 +406,51 @@ export default function App() {
   const [selectedImg, setSelectedImg] = useState(null);
   const [rxPatient, setRxPatient] = useState(null);
   const [newEvolution, setNewEvolution] = useState('');
+  // --- LÓGICA DE PERIODONTOGRAMA AVANZADO ---
+  const PERIO_TOOTH_ORDER = [
+      '18','17','16','15','14','13','12','11', '21','22','23','24','25','26','27','28',
+      '38','37','36','35','34','33','32','31', '41','42','43','44','45','46','47','48'
+  ];
+
+  const goToAdjacentTooth = (direction) => {
+      if (!toothModalData || !toothModalData.id) return;
+      const currentIndex = PERIO_TOOTH_ORDER.indexOf(toothModalData.id.toString());
+      if (currentIndex === -1) return;
+      
+      let nextIndex = currentIndex + direction;
+      if (nextIndex >= 0 && nextIndex < PERIO_TOOTH_ORDER.length) {
+          const nextId = PERIO_TOOTH_ORDER[nextIndex];
+          // Actualizamos el modal con el ID del diente vecino
+          setToothModalData(prev => ({ 
+              ...prev, 
+              id: nextId, 
+              perio: prev.perio || {} 
+          }));
+      }
+  };
+
+  const handlePerioChange = (face, field, index, value) => {
+      // Permite escribir números y el signo menos "-" para el margen (recesión/hiperplasia)
+      let val = value;
+      if (value !== '' && value !== '-') {
+          val = parseInt(value, 10);
+          if(isNaN(val)) return; // Evita que se ingresen letras
+      }
+
+      setToothModalData(prev => {
+          const currentPerio = prev.perio || {};
+          const key = `${field}_${face}`; // Ejemplo: 'pd_v' o 'mg_l'
+          const newArray = [...(currentPerio[key] || ['','',''])];
+          newArray[index] = val;
+          
+          return { ...prev, perio: { ...currentPerio, [key]: newArray } };
+      });
+  };
+
+  const calcNIC = (pd, mg) => {
+      if (pd === '' || mg === '' || pd === undefined || mg === undefined || pd === '-' || mg === '-') return '-';
+      return parseInt(pd) + parseInt(mg);
+  };
   
   // --- INVENTARIO & PAGOS ---
   const [inventorySearch, setInventorySearch] = useState('');
@@ -1576,8 +1703,161 @@ export default function App() {
             </div>
         </div>
 </Card>}
-                {patientTab === 'perio' && <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center"><p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p><h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2><p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p></Card><Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center"><p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p><h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2><p className="text-[10px] opacity-50">O'Leary (4 caras)</p></Card></div><Card theme={themeMode} className="flex flex-col items-center gap-8"><div className="flex gap-2 flex-wrap justify-center">{TEETH_UPPER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div><div className="flex gap-2 flex-wrap justify-center">{TEETH_LOWER.map(n=><Tooth key={n} number={n} isPerioMode={true} perioData={getPatient(selectedPatientId).clinical.perio?.[n]} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = getPatient(selectedPatientId).clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {vd:'', v:'', vm:'', ld:'', l:'', lm:''}, bop: existing.bop || {vd:false, v:false, vm:false, ld:false, l:false, lm:false}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>)}</div></Card><Card theme={themeMode} className="space-y-4"><h3 className="font-bold border-b border-white/10 pb-2">Tabla de Higiene (O'Leary)</h3><div className="overflow-x-auto pb-4"><div className="flex gap-2 min-w-max">{[...TEETH_UPPER, ...TEETH_LOWER].map(t => { const p = getPatient(selectedPatientId); if(p.clinical.teeth[t]?.status === 'missing') return null; return ( <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]} onChange={(face) => { const current = p.clinical.hygiene?.[t] || {}; const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); }} /> ); })}</div></div><div className="flex gap-4 text-xs opacity-50"><span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-sm"/> Placa</span><span className="flex items-center gap-1"><div className="w-3 h-3 bg-white/10 border border-white/20 rounded-sm"/> Limpio</span></div></Card></div>}
+{patientTab === 'perio' && (
+    <div className="space-y-4">
+        
+        {/* --- TARJETAS DE ÍNDICES (INTACTAS) --- */}
+        <div className="grid grid-cols-2 gap-4">
+            <Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center">
+                <p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p>
+                <h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2>
+                <p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p>
+            </Card>
+            <Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center">
+                <p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p>
+                <h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2>
+                <p className="text-[10px] opacity-50">O'Leary (4 caras)</p>
+            </Card>
+        </div>
+
+        {/* --- NUEVA CUADRÍCULA CLÍNICA (4 FILAS) --- */}
+        <Card theme={themeMode} className="flex flex-col gap-6 overflow-x-auto p-4 md:p-6 custom-scrollbar">
+            
+            {/* MAXILAR SUPERIOR */}
+            <div className="flex items-stretch relative">
+                <div className="flex items-center justify-center border-r border-white/10 pr-2 mr-2 md:pr-4 md:mr-4">
+                    <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-cyan-500 opacity-80" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                        Superior
+                    </span>
+                </div>
                 
+                <div className="flex flex-col gap-4 flex-1">
+                    {/* Fila Vestibular Superior */}
+                    <div className="flex items-center gap-2">
+                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Vestibular</span>
+                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
+                            {TEETH_UPPER.map(n => {
+                                const p = getPatient(selectedPatientId);
+                                return <Tooth key={`v-${n}`} number={n} isPerioMode={true} perioFace="v" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
+                            })}
+                        </div>
+                    </div>
+                    {/* Fila Palatino Superior */}
+                    <div className="flex items-center gap-2">
+                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Palatino</span>
+                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
+                            {TEETH_UPPER.map(n => {
+                                const p = getPatient(selectedPatientId);
+                                return <Tooth key={`p-${n}`} number={n} isPerioMode={true} perioFace="l" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="w-full h-px bg-white/5 my-2"></div>
+
+            {/* MAXILAR INFERIOR */}
+            <div className="flex items-stretch relative">
+                <div className="flex items-center justify-center border-r border-white/10 pr-2 mr-2 md:pr-4 md:mr-4">
+                    <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-cyan-500 opacity-80" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                        Inferior
+                    </span>
+                </div>
+                
+                <div className="flex flex-col gap-4 flex-1">
+                    {/* Fila Vestibular Inferior */}
+                    <div className="flex items-center gap-2">
+                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Vestibular</span>
+                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
+                            {TEETH_LOWER.map(n => {
+                                const p = getPatient(selectedPatientId);
+                                return <Tooth key={`v-${n}`} number={n} isPerioMode={true} perioFace="v" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
+                            })}
+                        </div>
+                    </div>
+                    {/* Fila Lingual Inferior */}
+                    <div className="flex items-center gap-2">
+                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Lingual</span>
+                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
+                            {TEETH_LOWER.map(n => {
+                                const p = getPatient(selectedPatientId);
+                                return <Tooth key={`l-${n}`} number={n} isPerioMode={true} perioFace="l" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Card>
+
+        {/* --- TABLA DE HIGIENE O'LEARY (REDISEÑADA) --- */}
+        <Card theme={themeMode} className="space-y-6 p-4 md:p-6">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <div>
+                    <h3 className="font-black text-lg text-cyan-500">Índice de Placa (O'Leary)</h3>
+                    <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest">Control de Higiene</p>
+                </div>
+                {/* Leyenda Visual */}
+                <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest bg-black/20 px-4 py-2 rounded-full border border-white/5">
+                    <span className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_red]"/> Placa
+                    </span>
+                    <span className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-white/10 border border-white/20 rounded-full"/> Limpio
+                    </span>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-6 items-center">
+                {/* FILA SUPERIOR */}
+                <div className="w-full bg-black/5 p-4 rounded-3xl border border-white/5">
+                    <span className="block text-[9px] font-black opacity-30 uppercase tracking-widest mb-2 text-center">Maxilar Superior</span>
+                    <div className="flex justify-center gap-1 md:gap-2 flex-wrap">
+                        {TEETH_UPPER.map(t => { 
+                            const p = getPatient(selectedPatientId); 
+                            if(p.clinical.teeth[t]?.status === 'missing') return null; 
+                            return ( 
+                                <HygieneCell 
+                                    key={t} 
+                                    tooth={t} 
+                                    data={p.clinical.hygiene?.[t]} 
+                                    onChange={(face) => { 
+                                        const current = p.clinical.hygiene?.[t] || {}; 
+                                        const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; 
+                                        savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); 
+                                    }} 
+                                /> 
+                            ); 
+                        })}
+                    </div>
+                </div>
+
+                {/* FILA INFERIOR */}
+                <div className="w-full bg-black/5 p-4 rounded-3xl border border-white/5">
+                    <span className="block text-[9px] font-black opacity-30 uppercase tracking-widest mb-2 text-center">Maxilar Inferior</span>
+                    <div className="flex justify-center gap-1 md:gap-2 flex-wrap">
+                        {TEETH_LOWER.map(t => { 
+                            const p = getPatient(selectedPatientId); 
+                            if(p.clinical.teeth[t]?.status === 'missing') return null; 
+                            return ( 
+                                <HygieneCell 
+                                    key={t} 
+                                    tooth={t} 
+                                    data={p.clinical.hygiene?.[t]} 
+                                    onChange={(face) => { 
+                                        const current = p.clinical.hygiene?.[t] || {}; 
+                                        const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; 
+                                        savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); 
+                                    }} 
+                                /> 
+                            ); 
+                        })}
+                    </div>
+                </div>
+            </div>
+        </Card>
+    </div>
+)}                
                 {/* V76: EVOLUTION TAB - SECURE (READ ONLY HISTORY) */}
                 {patientTab === 'evolution' && <div className="space-y-2">
                     <div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>
@@ -1751,7 +2031,7 @@ export default function App() {
             )}
         </div>}
       </main>
-{/* --- MODAL DIENTE LATERAL (CORREGIDO Y UNIFICADO) --- */}
+{/* --- MODAL DIENTE LATERAL (CORREGIDO, UNIFICADO Y CON PERIO) --- */}
 {modal === 'tooth' && (
     <div className="fixed inset-0 z-[100] flex justify-end">
         {/* Fondo sutil */}
@@ -1759,49 +2039,93 @@ export default function App() {
 
         <Card theme={themeMode} className="w-full max-w-sm h-full relative z-10 shadow-2xl border-l border-white/10 flex flex-col animate-in slide-in-from-right duration-300 rounded-none">
             
-            <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                <h3 className="text-2xl font-black italic tracking-tighter">Pieza {toothModalData.id}</h3>
+            {/* ENCABEZADO CON NAVEGACIÓN RÁPIDA (NUEVO) */}
+            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/5 dark:bg-white/5">
+                <div className="flex items-center gap-3">
+                    <button onClick={() => goToAdjacentTooth(-1)} className="p-1.5 bg-black/10 dark:bg-white/5 hover:bg-black/20 dark:hover:bg-white/10 rounded-lg transition-all"><ChevronLeft size={20} /></button>
+                    <h3 className="text-2xl font-black italic tracking-tighter w-20 text-center text-cyan-500">{toothModalData.id}</h3>
+                    <button onClick={() => goToAdjacentTooth(1)} className="p-1.5 bg-black/10 dark:bg-white/5 hover:bg-black/20 dark:hover:bg-white/10 rounded-lg transition-all"><ChevronRight size={20} /></button>
+                </div>
                 <button onClick={() => setModal(null)} className="p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                 
+                {/* --- SECCIÓN: PERIODONTOGRAMA TIPO DENTALINK (SOLO EN MODO PERIO) --- */}
+                {activeTab === 'perio' && (
+                    <div className="p-4 border border-white/10 rounded-3xl bg-black/5 dark:bg-white/5 shadow-inner animate-in fade-in">
+                        <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
+                            <h3 className="text-sm font-black text-cyan-600 dark:text-cyan-500 uppercase tracking-widest flex items-center gap-2">
+                                📏 Periodontograma
+                            </h3>
+                        </div>
+
+                        {/* TABLAS VESTIBULAR Y LINGUAL/PALATINO */}
+                        {['v', 'l'].map(face => (
+                            <div key={face} className="mb-5 bg-white/5 p-3 rounded-2xl border border-white/5 relative mt-4">
+                                <h4 className="text-[10px] font-bold opacity-50 uppercase tracking-wider mb-2 text-center absolute -top-3 left-1/2 -translate-x-1/2 bg-[#121212] px-3 py-0.5 rounded-full border border-white/10">
+                                    {face === 'v' ? 'Vestibular' : (parseInt(toothModalData.id) > 30 ? 'Lingual' : 'Palatino')}
+                                </h4>
+                                
+                                <div className="grid grid-cols-4 gap-1 mb-1 mt-2">
+                                    <div></div>
+                                    <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Dist</span>
+                                    <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Cent</span>
+                                    <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Mesi</span>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="grid grid-cols-4 gap-1 items-center">
+                                        <span className="text-[9px] font-bold text-right pr-1 opacity-70">Prof.</span>
+                                        {[0, 1, 2].map(idx => (
+                                            <input key={`pd-${face}-${idx}`} type="text" value={toothModalData.perio?.[`pd_${face}`]?.[idx] ?? ''} onChange={(e) => handlePerioChange(face, 'pd', idx, e.target.value)} className={`w-full h-8 text-center text-xs font-bold rounded-lg bg-black/20 border outline-none ${toothModalData.perio?.[`pd_${face}`]?.[idx] >= 4 ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-white/10 focus:border-cyan-500'}`} />
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-1 items-center">
+                                        <span className="text-[9px] font-bold text-right pr-1 opacity-70">Margen</span>
+                                        {[0, 1, 2].map(idx => (
+                                            <input key={`mg-${face}-${idx}`} type="text" value={toothModalData.perio?.[`mg_${face}`]?.[idx] ?? ''} onChange={(e) => handlePerioChange(face, 'mg', idx, e.target.value)} className="w-full h-8 text-center text-xs font-bold rounded-lg bg-black/20 border border-white/10 focus:border-blue-400 outline-none text-blue-400" />
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-1 items-center mt-2 pt-2 border-t border-white/5">
+                                        <span className="text-[10px] font-black text-right pr-1 text-cyan-600">NIC</span>
+                                        {[0, 1, 2].map(idx => {
+                                            const nic = calcNIC(toothModalData.perio?.[`pd_${face}`]?.[idx], toothModalData.perio?.[`mg_${face}`]?.[idx]);
+                                            return (
+                                                <div key={`nic-${face}-${idx}`} className={`w-full h-7 flex items-center justify-center text-xs font-black rounded-lg bg-black/10 ${nic >= 4 || nic === '-' ? 'text-orange-500' : 'text-emerald-500'}`}>{nic}</div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* ALERTAS PERIO */}
+                        <div className="grid grid-cols-4 gap-2 mt-4">
+                            <button onClick={() => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, bop: !prev.perio?.bop } }))} className={`p-2 rounded-xl border text-[10px] font-black transition-all ${toothModalData.perio?.bop ? 'bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-transparent border-white/10 opacity-50'}`}>🩸 BOP</button>
+                            <button onClick={() => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, pus: !prev.perio?.pus } }))} className={`p-2 rounded-xl border text-[10px] font-black transition-all ${toothModalData.perio?.pus ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-transparent border-white/10 opacity-50'}`}>🟡 PUS</button>
+                            <select className="p-2 rounded-xl bg-transparent border border-white/10 text-[10px] font-black outline-none text-center appearance-none" value={toothModalData.perio?.mobility || 0} onChange={(e) => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, mobility: parseInt(e.target.value) } }))}><option value={0} className="bg-[#121212]">Mov 0</option><option value={1} className="bg-[#121212]">Mov I</option><option value={2} className="bg-[#121212]">Mov II</option><option value={3} className="bg-[#121212]">Mov III</option></select>
+                            <select className="p-2 rounded-xl bg-transparent border border-white/10 text-[10px] font-black outline-none text-center appearance-none" value={toothModalData.perio?.furcation || 0} onChange={(e) => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, furcation: parseInt(e.target.value) } }))}><option value={0} className="bg-[#121212]">Furca 0</option><option value={1} className="bg-[#121212]">Furca I</option><option value={2} className="bg-[#121212]">Furca II</option><option value={3} className="bg-[#121212]">Furca III</option></select>
+                        </div>
+                    </div>
+                )}
+
                 {/* Selector de Modo (Hallazgos vs Tratamientos) */}
                 <div className="flex bg-black/10 dark:bg-white/5 p-1 rounded-xl">
-                    <button 
-                        onClick={() => setToothModalData({...toothModalData, mode: 'hallazgos'})}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'hallazgos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}
-                    >Hallazgos</button>
-                    <button 
-                        onClick={() => setToothModalData({...toothModalData, mode: 'tratamientos'})}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'tratamientos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}
-                    >Tratamientos</button>
+                    <button onClick={() => setToothModalData({...toothModalData, mode: 'hallazgos'})} className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'hallazgos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}>Hallazgos</button>
+                    <button onClick={() => setToothModalData({...toothModalData, mode: 'tratamientos'})} className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'tratamientos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}>Tratamientos</button>
                 </div>
 
                 {toothModalData.mode === 'hallazgos' ? (
                     /* --- MODO HALLAZGOS --- */
                     <div className="space-y-6 animate-in fade-in">
                         <div className={`flex flex-col items-center p-6 rounded-3xl border transition-colors ${t.border} bg-black/5 dark:bg-white/5 shadow-inner`}>
-                            <ToothSVG 
-                                number={toothModalData.id}
-                                faces={toothModalData.faces} 
-                                status={toothModalData.status} 
-                                size={100} 
-                                interactive={true}
-                                activeFace={toothModalData.activeFace || 'o'}
-                                onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})}
-                            />
+                            <ToothSVG number={toothModalData.id} faces={toothModalData.faces} status={toothModalData.status} size={100} interactive={true} activeFace={toothModalData.activeFace || 'o'} onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})} />
                             <p className="text-[10px] font-black opacity-50 mt-4 uppercase tracking-[0.2em]">
-                                Cara: <span className="text-cyan-500">
-                                    {toothModalData.activeFace === 'v' ? 'Vestibular' :
-                                     toothModalData.activeFace === 'l' ? 'Lingual/Palatino' :
-                                     toothModalData.activeFace === 'm' ? 'Mesial' :
-                                     toothModalData.activeFace === 'd' ? 'Distal' : 'Oclusal'}
-                                </span>
+                                Cara: <span className="text-cyan-500">{toothModalData.activeFace === 'v' ? 'Vestibular' : toothModalData.activeFace === 'l' ? 'Lingual/Palatino' : toothModalData.activeFace === 'm' ? 'Mesial' : toothModalData.activeFace === 'd' ? 'Distal' : 'Oclusal'}</span>
                             </p>
                         </div>
 
-                        {/* PEGA ESTO AQUÍ - BOTONERA RESTAURADA */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <span className="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">En Cara</span>
@@ -1820,13 +2144,7 @@ export default function App() {
                         <div className="pt-4">
                             <label className="text-[10px] font-black uppercase tracking-widest mb-2 block opacity-40">Evolución Clínica</label>
                             <div className="relative group">
-                                <textarea 
-                                    rows="4" 
-                                    placeholder="Dicta hallazgos..." 
-                                    className={`w-full p-5 rounded-3xl border ${t.border} ${t.inputBg} outline-none focus:border-cyan-500 font-bold text-sm resize-none transition-all shadow-inner`}
-                                    value={toothModalData.notes || ''} 
-                                    onChange={e => setToothModalData({...toothModalData, notes: e.target.value})}
-                                />
+                                <textarea rows="4" placeholder="Dicta hallazgos..." className={`w-full p-5 rounded-3xl border ${t.border} ${t.inputBg} outline-none focus:border-cyan-500 font-bold text-sm resize-none transition-all shadow-inner`} value={toothModalData.notes || ''} onChange={e => setToothModalData({...toothModalData, notes: e.target.value})} />
                                 <button onClick={() => toggleVoice()} className={`absolute bottom-4 right-4 p-4 rounded-2xl transition-all shadow-lg ${isListening ? 'bg-red-500 animate-pulse text-white scale-110' : 'bg-cyan-500 text-white shadow-cyan-500/20'}`}>
                                     {isListening ? <MicOff size={20} /> : <Mic size={20} />}
                                 </button>
@@ -1838,23 +2156,13 @@ export default function App() {
                     <div className="space-y-6 animate-in fade-in">
                         <div className="w-full">
                             <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Tratamiento Planificado</label>
-                            <input 
-                                list="catalog-tooth-options"
-                                className={`w-full outline-none font-bold text-sm p-4 rounded-2xl border ${t.border} ${t.inputBg} focus:border-cyan-400 transition-all shadow-inner`}
-                                placeholder="Busca en tu arancel..."
-                                value={toothModalData.treatment?.name || ''}
-                                onChange={e => setToothModalData({...toothModalData, treatment: {...(toothModalData.treatment || {}), name: e.target.value, status: toothModalData.treatment?.status || 'planned'}})}
-                            />
-                            <datalist id="catalog-tooth-options">
-                                {catalog.map(c => <option key={c.id} value={c.name} />)}
-                            </datalist>
+                            <input list="catalog-tooth-options" className={`w-full outline-none font-bold text-sm p-4 rounded-2xl border ${t.border} ${t.inputBg} focus:border-cyan-400 transition-all shadow-inner`} placeholder="Busca en tu arancel..." value={toothModalData.treatment?.name || ''} onChange={e => setToothModalData({...toothModalData, treatment: {...(toothModalData.treatment || {}), name: e.target.value, status: toothModalData.treatment?.status || 'planned'}})} />
+                            <datalist id="catalog-tooth-options">{catalog.map(c => <option key={c.id} value={c.name} />)}</datalist>
                         </div>
-
                         <div className="grid grid-cols-2 gap-3 mt-4">
                             <button onClick={() => setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'planned'}})} className={`p-4 rounded-2xl border text-[10px] font-black uppercase transition-all ${toothModalData.treatment?.status === 'planned' ? 'bg-red-500/20 border-red-500 text-red-500 shadow-lg shadow-red-500/10' : 'border-white/10 opacity-50'}`}>Por Hacer</button>
                             <button onClick={() => setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'completed'}})} className={`p-4 rounded-2xl border text-[10px] font-black uppercase transition-all ${toothModalData.treatment?.status === 'completed' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-white/10 opacity-50'}`}>Realizado</button>
                         </div>
-                        
                         <button onClick={() => setToothModalData({...toothModalData, treatment: null})} className="w-full p-2 text-[10px] font-bold text-red-400 opacity-50 hover:opacity-100 uppercase tracking-widest transition-opacity">Eliminar Tratamiento</button>
                     </div>
                 )}
@@ -1863,13 +2171,13 @@ export default function App() {
             <div className="p-6 border-t border-white/5 bg-black/5">
                 <button 
                     onClick={() => {
-                        // UNIFICAMOS EL GUARDADO AQUÍ
                         const p = getPatient(selectedPatientId); 
                         const ut = {...p.clinical.teeth, [toothModalData.id]: {
                             status: toothModalData.status, 
                             faces: toothModalData.faces, 
                             notes: toothModalData.notes, 
-                            treatment: toothModalData.treatment
+                            treatment: toothModalData.treatment,
+                            perio: toothModalData.perio // <-- ¡ESTO FALTABA PARA GUARDAR EL SONDAJE!
                         }}; 
                         savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, teeth: ut}}); 
                         setModal(null); 
@@ -2087,64 +2395,143 @@ export default function App() {
           </div>
       )}
 
-      {/* OTROS MODALES DE SIEMPRE */}
+{/* --- MODAL PERIODONTAL AVANZADO (CON GRÁFICO VISUAL EN TIEMPO REAL) --- */}
 {modal === 'perio' && (
-          <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
-              <Card theme={themeMode} className="w-full max-w-md space-y-4">
-                  <h3 className="font-bold text-xl">Diente {toothModalData.id} (Perio)</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                      {/* Agregamos theme={themeMode} a los InputField */}
-                      <InputField theme={themeMode} label="Movilidad (0-3)" value={perioData.mobility} onChange={e=>setPerioData({...perioData, mobility: e.target.value})}/>
-                      <InputField theme={themeMode} label="Furca (I-III)" value={perioData.furcation} onChange={e=>setPerioData({...perioData, furcation: e.target.value})}/>
-                  </div>
-                  
-                  <div className="space-y-2">
-                      <p className="text-[10px] font-bold uppercase opacity-50 text-center">Vestibular</p>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                          {['D', 'C', 'M'].map((pos, i) => { 
-                              const k = ['vd','v','vm'][i]; 
-                              return (
-                                  <div key={k} className="space-y-1">
-                                      {/* Usamos las variables t.inputBg, t.text y t.border */}
-                                      <input className={`w-full rounded text-center text-xs p-2 outline-none border transition-all ${t.inputBg} ${t.text} ${t.border} focus:border-cyan-400`} placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} />
-                                      <div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer border ${t.border} ${perioData.bop[k] ? 'bg-red-500 border-red-500' : t.inputBg}`} title="Sangrado"></div>
-                                  </div>
-                              )
-                          })}
-                      </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                      <p className="text-[10px] font-bold uppercase opacity-50 text-center">{toothModalData.id < 30 ? 'Palatino' : 'Lingual'}</p>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                          {['D', 'C', 'M'].map((pos, i) => { 
-                              const k = ['ld','l','lm'][i]; 
-                              return (
-                                  <div key={k} className="space-y-1">
-                                      <input className={`w-full rounded text-center text-xs p-2 outline-none border transition-all ${t.inputBg} ${t.text} ${t.border} focus:border-cyan-400`} placeholder={pos} value={perioData.pd[k]||''} onChange={e=>setPerioData({...perioData, pd: {...perioData.pd, [k]: e.target.value}})} />
-                                      <div onClick={()=>setPerioData({...perioData, bop: {...perioData.bop, [k]: !perioData.bop[k]}})} className={`h-4 rounded cursor-pointer border ${t.border} ${perioData.bop[k] ? 'bg-red-500 border-red-500' : t.inputBg}`} title="Sangrado"></div>
-                                  </div>
-                              )
-                          })}
-                      </div>
-                  </div>
-                  
-                  <div onClick={()=>setPerioData({...perioData, pus: !perioData.pus})} className={`p-3 rounded-xl border text-center font-bold text-xs cursor-pointer transition-colors ${perioData.pus ? 'bg-yellow-500 text-black border-yellow-500' : `${t.border} hover:opacity-70`}`}>
-                      {perioData.pus ? 'SUPURACIÓN (PUS)' : 'SIN PUS'}
-                  </div>
-                  
-                  {/* Agregamos theme={themeMode} al botón */}
-                  <Button theme={themeMode} className="w-full" onClick={()=>{ 
-                      const p = getPatient(selectedPatientId); 
-                      const newPerio = { ...p.clinical.perio, [toothModalData.id]: perioData }; 
-                      savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: newPerio }}); 
-                      setModal(null); 
-                      notify("Datos Perio Guardados"); 
-                  }}>GUARDAR DATOS</Button>
-              </Card>
-          </div>
-      )}
+    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <Card theme={themeMode} className="w-full max-w-sm space-y-3 relative overflow-hidden border-t-2 border-t-cyan-500 p-5">
+            
+            {/* ENCABEZADO COMPACTO */}
+            <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                <button onClick={() => goToAdjacentTooth(-1)} className="p-1.5 bg-black/20 hover:bg-black/40 rounded-lg transition-all"><ChevronLeft size={18} className="text-cyan-500"/></button>
+                <div className="text-center leading-tight">
+                    <h3 className="font-black text-xl tracking-tighter text-cyan-500">{toothModalData.id}</h3>
+                    <p className="text-[8px] uppercase tracking-widest opacity-50 font-bold">Registro Perio</p>
+                </div>
+                <button onClick={() => goToAdjacentTooth(1)} className="p-1.5 bg-black/20 hover:bg-black/40 rounded-lg transition-all"><ChevronRight size={18} className="text-cyan-500"/></button>
+            </div>
+            
+            {/* GRÁFICO VISUAL EN TIEMPO REAL (EL "KILLER FEATURE") */}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                {[
+                    { title: 'Vestibular', keys: ['vd', 'v', 'vm'] },
+                    { title: toothModalData.id < 30 ? 'Palatino' : 'Lingual', keys: ['ld', 'l', 'lm'] }
+                ].map((graph, idx) => {
+                    // Función para calcular la coordenada Y en el SVG (0mm = Y:30)
+                    const getY = (val) => 30 + ((parseInt(val) || 0) * 5); 
+                    
+                    const mg0 = getY(perioData.mg?.[graph.keys[0]]);
+                    const mg1 = getY(perioData.mg?.[graph.keys[1]]);
+                    const mg2 = getY(perioData.mg?.[graph.keys[2]]);
+                    
+                    const pd0 = getY((parseInt(perioData.mg?.[graph.keys[0]]) || 0) + (parseInt(perioData.pd?.[graph.keys[0]]) || 0));
+                    const pd1 = getY((parseInt(perioData.mg?.[graph.keys[1]]) || 0) + (parseInt(perioData.pd?.[graph.keys[1]]) || 0));
+                    const pd2 = getY((parseInt(perioData.mg?.[graph.keys[2]]) || 0) + (parseInt(perioData.pd?.[graph.keys[2]]) || 0));
+
+                    return (
+                        <div key={idx} className="bg-black/20 rounded-xl border border-white/5 p-2 flex flex-col items-center">
+                            <span className="text-[8px] font-black uppercase opacity-40 tracking-widest mb-1">{graph.title}</span>
+                            <svg viewBox="0 0 100 80" className="w-full h-16 drop-shadow-md">
+                                {/* Fondo: Silueta abstracta de la raíz */}
+                                <path d="M 10,25 Q 50,-5 90,25 L 85,75 Q 50,90 15,75 Z" fill={themeMode === 'light' ? '#e5e7eb' : '#374151'} opacity="0.4" />
+                                
+                                {/* Línea Cemento Esmalte (LCE) = Y:30 */}
+                                <line x1="0" y1="30" x2="100" y2="30" stroke="white" strokeWidth="1" strokeDasharray="2" opacity="0.3" />
+                                
+                                {/* Zona de Bolsa Periodontal (Roja) */}
+                                <polygon points={`15,${mg0} 50,${mg1} 85,${mg2} 85,${pd2} 50,${pd1} 15,${pd0}`} fill="#ef4444" fillOpacity="0.3" />
+                                
+                                {/* Línea del Margen Gingival (Azul) */}
+                                <polyline points={`15,${mg0} 50,${mg1} 85,${mg2}`} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                
+                                {/* Línea Base de la Bolsa (Roja Oscura) */}
+                                <polyline points={`15,${pd0} 50,${pd1} 85,${pd2}`} fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </div>
+                    )
+                })}
+            </div>
+
+            {/* TABLAS COMPACTAS (PD, MG, NIC) */}
+            <div className="space-y-3 mt-2">
+                {[
+                    { faceName: 'Vestibular', keys: ['vd', 'v', 'vm'] },
+                    { faceName: toothModalData.id < 30 ? 'Palatino' : 'Lingual', keys: ['ld', 'l', 'lm'] }
+                ].map((faceData, faceIdx) => (
+                    <div key={faceIdx} className="bg-black/20 p-2.5 rounded-xl border border-white/5 relative">
+                        <div className="grid grid-cols-4 gap-1.5 mb-1">
+                            <div></div>
+                            <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Dist</span>
+                            <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Cent</span>
+                            <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Mesi</span>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <div className="grid grid-cols-4 gap-1.5 items-center">
+                                <span className="text-[9px] font-bold text-right pr-1 opacity-70">Prof.</span>
+                                {faceData.keys.map(k => {
+                                    const pdValue = perioData.pd?.[k] || '';
+                                    const isDanger = parseInt(pdValue) >= 4;
+                                    const isBOP = perioData.bop?.[k];
+                                    return (
+                                        <div key={`pd-${k}`} className="relative group">
+                                            <input className={`w-full h-7 rounded text-center text-xs font-black p-0 outline-none border transition-all ${t.inputBg} ${t.text} ${isDanger ? 'border-red-500 text-red-500 bg-red-500/10' : t.border} focus:border-cyan-400`} value={pdValue} onChange={e=>setPerioData({...perioData, pd: {...(perioData.pd || {}), [k]: e.target.value}})} />
+                                            <div onClick={()=>setPerioData({...perioData, bop: {...(perioData.bop || {}), [k]: !isBOP}})} className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1.5 rounded-full cursor-pointer border transition-all ${isBOP ? 'bg-red-500 border-red-500 shadow-[0_0_5px_red]' : 'bg-black/40 border-white/10 opacity-30 hover:opacity-100'}`} title="Sangrado"></div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-1.5 items-center mt-1">
+                                <span className="text-[9px] font-bold text-right pr-1 opacity-70">Margen</span>
+                                {faceData.keys.map(k => (
+                                    <input key={`mg-${k}`} className={`w-full h-6 rounded text-center text-xs font-bold p-0 outline-none border transition-all ${t.inputBg} ${t.text} ${t.border} focus:border-blue-400 text-blue-400`} value={perioData.mg?.[k] || ''} onChange={e=>setPerioData({...perioData, mg: {...(perioData.mg || {}), [k]: e.target.value}})} />
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-1.5 items-center mt-1 pt-1 border-t border-white/5">
+                                <span className="text-[9px] font-black text-right pr-1 text-cyan-600">NIC</span>
+                                {faceData.keys.map(k => {
+                                    const nic = calcNIC(perioData.pd?.[k], perioData.mg?.[k]);
+                                    const isDangerNIC = parseInt(nic) >= 4;
+                                    return (
+                                        <div key={`nic-${k}`} className={`w-full h-6 flex items-center justify-center rounded text-xs font-black bg-black/20 ${nic === '-' ? 'opacity-30' : (isDangerNIC ? 'text-orange-500' : 'text-emerald-500')}`}>{nic}</div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            
+            {/* MOVILIDAD, FURCA Y PUS (UNA SOLA LÍNEA COMPACTA) */}
+            <div className="grid grid-cols-3 gap-2 mt-2">
+                <select className={`w-full p-2 rounded-lg text-center text-[9px] font-bold outline-none border transition-all ${t.inputBg} ${t.text} ${t.border} appearance-none cursor-pointer`} value={perioData.mobility || 0} onChange={e=>setPerioData({...perioData, mobility: parseInt(e.target.value)})}>
+                    <option value={0}>Mov 0</option><option value={1}>Mov I</option><option value={2}>Mov II</option><option value={3}>Mov III</option>
+                </select>
+                <select className={`w-full p-2 rounded-lg text-center text-[9px] font-bold outline-none border transition-all ${t.inputBg} ${t.text} ${t.border} appearance-none cursor-pointer`} value={perioData.furcation || 0} onChange={e=>setPerioData({...perioData, furcation: parseInt(e.target.value)})}>
+                    <option value={0}>Furca 0</option><option value={1}>Furca I</option><option value={2}>Furca II</option><option value={3}>Furca III</option>
+                </select>
+                <div onClick={()=>setPerioData({...perioData, pus: !perioData.pus})} className={`w-full flex items-center justify-center rounded-lg border text-center font-black text-[9px] cursor-pointer transition-all ${perioData.pus ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500' : `bg-transparent border-white/10 opacity-50`}`}>
+                    {perioData.pus ? '🟡 PUS' : '⚪ PUS'}
+                </div>
+            </div>
+            
+            {/* BOTONES DE ACCIÓN */}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                <button onClick={() => setModal(null)} className="w-full py-2 rounded-lg border border-white/10 text-[10px] font-black uppercase opacity-50 hover:opacity-100 transition-all">Cancelar</button>
+                <button onClick={()=>{ 
+                    const p = getPatient(selectedPatientId); 
+                    const newPerio = { ...p.clinical.perio, [toothModalData.id]: perioData }; 
+                    savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: newPerio }}); 
+                    setModal(null); 
+                    notify("Registro Guardado"); 
+                }} className="w-full py-2 bg-cyan-500 text-white rounded-lg text-[10px] font-black uppercase shadow-lg shadow-cyan-500/20 hover:scale-[1.02] transition-all">
+                    Guardar
+                </button>
+            </div>
+        </Card>
+    </div>
+)}
       {/* --- MODAL AGENDAR CITA ACTUALIZADO --- */}
 {modal === 'appt' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
     <Card  className="w-full max-w-sm space-y-4">
