@@ -643,19 +643,6 @@ export default function App() {
   const [labWorks, setLabWorks] = useState([]);
   const [newLabWork, setNewLabWork] = useState({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: new Date().toISOString().split('T')[0], expectedDate: '', status: 'sent', id: null });
  
-  // --- CARGA INICIAL DESDE SUPABASE ---
-  useEffect(() => {
-      const fetchLabWorks = async () => {
-          try {
-              const { data, error } = await supabase.from('lab_works').select('*');
-              if (error) throw error;
-              if (data) setLabWorks(data);
-          } catch (error) {
-              console.error("Error cargando trabajos de laboratorio:", error);
-          }
-      };
-      fetchLabWorks();
-  }, []); // Se ejecuta solo una vez al abrir ShiningCloud
   // --- VOZ A TEXTO ---
   const [isListening, setIsListening] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState('');
@@ -666,39 +653,21 @@ export default function App() {
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
   useEffect(() => { supabase.auth.getSession().then(({ data: { session } }) => setSession(session)); supabase.auth.onAuthStateChange((_e, s) => setSession(s)); }, []);
   
-  useEffect(() => {
+useEffect(() => {
     if (!session) return;
+    
     const load = async () => {
-      const { data: s } = await supabase.from('settings').select('*').eq('id', 'general').maybeSingle();
-      if (s) setConfigLocal(s.data);
-      const { data: p } = await supabase.from('patients').select('*');
-      if (p) { const m = {}; p.forEach(r => m[r.id] = r.data); setPatientRecords(m); }
-      const { data: a } = await supabase.from('appointments').select('*');
-      if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
-      const { data: f } = await supabase.from('financials').select('*');
-      if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id })));
-      const { data: pk } = await supabase.from('packs').select('*');
-      if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
-      const { data: i, error } = await supabase.from('inventory').select('*');
-      if (!error && i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
-      
-      // --- CARGA DE EQUIPO SEGURA (V77) Y CATÁLOGO ---
+      // 1. PRIMERO: Averiguar quién soy y quién es el dueño de mi clínica
       const { data: t, error: tErr } = await supabase.from('team').select('*');
+      let myClinicAdmin = session.user.email; 
       
-      let myClinicAdmin = session.user.email; // Por defecto, asume que tú eres el dueño
-
       if (!tErr && t) {
           const allTeamData = t.map(r => ({...r.data, id: r.id}));
-          
-          // 1. Ver si el usuario actual fue agregado por algún administrador
           const me = allTeamData.find(u => u.email === session.user.email);
           
-          // 2. Definir quién es el dueño de la clínica
-          if (me) myClinicAdmin = me.admin_email;
+          if (me) myClinicAdmin = me.admin_email; 
           
-          // 3. Filtrar para ver SOLO al equipo de esta clínica específica
           const myTeam = allTeamData.filter(u => u.admin_email === myClinicAdmin);
-          
           setTeam(myTeam);
           
           if (myTeam.length === 0 || !me) setUserRole('admin'); 
@@ -706,36 +675,50 @@ export default function App() {
       } else { 
           setUserRole('admin'); 
       }
-
-      // <-- PASO B: Guardamos al dueño en memoria y cargamos SU catálogo
+      
       setClinicOwner(myClinicAdmin);
 
-      const { data: catData } = await supabase.from('catalog').select('*');
-      if (catData) {
-          const allCatalog = catData.map(r => ({ ...r.data, id: r.id }));
-          // Filtramos: Solo muestra los de esta clínica (o los viejos sin etiqueta para no perderlos)
-          setCatalog(allCatalog.filter(c => c.admin_email === myClinicAdmin || !c.admin_email));
-      }
+      // 2. SEGUNDO: Descargar SOLO los datos que le pertenecen a mi clínica
+      const { data: s } = await supabase.from('settings').select('*').eq('id', 'general').maybeSingle();
+      if (s) setConfigLocal(s.data);
+      
+      const { data: p } = await supabase.from('patients').select('*').eq('admin_email', myClinicAdmin);
+      if (p) { const m = {}; p.forEach(r => m[r.id] = r.data); setPatientRecords(m); }
+      
+      const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin);
+      if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
+      
+      const { data: f } = await supabase.from('financials').select('*').eq('admin_email', myClinicAdmin);
+      if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id })));
+      
+      const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin);
+      if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
+      
+      const { data: i, error: iErr } = await supabase.from('inventory').select('*').eq('admin_email', myClinicAdmin);
+      if (!iErr && i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
 
-      // 👇 PASO 2: CARGAMOS EL LABORATORIO FILTRADO (NUEVO) 👇
-      const { data: labData } = await supabase.from('lab_works').select('*');
-      if (labData) {
-          // Filtramos igual que el catálogo para mantener tu mismo estándar de seguridad
-          setLabWorks(labData.filter(w => w.admin_email === myClinicAdmin || !w.admin_email));
-      }
+      const { data: catData } = await supabase.from('catalog').select('*').eq('admin_email', myClinicAdmin);
+      if (catData) setCatalog(catData.map(r => ({ ...r.data, id: r.id })));
+
+      const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin);
+      if (labData) setLabWorks(labData); 
     };
+    
     load();
-    }, [session]);
+  }, [session]);
 
-  // --- V76: SISTEMA DE AUDITORÍA ---
+// --- V76/V78: SISTEMA DE AUDITORÍA CON ETIQUETA DE CLÍNICA ---
   const logAction = async (action, details, patientId = null) => {
       try {
+          const currentOwner = clinicOwner || session.user.email;
+          
           await supabase.from('audit_logs').insert({
               user_email: session.user.email,
               action: action,
               patient_id: patientId,
               details: details,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              admin_email: currentOwner // <-- LA ETIQUETA MULTITENANT
           });
       } catch (error) {
           console.error("Error creating audit log", error);
@@ -744,7 +727,17 @@ export default function App() {
 
   const notify = (m) => { setNotification(m); setTimeout(() => setNotification(''), 3000); };
   const toggleTheme = () => { const modes = ['dark', 'light', 'blue']; const next = modes[(modes.indexOf(themeMode) + 1) % modes.length]; setThemeMode(next); localStorage.setItem('sc_theme_mode', next); };
-  const saveToSupabase = async (t, id, d) => { await supabase.from(t).upsert({ id: id.toString(), data: d }); };
+  // --- FUNCIÓN MAESTRA DE GUARDADO BLINDADA (V78) ---
+  const saveToSupabase = async (t, id, d) => { 
+      // Determinamos quién es el dueño de la clínica en este momento
+      const currentOwner = clinicOwner || session.user.email;
+      
+      await supabase.from(t).upsert({ 
+          id: id.toString(), 
+          data: d,
+          admin_email: currentOwner // <-- LA ETIQUETA MULTITENANT
+      }); 
+  };
   
   const getPatient = (id) => {
       const base = { id, personal: { legalName: id }, anamnesis: { recent: '', remote: '', conditions: {} }, clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, consents: [], images: [] };
