@@ -332,30 +332,86 @@ const PrivateImage = ({ img, onClick }) => {
 
     return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick(signedUrl)} />;
 };
+// --- PESTAÑA DE TÉRMINOS Y CONDICIONES ---
+const TermsScreen = ({ theme }) => {
+    return (
+        <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-fade-in">
+            <div className={`${theme.card} rounded-3xl p-6 md:p-10 shadow-xl border border-white/5`}>
+                <div className="flex items-center gap-4 mb-8 border-b border-white/10 pb-6">
+                    <div className="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center">
+                        {/* Usamos un icono de texto o escudo genérico */}
+                        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black tracking-tight">Términos de Uso y Servicio</h2>
+                        <p className={`text-sm ${theme.subText}`}>Última actualización: {new Date().toLocaleDateString()}</p>
+                    </div>
+                </div>
 
+                <div className={`space-y-6 text-sm leading-relaxed ${theme.subText}`}>
+                    <section>
+                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>1. Aceptación de los Términos</h3>
+                        <p>Al suscribirse y utilizar ShiningCloud Dental, el Usuario acepta cumplir con estos términos. El servicio se presta "tal cual" y según disponibilidad, enfocado en optimizar la gestión de clínicas dentales en Chile y Latinoamérica.</p>
+                    </section>
+
+                    <section>
+                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>2. Naturaleza del Servicio</h3>
+                        <p>ShiningCloud es una herramienta de apoyo administrativo y clínico. <strong>El Proveedor no practica la odontología.</strong> El diagnóstico, plan de tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario. El software asistido por IA (como el periodontograma por voz) es una ayuda técnica y no reemplaza el juicio clínico del dentista.</p>
+                    </section>
+
+                    <section>
+                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>3. Propiedad y Privacidad de los Datos (Ley 19.628)</h3>
+                        <ul className="list-disc pl-5 space-y-2">
+                            <li><strong>Propiedad:</strong> Los datos de salud y fichas clínicas cargados pertenecen íntegramente al Usuario (la clínica o el dentista titular). El Proveedor actúa únicamente como custodio y procesador tecnológico.</li>
+                            <li><strong>Seguridad:</strong> Utilizamos protocolos de encriptación de grado bancario e infraestructura segura en la nube. Sin embargo, el Usuario es el único responsable de mantener la confidencialidad de sus claves de acceso y de cerrar su sesión en dispositivos públicos.</li>
+                            <li><strong>Privacidad:</strong> Nos comprometemos a no vender, ceder ni perfilar comercialmente los datos de sus pacientes bajo ninguna circunstancia.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>4. Responsabilidades del Usuario</h3>
+                        <p>El Usuario se obliga a cumplir con la normativa sanitaria vigente (incluyendo la Ley 20.584 sobre Derechos y Deberes de los Pacientes en Chile). Además, asume la responsabilidad de realizar exportaciones o respaldos periódicos de su información como medida de precaución.</p>
+                    </section>
+
+                    <section>
+                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>5. Suscripción y Pagos</h3>
+                        <p>Los pagos se procesan de forma segura a través de Flow.cl (o pasarelas certificadas similares). El servicio funciona bajo la modalidad de prepago mensual o anual. El no pago de la suscripción resultará en la limitación de la cuenta a un modo de "solo lectura" durante 30 días, tras los cuales la cuenta podría ser suspendida definitivamente.</p>
+                    </section>
+
+                    <section>
+                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>6. Limitación de Responsabilidad</h3>
+                        <p>En la máxima medida permitida por la ley, el Proveedor no será responsable por lucro cesante, pérdida de datos derivada de un mal manejo de contraseñas, ni por interrupciones del servicio originadas por proveedores de internet o de infraestructura en la nube. La responsabilidad máxima del Proveedor ante cualquier evento se limitará al equivalente a los últimos 3 meses de suscripción pagados por el Usuario.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+    );
+};
 // --- LANDING PAGE DE VENTAS (SHININGCLOUD DENTAL) ---
 const LandingPage = ({ onLoginClick }) => {
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+// Reemplaza el link viejo por este:
+const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
+
     return (
-        <div className="min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-cyan-500 selection:text-white overflow-x-hidden">
-            {/* BARRA DE NAVEGACIÓN */}
+        <div className="min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-cyan-500 selection:text-white overflow-x-hidden relative">
+            
+            {/* --- NAVEGACIÓN --- */}
             <nav className="container mx-auto px-6 py-6 flex justify-between items-center relative z-10">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-cyan-400 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/30 flex items-center justify-center">
-                        <span className="text-white font-black text-xl">S</span>
-                    </div>
+                    <div className="w-8 h-8 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-xl shadow-lg shadow-amber-500/30 flex items-center justify-center">
+    <Cloud className="text-white" size={20} strokeWidth={2.5} />
+</div>
                     <span className="font-black text-xl tracking-tighter">ShiningCloud</span>
                 </div>
-                <button 
-                    onClick={onLoginClick}
-                    className="px-6 py-2 text-sm font-bold bg-white/10 hover:bg-white/20 rounded-full transition-all border border-white/5"
-                >
+                <button onClick={onLoginClick} className="px-6 py-2 text-sm font-bold bg-white/10 hover:bg-white/20 rounded-full transition-all border border-white/5">
                     Iniciar Sesión
                 </button>
             </nav>
 
-            {/* HERO SECTION (Lo primero que ven) */}
+            {/* --- HERO SECTION --- */}
             <div className="relative pt-20 pb-32 text-center px-4">
-                {/* Efectos de luz de fondo */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none"></div>
                 
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 relative z-10 leading-tight">
@@ -370,36 +426,29 @@ const LandingPage = ({ onLoginClick }) => {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-                    <button 
-                        onClick={onLoginClick}
-                        className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-black rounded-full transition-all shadow-[0_0_40px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_rgba(6,182,212,0.6)] hover:-translate-y-1 text-lg"
-                    >
-                        Comienza tu Prueba Gratis
+                    <button onClick={() => document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-black rounded-full transition-all shadow-[0_0_40px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_rgba(6,182,212,0.6)] hover:-translate-y-1 text-lg">
+                        Ver Planes y Precios
                     </button>
-                    <button 
-                        onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
-                        className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full transition-all border border-white/10"
-                    >
+                    <button onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full transition-all border border-white/10">
                         Ver Funciones
                     </button>
                 </div>
             </div>
 
-            {/* SECCIÓN DE CARACTERÍSTICAS (El valor del producto) */}
+            {/* --- SECCIÓN DE CARACTERÍSTICAS --- */}
             <div id="features" className="container mx-auto px-6 py-24 border-t border-white/5">
                 <div className="text-center mb-16">
                     <h2 className="text-3xl md:text-4xl font-black mb-4">Diseñado para la clínica moderna</h2>
                     <p className="text-slate-400">Todo lo que necesitas, a un clic de distancia.</p>
                 </div>
-
                 <div className="grid md:grid-cols-3 gap-8">
                     {[
                         { icon: '🎙️', title: 'Periodontograma por Voz', desc: 'Dicta las profundidades y sangrados mientras examinas. La IA lo dibuja en tiempo real.' },
                         { icon: '🦷', title: 'Odontograma Interactivo', desc: 'Diseño anatómico ultra rápido. Registra caries, restauraciones y ausencias en segundos.' },
-                        { icon: '💸', title: 'Presupuestos a 1 Clic', desc: 'Genera cotizaciones hermosas, envíalas por WhatsApp y controla los pagos de tus pacientes.' },
-                        { icon: '🔒', title: 'Seguridad Multitenant', desc: 'Tus datos están blindados con encriptación de grado bancario. Nadie más puede verlos.' },
+                        { icon: '💸', title: 'Presupuestos a 1 Clic', desc: 'Genera cotizaciones hermosas, envíalas por WhatsApp y controla los pagos.' },
+                        { icon: '🔒', title: 'Seguridad Multitenant', desc: 'Tus datos están blindados con encriptación de grado bancario.' },
                         { icon: '📸', title: 'Galería Privada', desc: 'Almacenamiento seguro en la nube para radiografías y fotos clínicas.' },
-                        { icon: '📱', title: '100% Móvil y Rápido', desc: 'Úsalo desde tu iPad en el sillón o desde tu celular en la casa. Carga al instante.' },
+                        { icon: '📱', title: '100% Móvil y Rápido', desc: 'Úsalo desde tu iPad en el sillón o celular en la casa. Carga al instante.' },
                     ].map((feat, i) => (
                         <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-cyan-500/30 transition-colors">
                             <div className="text-4xl mb-4">{feat.icon}</div>
@@ -410,8 +459,8 @@ const LandingPage = ({ onLoginClick }) => {
                 </div>
             </div>
 
-            {/* SECCIÓN DE PRECIOS */}
-            <div className="container mx-auto px-6 py-24 border-t border-white/5 text-center">
+            {/* --- SECCIÓN DE PRECIOS Y CHECKOUT --- */}
+            <div id="pricing" className="container mx-auto px-6 py-24 border-t border-white/5 text-center">
                 <h2 className="text-3xl md:text-4xl font-black mb-12">Un precio simple. Todo incluido.</h2>
                 
                 <div className="max-w-md mx-auto p-1 rounded-3xl bg-gradient-to-b from-cyan-500/50 to-transparent">
@@ -425,24 +474,69 @@ const LandingPage = ({ onLoginClick }) => {
                         </div>
 
                         <ul className="text-left space-y-4 mb-8">
-                            {['Pacientes ilimitados', 'Dictado por voz con IA', 'Agenda y recordatorios', 'Gestión de caja y presupuestos', 'Soporte prioritario'].map((item, i) => (
+                            {['Pacientes ilimitados', 'Dictado por voz con IA', 'Agenda y recordatorios', 'Gestión de presupuestos', 'Soporte prioritario'].map((item, i) => (
                                 <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-300">
                                     <span className="text-cyan-400">✓</span> {item}
                                 </li>
                             ))}
                         </ul>
 
-                        <button 
-                            onClick={onLoginClick}
-                            className="w-full py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition-colors"
-                        >
-                            Crear Cuenta
-                        </button>
+                       {/* EL CHECKBOX DE TÉRMINOS Y BOTÓN DE PAGO */}
+<div className="flex flex-col items-center gap-4 mt-8 pt-6 border-t border-white/10">
+    <label className="flex items-start gap-3 cursor-pointer group text-left">
+        <input 
+            type="checkbox" 
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1 w-5 h-5 accent-amber-500 rounded cursor-pointer"
+        />
+        <span className="text-xs text-slate-400 leading-relaxed">
+            He leído y acepto los <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-amber-400 hover:text-amber-300 underline font-bold">Términos de Servicio y Política de Privacidad</button>.
+        </span>
+    </label>
+
+    <button 
+        disabled={!acceptedTerms}
+        onClick={() => window.location.href = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d"}
+        className={`w-full py-4 font-black rounded-xl transition-all text-lg ${
+            acceptedTerms 
+            ? "bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]" 
+            : "bg-white/5 text-white/30 cursor-not-allowed border border-white/10"
+        }`}
+    >
+        Suscribirse y Crear Cuenta
+    </button>
+    {!acceptedTerms && <p className="text-[10px] text-red-400/80">Debes aceptar los términos para continuar.</p>}
+</div>
                     </div>
                 </div>
             </div>
 
-            {/* FOOTER */}
+            {/* --- MODAL DE TÉRMINOS Y CONDICIONES --- */}
+            {showTerms && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-[#111827] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                            <h3 className="text-xl font-black text-cyan-400">Términos y Condiciones de Uso</h3>
+                            <button onClick={() => setShowTerms(false)} className="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+                        </div>
+                        <div className="p-6 overflow-y-auto text-sm text-slate-300 space-y-4 custom-scrollbar">
+                            <p><strong>1. Aceptación de los Términos:</strong> Al suscribirse y utilizar ShiningCloud Dental, el Usuario acepta cumplir con estos términos. El servicio se presta "tal cual" y según disponibilidad.</p>
+                            <p><strong>2. Naturaleza del Servicio:</strong> ShiningCloud es una herramienta de apoyo administrativo y clínico. El Proveedor no practica la odontología. El diagnóstico, tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario. El software no reemplaza el juicio clínico del dentista.</p>
+                            <p><strong>3. Propiedad y Privacidad de los Datos (Ley 19.628 - Chile):</strong> Los datos de salud cargados pertenecen al Usuario (la clínica/dentista). El Proveedor actúa únicamente como custodio y procesador de dichos datos. El Proveedor utiliza protocolos de encriptación y almacenamiento seguro en la nube. Sin embargo, el Usuario es responsable de mantener la confidencialidad de sus claves de acceso.</p>
+                            <p><strong>4. Responsabilidad del Usuario:</strong> El Usuario se obliga a cumplir con la Ley 20.584 sobre Derechos y Deberes de los Pacientes en Chile. No debe compartir su cuenta con terceros no autorizados y debe mantener respaldos periódicos de su información clínica (el software permite exportar datos).</p>
+                            <p><strong>5. Limitación de Responsabilidad:</strong> En ningún caso el Proveedor será responsable por errores en el diagnóstico, pérdida de datos por mal uso de la cuenta, ataques cibernéticos de terceros, lucro cesante o interrupciones del servicio debido a fallas de internet. La responsabilidad total se limita al monto pagado por el Usuario en los últimos 3 meses.</p>
+                            <p><strong>6. Suscripción y Pagos:</strong> Los pagos se procesan a través de Flow.cl. El servicio es prepago y mensual. La falta de pago resultará en la limitación de la cuenta.</p>
+                        </div>
+                        <div className="p-6 border-t border-white/10 bg-black/20 text-right">
+                            <button onClick={() => { setAcceptedTerms(true); setShowTerms(false); }} className="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition-colors">
+                                Entendido y Acepto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <footer className="border-t border-white/5 py-10 text-center text-slate-500 text-sm">
                 <p>© {new Date().getFullYear()} ShiningCloud Dental. Todos los derechos reservados.</p>
             </footer>
@@ -542,11 +636,95 @@ const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Pacien
 };
 
 const AuthScreen = () => {
-  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [loading, setLoading] = useState(false); const [isSignUp, setIsSignUp] = useState(false); const [msg, setMsg] = useState('');
-  const handleAuth = async (e) => { e.preventDefault(); setLoading(true); setMsg(''); try { if (isSignUp) { const { error } = await supabase.auth.signUp({ email, password }); if (error) throw error; setMsg('Cuenta creada.'); } else { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; } } catch (error) { setMsg(error.message); } finally { setLoading(false); } };
-  return (<div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]"><div className="w-full max-w-sm flex flex-col items-center"><Cloud size={60} className="text-cyan-400 mb-4" /><h1 className="text-3xl font-black text-white mb-8">ShiningCloud</h1><form onSubmit={handleAuth} className="w-full space-y-4 p-6 bg-white/5 rounded-3xl border border-white/10"><input type="email" placeholder="Email" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={email} onChange={e=>setEmail(e.target.value)} required /><input type="password" placeholder="Clave" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10" value={password} onChange={e=>setPassword(e.target.value)} required /><button className="w-full p-4 bg-cyan-500 text-white rounded-xl font-bold uppercase tracking-widest">{loading ? '...' : (isSignUp ? 'Registrar' : 'Entrar')}</button></form><button onClick={()=>setIsSignUp(!isSignUp)} className="mt-6 text-xs font-bold text-white/60 uppercase tracking-widest underline underline-offset-4 decoration-white/30 hover:text-cyan-400 hover:decoration-cyan-400 transition-all duration-300">
-    {isSignUp ? 'Ya tengo cuenta (Login)' : '¿No tienes cuenta? Crear una'}
-</button></div></div>);
+  const [email, setEmail] = useState(''); 
+  const [password, setPassword] = useState(''); 
+  const [loading, setLoading] = useState(false); 
+  const [msg, setMsg] = useState('');
+
+  // TU LINK AUTOMÁTICO DE MERCADO PAGO
+  const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
+
+  // Leemos la URL para saber si el dentista acaba de pagar
+  const urlParams = new URLSearchParams(window.location.search);
+  const vieneDePago = urlParams.get('pago') === 'exitoso';
+  
+  // Si viene de pagar, le abrimos el modo "Registro". Si no, modo "Login" normal.
+  const [isSignUp, setIsSignUp] = useState(vieneDePago);
+
+  const handleAuth = async (e) => { 
+    e.preventDefault(); 
+    setLoading(true); 
+    setMsg(''); 
+    try { 
+      if (isSignUp) { 
+        // Creación de cuenta (solo si viene de Mercado Pago)
+        const { error } = await supabase.auth.signUp({ email, password }); 
+        if (error) throw error; 
+        
+        setMsg('¡Clínica creada! Iniciando sesión...'); 
+        
+        // Iniciamos sesión automáticamente y limpiamos el link
+        setTimeout(async () => {
+            await supabase.auth.signInWithPassword({ email, password });
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 1500);
+
+      } else { 
+        // Login normal
+        const { error } = await supabase.auth.signInWithPassword({ email, password }); 
+        if (error) throw error; 
+      } 
+    } catch (error) { 
+      setMsg(error.message); 
+    } finally { 
+      setLoading(false); 
+    } 
+  };
+
+  return (
+    <div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]">
+      <div className="w-full max-w-sm flex flex-col items-center">
+        
+        {/* LOGO DORADO PREMIUM */}
+        <div className="w-16 h-16 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30 mb-4">
+          <Cloud className="text-white" size={36} strokeWidth={2.5} />
+        </div>
+        
+        <h1 className="text-3xl font-black text-white mb-2">ShiningCloud</h1>
+        
+        {/* Mensaje dinámico dependiendo de si pagaron o no */}
+        {vieneDePago ? (
+            <p className="text-amber-400 text-sm mb-8 font-bold text-center">
+                ¡Suscripción confirmada! 💳<br/>Crea tu contraseña para entrar.
+            </p>
+        ) : (
+            <p className="text-slate-400 text-sm mb-8 text-center">Ingresa a tu clínica</p>
+        )}
+
+        <form onSubmit={handleAuth} className="w-full space-y-4 p-6 bg-white/5 rounded-3xl border border-white/10 shadow-2xl relative">
+          {msg && <div className="p-3 bg-white/10 border border-white/20 text-white text-xs rounded-xl text-center font-bold">{msg}</div>}
+          
+          <input type="email" placeholder="Email" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10 focus:border-amber-500 transition-colors" value={email} onChange={e=>setEmail(e.target.value)} required />
+          <input type="password" placeholder="Clave (mín. 6 caracteres)" className="w-full p-4 bg-black/40 rounded-xl text-white outline-none border border-white/10 focus:border-amber-500 transition-colors" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6} />
+          
+          <button disabled={loading} className="w-full p-4 bg-amber-500 text-black rounded-xl font-bold uppercase tracking-widest hover:bg-amber-400 transition-colors">
+            {loading ? 'Procesando...' : (isSignUp ? 'Crear Mi Clínica' : 'Entrar')}
+          </button>
+        </form>
+
+        {/* Botón hacia Mercado Pago si intentan registrarse sin pagar */}
+        {!vieneDePago && (
+          <button 
+            onClick={(e) => { e.preventDefault(); window.location.href = MP_SUBSCRIPTION_LINK; }} 
+            className="mt-6 text-xs font-bold text-white/60 uppercase tracking-widest hover:text-amber-400 transition-all duration-300 text-center"
+          >
+            ¿No tienes cuenta? <br/>
+            <span className="underline underline-offset-4 mt-2 inline-block">Probar 30 días gratis</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 const TEETH_UPPER = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
@@ -1297,6 +1475,7 @@ useEffect(() => {
       if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'catalog', label: 'Arancel', icon: Library }); }
       if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
       if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'lab', label: 'Laboratorio', icon: FlaskConical }); }
+      base.push({ id: 'terms', label: 'Legal', icon: Shield });
       return base;
   };
 // --- LÓGICA DEL CRM DE RETENCIÓN (RECALLS) ---
@@ -1420,6 +1599,8 @@ useEffect(() => {
                 <div className="space-y-6"><h3 className="font-bold text-lg">Accesos Rápidos</h3><div className="grid grid-cols-2 gap-3"><button onClick={()=>setModal('appt')} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><CalendarClock size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Agendar</span></button><button onClick={()=>{setActiveTab('ficha'); setSelectedPatientId(null); setSearchTerm('');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><User size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Paciente</span></button>{userRole !== 'dentist' && <button onClick={()=>{setActiveTab('quote'); setQuoteMode('calc');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><Calculator size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Cotizar</span></button>}{(userRole === 'admin' || userRole === 'assistant') && <button onClick={()=>{setActiveTab('history');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><Wallet size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Caja</span></button>}</div></div>
             </div>
         </div>}
+
+    {activeTab === 'terms' && <TermsScreen theme={t} />}
 
         {/* --- CENTRO FINANCIERO ACTUALIZADO (V77) --- */}
         {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant') && <div className="space-y-6 animate-in slide-in-from-right h-full flex flex-col">
