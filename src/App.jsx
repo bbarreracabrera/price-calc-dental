@@ -333,6 +333,123 @@ const PrivateImage = ({ img, onClick }) => {
     return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick(signedUrl)} />;
 };
 
+// --- LANDING PAGE DE VENTAS (SHININGCLOUD DENTAL) ---
+const LandingPage = ({ onLoginClick }) => {
+    return (
+        <div className="min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-cyan-500 selection:text-white overflow-x-hidden">
+            {/* BARRA DE NAVEGACIÓN */}
+            <nav className="container mx-auto px-6 py-6 flex justify-between items-center relative z-10">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-tr from-cyan-400 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/30 flex items-center justify-center">
+                        <span className="text-white font-black text-xl">S</span>
+                    </div>
+                    <span className="font-black text-xl tracking-tighter">ShiningCloud</span>
+                </div>
+                <button 
+                    onClick={onLoginClick}
+                    className="px-6 py-2 text-sm font-bold bg-white/10 hover:bg-white/20 rounded-full transition-all border border-white/5"
+                >
+                    Iniciar Sesión
+                </button>
+            </nav>
+
+            {/* HERO SECTION (Lo primero que ven) */}
+            <div className="relative pt-20 pb-32 text-center px-4">
+                {/* Efectos de luz de fondo */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none"></div>
+                
+                <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 relative z-10 leading-tight">
+                    El software dental <br className="hidden md:block"/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                        que realmente quieres usar.
+                    </span>
+                </h1>
+                
+                <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 relative z-10">
+                    Olvídate de los sistemas lentos de los años 90. ShiningCloud es rápido, seguro y cuenta con <b>dictado por voz de IA</b> para que llenes fichas sin soltar el instrumental.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
+                    <button 
+                        onClick={onLoginClick}
+                        className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-black rounded-full transition-all shadow-[0_0_40px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_rgba(6,182,212,0.6)] hover:-translate-y-1 text-lg"
+                    >
+                        Comienza tu Prueba Gratis
+                    </button>
+                    <button 
+                        onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
+                        className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full transition-all border border-white/10"
+                    >
+                        Ver Funciones
+                    </button>
+                </div>
+            </div>
+
+            {/* SECCIÓN DE CARACTERÍSTICAS (El valor del producto) */}
+            <div id="features" className="container mx-auto px-6 py-24 border-t border-white/5">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-black mb-4">Diseñado para la clínica moderna</h2>
+                    <p className="text-slate-400">Todo lo que necesitas, a un clic de distancia.</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
+                    {[
+                        { icon: '🎙️', title: 'Periodontograma por Voz', desc: 'Dicta las profundidades y sangrados mientras examinas. La IA lo dibuja en tiempo real.' },
+                        { icon: '🦷', title: 'Odontograma Interactivo', desc: 'Diseño anatómico ultra rápido. Registra caries, restauraciones y ausencias en segundos.' },
+                        { icon: '💸', title: 'Presupuestos a 1 Clic', desc: 'Genera cotizaciones hermosas, envíalas por WhatsApp y controla los pagos de tus pacientes.' },
+                        { icon: '🔒', title: 'Seguridad Multitenant', desc: 'Tus datos están blindados con encriptación de grado bancario. Nadie más puede verlos.' },
+                        { icon: '📸', title: 'Galería Privada', desc: 'Almacenamiento seguro en la nube para radiografías y fotos clínicas.' },
+                        { icon: '📱', title: '100% Móvil y Rápido', desc: 'Úsalo desde tu iPad en el sillón o desde tu celular en la casa. Carga al instante.' },
+                    ].map((feat, i) => (
+                        <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-cyan-500/30 transition-colors">
+                            <div className="text-4xl mb-4">{feat.icon}</div>
+                            <h3 className="text-xl font-bold mb-2">{feat.title}</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed">{feat.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* SECCIÓN DE PRECIOS */}
+            <div className="container mx-auto px-6 py-24 border-t border-white/5 text-center">
+                <h2 className="text-3xl md:text-4xl font-black mb-12">Un precio simple. Todo incluido.</h2>
+                
+                <div className="max-w-md mx-auto p-1 rounded-3xl bg-gradient-to-b from-cyan-500/50 to-transparent">
+                    <div className="bg-[#0B0F19] p-8 rounded-[22px]">
+                        <h3 className="text-2xl font-bold mb-2">Plan Pro</h3>
+                        <p className="text-slate-400 text-sm mb-6">Para clínicas que quieren crecer sin límites.</p>
+                        
+                        <div className="mb-6">
+                            <span className="text-5xl font-black tracking-tighter">$10.000</span>
+                            <span className="text-slate-400 font-bold"> CLP / mes</span>
+                        </div>
+
+                        <ul className="text-left space-y-4 mb-8">
+                            {['Pacientes ilimitados', 'Dictado por voz con IA', 'Agenda y recordatorios', 'Gestión de caja y presupuestos', 'Soporte prioritario'].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-300">
+                                    <span className="text-cyan-400">✓</span> {item}
+                                </li>
+                            ))}
+                        </ul>
+
+                        <button 
+                            onClick={onLoginClick}
+                            className="w-full py-4 bg-white text-black font-black rounded-xl hover:bg-cyan-400 transition-colors"
+                        >
+                            Crear Cuenta
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* FOOTER */}
+            <footer className="border-t border-white/5 py-10 text-center text-slate-500 text-sm">
+                <p>© {new Date().getFullYear()} ShiningCloud Dental. Todos los derechos reservados.</p>
+            </footer>
+        </div>
+    );
+};
+
 // 1. LA FÁBRICA DE PACIENTES (Va separada arriba)
 const getPatient = (id) => {
     const existing = patientRecords[id];
@@ -438,6 +555,7 @@ const TEETH_LOWER = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
 // --- APP ---
 export default function App() {
   const [session, setSession] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('sc_theme_mode') || 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [quoteMode, setQuoteMode] = useState('calc');
@@ -1205,7 +1323,25 @@ useEffect(() => {
       // 4. Filtrar: Mostrar solo a los que NO tienen citas futuras
       return Object.values(latestAppts).filter(a => !futurePatientNames.has(a.name));
   }, [appointments]);
-  if (!session) return <AuthScreen />;
+  if (!session) {
+      if (!showLogin) {
+          return <LandingPage onLoginClick={() => setShowLogin(true)} />;
+      }
+      return (
+          <div className="relative min-h-screen">
+              {/* Botón flotante para volver a la Landing Page */}
+              <button 
+                  onClick={() => setShowLogin(false)}
+                  className="absolute top-6 left-6 z-50 text-slate-400 hover:text-white flex items-center gap-2 font-bold text-sm transition-colors bg-black/50 p-2 rounded-lg backdrop-blur-sm"
+              >
+                  ← Volver al inicio
+              </button>
+              
+              {/* Tu pantalla de Login original */}
+              <AuthScreen />
+          </div>
+      );
+  }
   const t = THEMES[themeMode] || THEMES.dark;
 
   return (
