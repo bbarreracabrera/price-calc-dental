@@ -15,6 +15,52 @@ import {
 } from 'lucide-react';
 import { supabase } from './supabase';
 
+// --- COMPONENTE REUTILIZABLE DE TEXTO LEGAL ---
+const LegalText = ({ isDarkTheme = true }) => {
+    // Si isDarkTheme es true, usa los colores oscuros de la Landing, si no, usa el tema de la app (para TermsScreen)
+    const textColor = isDarkTheme ? "text-slate-300" : "";
+    const titleColor = isDarkTheme ? "text-amber-400" : "text-cyan-500";
+    const bgContainer = isDarkTheme ? "" : "text-sm leading-relaxed";
+
+    return (
+        <div className={`space-y-6 ${textColor} ${bgContainer}`}>
+            <section>
+                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>1. Aceptación de los Términos</h3>
+                <p>Al suscribirse y utilizar ShiningCloud Dental, el Usuario acepta cumplir con estos términos. El servicio se presta "tal cual" y según disponibilidad, enfocado en optimizar la gestión de clínicas dentales en Chile y Latinoamérica.</p>
+            </section>
+
+            <section>
+                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>2. Naturaleza del Servicio</h3>
+                <p>ShiningCloud es una herramienta de apoyo administrativo y clínico. <strong>El Proveedor no practica la odontología.</strong> El diagnóstico, plan de tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario. El software asistido por IA (como el periodontograma por voz) es una ayuda técnica y no reemplaza el juicio clínico del dentista.</p>
+            </section>
+
+            <section>
+                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>3. Propiedad y Privacidad de los Datos (Ley 19.628)</h3>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li><strong>Propiedad:</strong> Los datos de salud y fichas clínicas cargados pertenecen íntegramente al Usuario (la clínica o el dentista titular). El Proveedor actúa únicamente como custodio y procesador tecnológico.</li>
+                    <li><strong>Seguridad:</strong> Utilizamos protocolos de encriptación de grado bancario e infraestructura segura en la nube. Sin embargo, el Usuario es el único responsable de mantener la confidencialidad de sus claves de acceso y de cerrar su sesión en dispositivos públicos.</li>
+                    <li><strong>Privacidad:</strong> Nos comprometemos a no vender, ceder ni perfilar comercialmente los datos de sus pacientes bajo ninguna circunstancia.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>4. Responsabilidades del Usuario</h3>
+                <p>El Usuario se obliga a cumplir con la normativa sanitaria vigente (incluyendo la Ley 20.584 sobre Derechos y Deberes de los Pacientes en Chile). Además, asume la responsabilidad de realizar exportaciones o respaldos periódicos de su información como medida de precaución.</p>
+            </section>
+
+            <section>
+                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>5. Suscripción y Pagos</h3>
+                <p>Los pagos se procesan de forma segura a través de <strong>Mercado Pago</strong> (o pasarelas certificadas similares). El servicio funciona bajo la modalidad de suscripción mensual automática. El no pago de la suscripción resultará en la limitación de la cuenta a un modo de "solo lectura" durante 30 días, tras los cuales la cuenta podría ser suspendida definitivamente.</p>
+            </section>
+
+            <section>
+                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>6. Limitación de Responsabilidad</h3>
+                <p>En la máxima medida permitida por la ley, el Proveedor no será responsable por lucro cesante, pérdida de datos derivada de un mal manejo de contraseñas, ni por interrupciones del servicio originadas por proveedores de internet o de infraestructura en la nube. La responsabilidad máxima del Proveedor ante cualquier evento se limitará al equivalente a los últimos 3 meses de suscripción pagados por el Usuario.</p>
+            </section>
+        </div>
+    );
+};
+
 // --- CONFIGURACIÓN BASE ---
 const CONSENT_TEMPLATES = {
   general: { title: "Consentimiento General", text: "Autorizo al Dr/a. a realizar los exámenes y tratamientos dentales necesarios. Entiendo que la odontología no es una ciencia exacta y que no se pueden garantizar resultados. Me comprometo a seguir las indicaciones y asistir a mis citas." },
@@ -333,55 +379,24 @@ const PrivateImage = ({ img, onClick }) => {
     return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick(signedUrl)} />;
 };
 // --- PESTAÑA DE TÉRMINOS Y CONDICIONES ---
+// --- PESTAÑA DE TÉRMINOS Y CONDICIONES (DENTRO DE LA APP) ---
 const TermsScreen = ({ theme }) => {
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-fade-in">
             <div className={`${theme.card} rounded-3xl p-6 md:p-10 shadow-xl border border-white/5`}>
                 <div className="flex items-center gap-4 mb-8 border-b border-white/10 pb-6">
                     <div className="w-12 h-12 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center">
-                        {/* Usamos un icono de texto o escudo genérico */}
                         <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     </div>
                     <div>
                         <h2 className="text-2xl font-black tracking-tight">Términos de Uso y Servicio</h2>
-                        <p className={`text-sm ${theme.subText}`}>Última actualización: {new Date().toLocaleDateString()}</p>
+                        <p className={`text-sm ${theme.subText}`}>Última actualización: 28-02-2026</p>
                     </div>
                 </div>
 
-                <div className={`space-y-6 text-sm leading-relaxed ${theme.subText}`}>
-                    <section>
-                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>1. Aceptación de los Términos</h3>
-                        <p>Al suscribirse y utilizar ShiningCloud Dental, el Usuario acepta cumplir con estos términos. El servicio se presta "tal cual" y según disponibilidad, enfocado en optimizar la gestión de clínicas dentales en Chile y Latinoamérica.</p>
-                    </section>
-
-                    <section>
-                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>2. Naturaleza del Servicio</h3>
-                        <p>ShiningCloud es una herramienta de apoyo administrativo y clínico. <strong>El Proveedor no practica la odontología.</strong> El diagnóstico, plan de tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario. El software asistido por IA (como el periodontograma por voz) es una ayuda técnica y no reemplaza el juicio clínico del dentista.</p>
-                    </section>
-
-                    <section>
-                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>3. Propiedad y Privacidad de los Datos (Ley 19.628)</h3>
-                        <ul className="list-disc pl-5 space-y-2">
-                            <li><strong>Propiedad:</strong> Los datos de salud y fichas clínicas cargados pertenecen íntegramente al Usuario (la clínica o el dentista titular). El Proveedor actúa únicamente como custodio y procesador tecnológico.</li>
-                            <li><strong>Seguridad:</strong> Utilizamos protocolos de encriptación de grado bancario e infraestructura segura en la nube. Sin embargo, el Usuario es el único responsable de mantener la confidencialidad de sus claves de acceso y de cerrar su sesión en dispositivos públicos.</li>
-                            <li><strong>Privacidad:</strong> Nos comprometemos a no vender, ceder ni perfilar comercialmente los datos de sus pacientes bajo ninguna circunstancia.</li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>4. Responsabilidades del Usuario</h3>
-                        <p>El Usuario se obliga a cumplir con la normativa sanitaria vigente (incluyendo la Ley 20.584 sobre Derechos y Deberes de los Pacientes en Chile). Además, asume la responsabilidad de realizar exportaciones o respaldos periódicos de su información como medida de precaución.</p>
-                    </section>
-
-                    <section>
-                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>5. Suscripción y Pagos</h3>
-                        <p>Los pagos se procesan de forma segura a través de Flow.cl (o pasarelas certificadas similares). El servicio funciona bajo la modalidad de prepago mensual o anual. El no pago de la suscripción resultará en la limitación de la cuenta a un modo de "solo lectura" durante 30 días, tras los cuales la cuenta podría ser suspendida definitivamente.</p>
-                    </section>
-
-                    <section>
-                        <h3 className={`text-lg font-bold mb-2 ${theme.text}`}>6. Limitación de Responsabilidad</h3>
-                        <p>En la máxima medida permitida por la ley, el Proveedor no será responsable por lucro cesante, pérdida de datos derivada de un mal manejo de contraseñas, ni por interrupciones del servicio originadas por proveedores de internet o de infraestructura en la nube. La responsabilidad máxima del Proveedor ante cualquier evento se limitará al equivalente a los últimos 3 meses de suscripción pagados por el Usuario.</p>
-                    </section>
+                {/* AQUÍ LLAMAMOS AL TEXTO LEGAL CON EL TEMA DE LA APP */}
+                <div className={theme.subText}>
+                    <LegalText isDarkTheme={false} />
                 </div>
             </div>
         </div>
@@ -513,29 +528,39 @@ const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?
             </div>
 
             {/* --- MODAL DE TÉRMINOS Y CONDICIONES --- */}
-            {showTerms && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#111827] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-xl font-black text-cyan-400">Términos y Condiciones de Uso</h3>
-                            <button onClick={() => setShowTerms(false)} className="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
-                        </div>
-                        <div className="p-6 overflow-y-auto text-sm text-slate-300 space-y-4 custom-scrollbar">
-                            <p><strong>1. Aceptación de los Términos:</strong> Al suscribirse y utilizar ShiningCloud Dental, el Usuario acepta cumplir con estos términos. El servicio se presta "tal cual" y según disponibilidad.</p>
-                            <p><strong>2. Naturaleza del Servicio:</strong> ShiningCloud es una herramienta de apoyo administrativo y clínico. El Proveedor no practica la odontología. El diagnóstico, tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario. El software no reemplaza el juicio clínico del dentista.</p>
-                            <p><strong>3. Propiedad y Privacidad de los Datos (Ley 19.628 - Chile):</strong> Los datos de salud cargados pertenecen al Usuario (la clínica/dentista). El Proveedor actúa únicamente como custodio y procesador de dichos datos. El Proveedor utiliza protocolos de encriptación y almacenamiento seguro en la nube. Sin embargo, el Usuario es responsable de mantener la confidencialidad de sus claves de acceso.</p>
-                            <p><strong>4. Responsabilidad del Usuario:</strong> El Usuario se obliga a cumplir con la Ley 20.584 sobre Derechos y Deberes de los Pacientes en Chile. No debe compartir su cuenta con terceros no autorizados y debe mantener respaldos periódicos de su información clínica (el software permite exportar datos).</p>
-                            <p><strong>5. Limitación de Responsabilidad:</strong> En ningún caso el Proveedor será responsable por errores en el diagnóstico, pérdida de datos por mal uso de la cuenta, ataques cibernéticos de terceros, lucro cesante o interrupciones del servicio debido a fallas de internet. La responsabilidad total se limita al monto pagado por el Usuario en los últimos 3 meses.</p>
-                            <p><strong>6. Suscripción y Pagos:</strong> Los pagos se procesan a través de Flow.cl. El servicio es prepago y mensual. La falta de pago resultará en la limitación de la cuenta.</p>
-                        </div>
-                        <div className="p-6 border-t border-white/10 bg-black/20 text-right">
-                            <button onClick={() => { setAcceptedTerms(true); setShowTerms(false); }} className="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition-colors">
-                                Entendido y Acepto
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+           {/* ESTE ES EL POPUP QUE SE ABRE CUANDO LE DAN A "He leído y acepto..." */}
+{showTerms && (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="bg-[#0B0F19] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col relative shadow-2xl">
+            
+            {/* Cabecera del Popup */}
+            <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-white">Términos de Servicio</h2>
+                <button onClick={() => setShowTerms(false)} className="text-white/50 hover:text-white transition-colors">
+                    ✕
+                </button>
+            </div>
+            
+            {/* Contenido scrolleable (AQUÍ LLAMAMOS AL TEXTO) */}
+            <div className="p-6 overflow-y-auto">
+                <LegalText isDarkTheme={true} />
+            </div>
+            
+            {/* Botón de cierre abajo */}
+            <div className="p-6 border-t border-white/10">
+                <button 
+                    onClick={() => {
+                        setAcceptedTerms(true); // Opcional: Si lo leen, puedes marcárselo como aceptado
+                        setShowTerms(false);
+                    }} 
+                    className="w-full py-3 bg-amber-500 text-black font-bold rounded-xl hover:bg-amber-400 transition-colors"
+                >
+                    Entendido y acepto
+                </button>
+            </div>
+        </div>
+    </div>
+)}
 
             <footer className="border-t border-white/5 py-10 text-center text-slate-500 text-sm">
                 <p>© {new Date().getFullYear()} ShiningCloud Dental. Todos los derechos reservados.</p>
