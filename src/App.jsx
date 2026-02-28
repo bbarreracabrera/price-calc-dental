@@ -295,6 +295,43 @@ const HygieneCell = ({ tooth, data = {}, onChange }) => {
 const Card = ({ children, className = "", theme, ...props }) => { const t = THEMES[theme] || THEMES.dark; return <div {...props} className={`p-6 rounded-3xl transition-all relative ${t.card} ${className}`}>{children}</div>; };
 const Button = ({ onClick, children, variant = "primary", className = "", theme, disabled }) => { const t = THEMES[theme] || THEMES.dark; const styles = { primary: `${t.gradient} text-white shadow-lg`, secondary: t.buttonSecondary }; return <button disabled={disabled} onClick={onClick} className={`p-3 rounded-2xl font-bold active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-50 ${styles[variant]} ${className}`}>{children}</button>; };
 const InputField = ({ label, icon: Icon, theme, textarea, ...props }) => { const t = THEMES[theme] || THEMES.dark; return (<div className="w-full">{label && <label className={`text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 ${t.subText}`}>{label}</label>}<div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>{Icon && <Icon size={16} className={`mr-2 mt-0.5 ${t.subText}`}/>}{textarea ? <textarea {...props} rows="3" className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`}/> : <input {...props} className={`bg-transparent outline-none w-full font-bold text-sm ${t.text}`}/>}</div></div>); };
+// --- COMPONENTE DE SEGURIDAD: URLS FIRMADAS PARA BUCKET PRIVADO ---
+const PrivateImage = ({ img, onClick }) => {
+    const [signedUrl, setSignedUrl] = useState(null);
+
+    useEffect(() => {
+        const fetchUrl = async () => {
+            // 1. Compatibilidad: Si es una imagen vieja (pública), usarla directo
+            if (img.url && img.url.startsWith('http')) {
+                setSignedUrl(img.url);
+                return;
+            }
+            
+            // 2. Si es una imagen nueva (privada), pedir el pase VIP de 60 minutos (3600 seg)
+            const filePath = img.path || img.url; // Respaldo por si se guardó en el campo 'url'
+            const { data, error } = await supabase.storage.from('patient-images').createSignedUrl(filePath, 3600);
+            
+            if (data) setSignedUrl(data.signedUrl);
+            if (error) console.error("Error seguridad imagen:", error);
+        };
+        fetchUrl();
+    }, [img]);
+
+    if (!signedUrl) return <div className="w-full h-full flex items-center justify-center bg-black/10"><Loader className="animate-spin opacity-50" size={20}/></div>;
+
+    const isPdf = signedUrl.toLowerCase().includes('.pdf');
+
+    if (isPdf) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-black/10 dark:hover:bg-white/10" onClick={() => window.open(signedUrl, '_blank')}>
+                <span className="text-4xl mb-2">📄</span>
+                <span className="text-[10px] font-bold px-2 text-center opacity-50 break-all">Ver Documento</span>
+            </div>
+        );
+    }
+
+    return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick(signedUrl)} />;
+};
 
 // 1. LA FÁBRICA DE PACIENTES (Va separada arriba)
 const getPatient = (id) => {
@@ -313,15 +350,52 @@ const getPatient = (id) => {
     return base;
 };
 
-// 2. EL BUSCADOR (El componente visual con su return arreglado)
+// 2. EL BUSCADOR INTELIGENTE (ASÍNCRONO - V79)
 const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Paciente..." }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
-    
-    const results = useMemo(() => { 
+    const [dbResults, setDbResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // Motor de búsqueda en la nube (Se activa cuando escribes más de 2 letras)
+    useEffect(() => {
+        if (query.length < 2) {
+            setDbResults([]);
+            return;
+        }
+        
+        // Retrasamos la búsqueda medio segundo para no disparar 10 búsquedas si escriben rápido
+        const delayDebounceFn = setTimeout(async () => {
+            setIsSearching(true);
+            
+            // Buscamos directamente dentro del JSON en Supabase
+            const { data } = await supabase
+                .from('patients')
+                .select('id, data')
+                .ilike('data->personal->>legalName', `%${query}%`)
+                .limit(10); // Traemos máximo 10 coincidencias
+            
+            if (data) {
+                // Los preparamos para que React los entienda
+                const formatted = data.map(r => ({ ...r.data, id: r.id }));
+                setDbResults(formatted);
+            }
+            setIsSearching(false);
+        }, 500); 
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [query]);
+
+    // Combinamos los que ya tienes descargados con los que encontró en la nube
+    const combinedResults = useMemo(() => { 
         if (!query) return []; 
-        return Object.values(patients).filter(p => p.personal?.legalName?.toLowerCase().includes(query.toLowerCase())); 
-    }, [query, patients]);
+        const local = Object.values(patients).filter(p => p.personal?.legalName?.toLowerCase().includes(query.toLowerCase())); 
+        
+        // Unimos y filtramos duplicados (por si ya lo tenías local)
+        const all = [...local, ...dbResults];
+        const unique = Array.from(new Map(all.map(item => [item.id, item])).values());
+        return unique;
+    }, [query, patients, dbResults]);
     
     const t = THEMES[theme] || THEMES.dark;
     
@@ -330,13 +404,18 @@ const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Pacien
             <InputField theme={theme} icon={Search} placeholder={placeholder} value={query} onChange={e => { setQuery(e.target.value); setShowResults(true); }} onFocus={() => setShowResults(true)} />
             {showResults && query && (
                 <div className={`absolute left-0 right-0 top-full mt-2 rounded-xl border max-h-48 overflow-y-auto shadow-xl ${t.card}`}>
-                    {results.length > 0 ? results.map(p => (
-                        <div key={p.id} onClick={() => { onSelect(p); setQuery(p.personal.legalName); setShowResults(false); }} className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0">
-                            <p className="font-bold text-sm">{p.personal.legalName}</p>
+                    
+                    {isSearching && <div className="p-3 text-xs opacity-50 text-center flex items-center justify-center gap-2"><Loader size={12} className="animate-spin"/> Buscando en servidor...</div>}
+                    
+                    {!isSearching && combinedResults.length > 0 ? combinedResults.map(p => (
+                        <div key={p.id} onClick={() => { onSelect(p); setQuery(p.personal?.legalName); setShowResults(false); }} className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 flex justify-between items-center">
+                            <p className="font-bold text-sm">{p.personal?.legalName}</p>
+                            {/* Le ponemos una etiqueta visual si lo trajo de la nube */}
+                            {!patients[p.id] && <span className="text-[8px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-black tracking-widest">NUBE</span>}
                         </div>
-                    )) : (
+                    )) : !isSearching && (
                         <div className="p-3 text-xs opacity-50">
-                            No encontrado. <span className="underline cursor-pointer font-bold ml-1" onClick={()=>{ onSelect({id:'new', name: query}); setShowResults(false); }}>Crear "{query}"</span>
+                            No encontrado. <span className="underline cursor-pointer font-bold ml-1 text-cyan-400" onClick={()=>{ onSelect({id:'new', name: query}); setShowResults(false); }}>Crear "{query}"</span>
                         </div>
                     )}
                 </div>
@@ -682,7 +761,7 @@ useEffect(() => {
       const { data: s } = await supabase.from('settings').select('*').eq('id', 'general').maybeSingle();
       if (s) setConfigLocal(s.data);
       
-      const { data: p } = await supabase.from('patients').select('*').eq('admin_email', myClinicAdmin);
+      const { data: p } = await supabase.from('patients').select('*').eq('admin_email', myClinicAdmin).order('id', { ascending: false }).limit(50);
       if (p) { const m = {}; p.forEach(r => m[r.id] = r.data); setPatientRecords(m); }
       
       const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin);
@@ -758,7 +837,40 @@ useEffect(() => {
       logAction('UPDATE_PATIENT', { patientName: d.personal.legalName }, id);
   };
 
-  const handleLogoUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { const newConfig = { ...config, logo: reader.result }; setConfigLocal(newConfig); saveToSupabase('settings', 'general', newConfig); notify("Logo Actualizado"); }; reader.readAsDataURL(file); };
+  // --- SUBIDA DE LOGO OPTIMIZADA (EN BUCKET PÚBLICO SEPARADO) ---
+  const handleLogoUpload = async (e) => { 
+      const file = e.target.files[0]; 
+      if (!file) return; 
+      
+      setUploading(true);
+      notify("Subiendo logo...");
+      
+      try {
+          // Usamos tu email como nombre para que siempre se sobreescriba y no acumules basura
+          const fileName = `logo_${clinicOwner || session.user.email}.${file.name.split('.').pop()}`;
+          
+          // Subimos al bucket dedicado de logos
+          const { error: uploadError } = await supabase.storage.from('clinic-logos').upload(fileName, file, { upsert: true });
+          if (uploadError) throw uploadError;
+          
+          // Obtenemos el link público
+          const { data: { publicUrl } } = supabase.storage.from('clinic-logos').getPublicUrl(fileName);
+          
+          // Guardamos SOLO el link en la base de datos
+          const newConfig = { ...config, logo: publicUrl }; 
+          setConfigLocal(newConfig); 
+          
+          // Guardamos con la etiqueta de seguridad multitenant
+          await saveToSupabase('settings', 'general', newConfig); 
+          
+          notify("Logo Actualizado con éxito"); 
+      } catch (err) {
+          console.error(err);
+          alert("Error subiendo el logo");
+      } finally {
+          setUploading(false);
+      }
+  };
 
   const currentTotal = useMemo(() => { const time = parseFloat(sessionData.clinicalTime) || 0; const base = parseFloat(sessionData.baseCost) || 0; const hourly = parseFloat(config.hourlyRate) || 0; const margin = parseFloat(config.profitMargin) || 0; return Math.round(((hourly / 60) * time + base) / (1 - margin / 100)); }, [sessionData, config]);
   const incomeRecords = financialRecords.filter(f => !f.type || f.type === 'income');
@@ -775,7 +887,8 @@ useEffect(() => {
   const todaysAppointments = appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).sort((a,b) => a.time.localeCompare(b.time));
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
 
- const handleImageUpload = async (e) => {
+ // --- SUBIDA SEGURA DE IMÁGENES CLÍNICAS (BUCKET PRIVADO) ---
+  const handleImageUpload = async (e) => {
       const file = e.target.files[0]; 
       if (!file || !selectedPatientId) return; 
       setUploading(true);
@@ -783,19 +896,20 @@ useEffect(() => {
           const fileName = `${selectedPatientId}_${Date.now()}.${file.name.split('.').pop()}`;
           const { error: uploadError } = await supabase.storage.from('patient-images').upload(fileName, file);
           if (uploadError) throw uploadError;
-          const { data: { publicUrl } } = supabase.storage.from('patient-images').getPublicUrl(fileName);
+          
           const p = getPatient(selectedPatientId);
           
-          // LA MAGIA ESTÁ AQUÍ: Agregamos la propiedad "folder" usando la carpeta activa
+          // LA MAGIA: Ya no pedimos la URL pública, guardamos el "path" (fileName) interno
           const updatedImages = [...(p.images || []), { 
               id: Date.now(), 
-              url: publicUrl, 
+              path: fileName, // <-- Guardamos la ruta interna para generar el Signed URL después
+              url: fileName,  // Guardamos lo mismo aquí por compatibilidad con tu código actual
               date: new Date().toLocaleDateString(),
-              folder: activeFolder // <--- Asigna el archivo a la carpeta actual
+              folder: activeFolder 
           }];
           
           await savePatientData(selectedPatientId, { ...p, images: updatedImages });
-          notify(`Archivo guardado en ${activeFolder}`);
+          notify(`Archivo encriptado en ${activeFolder}`);
           logAction('UPLOAD_IMAGE', { fileName, folder: activeFolder }, selectedPatientId); 
       } catch (err) { 
           alert(`Error: ${err.message}`); 
@@ -1534,7 +1648,7 @@ useEffect(() => {
                 </div>
                 
                 <Card theme={themeMode} className="space-y-6">
-                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+                 <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
                         if (p.id === 'new') {
                             let nombreReal = p.name;
                             if (!nombreReal || nombreReal.trim() === "") { nombreReal = window.prompt("Confirma el nombre:"); if (!nombreReal) return; }
@@ -1547,7 +1661,10 @@ useEffect(() => {
                             setSessionData({...sessionData, patientName: nombreReal, patientId: newId});
                             notify("Paciente Creado");
                         } else {
-                            setSessionData({...sessionData, patientName: p.personal.legalName, patientId: p.id});
+                            // 👇 MAGIA INYECTADA AQUÍ 👇
+                            setPatientRecords(prev => ({...prev, [p.id]: p}));
+                            
+                            setSessionData({...sessionData, patientName: p.personal?.legalName || p.name, patientId: p.id});
                         }
                     }} />
                     
@@ -1733,6 +1850,9 @@ useEffect(() => {
                                 setSelectedPatientId(newId); 
                                 notify("Paciente Creado Exitosamente");
                             } else { 
+                                // 👇 LA MAGIA ESTÁ EXACTAMENTE AQUÍ 👇
+                                // Inyectamos el paciente de la nube a la memoria local antes de abrirlo
+                                setPatientRecords(prev => ({...prev, [p.id]: p}));
                                 setSelectedPatientId(p.id); 
                             } 
                         }} 
@@ -1741,7 +1861,6 @@ useEffect(() => {
                 <div className="grid gap-2">
                     {Object.keys(patientRecords).map(k => (
                         <Card key={k} theme={themeMode} onClick={() => setSelectedPatientId(k)} className="cursor-pointer py-4 flex justify-between items-center">
-                            {/* EL GRAN ARREGLO VISUAL: Ahora lee el nombre real, no el ID */}
                             <span className="font-bold capitalize">{patientRecords[k]?.personal?.legalName || 'Paciente sin nombre'}</span>
                             <ArrowRight size={14}/>
                         </Card>
@@ -2170,21 +2289,22 @@ useEffect(() => {
                       ) : (
                           getPatient(selectedPatientId).images?.filter(img => (img.folder || 'Otros') === activeFolder).map(img => (
                               <div key={img.id} className={`relative group rounded-2xl overflow-hidden aspect-square border ${t.border} bg-black/5 dark:bg-white/5`}>
-                                  {/* Si es un PDF (Documentos), mostramos un icono en vez de romper la imagen */}
-                                  {img.url.toLowerCase().includes('.pdf') ? (
-                                      <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-black/10 dark:hover:bg-white/10" onClick={()=>window.open(img.url, '_blank')}>
-                                          <span className="text-4xl mb-2">📄</span>
-                                          <span className="text-[10px] font-bold px-2 text-center opacity-50 break-all">Ver Documento</span>
-                                      </div>
-                                  ) : (
-                                      <img src={img.url} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={()=>setSelectedImg(img.url)}/>
-                                  )}
+                                  
+                                  {/* AQUI LLAMAMOS A NUESTRO COMPONENTE DE SEGURIDAD */}
+                                  <PrivateImage img={img} onClick={setSelectedImg} />
                                   
                                   <button onClick={async()=>{ 
                                       if(window.confirm("¿Seguro que deseas eliminar este archivo?")) {
-                                          const p=getPatient(selectedPatientId); 
-                                          const f = p.images.filter(i=>i.id!==img.id); 
+                                          const p = getPatient(selectedPatientId); 
+                                          const f = p.images.filter(i => i.id !== img.id); 
                                           await savePatientData(selectedPatientId, {...p, images:f}); 
+                                          
+                                          // Limpiamos el archivo real de Supabase para no ocupar espacio "basura"
+                                          const filePath = img.path || img.url;
+                                          if (filePath && !filePath.startsWith('http')) {
+                                              await supabase.storage.from('patient-images').remove([filePath]);
+                                          }
+                                          
                                           notify("Eliminado"); 
                                       }
                                   }} className="absolute top-2 right-2 p-2 bg-red-500 shadow-lg rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-20">
@@ -2202,23 +2322,26 @@ useEffect(() => {
 
         {/* --- TABS COMUNES (MANTENIDOS) --- */}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <Card theme={themeMode} className="space-y-4"><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
-    if (p.id === 'new') {
-        const newId = "pac_" + Date.now().toString();
-        const nombreReal = p.name;
-        
-        const newPatient = getPatient(newId);
-        newPatient.id = newId;
-        newPatient.name = nombreReal;
-        if (!newPatient.personal) newPatient.personal = {};
-        newPatient.personal.legalName = nombreReal;
-        
-        savePatientData(newId, newPatient);
-        setRxPatient(newPatient);
-        notify("Paciente Creado Exitosamente");
-    } else {
-        setRxPatient(p);
-    }
-}} />{rxPatient && (<div className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 animate-in fade-in"><div className={`w-12 h-12 rounded-full ${t.accentBg} flex items-center justify-center font-bold text-white`}>{rxPatient.personal.legalName[0]}</div><div><p className="font-bold">{rxPatient.personal.legalName}</p><p className="text-xs opacity-60">RUT: {rxPatient.personal.rut}</p></div></div>)}<div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><Button theme={themeMode} onClick={()=>{setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}><Plus/></Button></div>{prescription.map((p,i)=>(<div key={i} className="p-3 bg-white/5 rounded-xl flex justify-between text-xs"><span>{p.name} - {p.dosage}</span><X size={14} onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}/></div>))}<Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx', rxPatient)}><Printer/> GENERAR PDF</Button></Card>}
+            if (p.id === 'new') {
+                const newId = "pac_" + Date.now().toString();
+                const nombreReal = p.name;
+                
+                const newPatient = getPatient(newId);
+                newPatient.id = newId;
+                newPatient.name = nombreReal;
+                if (!newPatient.personal) newPatient.personal = {};
+                newPatient.personal.legalName = nombreReal;
+                
+                savePatientData(newId, newPatient);
+                setRxPatient(newPatient);
+                notify("Paciente Creado Exitosamente");
+            } else {
+                // 👇 MAGIA INYECTADA AQUÍ 👇
+                setPatientRecords(prev => ({...prev, [p.id]: p}));
+                
+                setRxPatient(p);
+            }
+        }} />{rxPatient && (<div className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 animate-in fade-in"><div className={`w-12 h-12 rounded-full ${t.accentBg} flex items-center justify-center font-bold text-white`}>{rxPatient.personal.legalName[0]}</div><div><p className="font-bold">{rxPatient.personal.legalName}</p><p className="text-xs opacity-60">RUT: {rxPatient.personal.rut}</p></div></div>)}<div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><Button theme={themeMode} onClick={()=>{setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}><Plus/></Button></div>{prescription.map((p,i)=>(<div key={i} className="p-3 bg-white/5 rounded-xl flex justify-between text-xs"><span>{p.name} - {p.dosage}</span><X size={14} onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}/></div>))}<Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx', rxPatient)}><Printer/> GENERAR PDF</Button></Card>}
         {/* --- PESTAÑA DE RETENCIÓN (CRM) --- */}
         {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <div className="space-y-6 animate-in slide-in-from-bottom">
             <div className="flex justify-between items-center">
@@ -2796,23 +2919,25 @@ useEffect(() => {
             <h3 className="font-bold text-xl">{newAppt.id ? 'Editar Cita' : 'Agendar Cita'}</h3>
             <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100"><X size={20}/></button>
         </div>
-        {!newAppt.id && <PatientSelect  patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
-           if (p.id === 'new') {
-        const newId = "pac_" + Date.now().toString();
-        const nombreReal = p.name;
-        
-        const newPatient = getPatient(newId);
-        newPatient.id = newId;
-        newPatient.name = nombreReal;
-        if (!newPatient.personal) newPatient.personal = {};
-        newPatient.personal.legalName = nombreReal;
-        
-        savePatientData(newId, newPatient);
-        setNewAppt({...newAppt, name: nombreReal});
-        notify("Paciente Creado Exitosamente");
-    } else {
-        setNewAppt({...newAppt, name: p.personal.legalName});
-    }
+       {!newAppt.id && <PatientSelect patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+            if (p.id === 'new') {
+                const newId = "pac_" + Date.now().toString();
+                const nombreReal = p.name;
+                const newPatient = getPatient(newId);
+                newPatient.id = newId;
+                newPatient.name = nombreReal;
+                if (!newPatient.personal) newPatient.personal = {};
+                newPatient.personal.legalName = nombreReal;
+                
+                savePatientData(newId, newPatient);
+                setNewAppt({...newAppt, name: nombreReal});
+                notify("Paciente Creado Exitosamente");
+            } else {
+                // 👇 MAGIA INYECTADA AQUÍ 👇
+                setPatientRecords(prev => ({...prev, [p.id]: p}));
+                
+                setNewAppt({...newAppt, name: p.personal?.legalName || p.name});
+            }
         }} />}
         
         {newAppt.id && <p className="font-bold text-lg text-cyan-400">{newAppt.name}</p>}
