@@ -406,6 +406,10 @@ const TermsScreen = ({ theme }) => {
 const LandingPage = ({ onLoginClick }) => {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
+    const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [msg, setMsg] = useState('');
 // Reemplaza el link viejo por este:
 const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
 useEffect(() => {
@@ -673,15 +677,20 @@ const AuthScreen = () => {
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   useEffect(() => {
-    // Escuchamos si Supabase nos dice que vienen del correo
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecoveringPassword(true); // ¡Activamos el modo recuperación!
-      }
-    });
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Si inicia sesión normal...
+    if (session) {
+      // Tu código actual para guardar la sesión (ej: setSession(session))
+    }
+    
+    // 👉 ¡EL NUEVO VIGÍA! Si el evento es recuperación, lo frenamos
+    if (event === 'PASSWORD_RECOVERY') {
+      setIsRecoveringPassword(true);
+    }
+  });
 
-    return () => subscription.unsubscribe();
-  }, []);
+  return () => subscription.unsubscribe();
+}, []);
 
   // TU LINK AUTOMÁTICO DE MERCADO PAGO
   const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
@@ -726,23 +735,16 @@ const AuthScreen = () => {
   // 👉 1. PEGA ESTA NUEVA FUNCIÓN AQUÍ:
   const handleResetPassword = async () => {
     if (!email) {
-      setMsg('Por favor, ingresa tu correo electrónico arriba para recuperar la clave.');
+      setMsg('Por favor, ingresa tu correo electrónico arriba.');
       return;
     }
-    
     setLoading(true);
     setMsg('Enviando correo...');
-    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin, 
     });
-    
-    if (error) {
-      setMsg("Error: " + error.message);
-    } else {
-      setMsg("¡Listo! Te enviamos un enlace al correo para cambiar tu contraseña.");
-    }
-    
+    if (error) setMsg("Error: " + error.message);
+    else setMsg("¡Te enviamos un enlace al correo!");
     setLoading(false);
   };
   // 👉 2. FUNCIÓN PARA GUARDAR LA NUEVA CONTRASEÑA
@@ -750,49 +752,47 @@ const AuthScreen = () => {
     e.preventDefault();
     setLoading(true);
     setMsg('Actualizando tu contraseña...');
-    
-    // Supabase actualiza la clave del usuario que entró con el "link mágico"
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    
     if (error) {
-      setMsg("Error al actualizar: " + error.message);
+      setMsg("Error: " + error.message);
     } else {
-      setMsg("¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.");
-      setIsRecoveringPassword(false); // Apagamos el modo recuperación
-      setNewPassword(''); // Limpiamos la casilla
+      alert("¡Contraseña actualizada con éxito!");
+      setIsRecoveringPassword(false); // Lo dejamos entrar
+      setNewPassword(''); 
     }
     setLoading(false);
   };
-// 👉 3. LA PANTALLA ESPECIAL (Pégalo justo antes de tu 'return' normal)
+
+  // LA PANTALLA NEGRA QUE BLOQUEA EL ACCESO:
   if (isRecoveringPassword) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0B0F19] p-4">
         <div className="bg-gray-800/50 border border-gray-700 p-8 rounded-2xl max-w-md w-full text-white shadow-xl">
           <h2 className="text-2xl font-bold mb-2 text-center">Crea tu nueva contraseña</h2>
-          <p className="text-gray-400 text-sm text-center mb-6">Ingresa una nueva clave de acceso para tu clínica.</p>
+          <p className="text-gray-400 text-sm text-center mb-6">Ingresa una nueva clave de acceso.</p>
           
           {msg && <p className="text-amber-400 text-sm text-center mb-4 font-medium">{msg}</p>}
           
           <input 
             type="password" 
-            placeholder="Escribe tu nueva contraseña" 
+            placeholder="Nueva contraseña" 
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-xl mb-6 text-white focus:outline-none focus:border-cyan-500"
+            className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-xl mb-6 text-white"
           />
           
           <button 
             onClick={handleUpdatePassword}
             disabled={loading}
-            className="w-full p-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-bold transition-all"
+            className="w-full p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-bold"
           >
-            {loading ? 'Guardando...' : 'Guardar nueva contraseña'}
+            {loading ? 'Guardando...' : 'Guardar y Entrar'}
           </button>
         </div>
       </div>
     );
   }
-
+  
   return (
     <div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]">
       <div className="w-full max-w-sm flex flex-col items-center">
@@ -822,15 +822,15 @@ const AuthScreen = () => {
 
         {/* 👉 2. PEGA EL BOTÓN JUSTO DEBAJO DEL INPUT DE CONTRASEÑA */}
         {!isSignUp && (
-          <button 
-            type="button" 
-            onClick={handleResetPassword} 
-            disabled={loading}
-            className="text-sm text-cyan-400 hover:text-cyan-300 text-left -mt-2 mb-2 w-fit transition-colors"
-          >
-            ¿Olvidaste tu contraseña?
-          </button>
-        )}
+    <button 
+      type="button" 
+      onClick={handleResetPassword} 
+      disabled={loading}
+      className="text-sm text-cyan-400 hover:text-cyan-300 text-left -mt-2 mb-2 w-fit transition-colors"
+    >
+      ¿Olvidaste tu contraseña?
+    </button>
+  )}
           
           <button disabled={loading} className="w-full p-4 bg-amber-500 text-black rounded-xl font-bold uppercase tracking-widest hover:bg-amber-400 transition-colors">
             {loading ? 'Procesando...' : (isSignUp ? 'Crear Mi Clínica' : 'Entrar')}
