@@ -677,20 +677,22 @@ const AuthScreen = () => {
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   useEffect(() => {
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-    // Si inicia sesión normal...
-    if (session) {
-      // Tu código actual para guardar la sesión (ej: setSession(session))
-    }
-    
-    // 👉 ¡EL NUEVO VIGÍA! Si el evento es recuperación, lo frenamos
-    if (event === 'PASSWORD_RECOVERY') {
+    // 🚀 EL TRUCO INFALIBLE: Leemos la URL directamente apenas carga la app
+    if (window.location.hash.includes('type=recovery')) {
       setIsRecoveringPassword(true);
     }
-  });
 
-  return () => subscription.unsubscribe();
-}, []);
+    // El vigía normal de Supabase (por si acaso)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveringPassword(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // TU LINK AUTOMÁTICO DE MERCADO PAGO
   const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
@@ -792,11 +794,10 @@ const AuthScreen = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]">
-      <div className="w-full max-w-sm flex flex-col items-center">
-        
+      <div className="w-full max-w-sm flex flex-col items-center">    
         {/* LOGO DORADO PREMIUM */}
         <div className="w-16 h-16 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30 mb-4">
           <Cloud className="text-white" size={36} strokeWidth={2.5} />
