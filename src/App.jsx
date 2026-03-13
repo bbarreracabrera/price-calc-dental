@@ -16,7 +16,9 @@ import {
 import { supabase } from './supabase';
 import LegalText from './LegalText';
 import LandingPage from './LandingPage';
+import CatalogModal from './CatalogModal';
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line } from 'recharts';
+import { Toaster, toast } from 'react-hot-toast';
 
 // --- CONFIGURACIÓN BASE ---
 const CONSENT_TEMPLATES = {
@@ -595,6 +597,20 @@ const getLocalDate = () => {
     return new Date(Date.now() - tzoffset).toISOString().split('T')[0];
 };
 
+const formatRUT = (rut) => {
+    if (!rut) return '';
+    // Quita todo lo que no sea número o la letra K
+    let cleanRut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+    if (cleanRut.length <= 1) return cleanRut;
+    
+    // Separa el dígito verificador del resto
+    let result = cleanRut.slice(-1);
+    let body = cleanRut.slice(0, -1);
+    
+    // Agrega los puntos cada 3 números
+    let formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return `${formattedBody}-${result}`;
+};
 // --- APP ---
 export default function App() {
   const [session, setSession] = useState(null);
@@ -632,8 +648,7 @@ export default function App() {
   const [newPackItem, setNewPackItem] = useState({ name: '', cost: '' });
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [modal, setModal] = useState(null);
-  const [notification, setNotification] = useState('');
-  
+
   // PERIO & CONSENT & IMAGES & ODONTOGRAMA PRO
   // --- NUEVO ESTADO PARA EL MODO ODONTOGRAMA ---
   const [odontogramMode, setOdontogramMode] = useState('hallazgos');
@@ -965,7 +980,10 @@ useEffect(() => {
       }
   };
 
-  const notify = (m) => { setNotification(m); setTimeout(() => setNotification(''), 3000); };
+  const notify = (m) => toast.success(m, { 
+    style: { borderRadius: '12px', background: '#1e1e1e', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', fontWeight: 'bold', fontSize: '12px' },
+    iconTheme: { primary: '#06b6d4', secondary: '#fff' }
+});
   const toggleTheme = () => { const modes = ['dark', 'light', 'blue']; const next = modes[(modes.indexOf(themeMode) + 1) % modes.length]; setThemeMode(next); localStorage.setItem('sc_theme_mode', next); };
   // --- FUNCIÓN MAESTRA DE GUARDADO BLINDADA (V78) ---
   const saveToSupabase = async (t, id, d) => { 
@@ -1393,6 +1411,7 @@ useEffect(() => {
 
   return (
     <div className={`min-h-screen flex ${t.bg} ${t.text} transition-all duration-500 font-sans`}>
+        <Toaster position="bottom-center" reverseOrder={false} />
       {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={()=>setMobileMenuOpen(false)}></div>}
       
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out ${t.card} border-r flex flex-col`}>
@@ -1439,7 +1458,7 @@ useEffect(() => {
 
       <main className="flex-1 md:ml-64 p-6 md:p-12 h-screen overflow-y-auto">
         <div className="md:hidden flex items-center justify-between mb-6"><button onClick={()=>setMobileMenuOpen(true)} className={`p-2 rounded-xl ${t.inputBg}`}><Menu/></button><span className="font-black text-lg">ShiningCloud | Dental</span><div className="w-8"></div></div>
-        {notification && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-cyan-500 text-white px-6 py-2 rounded-full font-bold animate-bounce">{notification}</div>}
+        
 
         {activeTab === 'dashboard' && <div className="space-y-8 animate-in fade-in">
             <h1 className="text-4xl font-black">Hola, {config.name.split(' ')[0]} 👋</h1>
@@ -1760,7 +1779,7 @@ useEffect(() => {
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <InputField theme={themeMode} label="Nombre Clínica/Dr" value={config.name || ''} onChange={e=>setConfigLocal({...config, name:e.target.value})} />
-                            <InputField theme={themeMode} label="RUT Profesional" value={config.rut || ''} onChange={e=>setConfigLocal({...config, rut:e.target.value})} />
+                            <InputField theme={themeMode} label="RUT Profesional" value={config.rut || ''} onChange={e=>setConfigLocal({...config, rut: formatRUT(e.target.value)})} />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <InputField theme={themeMode} label="Especialidad" value={config.specialty || ''} onChange={e=>setConfigLocal({...config, specialty:e.target.value})} />
@@ -2057,7 +2076,7 @@ useEffect(() => {
         {activeTab === 'ficha' && selectedPatientId && <div className="space-y-4 animate-in slide-in-from-right"><button onClick={()=>setSelectedPatientId(null)} className="flex items-center gap-2 text-xs font-bold opacity-50"><ArrowLeft size={14}/> VOLVER</button><h2 className="text-3xl font-black capitalize">{selectedPatientId}</h2><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Anamnesis', icon: FileQuestion, restricted: true}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>{
             if (userRole === 'assistant' && b.restricted) return null; // V76: Role Protection
             return (<button key={b.id} onClick={()=>setPatientTab(b.id)} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap ${patientTab===b.id?t.accentBg:'bg-white/5'}`}>{b.label}</button>)
-        })}</div>{patientTab === 'personal' && <Card theme={themeMode} className="space-y-4"><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Completo" value={getPatient(selectedPatientId).personal.legalName} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, legalName: e.target.value}})} /><InputField theme={themeMode} label="RUT / DNI" value={getPatient(selectedPatientId).personal.rut} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, rut: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Email" icon={Mail} value={getPatient(selectedPatientId).personal.email} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, email: e.target.value}})} /><div className="flex items-end gap-2"><InputField theme={themeMode} label="Teléfono" icon={Phone} value={getPatient(selectedPatientId).personal.phone} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, phone: e.target.value}})} />{getPatient(selectedPatientId).personal.phone && <button onClick={()=>sendWhatsApp(getPatient(selectedPatientId).personal.phone, "Hola, me comunico de ShiningCloud Dental.")} className="p-3 bg-emerald-500 rounded-xl text-white mb-[2px]"><MessageCircle size={18}/></button>}</div></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, birthDate: e.target.value}})} /><InputField theme={themeMode} label="Ocupación" value={getPatient(selectedPatientId).personal.occupation} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, occupation: e.target.value}})} /></div><InputField theme={themeMode} label="Dirección" icon={MapPin} value={getPatient(selectedPatientId).personal.address} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, address: e.target.value}})} /><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, city: e.target.value}})} /><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, commune: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Previsión" value={getPatient(selectedPatientId).personal.convention} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, convention: e.target.value}})} /><InputField theme={themeMode} label="Apoderado (Si aplica)" value={getPatient(selectedPatientId).personal.guardian} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, guardian: e.target.value}})} /></div></Card>}
+        })}</div>{patientTab === 'personal' && <Card theme={themeMode} className="space-y-4"><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Completo" value={getPatient(selectedPatientId).personal.legalName} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, legalName: e.target.value}})} /><InputField theme={themeMode} label="RUT / DNI" value={getPatient(selectedPatientId).personal?.rut || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, rut: formatRUT(e.target.value)}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Email" icon={Mail} value={getPatient(selectedPatientId).personal.email} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, email: e.target.value}})} /><div className="flex items-end gap-2"><InputField theme={themeMode} label="Teléfono" icon={Phone} value={getPatient(selectedPatientId).personal.phone} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, phone: e.target.value}})} />{getPatient(selectedPatientId).personal.phone && <button onClick={()=>sendWhatsApp(getPatient(selectedPatientId).personal.phone, "Hola, me comunico de ShiningCloud Dental.")} className="p-3 bg-emerald-500 rounded-xl text-white mb-[2px]"><MessageCircle size={18}/></button>}</div></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, birthDate: e.target.value}})} /><InputField theme={themeMode} label="Ocupación" value={getPatient(selectedPatientId).personal.occupation} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, occupation: e.target.value}})} /></div><InputField theme={themeMode} label="Dirección" icon={MapPin} value={getPatient(selectedPatientId).personal.address} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, address: e.target.value}})} /><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, city: e.target.value}})} /><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, commune: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Previsión" value={getPatient(selectedPatientId).personal.convention} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, convention: e.target.value}})} /><InputField theme={themeMode} label="Apoderado (Si aplica)" value={getPatient(selectedPatientId).personal.guardian} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, guardian: e.target.value}})} /></div></Card>}
                 {patientTab === 'anamnesis' && <Card theme={themeMode} className="space-y-4">
                     <div className="flex flex-wrap gap-2 mb-4">
                         {ANAMNESIS_TAGS.map(tag => {
@@ -2911,28 +2930,13 @@ useEffect(() => {
           </div>
       )}
 
-      {/* MODAL ARANCEL */}
+     {/* MODAL ARANCEL EXTERNO */}
       {modal === 'catalogItem' && (
-          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <Card theme={themeMode} className="w-full max-w-sm space-y-4">
-                  <div className="flex justify-between items-center">
-                      <h3 className="font-bold text-xl">{newCatalogItem.id ? 'Editar Tratamiento' : 'Nuevo Tratamiento'}</h3>
-                      <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100 transition-opacity"><X/></button>
-                  </div>
-                  <InputField theme={themeMode} placeholder="Nombre (Ej: Endodoncia Birradicular)" value={newCatalogItem.name} onChange={e=>setNewCatalogItem({...newCatalogItem, name:e.target.value})}/>
-                  <InputField theme={themeMode} type="number" placeholder="$ Precio Fijo" value={newCatalogItem.price} onChange={e=>setNewCatalogItem({...newCatalogItem, price:e.target.value})}/>
-                  <Button theme={themeMode} className="w-full" onClick={async()=>{
-                      if(newCatalogItem.name && newCatalogItem.price){
-                          const id = newCatalogItem.id || Date.now().toString();
-                          const itemData = { ...newCatalogItem, price: Number(newCatalogItem.price), id, admin_email: clinicOwner };
-                          if (newCatalogItem.id) { setCatalog(catalog.map(c => c.id === id ? itemData : c)); } 
-                          else { setCatalog([...catalog, itemData]); }
-                          await saveToSupabase('catalog', id, itemData);
-                          setModal(null); setNewCatalogItem({name:'', price:'', id:null}); notify("Guardado en Arancel");
-                      }
-                  }}>GUARDAR EN ARANCEL</Button>
-              </Card>
-          </div>
+          <CatalogModal 
+              themeMode={themeMode} newCatalogItem={newCatalogItem} setNewCatalogItem={setNewCatalogItem} 
+              catalog={catalog} setCatalog={setCatalog} setModal={setModal} 
+              clinicOwner={clinicOwner} notify={notify} saveToSupabase={saveToSupabase} 
+          />
       )}
 
 {/* --- MODAL PERIODONTAL AVANZADO (CON GRÁFICO VISUAL EN TIEMPO REAL) --- */}
