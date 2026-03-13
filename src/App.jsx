@@ -14,52 +14,9 @@ import {
   BarChart2, PieChart, EyeOff, FileLock , FlaskConical 
 } from 'lucide-react';
 import { supabase } from './supabase';
-
-// --- COMPONENTE REUTILIZABLE DE TEXTO LEGAL ---
-const LegalText = ({ isDarkTheme = true }) => {
-    // Si isDarkTheme es true, usa los colores oscuros de la Landing, si no, usa el tema de la app (para TermsScreen)
-    const textColor = isDarkTheme ? "text-slate-300" : "";
-    const titleColor = isDarkTheme ? "text-amber-400" : "text-cyan-500";
-    const bgContainer = isDarkTheme ? "" : "text-sm leading-relaxed";
-
-    return (
-        <div className={`space-y-6 ${textColor} ${bgContainer}`}>
-            <section>
-                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>1. Aceptación de los Términos</h3>
-                <p>Al suscribirse y utilizar ShiningCloud Dental, el Usuario acepta cumplir con estos términos. El servicio se presta "tal cual" y según disponibilidad, enfocado en optimizar la gestión de clínicas dentales en Chile y Latinoamérica.</p>
-            </section>
-
-            <section>
-                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>2. Naturaleza del Servicio</h3>
-                <p>ShiningCloud es una herramienta de apoyo administrativo y clínico. <strong>El Proveedor no practica la odontología.</strong> El diagnóstico, plan de tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario. El software asistido por IA (como el periodontograma por voz) es una ayuda técnica y no reemplaza el juicio clínico del dentista.</p>
-            </section>
-
-            <section>
-                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>3. Propiedad y Privacidad de los Datos (Ley 19.628)</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                    <li><strong>Propiedad:</strong> Los datos de salud y fichas clínicas cargados pertenecen íntegramente al Usuario (la clínica o el dentista titular). El Proveedor actúa únicamente como custodio y procesador tecnológico.</li>
-                    <li><strong>Seguridad:</strong> Utilizamos protocolos de encriptación de grado bancario e infraestructura segura en la nube. Sin embargo, el Usuario es el único responsable de mantener la confidencialidad de sus claves de acceso y de cerrar su sesión en dispositivos públicos.</li>
-                    <li><strong>Privacidad:</strong> Nos comprometemos a no vender, ceder ni perfilar comercialmente los datos de sus pacientes bajo ninguna circunstancia.</li>
-                </ul>
-            </section>
-
-            <section>
-                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>4. Responsabilidades del Usuario</h3>
-                <p>El Usuario se obliga a cumplir con la normativa sanitaria vigente (incluyendo la Ley 20.584 sobre Derechos y Deberes de los Pacientes en Chile). Además, asume la responsabilidad de realizar exportaciones o respaldos periódicos de su información como medida de precaución.</p>
-            </section>
-
-            <section>
-                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>5. Suscripción y Pagos</h3>
-                <p>Los pagos se procesan de forma segura a través de <strong>Mercado Pago</strong> (o pasarelas certificadas similares). El servicio funciona bajo la modalidad de suscripción mensual automática. El no pago de la suscripción resultará en la limitación de la cuenta a un modo de "solo lectura" durante 30 días, tras los cuales la cuenta podría ser suspendida definitivamente.</p>
-            </section>
-
-            <section>
-                <h3 className={`text-lg font-bold mb-2 ${titleColor}`}>6. Limitación de Responsabilidad</h3>
-                <p>En la máxima medida permitida por la ley, el Proveedor no será responsable por lucro cesante, pérdida de datos derivada de un mal manejo de contraseñas, ni por interrupciones del servicio originadas por proveedores de internet o de infraestructura en la nube. La responsabilidad máxima del Proveedor ante cualquier evento se limitará al equivalente a los últimos 3 meses de suscripción pagados por el Usuario.</p>
-            </section>
-        </div>
-    );
-};
+import LegalText from './LegalText';
+import LandingPage from './LandingPage';
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line } from 'recharts';
 
 // --- CONFIGURACIÓN BASE ---
 const CONSENT_TEMPLATES = {
@@ -346,21 +303,21 @@ const PrivateImage = ({ img, onClick }) => {
     const [signedUrl, setSignedUrl] = useState(null);
 
     useEffect(() => {
+        let isMounted = true; // Escudo protector
         const fetchUrl = async () => {
-            // 1. Compatibilidad: Si es una imagen vieja (pública), usarla directo
             if (img.url && img.url.startsWith('http')) {
-                setSignedUrl(img.url);
+                if (isMounted) setSignedUrl(img.url);
                 return;
             }
             
-            // 2. Si es una imagen nueva (privada), pedir el pase VIP de 60 minutos (3600 seg)
-            const filePath = img.path || img.url; // Respaldo por si se guardó en el campo 'url'
+            const filePath = img.path || img.url; 
             const { data, error } = await supabase.storage.from('patient-images').createSignedUrl(filePath, 3600);
             
-            if (data) setSignedUrl(data.signedUrl);
+            if (isMounted && data) setSignedUrl(data.signedUrl);
             if (error) console.error("Error seguridad imagen:", error);
         };
         fetchUrl();
+        return () => { isMounted = false; }; // Se limpia al cerrar
     }, [img]);
 
     if (!signedUrl) return <div className="w-full h-full flex items-center justify-center bg-black/10"><Loader className="animate-spin opacity-50" size={20}/></div>;
@@ -379,7 +336,6 @@ const PrivateImage = ({ img, onClick }) => {
     return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick(signedUrl)} />;
 };
 // --- PESTAÑA DE TÉRMINOS Y CONDICIONES ---
-// --- PESTAÑA DE TÉRMINOS Y CONDICIONES (DENTRO DE LA APP) ---
 const TermsScreen = ({ theme }) => {
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-fade-in">
@@ -402,181 +358,7 @@ const TermsScreen = ({ theme }) => {
         </div>
     );
 };
-// --- LANDING PAGE DE VENTAS (SHININGCLOUD DENTAL) ---
-const LandingPage = ({ onLoginClick }) => {
-    const [acceptedTerms, setAcceptedTerms] = useState(false);
-    const [showTerms, setShowTerms] = useState(false);
-    const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
-    const [newPassword, setNewPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [msg, setMsg] = useState('');
-// Reemplaza el link viejo por este:
-const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
-useEffect(() => {
-        // Si la URL oculta dice que venimos a recuperar la clave...
-        if (window.location.hash.includes('type=recovery')) {
-            onLoginClick(); // Abrimos la pantalla de Login automáticamente
-        }
-    }, []);
-    return (
-        <div className="min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-cyan-500 selection:text-white overflow-x-hidden relative">
-            
-            {/* --- NAVEGACIÓN --- */}
-            <nav className="container mx-auto px-6 py-6 flex justify-between items-center relative z-10">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-xl shadow-lg shadow-amber-500/30 flex items-center justify-center">
-    <Cloud className="text-white" size={20} strokeWidth={2.5} />
-</div>
-                    <span className="font-black text-xl tracking-tighter">ShiningCloud</span>
-                </div>
-                <button onClick={onLoginClick} className="px-6 py-2 text-sm font-bold bg-white/10 hover:bg-white/20 rounded-full transition-all border border-white/5">
-                    Iniciar Sesión
-                </button>
-            </nav>
 
-            {/* --- HERO SECTION --- */}
-            <div className="relative pt-20 pb-32 text-center px-4">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none"></div>
-                
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 relative z-10 leading-tight">
-                    El software dental <br className="hidden md:block"/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                        que realmente quieres usar.
-                    </span>
-                </h1>
-                
-                <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 relative z-10">
-                    Olvídate de los sistemas lentos de los años 90. ShiningCloud es rápido, seguro y cuenta con <b>dictado por voz de IA</b> para que llenes fichas sin soltar el instrumental.
-                </p>
-                
-                <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-                    <button onClick={() => document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-black rounded-full transition-all shadow-[0_0_40px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_rgba(6,182,212,0.6)] hover:-translate-y-1 text-lg">
-                        Ver Planes y Precios
-                    </button>
-                    <button onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full transition-all border border-white/10">
-                        Ver Funciones
-                    </button>
-                </div>
-            </div>
-
-            {/* --- SECCIÓN DE CARACTERÍSTICAS --- */}
-            <div id="features" className="container mx-auto px-6 py-24 border-t border-white/5">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-black mb-4">Diseñado para la clínica moderna</h2>
-                    <p className="text-slate-400">Todo lo que necesitas, a un clic de distancia.</p>
-                </div>
-                <div className="grid md:grid-cols-3 gap-8">
-                    {[
-                        { icon: '🎙️', title: 'Periodontograma por Voz', desc: 'Dicta las profundidades y sangrados mientras examinas. La IA lo dibuja en tiempo real.' },
-                        { icon: '🦷', title: 'Odontograma Interactivo', desc: 'Diseño anatómico ultra rápido. Registra caries, restauraciones y ausencias en segundos.' },
-                        { icon: '💸', title: 'Presupuestos a 1 Clic', desc: 'Genera cotizaciones hermosas, envíalas por WhatsApp y controla los pagos.' },
-                        { icon: '🔒', title: 'Seguridad Multitenant', desc: 'Tus datos están blindados con encriptación de grado bancario.' },
-                        { icon: '📸', title: 'Galería Privada', desc: 'Almacenamiento seguro en la nube para radiografías y fotos clínicas.' },
-                        { icon: '📱', title: '100% Móvil y Rápido', desc: 'Úsalo desde tu iPad en el sillón o celular en la casa. Carga al instante.' },
-                    ].map((feat, i) => (
-                        <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-cyan-500/30 transition-colors">
-                            <div className="text-4xl mb-4">{feat.icon}</div>
-                            <h3 className="text-xl font-bold mb-2">{feat.title}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed">{feat.desc}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* --- SECCIÓN DE PRECIOS Y CHECKOUT --- */}
-            <div id="pricing" className="container mx-auto px-6 py-24 border-t border-white/5 text-center">
-                <h2 className="text-3xl md:text-4xl font-black mb-12">Un precio simple. Todo incluido.</h2>
-                
-                <div className="max-w-md mx-auto p-1 rounded-3xl bg-gradient-to-b from-cyan-500/50 to-transparent">
-                    <div className="bg-[#0B0F19] p-8 rounded-[22px]">
-                        <h3 className="text-2xl font-bold mb-2">Plan Pro</h3>
-                        <p className="text-slate-400 text-sm mb-6">Para clínicas que quieren crecer sin límites.</p>
-                        
-                        <div className="mb-6">
-                            <span className="text-5xl font-black tracking-tighter">$10.000</span>
-                            <span className="text-slate-400 font-bold"> CLP / mes</span>
-                        </div>
-
-                        <ul className="text-left space-y-4 mb-8">
-                            {['Pacientes ilimitados', 'Dictado por voz con IA', 'Agenda y recordatorios', 'Gestión de presupuestos', 'Soporte prioritario'].map((item, i) => (
-                                <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-300">
-                                    <span className="text-cyan-400">✓</span> {item}
-                                </li>
-                            ))}
-                        </ul>
-
-                       {/* EL CHECKBOX DE TÉRMINOS Y BOTÓN DE PAGO */}
-<div className="flex flex-col items-center gap-4 mt-8 pt-6 border-t border-white/10">
-    <label className="flex items-start gap-3 cursor-pointer group text-left">
-        <input 
-            type="checkbox" 
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            className="mt-1 w-5 h-5 accent-amber-500 rounded cursor-pointer"
-        />
-        <span className="text-xs text-slate-400 leading-relaxed">
-            He leído y acepto los <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-amber-400 hover:text-amber-300 underline font-bold">Términos de Servicio y Política de Privacidad</button>.
-        </span>
-    </label>
-
-    <button 
-        disabled={!acceptedTerms}
-        onClick={() => window.location.href = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d"}
-        className={`w-full py-4 font-black rounded-xl transition-all text-lg ${
-            acceptedTerms 
-            ? "bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]" 
-            : "bg-white/5 text-white/30 cursor-not-allowed border border-white/10"
-        }`}
-    >
-        Suscribirse y Crear Cuenta
-    </button>
-    {!acceptedTerms && <p className="text-[10px] text-red-400/80">Debes aceptar los términos para continuar.</p>}
-</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* --- MODAL DE TÉRMINOS Y CONDICIONES --- */}
-           {/* ESTE ES EL POPUP QUE SE ABRE CUANDO LE DAN A "He leído y acepto..." */}
-{showTerms && (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-        <div className="bg-[#0B0F19] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col relative shadow-2xl">
-            
-            {/* Cabecera del Popup */}
-            <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-white">Términos de Servicio</h2>
-                <button onClick={() => setShowTerms(false)} className="text-white/50 hover:text-white transition-colors">
-                    ✕
-                </button>
-            </div>
-            
-            {/* Contenido scrolleable (AQUÍ LLAMAMOS AL TEXTO) */}
-            <div className="p-6 overflow-y-auto">
-                <LegalText isDarkTheme={true} />
-            </div>
-            
-            {/* Botón de cierre abajo */}
-            <div className="p-6 border-t border-white/10">
-                <button 
-                    onClick={() => {
-                        setAcceptedTerms(true); // Opcional: Si lo leen, puedes marcárselo como aceptado
-                        setShowTerms(false);
-                    }} 
-                    className="w-full py-3 bg-amber-500 text-black font-bold rounded-xl hover:bg-amber-400 transition-colors"
-                >
-                    Entendido y acepto
-                </button>
-            </div>
-        </div>
-    </div>
-)}
-
-            <footer className="border-t border-white/5 py-10 text-center text-slate-500 text-sm">
-                <p>© {new Date().getFullYear()} ShiningCloud Dental. Todos los derechos reservados.</p>
-            </footer>
-        </div>
-    );
-};
 
 // 1. LA FÁBRICA DE PACIENTES (Va separada arriba)
 const getPatient = (id) => {
@@ -674,8 +456,6 @@ const AuthScreen = () => {
   const [password, setPassword] = useState(''); 
   const [loading, setLoading] = useState(false); 
   const [msg, setMsg] = useState('');
-  const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
   useEffect(() => {
     // 🚀 EL TRUCO INFALIBLE: Leemos la URL directamente apenas carga la app
     if (window.location.hash.includes('type=recovery')) {
@@ -716,12 +496,11 @@ const AuthScreen = () => {
         
         setMsg('¡Clínica creada! Iniciando sesión...'); 
         
-        // Iniciamos sesión automáticamente y limpiamos el link
-        setTimeout(async () => {
-            await supabase.auth.signInWithPassword({ email, password });
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }, 1500);
-
+        // Iniciamos sesión automáticamente DESPUÉS de que se creó
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        
+        window.history.replaceState({}, document.title, window.location.pathname);
       } else { 
         // Login normal
         const { error } = await supabase.auth.signInWithPassword({ email, password }); 
@@ -749,52 +528,7 @@ const AuthScreen = () => {
     else setMsg("¡Te enviamos un enlace al correo!");
     setLoading(false);
   };
-  // 👉 2. FUNCIÓN PARA GUARDAR LA NUEVA CONTRASEÑA
-  const handleUpdatePassword = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMsg('Actualizando tu contraseña...');
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) {
-      setMsg("Error: " + error.message);
-    } else {
-      alert("¡Contraseña actualizada con éxito!");
-      setIsRecoveringPassword(false); // Lo dejamos entrar
-      setNewPassword(''); 
-    }
-    setLoading(false);
-  };
-
-  // LA PANTALLA NEGRA QUE BLOQUEA EL ACCESO:
-  if (isRecoveringPassword) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0B0F19] p-4">
-        <div className="bg-gray-800/50 border border-gray-700 p-8 rounded-2xl max-w-md w-full text-white shadow-xl">
-          <h2 className="text-2xl font-bold mb-2 text-center">Crea tu nueva contraseña</h2>
-          <p className="text-gray-400 text-sm text-center mb-6">Ingresa una nueva clave de acceso.</p>
-          
-          {msg && <p className="text-amber-400 text-sm text-center mb-4 font-medium">{msg}</p>}
-          
-          <input 
-            type="password" 
-            placeholder="Nueva contraseña" 
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-xl mb-6 text-white"
-          />
-          
-          <button 
-            onClick={handleUpdatePassword}
-            disabled={loading}
-            className="w-full p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-bold"
-          >
-            {loading ? 'Guardando...' : 'Guardar y Entrar'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+ 
   return (
     <div className="fixed inset-0 bg-[#050505] flex items-center justify-center p-6 z-[100]">
       <div className="w-full max-w-sm flex flex-col items-center">    
@@ -855,6 +589,11 @@ const AuthScreen = () => {
 
 const TEETH_UPPER = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
 const TEETH_LOWER = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+
+const getLocalDate = () => {
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    return new Date(Date.now() - tzoffset).toISOString().split('T')[0];
+};
 
 // --- APP ---
 export default function App() {
@@ -1133,16 +872,16 @@ export default function App() {
   // --- INVENTARIO & PAGOS ---
   const [inventorySearch, setInventorySearch] = useState('');
   const [newItem, setNewItem] = useState({ name: '', stock: 0, min: 5, unit: 'u', id: null });
-  const [paymentInput, setPaymentInput] = useState({ amount: '', method: 'Efectivo', date: new Date().toISOString().split('T')[0], receiptNumber: '' });
+  const [paymentInput, setPaymentInput] = useState({ amount: '', method: 'Efectivo', date: getLocalDate(), receiptNumber: '' });
   const [selectedFinancialRecord, setSelectedFinancialRecord] = useState(null);
  // --- NUEVOS ESTADOS CENTRO FINANCIERO ---
   const [financeTab, setFinanceTab] = useState('resumen'); 
-  const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: new Date().toISOString().split('T')[0], patientRef: '' });
+  const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
   const [newMember, setNewMember] = useState({ name: '', email: '', role: 'dentist' });
 
   // --- ESTADOS DE LABORATORIO ---
   const [labWorks, setLabWorks] = useState([]);
-  const [newLabWork, setNewLabWork] = useState({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: new Date().toISOString().split('T')[0], expectedDate: '', status: 'sent', id: null });
+  const [newLabWork, setNewLabWork] = useState({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: getLocalDate(), expectedDate: '', status: 'sent', id: null });
  
   // --- VOZ A TEXTO ---
   const [isListening, setIsListening] = useState(false);
@@ -1268,8 +1007,8 @@ useEffect(() => {
       notify("Subiendo logo...");
       
       try {
-          // Usamos tu email como nombre para que siempre se sobreescriba y no acumules basura
-          const fileName = `logo_${clinicOwner || session.user.email}.${file.name.split('.').pop()}`;
+            // Eliminamos la extensión dinámica para forzar la sobreescritura del archivo anterior
+            const fileName = `logo_${clinicOwner || session.user.email}_file`;
           
           // Subimos al bucket dedicado de logos
           const { error: uploadError } = await supabase.storage.from('clinic-logos').upload(fileName, file, { upsert: true });
@@ -1306,7 +1045,7 @@ useEffect(() => {
       const pending = (rec.total || 0) - paid;
       return acc + (pending > 0 ? pending : 0);
   }, 0);
-  const todaysAppointments = appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).sort((a,b) => a.time.localeCompare(b.time));
+  const todaysAppointments = appointments.filter(a => a.date === getLocalDate()).sort((a,b) => a.time.localeCompare(b.time));
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
 
  // --- SUBIDA SEGURA DE IMÁGENES CLÍNICAS (BUCKET PRIVADO) ---
@@ -1560,9 +1299,12 @@ useEffect(() => {
   // --- WHATSAPP HELPER ---
   const sendWhatsApp = (phone, text) => {
       if (!phone) return alert("El paciente no tiene teléfono registrado.");
-      const cleanPhone = phone.replace(/\D/g, ''); 
-      const finalPhone = cleanPhone.startsWith('56') ? cleanPhone : `56${cleanPhone}`; 
-      window.open(`https://wa.me/${finalPhone}?text=${encodeURIComponent(text)}`, '_blank');
+      let cleanPhone = phone.replace(/\D/g, ''); 
+      // Solo forzamos el 56 si el número tiene exactamente 8 o 9 dígitos (formato local chileno). Si tiene más, asumimos que ya trae código de país.
+      if (cleanPhone.length === 8 || cleanPhone.length === 9) {
+          cleanPhone = `56${cleanPhone}`;
+      }
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const getPatientPhone = (name) => {
@@ -1576,7 +1318,7 @@ useEffect(() => {
       if (incomeRecords.length === 0) return [{label: 'Ayer', value: 0}, {label: 'Hoy', value: 0}];
       
       // Tomamos los últimos 6 ingresos registrados para mostrar la tendencia reciente
-      const recentIncomes = [...incomeRecords].sort((a,b) => b.id - a.id).slice(0, 6).reverse();
+      const recentIncomes = [...incomeRecords].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 6).reverse();
       
       return recentIncomes.map(rec => {
           const paid = (rec.payments || []).reduce((s,p)=>s+p.amount,0) + (rec.paid && !rec.payments ? rec.paid : 0);
@@ -1774,7 +1516,7 @@ useEffect(() => {
                             const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
                             const pending = (h.total || 0) - paid; 
                             return (
-                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: new Date().toISOString().split('T')[0]}); setModal('abono');}} className={`flex justify-between items-center cursor-pointer border-l-4 ${pending<=0?'border-emerald-500':'border-yellow-500'} hover:scale-[1.01] transition-transform`}>
+                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate()}); setModal('abono');}} className={`flex justify-between items-center cursor-pointer border-l-4 ${pending<=0?'border-emerald-500':'border-yellow-500'} hover:scale-[1.01] transition-transform`}>
                                 <div><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Presupuesto: ${h.total?.toLocaleString()}</p></div>
                                 <div className="flex flex-col items-end gap-1">
                                     <p className={`font-black ${pending<=0?'text-emerald-500':'text-yellow-500'}`}>{pending <= 0 ? 'PAGADO' : `FALTA: $${pending.toLocaleString()}`}</p>
@@ -1799,7 +1541,7 @@ useEffect(() => {
                             const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
                             const pending = (h.total || 0) - paid; 
                             return (
-                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: new Date().toISOString().split('T')[0]}); setModal('abono');}} className="flex flex-col md:flex-row justify-between items-center cursor-pointer border-l-4 border-red-500 hover:scale-[1.01] transition-transform gap-4">
+                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate()}); setModal('abono');}} className="flex flex-col md:flex-row justify-between items-center cursor-pointer border-l-4 border-red-500 hover:scale-[1.01] transition-transform gap-4">
                                 <div className="w-full md:w-auto"><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Total tto: ${h.total?.toLocaleString()}</p></div>
                                 <div className="flex items-center gap-4 w-full md:w-auto justify-between">
                                     <p className="font-black text-red-500 text-xl">-$ {pending.toLocaleString()}</p>
@@ -1922,7 +1664,7 @@ useEffect(() => {
                         <p className="text-xs opacity-50 mt-1">Gestiona los envíos y recepciones de coronas, prótesis y placas.</p>
                     </div>
                     <Button theme={themeMode} onClick={() => {
-                        setNewLabWork({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: new Date().toISOString().split('T')[0], expectedDate: '', status: 'sent', id: null });
+                        setNewLabWork({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: getLocalDate(), expectedDate: '', status: 'sent', id: null });
                         setModal('labWork');
                     }}>+ Nuevo Trabajo</Button>
                 </div>
@@ -2177,7 +1919,7 @@ useEffect(() => {
                                     
                                     await saveToSupabase('financials', id, {
                                         id, total: total, paid: 0, payments: [], patientName: sessionData.patientName, 
-                                        date: new Date().toISOString().split('T')[0], type: 'income', description: detalle
+                                        date: getLocalDate(), type: 'income', description: detalle
                                     }); 
                                     
                                     notify("Aprobado y enviado a Caja"); 
@@ -3106,7 +2848,7 @@ useEffect(() => {
                           const nr = {...selectedFinancialRecord, paid: newTotalPaid, payments: updatedPayments}; 
                           setFinancialRecords(prev => prev.map(h => h.id === nr.id ? nr : h));
                           await saveToSupabase('financials', nr.id, nr); 
-                          setModal(null); setPaymentInput({amount:'', method:'Efectivo', date: new Date().toISOString().split('T')[0], receiptNumber: ''}); notify("Abono Registrado");
+                          setModal(null); setPaymentInput({amount:'', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); notify("Abono Registrado");
                       }}>CONFIRMAR PAGO</Button>
                   </div>
                   <div className="max-h-32 overflow-y-auto space-y-2">
@@ -3415,9 +3157,20 @@ useEffect(() => {
 
         <div className="flex gap-2 pt-2">
             {newAppt.id && (
-                <button onClick={(e)=>{e.stopPropagation(); supabase.from('appointments').delete().eq('id', newAppt.id).then(()=>{setAppointments(appointments.filter(a=>a.id!==newAppt.id)); setModal(null); notify("Cita Eliminada");})}} className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl">
-                    <Trash2 size={20}/>
-                </button>
+                <button onClick={async (e) => {
+    e.stopPropagation(); 
+    try {
+        const { error } = await supabase.from('appointments').delete().eq('id', newAppt.id);
+        if (error) throw error;
+        setAppointments(appointments.filter(a => a.id !== newAppt.id)); 
+        setModal(null); 
+        notify("Cita Eliminada");
+    } catch (err) {
+        alert("Error al eliminar la cita. Revisa tu conexión.");
+    }
+}} className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl">
+    <Trash2 size={20}/>
+</button>
             )}
             <Button  className="flex-1" onClick={async ()=>{ 
                 if(newAppt.name){ 
