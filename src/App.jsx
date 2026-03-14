@@ -461,7 +461,7 @@ const AuthScreen = () => {
   useEffect(() => {
     // 🚀 EL TRUCO INFALIBLE: Leemos la URL directamente apenas carga la app
     if (window.location.hash.includes('type=recovery')) {
-      setIsRecoveringPassword(true);
+     setModal('recovery');
     }
 
     // El vigía normal de Supabase (por si acaso)
@@ -469,7 +469,7 @@ const AuthScreen = () => {
       setSession(session);
       
       if (event === 'PASSWORD_RECOVERY') {
-        setIsRecoveringPassword(true);
+       setModal('recovery');
       }
     });
 
@@ -648,6 +648,7 @@ export default function App() {
   const [newPackItem, setNewPackItem] = useState({ name: '', cost: '' });
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [modal, setModal] = useState(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
 
   // PERIO & CONSENT & IMAGES & ODONTOGRAMA PRO
   // --- NUEVO ESTADO PARA EL MODO ODONTOGRAMA ---
@@ -906,7 +907,20 @@ export default function App() {
   const logoInputRef = useRef(null);
 
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
-  useEffect(() => { supabase.auth.getSession().then(({ data: { session } }) => setSession(session)); supabase.auth.onAuthStateChange((_e, s) => setSession(s)); }, []);
+useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            // AQUÍ ATRAPAMOS EL LINK DE RECUPERACIÓN
+            if (event === 'PASSWORD_RECOVERY') {
+                setModal('recovery');
+            }
+            setSession(session);
+        });
+        return () => subscription.unsubscribe();
+    }, []);
   
 useEffect(() => {
     if (!session) return;
@@ -2927,6 +2941,44 @@ useEffect(() => {
                       )}
                   </div>
               </Card>
+          </div>
+      )}
+
+    {/* MODAL DE RECUPERACIÓN DE CONTRASEÑA (FORZADO) */}
+      {modal === 'recovery' && (
+          <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4">
+              <div className="bg-[#121212] border border-red-500/30 p-8 rounded-3xl w-full max-w-md text-white shadow-[0_0_50px_rgba(239,68,68,0.1)]">
+                  <h2 className="text-2xl font-black mb-2 text-amber-400">Actualiza tu Contraseña</h2>
+                  <p className="text-slate-400 text-sm mb-6">Por seguridad, debes establecer una nueva contraseña para tu cuenta ahora mismo antes de continuar.</p>
+                  
+                  <input 
+                      type="password" 
+                      placeholder="Nueva contraseña (mín. 6 caracteres)" 
+                      className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-amber-400 outline-none mb-6 font-bold"
+                      value={newPasswordInput}
+                      onChange={(e) => setNewPasswordInput(e.target.value)}
+                  />
+                  
+                  <button 
+                      onClick={async () => {
+                          if (newPasswordInput.length < 6) return notify("La contraseña debe tener al menos 6 caracteres.");
+                          
+                          // Enviamos la nueva contraseña a Supabase
+                          const { error } = await supabase.auth.updateUser({ password: newPasswordInput });
+                          
+                          if (error) {
+                              notify("Error al actualizar: " + error.message);
+                          } else {
+                              notify("¡Contraseña actualizada con éxito! Ya puedes usar el sistema.");
+                              setModal(null);
+                              setNewPasswordInput('');
+                          }
+                      }}
+                      className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black rounded-xl transition-all shadow-lg active:scale-95"
+                  >
+                      GUARDAR NUEVA CONTRASEÑA
+                  </button>
+              </div>
           </div>
       )}
 
