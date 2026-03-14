@@ -575,6 +575,77 @@ const AuthScreen = () => {
 const TEETH_UPPER = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
 const TEETH_LOWER = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
 
+const DEFAULT_CATALOG = [
+    // DIAGNÓSTICO Y PREVENCIÓN
+    { name: 'Consulta de Diagnóstico', price: 25000 },
+    { name: 'Consulta de Especialidad', price: 40000 },
+    { name: 'Radiografía Retroalveolar', price: 10000 },
+    { name: 'Aplicación de Flúor Barniz', price: 25000 },
+    { name: 'Sellante (por diente)', price: 20000 },
+    { name: 'Instrucción de Higiene Oral', price: 15000 },
+
+    // OPERATORIA (TAPADURAS)
+    { name: 'Restauración Resina Simple (1 Cara)', price: 35000 },
+    { name: 'Restauración Resina Compuesta (2 Caras)', price: 45000 },
+    { name: 'Restauración Resina Compleja (3 o más caras)', price: 55000 },
+    { name: 'Reconstrucción Coronaria (Resina)', price: 70000 },
+    { name: 'Incrustación Cerámica / Resina Indirecta', price: 150000 },
+
+    // PERIODONCIA (ENCÍAS)
+    { name: 'Limpieza (Destartraje y Profilaxis)', price: 45000 },
+    { name: 'Pulido Radicular (por sextante)', price: 40000 },
+    { name: 'Cirugía Periodontal (por sextante)', price: 120000 },
+    { name: 'Gingivectomía (por diente)', price: 35000 },
+    { name: 'Férula de Contención Periodontal', price: 60000 },
+
+    // ENDODONCIA (TRATAMIENTOS DE CONDUCTO)
+    { name: 'Endodoncia Unirradicular', price: 120000 },
+    { name: 'Endodoncia Birradicular', price: 150000 },
+    { name: 'Endodoncia Multirradicular (Molares)', price: 190000 },
+    { name: 'Retratamiento Endodóntico (Recargo)', price: 50000 },
+    { name: 'Urgencia Endodóntica (Trepanación)', price: 45000 },
+
+    // CIRUGÍA E IMPLANTES
+    { name: 'Extracción Simple', price: 40000 },
+    { name: 'Extracción Compleja / A colgajo', price: 70000 },
+    { name: 'Extracción Tercer Molar (Erupcionado)', price: 80000 },
+    { name: 'Extracción Tercer Molar (Incluido/Semi-incluido)', price: 130000 },
+    { name: 'Instalación Implante (Fase Quirúrgica)', price: 550000 },
+    { name: 'Elevación de Seno Maxilar', price: 350000 },
+    { name: 'Injerto Óseo (por sitio)', price: 200000 },
+
+    // PRÓTESIS FIJA Y REMOVIBLE
+    { name: 'Corona Provisoria de Acrílico', price: 50000 },
+    { name: 'Perno Muñón Metálico / Fibra de Vidrio', price: 80000 },
+    { name: 'Corona Metal Porcelana', price: 250000 },
+    { name: 'Corona Zirconio', price: 350000 },
+    { name: 'Prótesis Removible Acrílica (1 a 4 dientes)', price: 150000 },
+    { name: 'Prótesis Removible Metálica (Un maxilar)', price: 350000 },
+    { name: 'Prótesis Total Acrílica (Un maxilar)', price: 280000 },
+    { name: 'Reparación de Prótesis (Fractura/Diente)', price: 45000 },
+    { name: 'Rebasado de Prótesis', price: 60000 },
+
+    // ORTODONCIA
+    { name: 'Estudio de Ortodoncia (Modelos, Fotos, Cefalometría)', price: 60000 },
+    { name: 'Instalación Brackets Metálicos (Arcada)', price: 250000 },
+    { name: 'Instalación Brackets Estéticos (Arcada)', price: 400000 },
+    { name: 'Control Mensual Ortodoncia', price: 35000 },
+    { name: 'Contención Fija o Removible (Arcada)', price: 80000 },
+
+    // ESTÉTICA Y TTM (BRUXISMO)
+    { name: 'Blanqueamiento Led (Clínica)', price: 150000 },
+    { name: 'Blanqueamiento Cubetas (Casa)', price: 120000 },
+    { name: 'Carilla de Porcelana (por diente)', price: 280000 },
+    { name: 'Plano de Relajación (Placa de Bruxismo)', price: 120000 },
+    { name: 'Aplicación Toxina Botulínica (Bruxismo/Estética)', price: 180000 },
+
+    // ODONTOPEDIATRÍA
+    { name: 'Pulpotomía / Pulpectomía (Diente temporal)', price: 60000 },
+    { name: 'Corona de Acero (Diente temporal)', price: 75000 },
+    { name: 'Extracción Diente Temporal', price: 25000 },
+    { name: 'Mantenedor de Espacio', price: 70000 }
+];
+
 const getLocalDate = () => {
     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
     return new Date(Date.now() - tzoffset).toISOString().split('T')[0];
@@ -1651,11 +1722,26 @@ useEffect(() => {
                     <Button theme={themeMode} onClick={() => { setNewCatalogItem({name:'', price:'', id:null}); setModal('catalogItem'); }}><Plus/> Nuevo Tratamiento</Button>
                 </div>
                 <div className="grid gap-2 overflow-y-auto custom-scrollbar pb-10">
-                    {catalog.length === 0 ? (
-                        <div className="p-10 border border-dashed border-white/10 rounded-3xl text-center opacity-50">
-                            <Library size={40} className="mx-auto mb-4 opacity-30"/>
-                            <p>Tu arancel está vacío.</p>
-                            <p className="text-[10px] mt-2">Agrega tus prestaciones para usarlas en el cotizador.</p>
+                   {catalog.length === 0 ? (
+                        <div className="p-10 border border-dashed border-cyan-500/30 rounded-3xl text-center flex flex-col items-center bg-cyan-500/5">
+                            <Library size={48} className="mb-4 text-cyan-500 opacity-50"/>
+                            <h3 className="font-black text-lg mb-2">Tu arancel está vacío</h3>
+                            <p className="text-xs opacity-70 mb-6 max-w-sm">No pierdas tiempo escribiendo desde cero. Carga un arancel base referencial y luego ajusta los precios a la realidad de tu clínica.</p>
+                            
+                            <Button theme={themeMode} onClick={async () => {
+                                notify("Cargando arancel referencial...");
+                                const newItems = [];
+                                for (const item of DEFAULT_CATALOG) {
+                                    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                                    const fullItem = { ...item, id, admin_email: clinicOwner || session?.user?.email };
+                                    newItems.push(fullItem);
+                                    await saveToSupabase('catalog', id, fullItem);
+                                }
+                                setCatalog(newItems);
+                                notify("¡Arancel base cargado con éxito!");
+                            }}>
+                                <Plus size={18} /> CARGAR ARANCEL REFERENCIAL (51 ÍTEMS)
+                            </Button>
                         </div>
                     ) : (
                         catalog.sort((a,b)=>a.name.localeCompare(b.name)).map(item => (
