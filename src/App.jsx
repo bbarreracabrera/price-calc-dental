@@ -458,24 +458,7 @@ const AuthScreen = () => {
   const [password, setPassword] = useState(''); 
   const [loading, setLoading] = useState(false); 
   const [msg, setMsg] = useState('');
-  useEffect(() => {
-    // 🚀 EL TRUCO INFALIBLE: Leemos la URL directamente apenas carga la app
-    if (window.location.hash.includes('type=recovery')) {
-     setModal('recovery');
-    }
-
-    // El vigía normal de Supabase (por si acaso)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      
-      if (event === 'PASSWORD_RECOVERY') {
-       setModal('recovery');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
+ 
   // TU LINK AUTOMÁTICO DE MERCADO PAGO
   const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
 
@@ -907,20 +890,27 @@ export default function App() {
   const logoInputRef = useRef(null);
 
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
-useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-        });
+  useEffect(() => {
+      // 1. Truco infalible: Leemos la URL nativa por si Supabase se demora
+      if (window.location.hash.includes('type=recovery')) {
+          setModal('recovery');
+      }
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            // AQUÍ ATRAPAMOS EL LINK DE RECUPERACIÓN
-            if (event === 'PASSWORD_RECOVERY') {
-                setModal('recovery');
-            }
-            setSession(session);
-        });
-        return () => subscription.unsubscribe();
-    }, []);
+      // 2. Cargamos la sesión inicial
+      supabase.auth.getSession().then(({ data: { session } }) => {
+          setSession(session);
+      });
+
+      // 3. El vigía oficial de Supabase
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'PASSWORD_RECOVERY') {
+              setModal('recovery');
+          }
+          setSession(session);
+      });
+      
+      return () => subscription.unsubscribe();
+  }, []);
   
 useEffect(() => {
     if (!session) return;
@@ -1613,16 +1603,15 @@ useEffect(() => {
                                 
                                 <InputField theme={themeMode} type="number" placeholder="$ Monto Exacto" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> 
                                 <Button theme={themeMode} onClick={async()=>{ 
-    if(newMember.email && newMember.name){ 
-        const id=Date.now().toString(); 
-        // Le pegamos la etiqueta de a qué clínica pertenece (el correo del admin)
-        const u={...newMember, id, admin_email: session.user.email}; 
-        setTeam([...team, u]); 
-        await saveToSupabase('team', id, u); 
-        setNewMember({name:'', email:'', role:'dentist'}); 
-        notify("Usuario Agregado"); 
-    } 
-}}><Plus/></Button>
+                                    if(newExpense.description && newExpense.amount){ 
+                                        const id = Date.now().toString(); 
+                                        const ex = {...newExpense, id, type: 'expense', amount: Number(newExpense.amount)};
+                                        setFinancialRecords([...financialRecords, ex]); 
+                                        await saveToSupabase('financials', id, ex); 
+                                        setNewExpense({description:'', amount:'', category:'Insumos', date: getLocalDate(), patientRef:''}); 
+                                        notify("Gasto registrado con éxito"); 
+                                    } 
+                                }}><Plus/></Button>
                             </div>
                         </Card>
                         
@@ -2961,7 +2950,7 @@ useEffect(() => {
                   
                   <button 
                       onClick={async () => {
-                          if (newPasswordInput.length < 6) return notify("La contraseña debe tener al menos 6 caracteres.");
+                          if (newPasswordInput.length < 6) return alert("La contraseña debe tener al menos 6 caracteres.");
                           
                           // Enviamos la nueva contraseña a Supabase
                           const { error } = await supabase.auth.updateUser({ password: newPasswordInput });
@@ -2972,6 +2961,7 @@ useEffect(() => {
                               notify("¡Contraseña actualizada con éxito! Ya puedes usar el sistema.");
                               setModal(null);
                               setNewPasswordInput('');
+                              window.location.hash = ''; // Limpiamos la URL
                           }
                       }}
                       className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black rounded-xl transition-all shadow-lg active:scale-95"
