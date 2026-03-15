@@ -2081,40 +2081,63 @@ useEffect(() => {
                 <React.Fragment key={h}>
                     <div className="p-2 border-r border-b border-white/5 text-xs font-bold opacity-50 text-center h-24">{h}:00</div>
                     {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => { 
-                        const dateStr = d.toISOString().split('T')[0]; 
-                        const appt = appointments.find(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
-                        
-                        // Diccionario de colores según estado
-                        const statusColors = {
-                            agendado: 'border-stone-500 bg-stone-500/20 text-stone-300',
-                            confirmado: 'border-emerald-500 bg-emerald-500/20 text-emerald-300',
-                            espera: 'border-yellow-500 bg-yellow-500/20 text-yellow-300',
-                            atendiendo: 'border-blue-500 bg-blue-500/20 text-blue-300',
-                            no_asistio: 'border-red-500 bg-red-500/20 text-red-300'
-                        };
+const dateStr = d.toISOString().split('T')[0]; 
 
-                        return (
-                            <div key={d+h} className={`border-b border-white/5 border-r relative group h-24 transition-all hover:bg-white/5 ${!appt ? 'cursor-pointer' : ''}`} onClick={()=>{if(!appt) { setNewAppt({name: '', treatment: '', date: dateStr, time: `${h.toString().padStart(2, '0')}:00`, duration: 60, status: 'agendado', id: null}); setModal('appt'); }}}>
-                                {appt && (
-                                    <div 
-                                        onClick={(e)=>{e.stopPropagation(); setNewAppt(appt); setModal('appt');}}
-                                        className={`absolute top-0 left-0 w-full rounded-xl border-l-4 shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-all p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
-                                        style={{ height: `${(appt.duration || 60) / 60 * 100}%`, minHeight: '60px' }}
-                                    >
-                                        <div>
-                                            <p className="text-xs font-black truncate leading-tight">{appt.name}</p>
-                                            <p className="text-[9px] opacity-80 truncate">{appt.time} • {appt.treatment}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {!appt && <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"><Plus size={14} className="opacity-50"/></div>}
-                            </div>
-                        ) 
-                    })}
-                </React.Fragment>
-            ))}
-        </div>
+// Cambiamos a .filter para encontrar todas las citas de esa hora
+const hourAppts = appointments.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
+
+// Diccionario de colores según estado
+const statusColors = {
+    agendado: 'border-stone-500 bg-stone-500/20 text-stone-300',
+    confirmado: 'border-emerald-500 bg-emerald-500/20 text-emerald-300',
+    espera: 'border-yellow-500 bg-yellow-500/20 text-yellow-300',
+    atendiendo: 'border-blue-500 bg-blue-500/20 text-blue-300',
+    no_asistio: 'border-red-500 bg-red-500/20 text-red-300'
+};
+
+return (
+    <div 
+        key={d+h} 
+        className="border-b border-white/5 border-r relative group h-24 transition-all hover:bg-white/5 cursor-pointer" 
+        onClick={()=>{ setNewAppt({name: '', treatment: '', date: dateStr, time: `${h.toString().padStart(2, '0')}:00`, duration: 60, status: 'agendado', id: null}); setModal('appt'); }}
+    >
+        {/* Mapeamos TODAS las citas que caigan en esta hora */}
+        {hourAppts.map((appt, index) => {
+            const minutes = parseInt(appt.time.split(':')[1]) || 0;
+            const topOffset = (minutes / 60) * 100;
+
+            return (
+                <div 
+                    key={appt.id || index}
+                    onClick={(e)=>{e.stopPropagation(); setNewAppt(appt); setModal('appt');}}
+                    className={`absolute left-0 w-full rounded-xl border-l-4 shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-all p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
+                    style={{ 
+                        top: `${topOffset}%`, 
+                        height: `${(appt.duration || 60) / 60 * 100}%`, 
+                        minHeight: '60px' 
+                    }}
+                >
+                    <div>
+                        <p className="text-xs font-black truncate leading-tight">{appt.name}</p>
+                        <p className="text-[9px] opacity-80 truncate">{appt.time} • {appt.treatment}</p>
+                    </div>
+                </div>
+            );
+        })}
+        
+        {/* Icono de "+" cuando la celda está vacía */}
+        {hourAppts.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <Plus size={14} className="opacity-50"/>
+            </div>
+        )}
     </div>
+) 
+})}
+</React.Fragment>
+))}
+</div>
+</div>
 </div>}
         {activeTab === 'ficha' && !selectedPatientId && (
             <div className="space-y-4 animate-in slide-in-from-bottom">
