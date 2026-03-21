@@ -1447,7 +1447,7 @@ useEffect(() => {
                 <React.Fragment key={h}>
                     <div className="p-2 border-r border-b border-white/5 text-xs font-bold opacity-50 text-center h-24">{h}:00</div>
                     {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => { 
-const dateStr = d.toISOString().split('T')[0]; 
+const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; 
 
 // Cambiamos a .filter para encontrar todas las citas de esa hora
 const hourAppts = appointments.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
