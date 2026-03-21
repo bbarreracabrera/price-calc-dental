@@ -20,16 +20,8 @@ import { supabase } from './supabase';
 import LandingPage from './LandingPage';
 import CatalogModal from './CatalogModal';
 import { Toaster, toast } from 'react-hot-toast';
-import { 
-  CONSENT_TEMPLATES, 
-  ANAMNESIS_TAGS, 
-  THEMES, 
-  TEETH_UPPER, 
-  TEETH_LOWER, 
-  DEFAULT_CATALOG, 
-  getLocalDate, // <--- REVISA QUE ESTA LÍNEA ESTÉ AQUÍ
-  formatRUT 
-} from './constants';
+import { CONSENT_TEMPLATES, ANAMNESIS_TAGS, THEMES, TEETH_UPPER, TEETH_LOWER, DEFAULT_CATALOG, getLocalDate,formatRUT } from './constants';
+import { TEETH_UPPER_PED, TEETH_LOWER_PED } from './constants';
 
 // --- APP ---
 export default function App() {
@@ -75,6 +67,7 @@ export default function App() {
   // PERIO & CONSENT & IMAGES & ODONTOGRAMA PRO
   // --- NUEVO ESTADO PARA EL MODO ODONTOGRAMA ---
   const [odontogramMode, setOdontogramMode] = useState('hallazgos');
+  const [odontogramType, setOdontogramType] = useState('adulto'); // 'adulto', 'pediatrico', o 'mixto'
   // Actualizamos toothModalData para incluir datos de tratamiento
   const [toothModalData, setToothModalData] = useState({ id: null, status: null, faces: { v: null, l: null, m: null, d: null, o: null }, notes: '', treatment: {name: '', status: 'planned'}, mode: 'hallazgos' });
   const [consentTemplate, setConsentTemplate] = useState('general');
@@ -1823,19 +1816,50 @@ return (
                             </div>
                         </div>
                     );
-                })()}                {/* --- ODONTOGRAMA DUAL ACTUALIZADO --- */}
+                })()}        
+                        {/* --- ODONTOGRAMA DUAL (ADULTO/PEDIÁTRICO) ACTUALIZADO --- */}
 {patientTab === 'clinical' && <Card theme={themeMode} className="flex flex-col items-center gap-8">
     <div className="flex bg-white/5 p-1 rounded-xl w-full max-w-md mx-auto mb-2">
         <button onClick={()=>setOdontogramMode('hallazgos')} className={`flex-1 p-2 rounded-lg text-xs font-bold transition-all ${odontogramMode==='hallazgos'?t.accentBg:'opacity-50'}`}>🔍 Hallazgos (Diagnóstico)</button>
         <button onClick={()=>setOdontogramMode('tratamientos')} className={`flex-1 p-2 rounded-lg text-xs font-bold transition-all ${odontogramMode==='tratamientos'?'bg-emerald-500 text-white':'opacity-50'}`}>🛠️ Plan de Tratamiento</button>
     </div>
+
+    {/* SELECTOR DE DENTICIÓN */}
+    <div className="flex justify-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5 w-fit mx-auto mb-4">
+      <button onClick={() => setOdontogramType('adulto')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${odontogramType === 'adulto' ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Adulto</button>
+      <button onClick={() => setOdontogramType('pediatrico')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${odontogramType === 'pediatrico' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Pediátrico</button>
+      <button onClick={() => setOdontogramType('mixto')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${odontogramType === 'mixto' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Mixto</button>
+    </div>
     
-    <div className="flex gap-2 flex-wrap justify-center">
-        {TEETH_UPPER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
+    {/* ÁREA DE DIBUJO DE DIENTES */}
+    <div className="flex flex-col items-center gap-4">
+        {/* Superior Adulto */}
+        {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
+            <div className="flex gap-2 flex-wrap justify-center">
+                {TEETH_UPPER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
+            </div>
+        )}
+        {/* Superior Pediátrico */}
+        {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
+            <div className="flex gap-2 flex-wrap justify-center bg-amber-500/5 p-2 rounded-xl border border-amber-500/20">
+                {TEETH_UPPER_PED.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
+            </div>
+        )}
+        <div className="w-full h-px bg-white/10 my-2"></div> {/* Separador de maxilares */}
+        {/* Inferior Pediátrico */}
+        {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
+            <div className="flex gap-2 flex-wrap justify-center bg-amber-500/5 p-2 rounded-xl border border-amber-500/20">
+                {TEETH_LOWER_PED.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
+            </div>
+        )}
+        {/* Inferior Adulto */}
+        {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
+            <div className="flex gap-2 flex-wrap justify-center">
+                {TEETH_LOWER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
+            </div>
+        )}
     </div>
-    <div className="flex gap-2 flex-wrap justify-center">
-        {TEETH_LOWER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
-    </div>
+
     {/* --- LISTA DE RESUMEN Y ATAJO AL COTIZADOR --- */}
         <div className="w-full mt-6 space-y-4">
            <h3 className="font-bold border-b border-white/10 pb-3 flex justify-between items-center">
@@ -1847,8 +1871,8 @@ return (
                         const teeth = pData.clinical?.teeth || {};
                         const newQuoteItems = [];
                         
-                        // 1. Recorrer los 32 dientes buscando tratamientos "Por hacer"
-                        [...TEETH_UPPER, ...TEETH_LOWER].forEach(n => {
+                        // 1. Recorrer los 52 dientes posibles (Adultos + Pediátricos)
+                        [...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].forEach(n => {
                             const tData = teeth[n];
                             if (tData && tData.treatment && tData.treatment.name && tData.treatment.status !== 'completed') {
                                 // Buscar el precio en el catálogo
@@ -1879,8 +1903,8 @@ return (
             </h3>
             
             <div className="max-h-64 overflow-y-auto custom-scrollbar pr-2 space-y-2">
-                {/* Filtramos y mostramos solo los dientes que tienen algún dato */}
-                {[...TEETH_UPPER, ...TEETH_LOWER].map(n => {
+                {/* Filtramos y mostramos solo los dientes que tienen algún dato de AMBOS arrays */}
+                {[...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].map(n => {
                     const toothData = getPatient(selectedPatientId).clinical.teeth[n];
                     if (!toothData) return null;
                     
@@ -1891,7 +1915,8 @@ return (
                     if (toothData.status || hasFaces || hasNotes || hasTreatment) {
                         return (
                             <div key={n} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...toothData, faces: toothData.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: toothData.treatment || {name:'', status:'planned'}}); setModal('tooth');}} className="flex flex-col md:flex-row gap-3 p-3 bg-white/5 rounded-xl border border-white/5 text-xs hover:bg-white/10 transition-colors cursor-pointer group">
-                                <div className="w-10 h-10 shrink-0 rounded-full bg-black/40 flex items-center justify-center font-black text-lg text-cyan-400 group-hover:scale-110 transition-transform">{n}</div>
+                                {/* Color diferente para dientes de leche en el resumen */}
+                                <div className={`w-10 h-10 shrink-0 rounded-full bg-black/40 flex items-center justify-center font-black text-lg group-hover:scale-110 transition-transform ${n > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>{n}</div>
                                 <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <div>
                                         <span className="font-bold text-stone-400 uppercase text-[9px] block mb-0.5">Diagnóstico</span>
@@ -1918,7 +1943,7 @@ return (
                 })}
                 
                 {/* Mensaje si el odontograma está vacío */}
-                {![...TEETH_UPPER, ...TEETH_LOWER].some(n => {
+                {![...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].some(n => {
                     const d = getPatient(selectedPatientId).clinical.teeth[n];
                     return d && (d.status || (d.faces && Object.values(d.faces).some(v=>v)) || d.notes || d.treatment?.name);
                 }) && (

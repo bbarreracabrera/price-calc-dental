@@ -14,8 +14,13 @@ export const THEMES = {
   blue: { bg: 'bg-[#0a192f]', text: 'text-white', card: 'bg-[#112240]/90 border-cyan-500/20 shadow-cyan-900/20 shadow-2xl', accent: 'text-cyan-400', accentBg: 'bg-cyan-500', inputBg: 'bg-[#1d2d50] border-transparent focus-within:border-cyan-400', subText: 'text-slate-400', gradient: 'bg-gradient-to-br from-cyan-400 to-blue-600', buttonSecondary: 'bg-white/5 border-white/10 text-cyan-400' }
 };
 
+// Dentición Permanente (Adultos)
 export const TEETH_UPPER = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
 export const TEETH_LOWER = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+
+// Dentición Temporal (Pediátricos)
+export const TEETH_UPPER_PED = [55,54,53,52,51,61,62,63,64,65];
+export const TEETH_LOWER_PED = [85,84,83,82,81,71,72,73,74,75];
 
 export const DEFAULT_CATALOG = [
     { name: 'Consulta de Diagnóstico', price: 25000 },
