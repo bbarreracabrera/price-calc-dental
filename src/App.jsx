@@ -1636,9 +1636,9 @@ return (
                                     </div>
                                 ) : (
                                     <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto no-scrollbar w-full">
-                                        <button onClick={()=>setActiveFormType('general')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='general'?t.accentBg:'opacity-50'}`}>📋 Ficha General</button>
-                                        <button onClick={()=>setActiveFormType('cirugia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='cirugia'?'bg-red-500 text-white':'opacity-50'}`}>🔪 Cirugía</button>
-                                        <button onClick={()=>setActiveFormType('endodoncia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='endodoncia'?'bg-purple-500 text-white':'opacity-50'}`}>🔬 Endodoncia</button>
+                                        <button onClick={()=>setActiveFormType('general')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='general'?t.accentBg:'opacity-50'}`}> Ficha General</button>
+                                        <button onClick={()=>setActiveFormType('cirugia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='cirugia'?'bg-red-500 text-white':'opacity-50'}`}> Cirugía</button>
+                                        <button onClick={()=>setActiveFormType('endodoncia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='endodoncia'?'bg-purple-500 text-white':'opacity-50'}`}> Endodoncia</button>
                                     </div>
                                 )}
                             </div>
