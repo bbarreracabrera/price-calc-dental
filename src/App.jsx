@@ -13,6 +13,7 @@ import {
   ChevronLeft, ChevronRight, Users, Clock, DollarSign, PenTool, FileSignature, Edit3, Loader, TrendingDown, CreditCard, Banknote, Box, Minus, AlertTriangle, Shield, Mic, MicOff, MessageCircle,
   BarChart2, PieChart, EyeOff, FileLock , FlaskConical 
 } from 'lucide-react';
+import AgendaView from './components/AgendaView';
 import { Card, Button, InputField, SignaturePad, SimpleLineChart } from './components/UIComponents';
 import { ToothSVG, Tooth, HygieneCell } from './components/ToothSystem';
 import { PrivateImage, TermsScreen, PatientSelect, AuthScreen } from './components/SystemModals';
@@ -22,6 +23,17 @@ import CatalogModal from './CatalogModal';
 import { Toaster, toast } from 'react-hot-toast';
 import { CONSENT_TEMPLATES, ANAMNESIS_TAGS, THEMES, TEETH_UPPER, TEETH_LOWER, DEFAULT_CATALOG, getLocalDate,formatRUT } from './constants';
 import { TEETH_UPPER_PED, TEETH_LOWER_PED } from './constants';
+import FinanceCenter from './components/FinanceCenter';
+import DashboardView from './components/DashboardView';
+import CRMView from './components/CRMView';
+import CatalogView from './components/CatalogView';
+import InventoryView from './components/InventoryView';
+import LabView from './components/LabView';
+import SettingsView from './components/SettingsView';
+import QuoteView from './components/QuoteView';
+import PrescriptionView from './components/PrescriptionView';
+import OdontogramTab from './components/OdontogramTab';
+import PerioTab from './components/PerioTab';
 
 // --- APP ---
 export default function App() {
@@ -60,7 +72,6 @@ export default function App() {
 // --- ESTADO DE AGENDA ACTUALIZADO ---
   const [newAppt, setNewAppt] = useState({ name: '', treatment: '', date: '', time: '', duration: 60, status: 'agendado', id: null });  const [newPack, setNewPack] = useState({ name: '', items: [] });
   const [newPackItem, setNewPackItem] = useState({ name: '', cost: '' });
-  const [currentDate, setCurrentDate] = useState(new Date()); 
   const [modal, setModal] = useState(null);
   const [newPasswordInput, setNewPasswordInput] = useState('');
 
@@ -306,9 +317,8 @@ export default function App() {
   const [paymentInput, setPaymentInput] = useState({ amount: '', method: 'Efectivo', date: getLocalDate(), receiptNumber: '' });
   const [selectedFinancialRecord, setSelectedFinancialRecord] = useState(null);
  // --- NUEVOS ESTADOS CENTRO FINANCIERO ---
-  const [financeTab, setFinanceTab] = useState('resumen'); 
-  const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
   const [newMember, setNewMember] = useState({ name: '', email: '', role: 'dentist' });
+  const [financeTab, setFinanceTab] = useState('resumen');
 
   // --- ESTADOS DE LABORATORIO ---
   const [labWorks, setLabWorks] = useState([]);
@@ -896,608 +906,101 @@ useEffect(() => {
         <div className="md:hidden flex items-center justify-between mb-6"><button onClick={()=>setMobileMenuOpen(true)} className={`p-2 rounded-xl ${t.inputBg}`}><Menu/></button><span className="font-black text-lg">ShiningCloud | Dental</span><div className="w-8"></div></div>
         
 
-        {activeTab === 'dashboard' && <div className="space-y-8 animate-in fade-in">
-            <h1 className="text-4xl font-black">Hola, {config.name.split(' ')[0]} 👋</h1>
-            {userRole === 'admin' && (<div className="grid grid-cols-1 md:grid-cols-4 gap-4"><Card theme={themeMode} className="bg-emerald-500/10 border-emerald-500/20"><div className="flex justify-between mb-4"><div className="p-3 bg-emerald-500 rounded-xl text-white"><DollarSign/></div><span className="text-xs font-bold uppercase text-emerald-500">Recaudado</span></div><h2 className="text-3xl font-black">${totalCollected.toLocaleString()}</h2></Card><Card theme={themeMode} className="bg-red-500/10 border-red-500/20"><div className="flex justify-between mb-4"><div className="p-3 bg-red-500 rounded-xl text-white"><TrendingDown/></div><span className="text-xs font-bold uppercase text-red-500">Gastos</span></div><h2 className="text-3xl font-black">${totalExpenses.toLocaleString()}</h2></Card><Card theme={themeMode} className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500 to-teal-600' : 'from-red-500 to-orange-600'} text-white col-span-2 relative overflow-hidden`}><div className="relative z-10"><span className="text-xs font-bold uppercase opacity-80">Utilidad Neta</span><h2 className="text-4xl font-black mt-2">${netProfit.toLocaleString()}</h2><p className="text-xs opacity-60 mt-1">Ganancia Real</p></div><div className="absolute -right-4 -bottom-4 opacity-20"><DollarSign size={100}/></div></Card></div>)}
-            
-            {/* V75: CHART SECTION */}
-            {userRole === 'admin' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card theme={themeMode} className="flex flex-col">
-                        <div className="flex items-center gap-2 mb-4"><BarChart2 className={t.accent} size={20}/><h3 className="font-bold">Crecimiento de Ingresos</h3></div>
-                        <SimpleLineChart data={getChartData()} theme={themeMode} />
-                        <div className="flex justify-between text-[10px] opacity-40 mt-2 px-1"><span>6 Meses</span><span>Hoy</span></div>
-                    </Card>
-                    <Card theme={themeMode} className="flex flex-col justify-center items-center text-center p-8 bg-gradient-to-br from-blue-500/5 to-purple-500/5">
-                        <PieChart size={64} className="opacity-20 mb-4"/>
-                        <h3 className="font-bold text-xl">Top Tratamientos</h3>
-                        <p className={`text-xs ${t.subText} mt-2 max-w-xs`}>El 60% de tus ingresos proviene de tratamientos de Ortodoncia y Limpiezas.</p>
-                        <button onClick={() => { setActiveTab('history'); setFinanceTab('ingresos'); }} className="mt-4 text-xs font-bold text-blue-500 hover:underline flex items-center gap-1 mx-auto">Ir al Centro Financiero <ArrowRight size={12}/></button>
-                    </Card>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-4"><h3 className="font-bold text-lg flex items-center gap-2"><Clock className={t.accent} size={20}/> Agenda de Hoy</h3><div className="space-y-2">{todaysAppointments.length === 0 ? (<div className="p-10 border border-dashed border-white/10 rounded-3xl text-center opacity-50 flex flex-col items-center gap-4"><p>No tienes pacientes hoy.</p><Button theme={themeMode} onClick={()=>setModal('appt')}>Agendar Cita</Button></div>) : (todaysAppointments.map(a => (<div key={a.id} className={`flex items-center gap-4 p-4 rounded-2xl border border-white/5 ${t.card} hover:scale-[1.01] transition-transform`}><div className={`p-4 rounded-xl font-black text-white ${t.accentBg}`}>{a.time}</div><div className="flex-1"><h4 className="font-bold text-lg">{a.name}</h4><p className="text-xs opacity-50">{a.treatment}</p></div><button className="p-3 bg-white/5 rounded-xl hover:bg-white/10"><ArrowRight size={16}/></button></div>)))}</div></div>
-                <div className="space-y-6"><h3 className="font-bold text-lg">Accesos Rápidos</h3><div className="grid grid-cols-2 gap-3"><button onClick={()=>setModal('appt')} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><CalendarClock size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Agendar</span></button><button onClick={()=>{setActiveTab('ficha'); setSelectedPatientId(null); setSearchTerm('');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><User size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Paciente</span></button>{userRole !== 'dentist' && <button onClick={()=>{setActiveTab('quote'); setQuoteMode('calc');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><Calculator size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Cotizar</span></button>}{(userRole === 'admin' || userRole === 'assistant') && <button onClick={()=>{setActiveTab('history');}} className="p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 flex flex-col items-center gap-2 transition-all group"><Wallet size={24} className={`${t.accent} group-hover:scale-110 transition-transform`}/><span className="text-xs font-bold">Caja</span></button>}</div></div>
-            </div>
-        </div>}
+        {/* --- DASHBOARD --- */}
+{activeTab === 'dashboard' && (
+    <DashboardView 
+        config={config} userRole={userRole} themeMode={themeMode} t={t}
+        totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} 
+        chartData={getChartData()} todaysAppointments={todaysAppointments}
+        setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} 
+        setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode}
+    />
+)}
 
     {activeTab === 'terms' && <TermsScreen theme={t} />}
 
-        {/* --- CENTRO FINANCIERO ACTUALIZADO (V77) --- */}
-        {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant') && <div className="space-y-6 animate-in slide-in-from-right h-full flex flex-col">
-            <div className="flex justify-between items-center mb-2">
-                <h2 className="text-2xl font-bold flex items-center gap-2"><Wallet className={t.accent}/> Centro Financiero</h2>
-                <Button theme={themeMode} variant="secondary" onClick={()=>{const ws=XLSX.utils.json_to_sheet(financialRecords); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Finanzas"); XLSX.writeFile(wb, "Reporte_Finanzas.xlsx");}}><FileSpreadsheet/> Excel</Button>
-            </div>
-
-            <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto no-scrollbar shrink-0">
-                <button onClick={()=>setFinanceTab('resumen')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='resumen'?t.accentBg:'opacity-50'}`}>📊 Resumen</button>
-                <button onClick={()=>setFinanceTab('ingresos')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='ingresos'?t.accentBg:'opacity-50'}`}>💵 Ingresos y Caja</button>
-                <button onClick={()=>setFinanceTab('deudores')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='deudores'?'bg-red-500 text-white':'opacity-50'}`}>🚨 Por Cobrar</button>
-                <button onClick={()=>setFinanceTab('gastos')} className={`flex-1 p-3 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${financeTab==='gastos'?t.accentBg:'opacity-50'}`}>🦷 Gastos / Lab</button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar pb-10">
-                {/* --- SUB-TAB 1: RESUMEN (Dueño) --- */}
-                {financeTab === 'resumen' && (
-                    <div className="space-y-6 animate-in fade-in">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Card theme={themeMode} className="bg-emerald-500/10 border-emerald-500/20 text-center">
-                                <p className="text-emerald-500 font-bold text-xs uppercase mb-2">Recaudado (En Banco)</p>
-                                <h2 className="text-3xl font-black text-emerald-400">${totalCollected.toLocaleString()}</h2>
-                            </Card>
-                            <Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center">
-                                <p className="text-red-500 font-bold text-xs uppercase mb-2">Gastos (Operación)</p>
-                                <h2 className="text-3xl font-black text-red-400">${totalExpenses.toLocaleString()}</h2>
-                            </Card>
-                            <Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center">
-                                <p className="text-yellow-500 font-bold text-xs uppercase mb-2">En la Calle (Deudas)</p>
-                                <h2 className="text-3xl font-black text-yellow-400">${totalDebt.toLocaleString()}</h2>
-                            </Card>
-                        </div>
-                        <Card theme={themeMode} className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500 to-teal-600' : 'from-red-500 to-orange-600'} text-white text-center py-8 shadow-2xl`}>
-                            <p className="text-xs font-bold uppercase opacity-80 mb-2">Utilidad Real (Flujo de Caja)</p>
-                            <h2 className="text-5xl font-black">${netProfit.toLocaleString()}</h2>
-                        </Card>
-                    </div>
-                )}
-
-                {/* --- SUB-TAB 2: INGRESOS GENERALES --- */}
-                {financeTab === 'ingresos' && (
-                    <div className="space-y-4 animate-in fade-in">
-                        {incomeRecords.map(h=>{ 
-                            const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
-                            const pending = (h.total || 0) - paid; 
-                            return (
-                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate()}); setModal('abono');}} className={`flex justify-between items-center cursor-pointer border-l-4 ${pending<=0?'border-emerald-500':'border-yellow-500'} hover:scale-[1.01] transition-transform`}>
-                                <div><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Presupuesto: ${h.total?.toLocaleString()}</p></div>
-                                <div className="flex flex-col items-end gap-1">
-                                    <p className={`font-black ${pending<=0?'text-emerald-500':'text-yellow-500'}`}>{pending <= 0 ? 'PAGADO' : `FALTA: $${pending.toLocaleString()}`}</p>
-                                </div>
-                            </Card>
-                            )
-                        })}
-                    </div>
-                )}
-
-                {/* --- SUB-TAB 3: DEUDORES (CRM Financiero) --- */}
-                {financeTab === 'deudores' && (
-                    <div className="space-y-4 animate-in fade-in">
-                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex justify-between items-center">
-                            <div><h3 className="text-red-500 font-bold">Planilla de Morosidad</h3><p className="text-[10px] text-red-400/70">Solo pacientes con saldo pendiente</p></div>
-                            <h2 className="text-2xl font-black text-red-500">${totalDebt.toLocaleString()}</h2>
-                        </div>
-                        {incomeRecords.filter(h => {
-                            const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
-                            return (h.total || 0) - paid > 0;
-                        }).map(h=>{ 
-                            const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
-                            const pending = (h.total || 0) - paid; 
-                            return (
-                            <Card key={h.id} theme={themeMode} onClick={()=>{setSelectedFinancialRecord(h); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate()}); setModal('abono');}} className="flex flex-col md:flex-row justify-between items-center cursor-pointer border-l-4 border-red-500 hover:scale-[1.01] transition-transform gap-4">
-                                <div className="w-full md:w-auto"><p className="font-bold">{h.patientName}</p><p className="text-[10px] opacity-40">{h.date} • Total tto: ${h.total?.toLocaleString()}</p></div>
-                                <div className="flex items-center gap-4 w-full md:w-auto justify-between">
-                                    <p className="font-black text-red-500 text-xl">-$ {pending.toLocaleString()}</p>
-                                    <button onClick={(e)=>{ e.stopPropagation(); sendWhatsApp(getPatientPhone(h.patientName), `Hola ${h.patientName}, me comunico de ShiningCloud Dental. Le recordamos amablemente que su ficha registra un saldo pendiente de $${pending.toLocaleString()}. ¿Gusta que le envíe los datos de transferencia para regularizarlo?`); }} className="flex items-center gap-2 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg transition-colors"><MessageCircle size={14}/> Cobrar Deuda</button>
-                                </div>
-                            </Card>
-                            )
-                        })}
-                    </div>
-                )}
-
-                {/* --- SUB-TAB 4: GASTOS Y LABORATORIO --- */}
-                {financeTab === 'gastos' && (
-                    <div className="space-y-6 animate-in fade-in">
-                        <Card theme={themeMode} className="space-y-4 border-l-4 border-stone-500">
-                            <h3 className="font-bold text-lg">Egresos / Costos Clínica</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <InputField theme={themeMode} placeholder="Ítem (ej: Coronas Zirconio, Internet...)" value={newExpense.description} onChange={e=>setNewExpense({...newExpense, description:e.target.value})}/>
-                                <select className={`bg-[#121212] border border-white/10 rounded-xl px-3 p-3 text-xs font-bold outline-none ${t.text}`} value={newExpense.category} onChange={e=>setNewExpense({...newExpense, category:e.target.value})}>
-                                    <option value="Insumos">Caja: Insumos</option>
-                                    <option value="Laboratorio">Caja: Trabajos de Laboratorio</option>
-                                    <option value="Arriendo">Caja: Arriendo / Servicios</option>
-                                    <option value="Marketing">Caja: Publicidad</option>
-                                    <option value="Sueldos">Caja: Honorarios</option>
-                                    <option value="Otros">Caja: Otros Egresos</option>
-                                </select>
-                                
-                                {/* Campo exclusivo si seleccionan Laboratorio */}
-                                {newExpense.category === 'Laboratorio' && (
-                                    <div className="col-span-1 md:col-span-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl animate-in zoom-in">
-                                        <label className="text-[10px] font-bold text-blue-400 uppercase tracking-widest block mb-2">Asociar Costo a un Paciente</label>
-                                        <PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => setNewExpense({...newExpense, patientRef: p.personal.legalName})} placeholder="Buscar paciente..." />
-                                        {newExpense.patientRef && <p className="text-[10px] mt-2 font-bold bg-blue-500 text-white inline-block px-2 py-1 rounded">Costo asignado a: {newExpense.patientRef}</p>}
-                                    </div>
-                                )}
-                                
-                                <InputField theme={themeMode} type="number" placeholder="$ Monto Exacto" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> 
-                                <Button theme={themeMode} onClick={async()=>{ 
-                                    if(newExpense.description && newExpense.amount){ 
-                                        const id = Date.now().toString(); 
-                                        const ex = {...newExpense, id, type: 'expense', amount: Number(newExpense.amount)};
-                                        setFinancialRecords([...financialRecords, ex]); 
-                                        await saveToSupabase('financials', id, ex); 
-                                        setNewExpense({description:'', amount:'', category:'Insumos', date: getLocalDate(), patientRef:''}); 
-                                        notify("Gasto registrado con éxito"); 
-                                    } 
-                                }}><Plus/></Button>
-                            </div>
-                        </Card>
-                        
-                        <div className="space-y-2">
-                            {expenseRecords.map(ex => (
-                                <div key={ex.id} className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-3 rounded-xl ${ex.category==='Laboratorio' ? 'bg-blue-500/20 text-blue-400' : 'bg-stone-500/20 text-stone-400'}`}>
-                                            {ex.category==='Laboratorio' ? <Box size={18}/> : <TrendingDown size={18}/>}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold">{ex.description}</p>
-                                            <p className="text-[10px] opacity-60 mt-1">{ex.date} • {ex.category}</p>
-                                            {ex.patientRef && <span className="text-[9px] bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded ml-1 font-bold">Pac: {ex.patientRef}</span>}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="font-black text-red-500 text-lg">-${Number(ex.amount).toLocaleString()}</span>
-                                        <button onClick={async()=>{ const filtered = financialRecords.filter(f=>f.id!==ex.id); setFinancialRecords(filtered); await supabase.from('financials').delete().eq('id', ex.id); notify("Egreso Eliminado"); }} className="p-2 bg-black/40 rounded-lg text-stone-500 hover:text-red-500 hover:bg-red-500/20 transition-all"><Trash2 size={16}/></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>}
-
-{/* --- PESTAÑA ARANCEL / CATÁLOGO --- */}
-        {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && (
-            <div className="space-y-6 animate-in fade-in h-full flex flex-col">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Library className={t.accent}/> Arancel de Prestaciones</h2>
-                        <p className="text-xs opacity-50 mt-1">Administra tus tratamientos y precios fijos.</p>
-                    </div>
-                    <Button theme={themeMode} onClick={() => { setNewCatalogItem({name:'', price:'', id:null}); setModal('catalogItem'); }}><Plus/> Nuevo Tratamiento</Button>
-                </div>
-                <div className="grid gap-2 overflow-y-auto custom-scrollbar pb-10">
-                   {catalog.length === 0 ? (
-                        <div className="p-10 border border-dashed border-cyan-500/30 rounded-3xl text-center flex flex-col items-center bg-cyan-500/5">
-                            <Library size={48} className="mb-4 text-cyan-500 opacity-50"/>
-                            <h3 className="font-black text-lg mb-2">Tu arancel está vacío</h3>
-                            <p className="text-xs opacity-70 mb-6 max-w-sm">No pierdas tiempo escribiendo desde cero. Carga un arancel base referencial y luego ajusta los precios a la realidad de tu clínica.</p>
-                            
-                            <Button theme={themeMode} onClick={async () => {
-                                notify("Cargando arancel referencial...");
-                                const newItems = [];
-                                for (const item of DEFAULT_CATALOG) {
-                                    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                                    const fullItem = { ...item, id, admin_email: clinicOwner || session?.user?.email };
-                                    newItems.push(fullItem);
-                                    await saveToSupabase('catalog', id, fullItem);
-                                }
-                                setCatalog(newItems);
-                                notify("¡Arancel base cargado con éxito!");
-                            }}>
-                                <Plus size={18} /> CARGAR ARANCEL REFERENCIAL (51 ÍTEMS)
-                            </Button>
-                        </div>
-                    ) : (
-                        catalog.sort((a,b)=>a.name.localeCompare(b.name)).map(item => (
-                            <Card key={item.id} theme={themeMode} className="flex justify-between items-center p-4 hover:border-cyan-500/50 transition-colors">
-                                <div><h4 className="font-bold">{item.name}</h4></div>
-                                <div className="flex items-center gap-4">
-                                    <span className="font-black text-emerald-400">${Number(item.price).toLocaleString()}</span>
-                                    <button onClick={() => { setNewCatalogItem(item); setModal('catalogItem'); }} className="p-2 text-stone-400 hover:text-cyan-400 transition-colors"><Edit3 size={16}/></button>
-                                    <button onClick={async () => {
-                                        setCatalog(catalog.filter(c => c.id !== item.id));
-                                        await supabase.from('catalog').delete().eq('id', item.id);
-                                        notify("Tratamiento eliminado");
-                                    }} className="p-2 text-stone-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
-                                </div>
-                            </Card>
-                        ))
-                    )}
-                </div>
-            </div>
-        )}
-        {activeTab === 'inventory' && userRole === 'admin' && <div className="space-y-6 animate-in fade-in"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Inventario</h2><Button theme={themeMode} onClick={()=>{setNewItem({name:'', stock:0, min:5, unit:'u', id:null}); setModal('addItem');}}><Plus/> Nuevo Item</Button></div><div className="relative"><InputField theme={themeMode} icon={Search} placeholder="Buscar insumo..." value={inventorySearch} onChange={e=>setInventorySearch(e.target.value)} /></div><div className="space-y-2">{filteredInventory.map(item => { const isLow = (item.stock || 0) <= (item.min || 5); return (<div key={item.id} className={`flex justify-between items-center p-4 rounded-xl border transition-all ${isLow ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}><div className="flex items-center gap-4"><div className={`p-3 rounded-lg ${isLow ? 'bg-red-500 text-white' : 'bg-white/10'}`}>{isLow ? <AlertTriangle size={20}/> : <Box size={20}/>}</div><div><h4 className="font-bold">{item.name}</h4><p className="text-xs opacity-50">Mínimo: {item.min} {item.unit}</p></div></div><div className="flex items-center gap-4"><div className="flex items-center gap-2 bg-black/20 rounded-lg p-1"><button onClick={async()=>{ const n = Math.max(0, (item.stock||0)-1); const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Minus size={14}/></button><span className={`w-8 text-center font-bold ${isLow?'text-red-500':''}`}>{item.stock}</span><button onClick={async()=>{ const n = (item.stock||0)+1; const u = {...item, stock:n}; setInventory(inventory.map(i=>i.id===u.id?u:i)); await saveToSupabase('inventory', u.id, u); }} className="p-2 hover:bg-white/10 rounded"><Plus size={14}/></button></div><button onClick={()=>{setNewItem(item); setModal('addItem');}} className="p-2 text-white/50 hover:text-cyan-400"><Edit3 size={18}/></button></div></div>)})}</div></div>}
-        {/* --- MÓDULO DE LABORATORIO EXTERNO --- */}
-        {activeTab === 'lab' && (
-            <div className="space-y-6 animate-in slide-in-from-bottom h-full">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-3"><FlaskConical className={t.accent} size={28}/> Control de Laboratorio</h2>
-                        <p className="text-xs opacity-50 mt-1">Gestiona los envíos y recepciones de coronas, prótesis y placas.</p>
-                    </div>
-                    <Button theme={themeMode} onClick={() => {
-                        setNewLabWork({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: getLocalDate(), expectedDate: '', status: 'sent', id: null });
-                        setModal('labWork');
-                    }}>+ Nuevo Trabajo</Button>
-                </div>
-
-                <Card theme={themeMode}>
-    {/* Agregamos 'w-full' aquí 👇 */}
-    <div className="overflow-x-auto custom-scrollbar w-full"> 
-        {/* Agregamos 'border-collapse' aquí 👇 */}
-        <table className="w-full text-sm text-left border-collapse">
-                            <thead className={`text-xs uppercase opacity-50 border-b ${t.border}`}>
-                                <tr>
-                                    <th className="px-5 py-4">Paciente</th>
-                                    <th className="px-5 py-4">Trabajo</th>
-                                    <th className="px-5 py-4 text-center">Pieza</th>
-                                    <th className="px-5 py-4">Laboratorio</th>
-                                    <th className="px-5 py-4">Envío</th>
-                                    <th className="px-5 py-4">Entrega</th>
-                                    <th className="px-5 py-4 text-center">Estado</th>
-                                    <th className="px-5 py-4 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {labWorks.length === 0 ? (
-                                    <tr><td colSpan="8" className="text-center py-8 opacity-50 font-bold">No hay trabajos en curso. ¡Todo al día!</td></tr>
-                                ) : (
-                                    labWorks.sort((a,b) => new Date(a.expectedDate) - new Date(b.expectedDate)).map(work => {
-                                        const isLate = new Date(work.expectedDate) < new Date() && work.status === 'sent';
-                                        
-                                        return (
-                                        <tr key={work.id} className={`border-b ${t.border} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}>
-                                            <td className="px-5 py-5 font-bold min-w-[150px]">{work.patientName}</td>
-                                            
-                                            {/* CORRECCIÓN: El div ahora vive dentro de la celda */}
-                                            <td className="px-5 py-5">
-                                                <div className="max-w-[180px] truncate" title={work.workType}>{work.workType}</div>
-                                            </td>
-                                            
-                                            <td className="px-5 py-5 text-center font-bold text-cyan-600 dark:text-cyan-400">{work.tooth || '-'}</td>
-                                            <td className="px-5 py-5 whitespace-nowrap">{work.labName}</td>
-                                            <td className="px-5 py-5 text-xs opacity-70 whitespace-nowrap">{work.sendDate}</td>
-                                            <td className="px-5 py-5 font-bold whitespace-nowrap align-middle">
-    <div className={`flex items-center gap-1 ${isLate ? 'text-red-500' : ''}`}>
-        {isLate && <span>⚠️</span>} 
-        <span>{work.expectedDate}</span>
-    </div>
-</td>
-                                            <td className="px-5 py-5 text-center">
-                                                <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${work.status === 'received' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'}`}>
-                                                    {work.status === 'received' ? '✅ Recibido' : '⏳ En Tránsito'}
-                                                </span>
-                                            </td>
-                                            <td className="px-5 py-5 text-right">
-                                                <div className="flex justify-end gap-2 items-center">
-                                                    {work.status === 'sent' && (
-                                                        <button onClick={async () => {
-                                                            const updated = { ...work, status: 'received' };
-                                                            setLabWorks(labWorks.map(w => w.id === work.id ? updated : w));
-                                                            // ACTUALIZA EN SUPABASE
-                                                            await supabase.from('lab_works').update({ status: 'received' }).eq('id', work.id);
-                                                            if(typeof notify === 'function') notify("Trabajo marcado como RECIBIDO");
-                                                        }} className="text-[10px] bg-emerald-500 text-white px-3 py-1.5 rounded-lg shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform font-bold">Recibir</button>
-                                                    )}
-                                                    <button onClick={async () => {
-                                                        if(window.confirm("¿Seguro que deseas eliminar este registro?")){
-                                                            setLabWorks(labWorks.filter(w => w.id !== work.id));
-                                                            // BORRA DE SUPABASE
-                                                            await supabase.from('lab_works').delete().eq('id', work.id);
-                                                        }
-                                                    }} className="p-1.5 text-red-500 opacity-50 hover:opacity-100 hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16}/></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )})
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
-            </div>
-        )}
-
-      {/* --- SETTINGS (ACTUALIZADO: CON DATOS LEGALES MINSAL) --- */}
-        {activeTab === 'settings' && <div className="space-y-6 animate-in slide-in-from-bottom h-full">
-            <Card theme={themeMode} className="space-y-4">
-                <div onClick={()=>logoInputRef.current.click()} className="p-6 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
-                    <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload}/>
-                    {config.logo ? <img src={config.logo} className="h-16 object-contain"/> : <><Camera className="mb-2 opacity-50"/><span className="text-xs font-bold opacity-50">SUBIR LOGO</span></>}
-                </div>
-                {userRole === 'admin' ? (
-                    <>
-                        <h3 className="text-xs font-black text-cyan-600 dark:text-cyan-500 mt-2 uppercase tracking-widest border-b border-white/10 pb-2">
-                            Datos Generales
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputField theme={themeMode} label="Nombre Clínica/Dr" value={config.name || ''} onChange={e=>setConfigLocal({...config, name:e.target.value})} />
-                            <InputField theme={themeMode} label="RUT Profesional" value={config.rut || ''} onChange={e=>setConfigLocal({...config, rut: formatRUT(e.target.value)})} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputField theme={themeMode} label="Especialidad" value={config.specialty || ''} onChange={e=>setConfigLocal({...config, specialty:e.target.value})} />
-                            <InputField theme={themeMode} label="Teléfono" value={config.phone || ''} onChange={e=>setConfigLocal({...config, phone:e.target.value})} />
-                        </div>
-                        
-                        {/* --- NUEVA SECCIÓN: LEGAL MINSAL --- */}
-                        <h3 className="text-xs font-black text-cyan-600 dark:text-cyan-500 mt-6 uppercase tracking-widest border-b border-white/10 pb-2">
-                            Información Legal para Recetas (MINSAL)
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputField theme={themeMode} label="Registro Minsal (RNPI)" value={config.rnpi || ''} onChange={e=>setConfigLocal({...config, rnpi:e.target.value})} />
-                            <InputField theme={themeMode} label="Universidad / Título" value={config.university || ''} onChange={e=>setConfigLocal({...config, university:e.target.value})} />
-                        </div>
-                        <div className="grid grid-cols-1 gap-4">
-                            <InputField theme={themeMode} label="Dirección Clínica" value={config.address || ''} onChange={e=>setConfigLocal({...config, address:e.target.value})} />
-                        </div>
-                        <p className="text-[10px] opacity-50 font-medium italic mb-2">
-                            * El RUT, RNPI y la Universidad son obligatorios en Chile para la validez de recetas en farmacias.
-                        </p>
-
-                        <Button theme={themeMode} className="w-full mt-4" onClick={()=>{saveToSupabase('settings', 'general', config); notify("Ajustes Guardados");}}>GUARDAR DATOS</Button>
-                    </>
-                ) : <p className="text-center opacity-50 py-4">Contacta al administrador para editar datos.</p>}
-            </Card>
-
-            {/* GESTIÓN DE EQUIPO (SOLO ADMIN) */}
-            {userRole === 'admin' && (
-                <Card theme={themeMode} className="space-y-4 border-l-4 border-cyan-500">
-                    <h3 className="font-bold text-xl flex items-center gap-2"><Shield size={20}/> Gestión de Equipo</h3>
-                    <div className="flex gap-2">
-                        <InputField theme={themeMode} placeholder="Nombre" value={newMember.name} onChange={e=>setNewMember({...newMember, name:e.target.value})}/>
-                        <InputField theme={themeMode} placeholder="Email" value={newMember.email} onChange={e=>setNewMember({...newMember, email:e.target.value})}/>
-                        <select className={`bg-transparent border border-white/10 rounded-xl px-2 text-xs font-bold outline-none ${t.text}`} value={newMember.role} onChange={e=>setNewMember({...newMember, role:e.target.value})}><option className="bg-[#121212] text-white" value="admin">Admin</option><option className="bg-[#121212] text-white" value="dentist">Dentista</option><option className="bg-[#121212] text-white" value="assistant">Asistente</option></select>
-                        <Button theme={themeMode} onClick={async()=>{ 
-                            if(newMember.email && newMember.name){ 
-                                const id=Date.now().toString(); 
-                                const u={...newMember, id}; 
-                                setTeam([...team, u]); 
-                                await saveToSupabase('team', id, u); 
-                                setNewMember({name:'', email:'', role:'dentist'}); 
-                                notify("Usuario Agregado"); 
-                            } 
-                        }}><Plus/></Button>
-                    </div>
-                    <div className="space-y-2">
-                        {team.map(member => (
-                            <div key={member.id} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
-                                <div><p className="font-bold">{member.name}</p><p className="text-[10px] opacity-50">{member.email}</p></div>
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded bg-white/10 ${member.role==='admin'?'text-emerald-400':member.role==='dentist'?'text-blue-400':'text-stone-400'}`}>{member.role}</span>
-                                    <button onClick={async()=>{ const f=team.filter(t=>t.id!==member.id); setTeam(f); await supabase.from('team').delete().eq('id', member.id); }} className="text-red-500 opacity-50 hover:opacity-100"><Trash2 size={16}/></button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-            )}
-        </div>}     
-
-           {/* --- NUEVO COTIZADOR CLINICO (ARANCEL) --- */}
-        {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && (
-            <div className="space-y-6 animate-in slide-in-from-bottom h-full">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Calculator className={t.accent}/> Creador de Presupuestos</h2>
-                        <p className="text-xs opacity-50 mt-1">Arma presupuestos de forma rápida y envíalos directo a caja.</p>
-                    </div>
-                    <Button theme={themeMode} variant="secondary" onClick={() => setQuoteItems([])}>Limpiar Lista</Button>
-                </div>
-                
-                <Card theme={themeMode} className="space-y-6">
-                 <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
-                        if (p.id === 'new') {
-                            let nombreReal = p.name;
-                            if (!nombreReal || nombreReal.trim() === "") { nombreReal = window.prompt("Confirma el nombre:"); if (!nombreReal) return; }
-                            const newId = "pac_" + Date.now().toString();
-                            const newPatient = getPatient(newId);
-                            newPatient.id = newId; newPatient.name = nombreReal;
-                            if (!newPatient.personal) newPatient.personal = {};
-                            newPatient.personal.legalName = nombreReal;
-                            savePatientData(newId, newPatient);
-                            setSessionData({...sessionData, patientName: nombreReal, patientId: newId});
-                            notify("Paciente Creado");
-                        } else {
-                            // 👇 MAGIA INYECTADA AQUÍ 👇
-                            setPatientRecords(prev => ({...prev, [p.id]: p}));
-                            
-                            setSessionData({...sessionData, patientName: p.personal?.legalName || p.name, patientId: p.id});
-                        }
-                    }} />
-                    
-                    {sessionData.patientId && (
-                        /* Reemplazamos border-white/10 por t.border para la línea separadora */
-                        <div className={`animate-in fade-in space-y-4 border-t ${t.border} pt-4`}>
-                            <h3 className="font-bold">Agregar Procedimientos</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                                <div className="md:col-span-2 relative">
-                                    {/* AQUÍ ESTÁ EL ARREGLO DEL BUSCADOR: Agregamos border-2 y colores dinámicos forzados para que no desaparezca */}
-                                    <input 
-                                        list="arancel-options"
-                                        className={`w-full outline-none font-bold text-sm p-3 rounded-2xl border-2 border-black/10 dark:border-white/10 ${t.inputBg} ${t.text} focus:border-cyan-400 transition-all`}
-                                        placeholder="Procedimiento (Busca o escribe)"
-                                        value={newQuoteItem.name}
-                                        onChange={e => {
-                                            const val = e.target.value;
-                                            const found = catalog.find(c => c.name === val);
-                                            if (found) { setNewQuoteItem({...newQuoteItem, name: val, price: found.price}); } 
-                                            else { setNewQuoteItem({...newQuoteItem, name: val}); }
-                                        }}
-                                    />
-                                    <datalist id="arancel-options">
-                                        {catalog.map(c => <option key={c.id} value={c.name} />)}
-                                    </datalist>
-                                </div>
-                                <div><InputField theme={themeMode} placeholder="N° Diente (Opcional)" value={newQuoteItem.tooth} onChange={e=>setNewQuoteItem({...newQuoteItem, tooth:e.target.value})}/></div>
-                                <div className="md:col-span-2 flex gap-2">
-                                    <InputField theme={themeMode} type="number" placeholder="$ Valor" value={newQuoteItem.price} onChange={e=>setNewQuoteItem({...newQuoteItem, price:e.target.value})}/>
-                                    <Button theme={themeMode} onClick={()=>{
-                                        if(newQuoteItem.name && newQuoteItem.price) {
-                                            setQuoteItems([...quoteItems, { id: Date.now(), name: newQuoteItem.name, tooth: newQuoteItem.tooth, price: Number(newQuoteItem.price) }]);
-                                            setNewQuoteItem({name:'', price:'', tooth:''});
-                                        }
-                                    }}><Plus/></Button>
-                                </div>
-                            </div>
-
-                            {/* Limpiamos el bg-black/20 y pusimos un fondo suave que se adapta al tema */}
-                            <div className={`rounded-xl p-4 space-y-2 mt-4 max-h-48 overflow-y-auto bg-black/5 dark:bg-white/5 border ${t.border}`}>
-                                {quoteItems.length === 0 ? <p className="text-center text-xs opacity-50 py-4">El presupuesto está vacío.</p> : (
-                                    quoteItems.map((item) => (
-                                        <div key={item.id} className={`flex justify-between items-center text-sm border-b ${t.border} pb-2 last:border-0 hover:opacity-70 transition-colors p-1 rounded`}>
-                                            <div>
-                                                <span className="font-bold">{item.name}</span>
-                                                {item.tooth && <span className="ml-2 text-[10px] bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 px-2 py-0.5 rounded-full font-bold border border-cyan-500/20">Diente {item.tooth}</span>}
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <span className="font-black text-emerald-600 dark:text-emerald-400">${item.price.toLocaleString()}</span>
-                                                <button onClick={()=>setQuoteItems(quoteItems.filter(i=>i.id !== item.id))} className="text-red-500 opacity-50 hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            <div className={`flex justify-between items-center py-4 border-t border-b ${t.border} my-4`}>
-                                <span className="text-sm font-bold opacity-50 uppercase tracking-widest">Total Presupuesto</span>
-                                <h3 className="text-4xl font-black text-cyan-600 dark:text-cyan-400">${quoteItems.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</h3>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Button theme={themeMode} disabled={quoteItems.length===0} onClick={async ()=>{ 
-                                    const total = quoteItems.reduce((acc, item) => acc + item.price, 0);
-                                    const id = Date.now().toString(); 
-                                    const detalle = quoteItems.map(i => `${i.name}${i.tooth ? ` (D${i.tooth})` : ''}`).join(' + ');
-                                    
-                                    await saveToSupabase('financials', id, {
-                                        id, total: total, paid: 0, payments: [], patientName: sessionData.patientName, 
-                                        date: getLocalDate(), type: 'income', description: detalle
-                                    }); 
-                                    
-                                    notify("Aprobado y enviado a Caja"); 
-                                    setQuoteItems([]);
-                                    setActiveTab('history');
-                                }}>✅ APROBAR Y ENVIAR A CAJA</Button>
-                                
-                                <Button theme={themeMode} variant="secondary" disabled={quoteItems.length===0} onClick={()=>generatePDF('quote', quoteItems)}>
-                                    <Printer/> IMPRIMIR / PDF
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </Card>
-            </div>
-        )}
-       {/* --- AGENDA FLEXIBLE ACTUALIZADA --- */}
-{activeTab === 'agenda' && <div className="space-y-4 h-full flex flex-col">
-    <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold">Agenda Semanal</h2>
-            <div className={`flex items-center gap-2 rounded-xl p-1 border ${t.border} ${t.cardBg}`}>
-                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d)}} className="p-2 rounded hover:opacity-50 transition-opacity"><ChevronLeft size={16}/></button>
-                <button onClick={()=>setCurrentDate(new Date())} className="text-xs font-bold px-2">HOY</button>
-                <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d)}} className="p-2 rounded hover:opacity-50 transition-opacity"><ChevronRight size={16}/></button>
-            </div>
-        </div>
-        <div className="hidden md:flex gap-2 text-[9px] font-bold uppercase opacity-60">
-            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-stone-500"></div>Agendado</span>
-            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div>Confirmado</span>
-            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-500"></div>En Espera</span>
-            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div>Atendiendo</span>
-        </div>
-        <Button theme={themeMode} onClick={()=>{setNewAppt({name: '', treatment: '', date: '', time: '', duration: 60, status: 'agendado', id: null}); setModal('appt');}}><Plus/> Agendar</Button>
-    </div>
-    
-    <div className={`flex-1 overflow-auto rounded-2xl border ${t.border} ${t.cardBg} custom-scrollbar`}>
-        <div className="grid grid-cols-8 min-w-[800px]">
-            {/* Usamos t.bg para que el fondo pegajoso tome el color sólido exacto de tu tema */}
-            <div className={`p-4 border-b border-r ${t.border} text-xs font-bold text-center opacity-50 sticky top-0 z-20 ${t.bg}`}>HORA</div>
-            {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => (
-                <div key={d} className={`p-4 border-b ${t.border} text-center sticky top-0 z-20 ${t.bg} ${d.toDateString()===new Date().toDateString() ? t.accent : ''}`}>
-                    <p className="text-xs font-bold opacity-70">{['LUN','MAR','MIE','JUE','VIE','SAB','DOM'][d.getDay()===0?6:d.getDay()-1]}</p>
-                    <p className="text-xl font-black">{d.getDate()}</p>
-                </div>
-            ))}
-            
-            {Array.from({length:12}, (_,i)=>8+i).map(h => (
-                <React.Fragment key={h}>
-                    <div className="p-2 border-r border-b border-white/5 text-xs font-bold opacity-50 text-center h-24">{h}:00</div>
-                    {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => { 
-const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; 
-
-// Cambiamos a .filter para encontrar todas las citas de esa hora
-const hourAppts = appointments.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
-
-// Diccionario de colores según estado
-const statusColors = {
-    agendado: 'border-stone-500 bg-stone-500/20 text-stone-300',
-    confirmado: 'border-emerald-500 bg-emerald-500/20 text-emerald-300',
-    espera: 'border-yellow-500 bg-yellow-500/20 text-yellow-300',
-    atendiendo: 'border-blue-500 bg-blue-500/20 text-blue-300',
-    no_asistio: 'border-red-500 bg-red-500/20 text-red-300'
-};
-
-return (
-    <div 
-        key={d+h} 
-        className="border-b border-white/5 border-r relative group h-24 transition-all hover:bg-white/5 cursor-pointer" 
-        onClick={()=>{ setNewAppt({name: '', treatment: '', date: dateStr, time: `${h.toString().padStart(2, '0')}:00`, duration: 60, status: 'agendado', id: null}); setModal('appt'); }}
-    >
-        {/* Mapeamos TODAS las citas que caigan en esta hora */}
-        {hourAppts.map((appt, index) => {
-            const minutes = parseInt(appt.time.split(':')[1]) || 0;
-            const topOffset = (minutes / 60) * 100;
-
-            return (
-                <div 
-                    key={appt.id || index}
-                    onClick={(e)=>{e.stopPropagation(); setNewAppt(appt); setModal('appt');}}
-                    className={`absolute left-0 w-full rounded-xl border-l-4 shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-all p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
-                    style={{ 
-                        top: `${topOffset}%`, 
-                        height: `${(appt.duration || 60) / 60 * 100}%`, 
-                        minHeight: '60px' 
-                    }}
-                >
-                    <div>
-                        <p className="text-xs font-black truncate leading-tight">{appt.name}</p>
-                        <p className="text-[9px] opacity-80 truncate">{appt.time} • {appt.treatment}</p>
-                    </div>
-                </div>
-            );
-        })}
-        
-        {/* Icono de "+" cuando la celda está vacía */}
-        {hourAppts.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <Plus size={14} className="opacity-50"/>
-            </div>
-        )}
-    </div>
-) 
-})}
-</React.Fragment>
-))}
-</div>
-</div>
-</div>}
+ {/* --- CENTRO FINANCIERO (Refactorizado) --- */}
+{activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant') && (
+    <FinanceCenter 
+        themeMode={themeMode}
+        t={t}
+        financeTab={financeTab}      
+        setFinanceTab={setFinanceTab}
+        financialRecords={financialRecords}
+        setFinancialRecords={setFinancialRecords}
+        incomeRecords={incomeRecords}
+        expenseRecords={expenseRecords}
+        totalCollected={totalCollected}
+        totalExpenses={totalExpenses}
+        totalDebt={totalDebt}
+        netProfit={netProfit}
+        patientRecords={patientRecords}
+        saveToSupabase={saveToSupabase}
+        notify={notify}
+        sendWhatsApp={sendWhatsApp}
+        getPatientPhone={getPatientPhone}
+        onOpenAbonoModal={(record, pending) => {
+            setSelectedFinancialRecord(record); 
+            setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); 
+            setModal('abono');
+        }}
+    />
+)}  
+{/* --- ARANCEL / CATÁLOGO --- */}
+{activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && (
+    <CatalogView 
+        themeMode={themeMode} t={t} catalog={catalog} setCatalog={setCatalog} 
+        clinicOwner={clinicOwner} session={session} setNewCatalogItem={setNewCatalogItem} 
+        setModal={setModal} saveToSupabase={saveToSupabase} notify={notify} 
+    />
+)}
+        {/* --- INVENTARIO --- */}
+{activeTab === 'inventory' && userRole === 'admin' && (
+    <InventoryView 
+        themeMode={themeMode} t={t} inventory={inventory} setInventory={setInventory} 
+        filteredInventory={filteredInventory} inventorySearch={inventorySearch} 
+        setInventorySearch={setInventorySearch} setNewItem={setNewItem} 
+        setModal={setModal} saveToSupabase={saveToSupabase} 
+    />
+)}
+       {/* --- MÓDULO DE LABORATORIO EXTERNO --- */}
+{activeTab === 'lab' && (
+    <LabView 
+        themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks}
+        setNewLabWork={setNewLabWork} setModal={setModal} notify={notify}
+    />
+)}
+{/* --- SETTINGS / AJUSTES --- */}
+{activeTab === 'settings' && (
+    <SettingsView 
+        themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal}
+        logoInputRef={logoInputRef} handleLogoUpload={handleLogoUpload} userRole={userRole}
+        saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam}
+        newMember={newMember} setNewMember={setNewMember}
+    />
+)}
+{/* --- COTIZADOR --- */}
+{activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && (
+    <QuoteView 
+        themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems}
+        newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog}
+        patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData}
+        getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase}
+        notify={notify} generatePDF={generatePDF} setActiveTab={setActiveTab}
+    />
+)}
+{/* --- AGENDA FLEXIBLE (Refactorizada) --- */}
+{activeTab === 'agenda' && (
+    <AgendaView 
+        themeMode={themeMode} 
+        t={t} 
+        appointments={appointments} 
+        onOpenModal={(apptData) => { 
+            setNewAppt(apptData); 
+            setModal('appt'); 
+        }} 
+    />
+)}
         {activeTab === 'ficha' && !selectedPatientId && (
             <div className="space-y-4 animate-in slide-in-from-bottom">
                 <div className="flex gap-2">
@@ -1817,361 +1320,26 @@ return (
                         </div>
                     );
                 })()}        
-                        {/* --- ODONTOGRAMA DUAL (ADULTO/PEDIÁTRICO) ACTUALIZADO --- */}
-{patientTab === 'clinical' && <Card theme={themeMode} className="flex flex-col items-center gap-8">
-    <div className="flex bg-white/5 p-1 rounded-xl w-full max-w-md mx-auto mb-2">
-        <button onClick={()=>setOdontogramMode('hallazgos')} className={`flex-1 p-2 rounded-lg text-xs font-bold transition-all ${odontogramMode==='hallazgos'?t.accentBg:'opacity-50'}`}>🔍 Hallazgos (Diagnóstico)</button>
-        <button onClick={()=>setOdontogramMode('tratamientos')} className={`flex-1 p-2 rounded-lg text-xs font-bold transition-all ${odontogramMode==='tratamientos'?'bg-emerald-500 text-white':'opacity-50'}`}>🛠️ Plan de Tratamiento</button>
-    </div>
-
-    {/* SELECTOR DE DENTICIÓN */}
-    <div className="flex justify-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5 w-fit mx-auto mb-4">
-      <button onClick={() => setOdontogramType('adulto')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${odontogramType === 'adulto' ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Adulto</button>
-      <button onClick={() => setOdontogramType('pediatrico')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${odontogramType === 'pediatrico' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Pediátrico</button>
-      <button onClick={() => setOdontogramType('mixto')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${odontogramType === 'mixto' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Mixto</button>
-    </div>
-    
-    {/* ÁREA DE DIBUJO DE DIENTES */}
-    <div className="flex flex-col items-center gap-4">
-        {/* Superior Adulto */}
-        {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
-            <div className="flex gap-2 flex-wrap justify-center">
-                {TEETH_UPPER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
-            </div>
-        )}
-        {/* Superior Pediátrico */}
-        {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
-            <div className="flex gap-2 flex-wrap justify-center bg-amber-500/5 p-2 rounded-xl border border-amber-500/20">
-                {TEETH_UPPER_PED.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
-            </div>
-        )}
-        <div className="w-full h-px bg-white/10 my-2"></div> {/* Separador de maxilares */}
-        {/* Inferior Pediátrico */}
-        {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
-            <div className="flex gap-2 flex-wrap justify-center bg-amber-500/5 p-2 rounded-xl border border-amber-500/20">
-                {TEETH_LOWER_PED.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
-            </div>
-        )}
-        {/* Inferior Adulto */}
-        {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
-            <div className="flex gap-2 flex-wrap justify-center">
-                {TEETH_LOWER.map(n=><Tooth key={n} number={n} mode={odontogramMode} status={getPatient(selectedPatientId).clinical.teeth[n]?.status} data={getPatient(selectedPatientId).clinical.teeth[n]} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...getPatient(selectedPatientId).clinical.teeth[n], faces: getPatient(selectedPatientId).clinical.teeth[n]?.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: getPatient(selectedPatientId).clinical.teeth[n]?.treatment || {name:'', status:'planned'}}); setModal('tooth');}} theme={themeMode}/>)}
-            </div>
-        )}
-    </div>
-
-    {/* --- LISTA DE RESUMEN Y ATAJO AL COTIZADOR --- */}
-        <div className="w-full mt-6 space-y-4">
-           <h3 className="font-bold border-b border-white/10 pb-3 flex justify-between items-center">
-                <span>📋 Resumen del Odontograma</span>
-                {/* Botón Mágico que recolecta los dientes y lleva los datos al cotizador */}
-                {(userRole === 'admin' || userRole === 'dentist') && (
-                    <button onClick={() => {
-                        const pData = getPatient(selectedPatientId);
-                        const teeth = pData.clinical?.teeth || {};
-                        const newQuoteItems = [];
-                        
-                        // 1. Recorrer los 52 dientes posibles (Adultos + Pediátricos)
-                        [...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].forEach(n => {
-                            const tData = teeth[n];
-                            if (tData && tData.treatment && tData.treatment.name && tData.treatment.status !== 'completed') {
-                                // Buscar el precio en el catálogo
-                                const catalogItem = catalog.find(c => c.name === tData.treatment.name);
-                                
-                                newQuoteItems.push({
-                                    id: Date.now() + Math.random(), // ID único
-                                    name: tData.treatment.name,
-                                    tooth: n.toString(),
-                                    price: catalogItem ? Number(catalogItem.price) : 0 // Si no lo encuentra en el arancel, pone $0
-                                });
-                            }
-                        });
-
-                        // 2. Si encontró tratamientos, los carga a la lista de cobro
-                        if (newQuoteItems.length > 0) {
-                            setQuoteItems(newQuoteItems);
-                            notify(`¡Magia! Se importaron ${newQuoteItems.length} tratamientos al cotizador.`);
-                        }
-
-                        // 3. Viaje a la pestaña del cotizador
-                        setActiveTab('quote');
-                        setSessionData({...sessionData, patientName: pData.personal?.legalName || pData.name, patientId: selectedPatientId});
-                    }} className="text-[10px] bg-emerald-500 text-white px-4 py-2 rounded-xl uppercase tracking-widest font-bold shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform">
-                        Generar Presupuesto 💰
-                    </button>
-                )}
-            </h3>
-            
-            <div className="max-h-64 overflow-y-auto custom-scrollbar pr-2 space-y-2">
-                {/* Filtramos y mostramos solo los dientes que tienen algún dato de AMBOS arrays */}
-                {[...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].map(n => {
-                    const toothData = getPatient(selectedPatientId).clinical.teeth[n];
-                    if (!toothData) return null;
-                    
-                    const hasFaces = toothData.faces && Object.values(toothData.faces).some(v => v);
-                    const hasNotes = toothData.notes && toothData.notes.trim() !== '';
-                    const hasTreatment = toothData.treatment && toothData.treatment.name;
-                    
-                    if (toothData.status || hasFaces || hasNotes || hasTreatment) {
-                        return (
-                            <div key={n} onClick={()=>{setToothModalData({id:n, mode: odontogramMode, ...toothData, faces: toothData.faces || {v:null, l:null, m:null, d:null, o:null}, treatment: toothData.treatment || {name:'', status:'planned'}}); setModal('tooth');}} className="flex flex-col md:flex-row gap-3 p-3 bg-white/5 rounded-xl border border-white/5 text-xs hover:bg-white/10 transition-colors cursor-pointer group">
-                                {/* Color diferente para dientes de leche en el resumen */}
-                                <div className={`w-10 h-10 shrink-0 rounded-full bg-black/40 flex items-center justify-center font-black text-lg group-hover:scale-110 transition-transform ${n > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>{n}</div>
-                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <div>
-                                        <span className="font-bold text-stone-400 uppercase text-[9px] block mb-0.5">Diagnóstico</span>
-                                        <span className="font-bold">{toothData.status === 'missing' ? 'Ausente' : toothData.status === 'caries' ? 'Caries' : toothData.status === 'filled' ? 'Restauración' : toothData.status === 'crown' ? 'Corona' : 'Sano'}</span>
-                                        {hasFaces && <span className="ml-1 opacity-70">({Object.entries(toothData.faces).filter(([k,v])=>v).map(([k,v])=>k.toUpperCase()).join(', ')})</span>}
-                                    </div>
-                                    <div>
-                                        <span className="font-bold text-stone-400 uppercase text-[9px] block mb-0.5">Observaciones</span>
-                                        <span className="opacity-80">{toothData.notes || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="font-bold text-stone-400 uppercase text-[9px] block mb-0.5">Tratamiento Planificado</span>
-                                        {hasTreatment ? (
-                                            <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${toothData.treatment.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                {toothData.treatment.name} {toothData.treatment.status === 'completed' ? '(Listo)' : '(Por Hacer)'}
-                                            </span>
-                                        ) : <span className="opacity-50">-</span>}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    }
-                    return null;
-                })}
-                
-                {/* Mensaje si el odontograma está vacío */}
-                {![...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].some(n => {
-                    const d = getPatient(selectedPatientId).clinical.teeth[n];
-                    return d && (d.status || (d.faces && Object.values(d.faces).some(v=>v)) || d.notes || d.treatment?.name);
-                }) && (
-                    <div className="text-center py-8 opacity-40 border border-dashed border-white/10 rounded-xl">
-                        <p>No hay hallazgos registrados aún.</p>
-                        <p className="text-[10px]">Haz clic en un diente para comenzar.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-</Card>}
+                      
+{/* --- ODONTOGRAMA DUAL --- */}
+{patientTab === 'clinical' && (
+    <OdontogramTab 
+        themeMode={themeMode} t={t} odontogramMode={odontogramMode} setOdontogramMode={setOdontogramMode}
+        odontogramType={odontogramType} setOdontogramType={setOdontogramType} getPatient={getPatient}
+        selectedPatientId={selectedPatientId} setToothModalData={setToothModalData} setModal={setModal}
+        userRole={userRole} catalog={catalog} setQuoteItems={setQuoteItems} notify={notify}
+        setActiveTab={setActiveTab} sessionData={sessionData} setSessionData={setSessionData}
+    />
+)}
+{/* --- PERIODONTOGRAMA AVANZADO --- */}
 {patientTab === 'perio' && (
-    <div className="space-y-4">
-        {/* ENCABEZADO Y BOTÓN DE HISTORIAL */}
-        <div className="flex flex-col md:flex-row justify-between items-center bg-black/20 p-4 rounded-2xl border border-white/5 shadow-inner">
-            <div>
-                <h2 className="text-xl font-black text-cyan-500">Periodontograma Clínico</h2>
-                <p className="text-[10px] opacity-50 uppercase tracking-widest font-bold">Modo Evolutivo Integrado</p>
-            </div>
-            <button 
-                onClick={savePerioSnapshot} 
-                className="mt-3 md:mt-0 px-5 py-2.5 bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] flex items-center gap-2"
-            >
-                <span className="text-sm">💾</span> Guardar Evolución
-            </button>
-        </div>
-        
-        {/* --- TARJETAS DE ÍNDICES (INTACTAS) --- */}
-        <div className="grid grid-cols-2 gap-4">
-            <Card theme={themeMode} className="bg-red-500/10 border-red-500/20 text-center">
-                <p className="text-red-500 font-bold text-xs uppercase">Índice Sangrado (BOP)</p>
-                <h2 className="text-4xl font-black text-red-500">{getPerioStats().bop}%</h2>
-                <p className="text-[10px] opacity-50">Calculado sobre 6 puntos</p>
-            </Card>
-            <Card theme={themeMode} className="bg-yellow-500/10 border-yellow-500/20 text-center">
-                <p className="text-yellow-500 font-bold text-xs uppercase">Índice de Higiene</p>
-                <h2 className="text-4xl font-black text-yellow-500">{getPerioStats().plaque}%</h2>
-                <p className="text-[10px] opacity-50">O'Leary (4 caras)</p>
-            </Card>
-        </div>
-
-        {/* --- NUEVA CUADRÍCULA CLÍNICA (4 FILAS) --- */}
-        <Card theme={themeMode} className="flex flex-col gap-6 overflow-x-auto p-4 md:p-6 custom-scrollbar">
-            
-            {/* MAXILAR SUPERIOR */}
-            <div className="flex items-stretch relative">
-                <div className="flex items-center justify-center border-r border-white/10 pr-2 mr-2 md:pr-4 md:mr-4">
-                    <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-cyan-500 opacity-80" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                        Superior
-                    </span>
-                </div>
-                
-                <div className="flex flex-col gap-4 flex-1">
-                    {/* Fila Vestibular Superior */}
-                    <div className="flex items-center gap-2">
-                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Vestibular</span>
-                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
-                            {TEETH_UPPER.map(n => {
-                                const p = getPatient(selectedPatientId);
-                                return <Tooth key={`v-${n}`} number={n} isPerioMode={true} perioFace="v" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
-                            })}
-                        </div>
-                    </div>
-                    {/* Fila Palatino Superior */}
-                    <div className="flex items-center gap-2">
-                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Palatino</span>
-                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
-                            {TEETH_UPPER.map(n => {
-                                const p = getPatient(selectedPatientId);
-                                return <Tooth key={`p-${n}`} number={n} isPerioMode={true} perioFace="l" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="w-full h-px bg-white/5 my-2"></div>
-
-            {/* MAXILAR INFERIOR */}
-            <div className="flex items-stretch relative">
-                <div className="flex items-center justify-center border-r border-white/10 pr-2 mr-2 md:pr-4 md:mr-4">
-                    <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] text-cyan-500 opacity-80" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                        Inferior
-                    </span>
-                </div>
-                
-                <div className="flex flex-col gap-4 flex-1">
-                    {/* Fila Vestibular Inferior */}
-                    <div className="flex items-center gap-2">
-                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Vestibular</span>
-                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
-                            {TEETH_LOWER.map(n => {
-                                const p = getPatient(selectedPatientId);
-                                return <Tooth key={`v-${n}`} number={n} isPerioMode={true} perioFace="v" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
-                            })}
-                        </div>
-                    </div>
-                    {/* Fila Lingual Inferior */}
-                    <div className="flex items-center gap-2">
-                        <span className="w-14 text-[8px] md:text-[9px] font-black opacity-40 uppercase text-right tracking-widest">Lingual</span>
-                        <div className="flex gap-1 flex-nowrap md:flex-wrap">
-                            {TEETH_LOWER.map(n => {
-                                const p = getPatient(selectedPatientId);
-                                return <Tooth key={`l-${n}`} number={n} isPerioMode={true} perioFace="l" perioData={p.clinical.perio?.[n]} status={p.clinical.teeth[n]?.status} onClick={()=>{setToothModalData({id:n}); const existing = p.clinical.perio?.[n] || {}; setPerioData({ pd: existing.pd || {}, mg: existing.mg || {}, bop: existing.bop || {}, pus: existing.pus || false, mobility: existing.mobility || 0, furcation: existing.furcation || 0 }); setModal('perio');}} theme={themeMode}/>
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Card>
-
-        {/* --- TABLA DE HIGIENE O'LEARY (REDISEÑADA) --- */}
-        <Card theme={themeMode} className="space-y-6 p-4 md:p-6">
-            <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                <div>
-                    <h3 className="font-black text-lg text-cyan-500">Índice de Placa (O'Leary)</h3>
-                    <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest">Control de Higiene</p>
-                </div>
-                {/* Leyenda Visual */}
-                <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest bg-black/20 px-4 py-2 rounded-full border border-white/5">
-                    <span className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_red]"/> Placa
-                    </span>
-                    <span className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 bg-white/10 border border-white/20 rounded-full"/> Limpio
-                    </span>
-                </div>
-            </div>
-
-            <div className="flex flex-col gap-6 items-center">
-                {/* FILA SUPERIOR */}
-                <div className="w-full bg-black/5 p-4 rounded-3xl border border-white/5">
-                    <span className="block text-[9px] font-black opacity-30 uppercase tracking-widest mb-2 text-center">Maxilar Superior</span>
-                    <div className="flex justify-center gap-1 md:gap-2 flex-wrap">
-                        {TEETH_UPPER.map(t => { 
-                            const p = getPatient(selectedPatientId); 
-                            if(p.clinical.teeth[t]?.status === 'missing') return null; 
-                            return ( 
-                                <HygieneCell 
-                                    key={t} 
-                                    tooth={t} 
-                                    data={p.clinical.hygiene?.[t]} 
-                                    onChange={(face) => { 
-                                        const current = p.clinical.hygiene?.[t] || {}; 
-                                        const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; 
-                                        savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); 
-                                    }} 
-                                /> 
-                            ); 
-                        })}
-                    </div>
-                </div>
-
-                {/* FILA INFERIOR */}
-                <div className="w-full bg-black/5 p-4 rounded-3xl border border-white/5">
-                    <span className="block text-[9px] font-black opacity-30 uppercase tracking-widest mb-2 text-center">Maxilar Inferior</span>
-                    <div className="flex justify-center gap-1 md:gap-2 flex-wrap">
-                        {TEETH_LOWER.map(t => { 
-                            const p = getPatient(selectedPatientId); 
-                            if(p.clinical.teeth[t]?.status === 'missing') return null; 
-                            return ( 
-                                <HygieneCell 
-                                    key={t} 
-                                    tooth={t} 
-                                    data={p.clinical.hygiene?.[t]} 
-                                    onChange={(face) => { 
-                                        const current = p.clinical.hygiene?.[t] || {}; 
-                                        const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; 
-                                        savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); 
-                                    }} 
-                                /> 
-                            ); 
-                        })}
-                    </div>
-                </div>
-            </div>
-        </Card>
-        {/* --- HISTORIAL DE EVOLUCIONES PERIODONTALES --- */}
-        <Card theme={themeMode} className="space-y-4">
-            <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                <h3 className="font-bold text-cyan-500">Historial Clínico de Evoluciones</h3>
-                <span className="text-[10px] uppercase tracking-widest opacity-50 font-black">Snapshots</span>
-            </div>
-            
-            {(!getPatient(selectedPatientId).clinical.perioHistory || getPatient(selectedPatientId).clinical.perioHistory.length === 0) ? (
-                <div className="text-center py-8 bg-black/10 rounded-2xl border border-white/5 border-dashed">
-                    <p className="text-xs opacity-50 font-bold uppercase tracking-widest">No hay evoluciones guardadas aún</p>
-                    <p className="text-[10px] opacity-30 mt-1">Llena el periodontograma y haz clic en "Guardar Evolución" arriba.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Invertimos el arreglo para ver el más reciente primero */}
-                    {[...getPatient(selectedPatientId).clinical.perioHistory].reverse().map((snap, idx, arr) => (
-                        <div key={snap.id} className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col gap-3 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all cursor-pointer group">
-                            <div className="flex justify-between items-start border-b border-white/5 pb-2">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-black uppercase text-cyan-400 tracking-wider">
-                                        Evolución #{arr.length - idx}
-                                    </span>
-                                    <span className="text-[9px] font-bold opacity-50 mt-0.5">{snap.date}</span>
-                                </div>
-                                {/* Botoncito de acción (AHORA SÍ FUNCIONA) */}
-                                <button 
-                                    onClick={() => restoreSnapshot(snap)}
-                                    className="p-1.5 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 hover:bg-cyan-500/20 text-[10px] font-black uppercase text-cyan-500"
-                                >
-                                    Ver Detalle
-                                </button>
-                            </div>
-                            
-                            {/* Resumen de los índices en ese momento exacto */}
-                            <div className="flex justify-between items-center bg-black/40 p-2 rounded-lg">
-                                <div className="flex flex-col items-center flex-1 border-r border-white/5">
-                                    <span className="text-[8px] uppercase tracking-widest opacity-50 font-black mb-1">BOP</span>
-                                    <span className="text-[11px] font-black text-red-400">{snap.stats?.bop || 0}%</span>
-                                </div>
-                                <div className="flex flex-col items-center flex-1">
-                                    <span className="text-[8px] uppercase tracking-widest opacity-50 font-black mb-1">Higiene</span>
-                                    <span className="text-[11px] font-black text-yellow-400">{snap.stats?.plaque || 0}%</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </Card>
-    </div>
-)}                
+    <PerioTab 
+        themeMode={themeMode} t={t} getPatient={getPatient} selectedPatientId={selectedPatientId}
+        savePatientData={savePatientData} savePerioSnapshot={savePerioSnapshot} getPerioStats={getPerioStats}
+        setToothModalData={setToothModalData} setPerioData={setPerioData} setModal={setModal}
+        restoreSnapshot={restoreSnapshot}
+    />
+)}               
                 {/* V76: EVOLUTION TAB - SECURE (READ ONLY HISTORY) */}
                 {patientTab === 'evolution' && <div className="space-y-2">
                     <div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>
@@ -2283,71 +1451,25 @@ return (
             </div>
         }
 
-        {/* --- TABS COMUNES (MANTENIDOS) --- */}
-        {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <Card theme={themeMode} className="space-y-4"><PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
-            if (p.id === 'new') {
-                const newId = "pac_" + Date.now().toString();
-                const nombreReal = p.name;
-                
-                const newPatient = getPatient(newId);
-                newPatient.id = newId;
-                newPatient.name = nombreReal;
-                if (!newPatient.personal) newPatient.personal = {};
-                newPatient.personal.legalName = nombreReal;
-                
-                savePatientData(newId, newPatient);
-                setRxPatient(newPatient);
-                notify("Paciente Creado Exitosamente");
-            } else {
-                // 👇 MAGIA INYECTADA AQUÍ 👇
-                setPatientRecords(prev => ({...prev, [p.id]: p}));
-                
-                setRxPatient(p);
-            }
-        }} />{rxPatient && (<div className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 animate-in fade-in"><div className={`w-12 h-12 rounded-full ${t.accentBg} flex items-center justify-center font-bold text-white`}>{rxPatient.personal.legalName[0]}</div><div><p className="font-bold">{rxPatient.personal.legalName}</p><p className="text-xs opacity-60">RUT: {rxPatient.personal.rut}</p></div></div>)}<div className="flex gap-2"><InputField theme={themeMode} placeholder="Fármaco..." value={medInput.name} onChange={e=>setMedInput({...medInput, name:e.target.value})}/><InputField theme={themeMode} placeholder="Dosis..." value={medInput.dosage} onChange={e=>setMedInput({...medInput, dosage:e.target.value})}/><Button theme={themeMode} onClick={()=>{setPrescription([...prescription, medInput]); setMedInput({name:'', dosage:''});}}><Plus/></Button></div>{prescription.map((p,i)=>(<div key={i} className="p-3 bg-white/5 rounded-xl flex justify-between text-xs"><span>{p.name} - {p.dosage}</span><X size={14} onClick={()=>setPrescription(prescription.filter((_,idx)=>idx!==i))}/></div>))}<Button theme={themeMode} className="w-full" onClick={()=>generatePDF('rx', rxPatient)}><Printer/> GENERAR PDF</Button></Card>}
-        {/* --- PESTAÑA DE RETENCIÓN (CRM) --- */}
-        {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <div className="space-y-6 animate-in slide-in-from-bottom">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-2"><Users className={t.accent}/> CRM de Retención</h2>
-                    <p className="text-xs opacity-50 mt-1">Pacientes inactivos por más de 6 meses sin citas futuras.</p>
-                </div>
-                <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl font-bold">
-                    {getRecalls.length} Pacientes para recuperar
-                </div>
-            </div>
+{/* --- RECETAS (CLINICAL) --- */}
+{activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && (
+    <PrescriptionView 
+        themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient}
+        savePatientData={savePatientData} setPatientRecords={setPatientRecords}
+        rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput}
+        setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription}
+        notify={notify} generatePDF={generatePDF}
+    />
+)}
 
-            {getRecalls.length === 0 ? (
-                <div className="p-10 border border-dashed border-white/10 rounded-3xl text-center opacity-50 flex flex-col items-center gap-4">
-                    <Star size={40} className="opacity-30"/>
-                    <p>¡Excelente! No tienes pacientes inactivos o atrasados en sus controles.</p>
-                </div>
-            ) : (
-                <div className="grid gap-3">
-                    {getRecalls.map(appt => (
-                        <Card key={appt.id} theme={themeMode} className="flex flex-col md:flex-row justify-between items-center p-4 hover:border-emerald-500/50 transition-colors">
-                            <div className="flex items-center gap-4 mb-4 md:mb-0">
-                                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center font-bold text-lg opacity-50">
-                                    {appt.name[0]}
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-lg">{appt.name}</h4>
-                                    <p className="text-xs text-red-400">Última visita: {appt.date.split('-').reverse().join('/')} ({appt.treatment})</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2 w-full md:w-auto">
-                                <button onClick={()=>{setActiveTab('ficha'); setSelectedPatientId(Object.keys(patientRecords).find(k => patientRecords[k].personal?.legalName === appt.name));}} className="flex-1 md:flex-none p-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-colors">
-                                    Ver Ficha
-                                </button>
-                                <button onClick={()=>sendWhatsApp(getPatientPhone(appt.name), `Hola ${appt.name}, nos comunicamos de ShiningCloud Dental. Vemos que han pasado más de 6 meses desde tu última atención (${appt.treatment}). Nos encantaría agendar un control preventivo gratuito para ver cómo estás. ¿Te gustaría ver horarios disponibles?`)} className="flex-1 md:flex-none p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
-                                    <MessageCircle size={16}/> Recuperar por WhatsApp
-                                </button>
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-            )}
-        </div>}
+       {/* --- CRM DE RETENCIÓN --- */}
+{activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && (
+    <CRMView 
+        themeMode={themeMode} t={t} getRecalls={getRecalls} patientRecords={patientRecords}
+        setActiveTab={setActiveTab} setSelectedPatientId={setSelectedPatientId}
+        sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone}
+    />
+)}
       </main>
 {/* --- MODAL DIENTE LATERAL (CORREGIDO, UNIFICADO Y CON PERIO) --- */}
 {modal === 'tooth' && (
