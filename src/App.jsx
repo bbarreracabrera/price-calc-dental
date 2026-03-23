@@ -34,6 +34,14 @@ import QuoteView from './components/QuoteView';
 import PrescriptionView from './components/PrescriptionView';
 import OdontogramTab from './components/OdontogramTab';
 import PerioTab from './components/PerioTab';
+import PatientPersonalTab from './components/PatientPersonalTab';
+import PatientEvolutionTab from './components/PatientEvolutionTab';
+import PatientConsentTab from './components/PatientConsentTab';
+import PatientImagesTab from './components/PatientImagesTab';
+import PatientAnamnesisTab from './components/PatientAnamnesisTab';
+import ToothModal from './components/ToothModal';
+import ApptModal from './components/ApptModal';
+import AbonoModal from './components/AbonoModal';
 
 // --- APP ---
 export default function App() {
@@ -1079,247 +1087,24 @@ useEffect(() => {
             <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">{[{id:'personal', label:'Datos', icon: User}, {id:'anamnesis', label:'Fichas / Anam.', icon: FileQuestion, restricted: true}, {id:'clinical', label:'Odontograma', icon: Activity}, {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, {id:'consent', label:'Consentimientos', icon: FileSignature}, {id:'images', label:'Galería', icon: ImageIcon}].map(b=>{
             if (userRole === 'assistant' && b.restricted) return null; // V76: Role Protection
             return (<button key={b.id} onClick={()=>setPatientTab(b.id)} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap ${patientTab===b.id?t.accentBg:'bg-white/5'}`}>{b.label}</button>)
-        })}</div>{patientTab === 'personal' && <Card theme={themeMode} className="space-y-4"><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Nombre Completo" value={getPatient(selectedPatientId).personal.legalName} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, legalName: e.target.value}})} /><InputField theme={themeMode} label="RUT / DNI" value={getPatient(selectedPatientId).personal?.rut || ''} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, rut: formatRUT(e.target.value)}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Email" icon={Mail} value={getPatient(selectedPatientId).personal.email} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, email: e.target.value}})} /><div className="flex items-end gap-2"><InputField theme={themeMode} label="Teléfono" icon={Phone} value={getPatient(selectedPatientId).personal.phone} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, phone: e.target.value}})} />{getPatient(selectedPatientId).personal.phone && <button onClick={()=>sendWhatsApp(getPatient(selectedPatientId).personal.phone, "Hola, me comunico de ShiningCloud Dental.")} className="p-3 bg-emerald-500 rounded-xl text-white mb-[2px]"><MessageCircle size={18}/></button>}</div></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Fecha Nacimiento" type="date" value={getPatient(selectedPatientId).personal.birthDate} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, birthDate: e.target.value}})} /><InputField theme={themeMode} label="Ocupación" value={getPatient(selectedPatientId).personal.occupation} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, occupation: e.target.value}})} /></div><InputField theme={themeMode} label="Dirección" icon={MapPin} value={getPatient(selectedPatientId).personal.address} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, address: e.target.value}})} /><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Ciudad" value={getPatient(selectedPatientId).personal.city} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, city: e.target.value}})} /><InputField theme={themeMode} label="Comuna" value={getPatient(selectedPatientId).personal.commune} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, commune: e.target.value}})} /></div><div className="grid grid-cols-2 gap-4"><InputField theme={themeMode} label="Previsión" value={getPatient(selectedPatientId).personal.convention} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, convention: e.target.value}})} /><InputField theme={themeMode} label="Apoderado (Si aplica)" value={getPatient(selectedPatientId).personal.guardian} onChange={e=>savePatientData(selectedPatientId, {...getPatient(selectedPatientId), personal: {...getPatient(selectedPatientId).personal, guardian: e.target.value}})} /></div></Card>}
-                {patientTab === 'anamnesis' && (() => {
-                    const p = getPatient(selectedPatientId);
-                    
-                    // Inicializadores seguros de borradores
-                    const drafts = p.anamnesis?.drafts || { general: {}, cirugia: {}, endodoncia: {} };
-                    const history = p.anamnesis?.history || [];
-                    
-                    const setDraft = (type, field, value) => {
-                        savePatientData(selectedPatientId, { ...p, anamnesis: { ...p.anamnesis, drafts: { ...drafts, [type]: { ...drafts[type], [field]: value } } } });
-                    };
+        })}</div>
+        {/* --- DATOS PERSONALES --- */}
+        {patientTab === 'personal' && (
+            <PatientPersonalTab 
+                themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId}
+                savePatientData={savePatientData} sendWhatsApp={sendWhatsApp}
+            />
+        )}
 
-                    const saveFinalForm = (type) => {
-                        if (!window.confirm(`¿Guardar esta Ficha de ${type} como definitiva? No se podrá editar después.`)) return;
-                        
-                        const newForm = {
-                            id: Date.now().toString(),
-                            type: type,
-                            date: new Date().toLocaleString(),
-                            author: session?.user?.email,
-                            data: { ...drafts[type] }
-                        };
-                        
-                        // Guardamos en el historial y limpiamos el borrador
-                        savePatientData(selectedPatientId, { 
-                            ...p, 
-                            anamnesis: { 
-                                ...p.anamnesis, 
-                                history: [newForm, ...history],
-                                drafts: { ...drafts, [type]: {} } // Limpia el formulario
-                            } 
-                        });
-                        notify(`Ficha de ${type} guardada en el historial`);
-                        setViewingForm(newForm); // Lo abrimos en modo lectura
-                    };
-
-                    // Datos activos según si estamos viendo el historial o escribiendo un borrador
-                    const activeData = viewingForm ? viewingForm.data : drafts[activeFormType];
-                    const isReadOnly = viewingForm !== null;
-
-                    return (
-                        <div className="space-y-4 animate-in fade-in h-full flex flex-col">
-                            
-                            {/* CABECERA Y NAVEGACIÓN */}
-                            <div className="flex justify-between items-center mb-2">
-                                {isReadOnly ? (
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={()=>setViewingForm(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold transition-colors"><ArrowLeft size={14} className="inline mr-1"/> Volver a Edición</button>
-                                        <span className="text-sm font-black text-cyan-400 uppercase tracking-widest">Ficha Histórica: {viewingForm.type}</span>
-                                        <span className="text-[10px] opacity-50 bg-black/20 px-2 py-1 rounded border border-white/5">{viewingForm.date} • {viewingForm.author}</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto no-scrollbar w-full">
-                                        <button onClick={()=>setActiveFormType('general')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='general'?t.accentBg:'opacity-50'}`}> Ficha General</button>
-                                        <button onClick={()=>setActiveFormType('cirugia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='cirugia'?'bg-red-500 text-white':'opacity-50'}`}> Cirugía</button>
-                                        <button onClick={()=>setActiveFormType('endodoncia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='endodoncia'?'bg-purple-500 text-white':'opacity-50'}`}> Endodoncia</button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10 space-y-6">
-                                {/* --- 1. FICHA GENERAL EXTENDIDA --- */}
-                        {(isReadOnly ? viewingForm.type === 'general' : activeFormType === 'general') && (
-                            <Card theme={themeMode} className="space-y-6 border-t-2 border-t-amber-500 animate-in slide-in-from-left">
-                                <h3 className="font-black text-amber-500 uppercase tracking-widest text-sm border-b border-white/5 pb-2">Anamnesis y Examen General</h3>
-                                
-                                {/* ALARMAS GLOBALES (Siempre editables, actualizan el Banner Rojo al instante) */}
-                                {!isReadOnly && (
-                                    <div className="bg-red-500/5 border border-red-500/20 p-4 rounded-2xl mb-4">
-                                        <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-3">Alertas Médicas Globales</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {ANAMNESIS_TAGS.map(tag => {
-                                                const isActive = getPatient(selectedPatientId).anamnesis?.conditions?.[tag];
-                                                return (
-                                                    <button key={tag} onClick={() => { 
-                                                        const pat = getPatient(selectedPatientId); 
-                                                        const newCond = { ...pat.anamnesis.conditions, [tag]: !isActive }; 
-                                                        savePatientData(selectedPatientId, { ...pat, anamnesis: { ...pat.anamnesis, conditions: newCond } }); 
-                                                    }} className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${isActive ? 'bg-red-500 border-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-white/5 border-white/10 text-stone-400 hover:border-white/30'}`}>{tag}</button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 border-b border-white/10 pb-1">1. Motivo de Consulta</h4>
-                                    <InputField theme={themeMode} textarea label="Motivo de Consulta (En palabras del paciente)" disabled={isReadOnly} value={activeData.motivo || ''} onChange={e=>setDraft('general', 'motivo', e.target.value)} />
-                                    <InputField theme={themeMode} textarea label="Historia de la Enfermedad Actual" disabled={isReadOnly} value={activeData.enfermedadActual || ''} onChange={e=>setDraft('general', 'enfermedadActual', e.target.value)} />
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 border-b border-white/10 pb-1">2. Antecedentes Remotos</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <InputField theme={themeMode} textarea label="Antecedentes Médicos y Quirúrgicos" disabled={isReadOnly} value={activeData.medicos || ''} onChange={e=>setDraft('general', 'medicos', e.target.value)} />
-                                        <InputField theme={themeMode} textarea label="Fármacos en Uso y Alergias Detalladas" disabled={isReadOnly} value={activeData.farmacosAlergias || ''} onChange={e=>setDraft('general', 'farmacosAlergias', e.target.value)} />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <InputField theme={themeMode} textarea label="Hábitos (Tabaco, Alcohol, Bruxismo, etc.)" disabled={isReadOnly} value={activeData.habitos || ''} onChange={e=>setDraft('general', 'habitos', e.target.value)} />
-                                        <InputField theme={themeMode} textarea label="Antecedentes Odontológicos (Traumas, Ortodoncia previa)" disabled={isReadOnly} value={activeData.odontologicos || ''} onChange={e=>setDraft('general', 'odontologicos', e.target.value)} />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 border-b border-white/10 pb-1">3. Examen Físico</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <InputField theme={themeMode} textarea label="Examen Extraoral (ATM, Asimetrías, Ganglios)" disabled={isReadOnly} value={activeData.extraoral || ''} onChange={e=>setDraft('general', 'extraoral', e.target.value)} />
-                                        <InputField theme={themeMode} textarea label="Examen Intraoral (Mucosas, Lengua, Piso de boca)" disabled={isReadOnly} value={activeData.intraoral || ''} onChange={e=>setDraft('general', 'intraoral', e.target.value)} />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <InputField theme={themeMode} textarea label="Examen de Oclusión (Clase Angle, Overjet, Guías)" disabled={isReadOnly} value={activeData.oclusion || ''} onChange={e=>setDraft('general', 'oclusion', e.target.value)} />
-                                        <InputField theme={themeMode} textarea label="Examen Periodontal Inicial (Biotipo, Higiene, Sangrado)" disabled={isReadOnly} value={activeData.periodonto || ''} onChange={e=>setDraft('general', 'periodonto', e.target.value)} />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 bg-amber-500/5 p-4 rounded-2xl border border-amber-500/20">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 border-b border-amber-500/20 pb-1">4. Conclusión</h4>
-                                    <InputField theme={themeMode} textarea label="Diagnóstico Clínico Integral" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('general', 'diagnostico', e.target.value)} />
-                                    <InputField theme={themeMode} textarea label="Plan de Tratamiento (Fases)" disabled={isReadOnly} value={activeData.plan || ''} onChange={e=>setDraft('general', 'plan', e.target.value)} />
-                                </div>
-                            </Card>
-                        )}
-
-                                {/* --- 2. FICHA PRE-QUIRÚRGICA --- */}
-                                {(isReadOnly ? viewingForm.type === 'cirugia' : activeFormType === 'cirugia') && (
-                                    <Card theme={themeMode} className="space-y-6 border-t-2 border-t-red-500">
-                                        <h3 className="font-black text-red-500 uppercase tracking-widest text-sm border-b border-white/5 pb-2">Protocolo Pre-Quirúrgico</h3>
-                                        
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">ASA</label>
-                                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.asa || ''} onChange={e=>setDraft('cirugia', 'asa', e.target.value)}>
-                                                    <option value="">Seleccione...</option><option value="I">ASA I</option><option value="II">ASA II</option><option value="III">ASA III</option>
-                                                </select>
-                                            </div>
-                                            <InputField theme={themeMode} label="Presión Art." placeholder="120/80" disabled={isReadOnly} value={activeData.pa || ''} onChange={e=>setDraft('cirugia', 'pa', e.target.value)} />
-                                            <InputField theme={themeMode} label="Frec. Card." placeholder="Lpm" disabled={isReadOnly} value={activeData.fc || ''} onChange={e=>setDraft('cirugia', 'fc', e.target.value)} />
-                                            <InputField theme={themeMode} label="HGT (Glicemia)" placeholder="mg/dl" disabled={isReadOnly} value={activeData.hgt || ''} onChange={e=>setDraft('cirugia', 'hgt', e.target.value)} />
-                                        </div>
-
-                                        <InputField theme={themeMode} textarea label="Sistemática Radiográfica" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('cirugia', 'rx', e.target.value)} />
-                                        
-                                        <div className="space-y-4 bg-red-500/5 p-4 rounded-2xl border border-red-500/20">
-                                            <InputField theme={themeMode} textarea label="Diagnóstico Quirúrgico" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('cirugia', 'diagnostico', e.target.value)} />
-                                            <InputField theme={themeMode} textarea label="Paso a paso Quirúrgico (Técnica)" disabled={isReadOnly} value={activeData.tecnica || ''} onChange={e=>setDraft('cirugia', 'tecnica', e.target.value)} />
-                                        </div>
-                                    </Card>
-                                )}
-
-                                {/* --- 3. FICHA ENDODONCIA --- */}
-                                {(isReadOnly ? viewingForm.type === 'endodoncia' : activeFormType === 'endodoncia') && (
-                                    <Card theme={themeMode} className="space-y-6 border-t-2 border-t-purple-500">
-                                        <h3 className="font-black text-purple-500 uppercase tracking-widest text-sm border-b border-white/5 pb-2">Evaluación Endodóntica</h3>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <InputField theme={themeMode} label="Diente a Tratar" type="number" placeholder="Ej: 36" disabled={isReadOnly} value={activeData.diente || ''} onChange={e=>setDraft('endodoncia', 'diente', e.target.value)} />
-                                            <div className="md:col-span-2">
-                                                <InputField theme={themeMode} label="Semiología del Dolor" placeholder="Localización, cronología, alivio..." disabled={isReadOnly} value={activeData.dolor || ''} onChange={e=>setDraft('endodoncia', 'dolor', e.target.value)} />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Pruebas Sensibilidad (Frío)</label>
-                                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.frio || ''} onChange={e=>setDraft('endodoncia', 'frio', e.target.value)}>
-                                                    <option value="">Seleccione...</option><option value="Normal">Normal</option><option value="Aumentada (+)">Aumentada (+)</option><option value="Disminuida (-)">Disminuida (-)</option><option value="Sin Respuesta">Sin Respuesta</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Percusión / Palpación</label>
-                                                <input className={`w-full p-3 rounded-xl border text-sm font-bold outline-none ${t.inputBg} ${t.text} ${t.border}`} placeholder="Vertical (+), Horizontal (-)..." disabled={isReadOnly} value={activeData.percusion || ''} onChange={e=>setDraft('endodoncia', 'percusion', e.target.value)} />
-                                            </div>
-                                        </div>
-
-                                        <InputField theme={themeMode} textarea label="Examen Radiográfico (Raíces, conductos, zona apical)" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('endodoncia', 'rx', e.target.value)} />
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-purple-500/5 p-4 rounded-2xl border border-purple-500/20">
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-purple-400 ml-1">Diagnóstico Pulpar</label>
-                                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.dxPulpar || ''} onChange={e=>setDraft('endodoncia', 'dxPulpar', e.target.value)}>
-                                                    <option value="">Seleccione...</option>
-                                                    <option value="Pulpa Normal">Pulpa Normal</option>
-                                                    <option value="Pulpitis Reversible">Pulpitis Reversible</option>
-                                                    <option value="Pulpitis Irreversible Sintomática">Pulpitis Irreversible Sintomática</option>
-                                                    <option value="Pulpitis Irreversible Asintomática">Pulpitis Irreversible Asintomática</option>
-                                                    <option value="Necrosis Pulpar">Necrosis Pulpar</option>
-                                                    <option value="Diente Previamente Tratado">Diente Previamente Tratado</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-purple-400 ml-1">Diagnóstico Periapical</label>
-                                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.dxPeriapical || ''} onChange={e=>setDraft('endodoncia', 'dxPeriapical', e.target.value)}>
-                                                    <option value="">Seleccione...</option>
-                                                    <option value="Tejido Apical Normal">Tejido Apical Normal</option>
-                                                    <option value="Periodontitis Apical Sintomática">Periodontitis Apical Sintomática</option>
-                                                    <option value="Periodontitis Apical Asintomática">Periodontitis Apical Asintomática</option>
-                                                    <option value="Absceso Apical Agudo">Absceso Apical Agudo</option>
-                                                    <option value="Absceso Apical Crónico">Absceso Apical Crónico</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                )}
-
-                                {/* BOTÓN DE GUARDADO (SOLO EN MODO BORRADOR) */}
-                                {!isReadOnly && (
-                                    <button onClick={() => saveFinalForm(activeFormType)} className="w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30">
-                                        💾 GUARDAR FICHA DEFINITIVA
-                                    </button>
-                                )}
-
-                                {/* LISTA DE FICHAS HISTÓRICAS DE ESTE PACIENTE */}
-                                {!isReadOnly && (
-                                    <div className="pt-6 border-t border-white/10 mt-6">
-                                        <h4 className="font-bold text-sm mb-3">Historial de Fichas Guardadas</h4>
-                                        {history.length === 0 ? (
-                                            <p className="text-xs opacity-50 text-center py-4 border border-dashed border-white/10 rounded-xl">No hay fichas históricas guardadas.</p>
-                                        ) : (
-                                            <div className="grid gap-2">
-                                                {history.map(form => (
-                                                    <div key={form.id} onClick={() => setViewingForm(form)} className="p-3 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors group">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`p-2 rounded-lg ${form.type==='general'?'bg-amber-500/20 text-amber-500':form.type==='cirugia'?'bg-red-500/20 text-red-500':'bg-purple-500/20 text-purple-500'}`}>
-                                                                <FileText size={16}/>
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-bold text-sm capitalize">Ficha {form.type}</p>
-                                                                <p className="text-[10px] opacity-50">{form.date}</p>
-                                                            </div>
-                                                        </div>
-                                                        <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-cyan-400"/>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })()}        
+{/* --- ANAMNESIS Y FICHAS --- */}
+{patientTab === 'anamnesis' && (
+    <PatientAnamnesisTab 
+        themeMode={themeMode} t={t} getPatient={getPatient} selectedPatientId={selectedPatientId}
+        savePatientData={savePatientData} session={session} notify={notify}
+        activeFormType={activeFormType} setActiveFormType={setActiveFormType}
+        viewingForm={viewingForm} setViewingForm={setViewingForm}
+    />
+)}
                       
 {/* --- ODONTOGRAMA DUAL --- */}
 {patientTab === 'clinical' && (
@@ -1340,114 +1125,34 @@ useEffect(() => {
         restoreSnapshot={restoreSnapshot}
     />
 )}               
-                {/* V76: EVOLUTION TAB - SECURE (READ ONLY HISTORY) */}
-                {patientTab === 'evolution' && <div className="space-y-2">
-                    <div className={`flex items-start p-3 rounded-2xl transition-all ${t.inputBg}`}>
-                        <textarea rows="3" placeholder="Escribir nueva evolución (No editable después de guardar)..." className={`bg-transparent outline-none w-full font-bold text-sm resize-none ${t.text}`} value={newEvolution} onChange={e=>setNewEvolution(e.target.value)} />
-                        <div className="flex flex-col items-center gap-1">
-                            <button onClick={toggleVoice} className={`p-2 rounded-full transition-all ${isListening ? 'bg-red-500 animate-pulse text-white' : 'text-stone-400 hover:text-cyan-400'}`}>
-                                {isListening ? <MicOff size={18}/> : <Mic size={18}/>}
-                            </button>
-                        </div>
-                    </div>
-                    {voiceStatus && <p className="text-[10px] text-right opacity-60 animate-pulse font-bold">{voiceStatus}</p>}
-                    <Button theme={themeMode} className="w-full" onClick={()=>{ 
-                        if (!newEvolution.trim()) return;
-                        const p=getPatient(selectedPatientId); 
-                        // V76: Integridad - Nueva evolución se añade al principio, nunca se reemplaza el array
-                        const n={id:Date.now(), text:newEvolution, date:new Date().toLocaleString(), author: session.user.email}; 
-                        savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, evolution: [n, ...(p.clinical.evolution||[])]}}); 
-                        setNewEvolution(''); 
-                        logAction('ADD_EVOLUTION', { text_preview: newEvolution.substring(0,20) }, selectedPatientId);
-                    }}>GUARDAR Y BLOQUEAR</Button>
-                    
-                    <div className="space-y-2 mt-4">
-                        {getPatient(selectedPatientId).clinical.evolution?.map(ev=>(
-                            <div key={ev.id} className={`p-4 rounded-xl border border-white/5 relative ${t.card}`}>
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <FileLock size={14} className="text-emerald-500"/>
-                                        <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{ev.date}</span>
-                                    </div>
-                                    <span className="text-[9px] opacity-30">{ev.author}</span>
-                                </div>
-                                <p className="text-sm leading-relaxed">{ev.text}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>}
+                {/* --- EVOLUCIONES --- */}
+{patientTab === 'evolution' && (
+    <PatientEvolutionTab 
+        themeMode={themeMode} t={t} newEvolution={newEvolution} setNewEvolution={setNewEvolution}
+        isListening={isListening} toggleVoice={toggleVoice} voiceStatus={voiceStatus}
+        getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
+        session={session} logAction={logAction}
+    />
+)}
 
-                {patientTab === 'consent' && <div className="space-y-4">{modal === 'sign' ? (<Card theme={themeMode} className="space-y-4"><h3 className="font-bold">{CONSENT_TEMPLATES[consentTemplate].title}</h3><textarea className="w-full h-48 bg-black/20 p-4 rounded-xl text-sm leading-relaxed outline-none border border-white/10 focus:border-emerald-500 transition-colors resize-none text-white" value={consentText} onChange={(e)=>setConsentText(e.target.value)} /><SignaturePad theme={themeMode} onSave={(sig)=>{ const p=getPatient(selectedPatientId); savePatientData(selectedPatientId, {...p, consents:[{id:Date.now(), type:CONSENT_TEMPLATES[consentTemplate].title, text:consentText, signature:sig}, ...(p.consents||[])]}); setModal(null); }} onCancel={()=>setModal(null)}/></Card>) : (<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{Object.entries(CONSENT_TEMPLATES).map(([key, tpl]) => (<Card key={key} onClick={()=>{setConsentTemplate(key); setConsentText(tpl.text); setModal('sign');}} theme={themeMode} className="cursor-pointer hover:border-emerald-500 hover:scale-[1.02] transition-transform"><FileSignature className="text-emerald-500 mb-2"/><span className="font-bold text-sm block">{tpl.title}</span></Card>))}</div>)}<h3 className="font-bold pt-4 border-t border-white/10 mt-4">Historial</h3><div className="space-y-2">{(getPatient(selectedPatientId).consents || []).map(c => (<Card key={c.id} theme={themeMode} className="flex justify-between items-center py-3"><div><p className="font-bold text-sm">{c.type}</p><p className="text-[10px] opacity-50">{c.date}</p></div><div className="flex items-center gap-3"><div className="bg-white p-1 rounded"><img src={c.signature} className="h-8 object-contain" alt="Firma"/></div><button onClick={()=>generatePDF('consent', c)} className={`p-2 rounded-xl ${t.inputBg} hover:opacity-80`}><Printer size={16}/></button></div></Card>))}</div></div>}
-                {patientTab === 'images' && (
-          <div className="space-y-6 animate-in fade-in h-full flex flex-col">
-              
-              {/* --- 1. LAS PESTAÑAS DE LAS CARPETAS --- */}
-              <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar">
-                  {['Radiografías', 'Fotos Clínicas', 'Documentos', 'Otros'].map(folder => (
-                      <button 
-                          key={folder}
-                          onClick={() => setActiveFolder(folder)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${t.border} ${activeFolder === folder ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/20' : 'opacity-50 hover:opacity-100'}`}
-                      >
-                          {folder === 'Radiografías' ? '🦴 ' : folder === 'Fotos Clínicas' ? '📸 ' : folder === 'Documentos' ? '📄 ' : '📁 '}
-                          {folder}
-                      </button>
-                  ))}
-              </div>
-
-              {/* --- 2. ZONA DE SUBIDA (Te avisa a qué carpeta va) --- */}
-              <div className={`flex items-center justify-center border-2 border-dashed ${t.border} rounded-3xl p-8 relative group hover:opacity-70 transition-colors cursor-pointer ${t.cardBg}`}>
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*,application/pdf" onChange={handleImageUpload} disabled={uploading}/>
-                  {uploading ? (
-                      <Loader className="animate-spin text-cyan-400" size={30}/> 
-                  ) : (
-                      <div className="text-center">
-                          <Upload className="mx-auto mb-2 opacity-30"/>
-                          <span className="text-xs font-bold opacity-50 uppercase tracking-widest">
-                              Subir archivo a <span className="text-cyan-500">{activeFolder}</span>
-                          </span>
-                      </div>
-                  )}
-              </div>
-
-              {/* --- 3. LA CUADRÍCULA DE FOTOS (Filtrada por la carpeta activa) --- */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {getPatient(selectedPatientId).images?.filter(img => (img.folder || 'Otros') === activeFolder).length === 0 ? (
-                          <div className="col-span-full py-10 text-center opacity-30 text-sm font-bold">
-                              No hay archivos en la carpeta {activeFolder}
-                          </div>
-                      ) : (
-                          getPatient(selectedPatientId).images?.filter(img => (img.folder || 'Otros') === activeFolder).map(img => (
-                              <div key={img.id} className={`relative group rounded-2xl overflow-hidden aspect-square border ${t.border} bg-black/5 dark:bg-white/5`}>
-                                  
-                                  {/* AQUI LLAMAMOS A NUESTRO COMPONENTE DE SEGURIDAD */}
-                                  <PrivateImage img={img} onClick={setSelectedImg} />
-                                  
-                                  <button onClick={async()=>{ 
-                                      if(window.confirm("¿Seguro que deseas eliminar este archivo?")) {
-                                          const p = getPatient(selectedPatientId); 
-                                          const f = p.images.filter(i => i.id !== img.id); 
-                                          await savePatientData(selectedPatientId, {...p, images:f}); 
-                                          
-                                          // Limpiamos el archivo real de Supabase para no ocupar espacio "basura"
-                                          const filePath = img.path || img.url;
-                                          if (filePath && !filePath.startsWith('http')) {
-                                              await supabase.storage.from('patient-images').remove([filePath]);
-                                          }
-                                          
-                                          notify("Eliminado"); 
-                                      }
-                                  }} className="absolute top-2 right-2 p-2 bg-red-500 shadow-lg rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                      <Trash2 size={14}/>
-                                  </button>
-                              </div>
-                          ))
-                      )}
-                  </div>
-              </div>
-          </div>
-      )}
+               {/* --- CONSENTIMIENTOS --- */}
+{patientTab === 'consent' && (
+    <PatientConsentTab 
+        themeMode={themeMode} t={t} getPatient={getPatient} selectedPatientId={selectedPatientId}
+        savePatientData={savePatientData} modal={modal} setModal={setModal}
+        consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate}
+        consentText={consentText} setConsentText={setConsentText} generatePDF={generatePDF}
+    />
+)}
+{/* --- IMÁGENES / GALERÍA --- */}
+{patientTab === 'images' && (
+    <PatientImagesTab 
+        themeMode={themeMode} t={t} getPatient={getPatient} selectedPatientId={selectedPatientId}
+        savePatientData={savePatientData} activeFolder={activeFolder} setActiveFolder={setActiveFolder}
+        handleImageUpload={handleImageUpload} uploading={uploading} setSelectedImg={setSelectedImg}
+        notify={notify}
+    />
+)}
             </div>
         }
 
@@ -1471,165 +1176,17 @@ useEffect(() => {
     />
 )}
       </main>
-{/* --- MODAL DIENTE LATERAL (CORREGIDO, UNIFICADO Y CON PERIO) --- */}
+{/* --- MODAL DIENTE LATERAL --- */}
 {modal === 'tooth' && (
-    <div className="fixed inset-0 z-[100] flex justify-end">
-        {/* Fondo sutil */}
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={() => setModal(null)} />
-
-        <Card theme={themeMode} className="w-full max-w-sm h-full relative z-10 shadow-2xl border-l border-white/10 flex flex-col animate-in slide-in-from-right duration-300 rounded-none">
-            
-            {/* ENCABEZADO CON NAVEGACIÓN RÁPIDA (NUEVO) */}
-            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/5 dark:bg-white/5">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => goToAdjacentTooth(-1)} className="p-1.5 bg-black/10 dark:bg-white/5 hover:bg-black/20 dark:hover:bg-white/10 rounded-lg transition-all"><ChevronLeft size={20} /></button>
-                    <h3 className="text-2xl font-black italic tracking-tighter w-20 text-center text-cyan-500">{toothModalData.id}</h3>
-                    <button onClick={() => goToAdjacentTooth(1)} className="p-1.5 bg-black/10 dark:bg-white/5 hover:bg-black/20 dark:hover:bg-white/10 rounded-lg transition-all"><ChevronRight size={20} /></button>
-                </div>
-                <button onClick={() => setModal(null)} className="p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                
-                {/* --- SECCIÓN: PERIODONTOGRAMA TIPO DENTALINK (SOLO EN MODO PERIO) --- */}
-                {activeTab === 'perio' && (
-                    <div className="p-4 border border-white/10 rounded-3xl bg-black/5 dark:bg-white/5 shadow-inner animate-in fade-in">
-                        <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
-                            <h3 className="text-sm font-black text-cyan-600 dark:text-cyan-500 uppercase tracking-widest flex items-center gap-2">
-                                📏 Periodontograma
-                            </h3>
-                        </div>
-
-                        {/* TABLAS VESTIBULAR Y LINGUAL/PALATINO */}
-                        {['v', 'l'].map(face => (
-                            <div key={face} className="mb-5 bg-white/5 p-3 rounded-2xl border border-white/5 relative mt-4">
-                                <h4 className="text-[10px] font-bold opacity-50 uppercase tracking-wider mb-2 text-center absolute -top-3 left-1/2 -translate-x-1/2 bg-[#121212] px-3 py-0.5 rounded-full border border-white/10">
-                                    {face === 'v' ? 'Vestibular' : (parseInt(toothModalData.id) > 30 ? 'Lingual' : 'Palatino')}
-                                </h4>
-                                
-                                <div className="grid grid-cols-4 gap-1 mb-1 mt-2">
-                                    <div></div>
-                                    <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Dist</span>
-                                    <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Cent</span>
-                                    <span className="text-[8px] text-center font-black opacity-40 uppercase tracking-widest">Mesi</span>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <div className="grid grid-cols-4 gap-1 items-center">
-                                        <span className="text-[9px] font-bold text-right pr-1 opacity-70">Prof.</span>
-                                        {[0, 1, 2].map(idx => (
-                                            <input key={`pd-${face}-${idx}`} type="text" value={toothModalData.perio?.[`pd_${face}`]?.[idx] ?? ''} onChange={(e) => handlePerioChange(face, 'pd', idx, e.target.value)} className={`w-full h-8 text-center text-xs font-bold rounded-lg bg-black/20 border outline-none ${toothModalData.perio?.[`pd_${face}`]?.[idx] >= 4 ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-white/10 focus:border-cyan-500'}`} />
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-1 items-center">
-                                        <span className="text-[9px] font-bold text-right pr-1 opacity-70">Margen</span>
-                                        {[0, 1, 2].map(idx => (
-                                            <input key={`mg-${face}-${idx}`} type="text" value={toothModalData.perio?.[`mg_${face}`]?.[idx] ?? ''} onChange={(e) => handlePerioChange(face, 'mg', idx, e.target.value)} className="w-full h-8 text-center text-xs font-bold rounded-lg bg-black/20 border border-white/10 focus:border-blue-400 outline-none text-blue-400" />
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-1 items-center mt-2 pt-2 border-t border-white/5">
-                                        <span className="text-[10px] font-black text-right pr-1 text-cyan-600">NIC</span>
-                                        {[0, 1, 2].map(idx => {
-                                            const nic = calcNIC(toothModalData.perio?.[`pd_${face}`]?.[idx], toothModalData.perio?.[`mg_${face}`]?.[idx]);
-                                            return (
-                                                <div key={`nic-${face}-${idx}`} className={`w-full h-7 flex items-center justify-center text-xs font-black rounded-lg bg-black/10 ${nic >= 4 || nic === '-' ? 'text-orange-500' : 'text-emerald-500'}`}>{nic}</div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* ALERTAS PERIO */}
-                        <div className="grid grid-cols-4 gap-2 mt-4">
-                            <button onClick={() => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, bop: !prev.perio?.bop } }))} className={`p-2 rounded-xl border text-[10px] font-black transition-all ${toothModalData.perio?.bop ? 'bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-transparent border-white/10 opacity-50'}`}>🩸 BOP</button>
-                            <button onClick={() => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, pus: !prev.perio?.pus } }))} className={`p-2 rounded-xl border text-[10px] font-black transition-all ${toothModalData.perio?.pus ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-transparent border-white/10 opacity-50'}`}>🟡 PUS</button>
-                            <select className="p-2 rounded-xl bg-transparent border border-white/10 text-[10px] font-black outline-none text-center appearance-none" value={toothModalData.perio?.mobility || 0} onChange={(e) => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, mobility: parseInt(e.target.value) } }))}><option value={0} className="bg-[#121212]">Mov 0</option><option value={1} className="bg-[#121212]">Mov I</option><option value={2} className="bg-[#121212]">Mov II</option><option value={3} className="bg-[#121212]">Mov III</option></select>
-                            <select className="p-2 rounded-xl bg-transparent border border-white/10 text-[10px] font-black outline-none text-center appearance-none" value={toothModalData.perio?.furcation || 0} onChange={(e) => setToothModalData(prev => ({ ...prev, perio: { ...prev.perio, furcation: parseInt(e.target.value) } }))}><option value={0} className="bg-[#121212]">Furca 0</option><option value={1} className="bg-[#121212]">Furca I</option><option value={2} className="bg-[#121212]">Furca II</option><option value={3} className="bg-[#121212]">Furca III</option></select>
-                        </div>
-                    </div>
-                )}
-
-                {/* Selector de Modo (Hallazgos vs Tratamientos) */}
-                <div className="flex bg-black/10 dark:bg-white/5 p-1 rounded-xl">
-                    <button onClick={() => setToothModalData({...toothModalData, mode: 'hallazgos'})} className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'hallazgos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}>Hallazgos</button>
-                    <button onClick={() => setToothModalData({...toothModalData, mode: 'tratamientos'})} className={`flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${toothModalData.mode === 'tratamientos' ? 'bg-white dark:bg-white/10 shadow-sm text-cyan-500' : 'opacity-50'}`}>Tratamientos</button>
-                </div>
-
-                {toothModalData.mode === 'hallazgos' ? (
-                    /* --- MODO HALLAZGOS --- */
-                    <div className="space-y-6 animate-in fade-in">
-                        <div className={`flex flex-col items-center p-6 rounded-3xl border transition-colors ${t.border} bg-black/5 dark:bg-white/5 shadow-inner`}>
-                            <ToothSVG number={toothModalData.id} faces={toothModalData.faces} status={toothModalData.status} size={100} interactive={true} activeFace={toothModalData.activeFace || 'o'} onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})} />
-                            <p className="text-[10px] font-black opacity-50 mt-4 uppercase tracking-[0.2em]">
-                                Cara: <span className="text-cyan-500">{toothModalData.activeFace === 'v' ? 'Vestibular' : toothModalData.activeFace === 'l' ? 'Lingual/Palatino' : toothModalData.activeFace === 'm' ? 'Mesial' : toothModalData.activeFace === 'd' ? 'Distal' : 'Oclusal'}</span>
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                                <span className="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">En Cara</span>
-                                <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'caries'}, status: null})} className="w-full p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20 rounded-2xl text-[11px] font-black transition-all">🔴 CARIES</button>
-                                <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'filled'}, status: null})} className="w-full p-3 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white border border-blue-500/20 rounded-2xl text-[11px] font-black transition-all">🔵 RESINA</button>
-                                <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: null}})} className="w-full p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[11px] font-black transition-all opacity-70 hover:opacity-100">⚪ LIMPIAR CARA</button>
-                            </div>
-                            <div className="space-y-2">
-                                <span className="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">En Pieza</span>
-                                <button onClick={() => setToothModalData({...toothModalData, status: 'crown'})} className="w-full p-3 bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500 hover:text-black border border-yellow-500/20 rounded-2xl text-[11px] font-black transition-all">🟡 CORONA</button>
-                                <button onClick={() => setToothModalData({...toothModalData, status: 'missing'})} className="w-full p-3 bg-stone-500/10 text-stone-500 hover:bg-stone-500 hover:text-white border border-stone-500/20 rounded-2xl text-[11px] font-black transition-all">❌ AUSENTE</button>
-                                <button onClick={() => setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status:null})} className="w-full p-3 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 rounded-2xl text-[11px] font-black transition-all">✅ DIENTE SANO</button>
-                            </div>
-                        </div>
-                        
-                        <div className="pt-4">
-                            <label className="text-[10px] font-black uppercase tracking-widest mb-2 block opacity-40">Evolución Clínica</label>
-                            <div className="relative group">
-                                <textarea rows="4" placeholder="Dicta hallazgos..." className={`w-full p-5 rounded-3xl border ${t.border} ${t.inputBg} outline-none focus:border-cyan-500 font-bold text-sm resize-none transition-all shadow-inner`} value={toothModalData.notes || ''} onChange={e => setToothModalData({...toothModalData, notes: e.target.value})} />
-                                <button onClick={() => toggleVoice()} className={`absolute bottom-4 right-4 p-4 rounded-2xl transition-all shadow-lg ${isListening ? 'bg-red-500 animate-pulse text-white scale-110' : 'bg-cyan-500 text-white shadow-cyan-500/20'}`}>
-                                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    /* --- MODO TRATAMIENTOS --- */
-                    <div className="space-y-6 animate-in fade-in">
-                        <div className="w-full">
-                            <label className="text-[10px] font-black uppercase tracking-widest mb-1 block ml-1 text-stone-400">Tratamiento Planificado</label>
-                            <input list="catalog-tooth-options" className={`w-full outline-none font-bold text-sm p-4 rounded-2xl border ${t.border} ${t.inputBg} focus:border-cyan-400 transition-all shadow-inner`} placeholder="Busca en tu arancel..." value={toothModalData.treatment?.name || ''} onChange={e => setToothModalData({...toothModalData, treatment: {...(toothModalData.treatment || {}), name: e.target.value, status: toothModalData.treatment?.status || 'planned'}})} />
-                            <datalist id="catalog-tooth-options">{catalog.map(c => <option key={c.id} value={c.name} />)}</datalist>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-4">
-                            <button onClick={() => setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'planned'}})} className={`p-4 rounded-2xl border text-[10px] font-black uppercase transition-all ${toothModalData.treatment?.status === 'planned' ? 'bg-red-500/20 border-red-500 text-red-500 shadow-lg shadow-red-500/10' : 'border-white/10 opacity-50'}`}>Por Hacer</button>
-                            <button onClick={() => setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'completed'}})} className={`p-4 rounded-2xl border text-[10px] font-black uppercase transition-all ${toothModalData.treatment?.status === 'completed' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-white/10 opacity-50'}`}>Realizado</button>
-                        </div>
-                        <button onClick={() => setToothModalData({...toothModalData, treatment: null})} className="w-full p-2 text-[10px] font-bold text-red-400 opacity-50 hover:opacity-100 uppercase tracking-widest transition-opacity">Eliminar Tratamiento</button>
-                    </div>
-                )}
-            </div>
-
-            <div className="p-6 border-t border-white/5 bg-black/5">
-                <button 
-                    onClick={() => {
-                        const p = getPatient(selectedPatientId); 
-                        const ut = {...p.clinical.teeth, [toothModalData.id]: {
-                            status: toothModalData.status, 
-                            faces: toothModalData.faces, 
-                            notes: toothModalData.notes, 
-                            treatment: toothModalData.treatment,
-                            perio: toothModalData.perio // <-- ¡ESTO FALTABA PARA GUARDAR EL SONDAJE!
-                        }}; 
-                        savePatientData(selectedPatientId, {...p, clinical: {...p.clinical, teeth: ut}}); 
-                        setModal(null); 
-                        notify("Diente Guardado con éxito");
-                    }}
-                    className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-xl active:scale-95"
-                >
-                    GUARDAR DATOS
-                </button>
-            </div>
-        </Card>
-    </div>
+    <ToothModal 
+        themeMode={themeMode} t={t} toothModalData={toothModalData} 
+        setToothModalData={setToothModalData} setModal={setModal} activeTab={activeTab}
+        perioData={perioData} setPerioData={setPerioData} handlePerioChange={handlePerioChange} 
+        calcNIC={calcNIC} isPerioVoiceActive={isPerioVoiceActive} startPerioDictation={startPerioDictation} 
+        voiceFeedback={voiceFeedback} isListening={isListening} toggleVoice={toggleVoice} 
+        catalog={catalog} getPatient={getPatient} selectedPatientId={selectedPatientId} 
+        savePatientData={savePatientData} notify={notify} goToAdjacentTooth={goToAdjacentTooth}
+    />
 )}
 
 {/* --- MODAL NUEVO TRABAJO DE LABORATORIO --- */}
@@ -1711,62 +1268,15 @@ useEffect(() => {
               </div>
           </div>
       )}
-
-      {/* MODAL DE ABONOS */}
-      {modal === 'abono' && selectedFinancialRecord && (
-          <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-              <Card  className="w-full max-w-md space-y-6">
-                  <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                      <div><h3 className="text-xl font-bold">{selectedFinancialRecord.patientName}</h3><p className="text-xs opacity-50">{selectedFinancialRecord.date}</p></div>
-                      <button onClick={()=>setModal(null)}><X/></button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="p-3 bg-white/5 rounded-xl"><p className="text-[10px] uppercase opacity-50">Total</p><p className="font-bold">${(selectedFinancialRecord.total||0).toLocaleString()}</p></div>
-                      <div className="p-3 bg-emerald-500/10 rounded-xl"><p className="text-[10px] uppercase text-emerald-500">Pagado</p><p className="font-bold text-emerald-400">${((selectedFinancialRecord.payments||[]).reduce((s,p)=>s+p.amount,0) + (selectedFinancialRecord.paid && !selectedFinancialRecord.payments ? selectedFinancialRecord.paid : 0)).toLocaleString()}</p></div>
-                      <div className="p-3 bg-red-500/10 rounded-xl"><p className="text-[10px] uppercase text-red-500">Deuda</p><p className="font-bold text-red-400">${((selectedFinancialRecord.total||0) - ((selectedFinancialRecord.payments||[]).reduce((s,p)=>s+p.amount,0) + (selectedFinancialRecord.paid && !selectedFinancialRecord.payments ? selectedFinancialRecord.paid : 0))).toLocaleString()}</p></div>
-                  </div>
-                  <div className="space-y-3 bg-white/5 p-4 rounded-xl">
-                      <h4 className="font-bold text-sm">Registrar Nuevo Abono</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                          <InputField  type="number" placeholder="$ Monto" value={paymentInput.amount} onChange={e=>setPaymentInput({...paymentInput, amount:e.target.value})} />
-                          <select className="bg-[#121212] border border-white/10 rounded-xl px-2 p-3 text-xs font-bold outline-none text-white" value={paymentInput.method} onChange={e=>setPaymentInput({...paymentInput, method:e.target.value})}>
-                              <option value="Efectivo">Efectivo</option>
-                              <option value="Transferencia">Transferencia</option>
-                              <option value="Tarjeta">Tarjeta</option>
-                          </select>
-                          <InputField  placeholder="N° Boleta (Opc.)" value={paymentInput.receiptNumber} onChange={e=>setPaymentInput({...paymentInput, receiptNumber:e.target.value})} />
-                      </div>
-                      <Button  className="w-full" onClick={async ()=>{
-                          if(!paymentInput.amount) return;
-                          const newPayment = { amount: Number(paymentInput.amount), method: paymentInput.method, date: new Date().toLocaleDateString(), receiptNumber: paymentInput.receiptNumber };
-                          const currentPayments = selectedFinancialRecord.payments || [];
-                          if (!selectedFinancialRecord.payments && selectedFinancialRecord.paid > 0) {
-                              currentPayments.push({ amount: selectedFinancialRecord.paid, method: 'Histórico', date: selectedFinancialRecord.date });
-                          }
-                          const updatedPayments = [...currentPayments, newPayment];
-                          const newTotalPaid = updatedPayments.reduce((s,p)=>s+p.amount, 0);
-                          const nr = {...selectedFinancialRecord, paid: newTotalPaid, payments: updatedPayments}; 
-                          setFinancialRecords(prev => prev.map(h => h.id === nr.id ? nr : h));
-                          await saveToSupabase('financials', nr.id, nr); 
-                          setModal(null); setPaymentInput({amount:'', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); notify("Abono Registrado");
-                      }}>CONFIRMAR PAGO</Button>
-                  </div>
-                  <div className="max-h-32 overflow-y-auto space-y-2">
-                      <p className="text-[10px] font-bold opacity-50 uppercase">Historial de Pagos</p>
-                      {(selectedFinancialRecord.payments || []).length > 0 ? (selectedFinancialRecord.payments.map((p, i) => (
-                          <div key={i} className="flex justify-between items-center text-xs p-2 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                              <div className="flex gap-2 items-center">
-                                  <span className="opacity-50">{p.date}</span> 
-                                  <span className="font-bold">{p.method}</span>
-                                  {p.receiptNumber && <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-stone-300 font-mono tracking-wider border border-white/10">Bol: {p.receiptNumber}</span>}
-                              </div>
-                              <span className="font-bold text-emerald-400">+${p.amount.toLocaleString()}</span>
-                          </div>
-                      ))) : <p className="text-xs opacity-30 text-center">Sin abonos registrados.</p>}
-                  </div>
-              </Card>
-          </div>
-      )}
+      
+{/* --- MODAL DE ABONOS --- */}
+{modal === 'abono' && selectedFinancialRecord && (
+    <AbonoModal 
+        themeMode={themeMode} selectedFinancialRecord={selectedFinancialRecord} setModal={setModal}
+        paymentInput={paymentInput} setPaymentInput={setPaymentInput} financialRecords={financialRecords}
+        setFinancialRecords={setFinancialRecords} saveToSupabase={saveToSupabase} notify={notify}
+    />
+)}
 
       {/* MODAL INVENTARIO */}
       {modal === 'addItem' && (
@@ -2021,105 +1531,16 @@ useEffect(() => {
         </Card>
     </div>
 )}
-      {/* --- MODAL AGENDAR CITA ACTUALIZADO --- */}
-{modal === 'appt' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-    <Card  className="w-full max-w-sm space-y-4">
-        <div className="flex justify-between items-center">
-            <h3 className="font-bold text-xl">{newAppt.id ? 'Editar Cita' : 'Agendar Cita'}</h3>
-            <button onClick={()=>setModal(null)} className="opacity-50 hover:opacity-100"><X size={20}/></button>
-        </div>
-       {!newAppt.id && <PatientSelect patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
-            if (p.id === 'new') {
-                const newId = "pac_" + Date.now().toString();
-                const nombreReal = p.name;
-                const newPatient = getPatient(newId);
-                newPatient.id = newId;
-                newPatient.name = nombreReal;
-                if (!newPatient.personal) newPatient.personal = {};
-                newPatient.personal.legalName = nombreReal;
-                
-                savePatientData(newId, newPatient);
-                setNewAppt({...newAppt, name: nombreReal});
-                notify("Paciente Creado Exitosamente");
-            } else {
-                // 👇 MAGIA INYECTADA AQUÍ 👇
-                setPatientRecords(prev => ({...prev, [p.id]: p}));
-                
-                setNewAppt({...newAppt, name: p.personal?.legalName || p.name});
-            }
-        }} />}
-        
-        {newAppt.id && <p className="font-bold text-lg text-cyan-400">{newAppt.name}</p>}
-        
-        <InputField  label="Tratamiento" value={newAppt.treatment} onChange={e=>setNewAppt({...newAppt, treatment:e.target.value})}/>
-        
-        <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Fecha y Hora</label>
-                <input type="date" className="w-full bg-white/5 p-3 rounded-xl text-white outline-none text-xs" value={newAppt.date} onChange={e=>setNewAppt({...newAppt, date:e.target.value})}/>
-                <input type="time" className="w-full bg-white/5 p-3 rounded-xl text-white outline-none text-xs" value={newAppt.time} onChange={e=>setNewAppt({...newAppt, time:e.target.value})}/>
-            </div>
-            <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Detalles</label>
-                <select className="w-full bg-[#121212] border border-white/10 p-3 rounded-xl text-white outline-none text-xs" value={newAppt.duration} onChange={e=>setNewAppt({...newAppt, duration: Number(e.target.value)})}>
-                    <option value={15}>15 minutos</option>
-                    <option value={30}>30 minutos</option>
-                    <option value={45}>45 minutos</option>
-                    <option value={60}>1 Hora</option>
-                    <option value={90}>1.5 Horas</option>
-                    <option value={120}>2 Horas</option>
-                </select>
-                <select className={`w-full border border-white/10 p-3 rounded-xl text-white outline-none text-xs font-bold bg-[#121212] ${newAppt.status==='agendado'?'text-stone-400':newAppt.status==='confirmado'?'text-emerald-400':newAppt.status==='espera'?'text-yellow-400':newAppt.status==='atendiendo'?'text-blue-400':'text-red-400'}`} value={newAppt.status} onChange={e=>setNewAppt({...newAppt, status:e.target.value})}>
-                    <option value="agendado">⚪ Por Confirmar</option>
-                    <option value="confirmado">🟢 Confirmado</option>
-                    <option value="espera">🟡 En Sala Espera</option>
-                    <option value="atendiendo">🔵 En Box (Atendiendo)</option>
-                    <option value="no_asistio">🔴 No Asistió</option>
-                </select>
-            </div>
-        </div>
-
-        <div className="flex gap-2 pt-2">
-            {newAppt.id && (
-                <button onClick={async (e) => {
-    e.stopPropagation(); 
-    try {
-        const { error } = await supabase.from('appointments').delete().eq('id', newAppt.id);
-        if (error) throw error;
-        setAppointments(appointments.filter(a => a.id !== newAppt.id)); 
-        setModal(null); 
-        notify("Cita Eliminada");
-    } catch (err) {
-        alert("Error al eliminar la cita. Revisa tu conexión.");
-    }
-}} className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl">
-    <Trash2 size={20}/>
-</button>
-            )}
-            <Button  className="flex-1" onClick={async ()=>{ 
-                if(newAppt.name){ 
-                    const id = newAppt.id || Date.now().toString(); 
-                    const nd = {...newAppt, id}; 
-                    if (newAppt.id) {
-                        setAppointments(appointments.map(a => a.id === id ? nd : a));
-                    } else {
-                        setAppointments([...appointments, nd]); 
-                    }
-                    await saveToSupabase('appointments', id, nd); 
-                    setModal(null); 
-                    notify(newAppt.id ? "Cita Actualizada" : "Cita Agendada"); 
-                }
-            }}>{newAppt.id ? 'ACTUALIZAR' : 'AGENDAR'}</Button>
-        </div>
-        
-        {/* Atajo de WhatsApp para confirmar rápido */}
-        {newAppt.id && (
-            <button onClick={(e)=>{ e.stopPropagation(); sendWhatsApp(getPatientPhone(newAppt.name), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`); }} className="w-full flex items-center justify-center gap-2 text-[10px] bg-white/5 py-2 rounded-xl hover:bg-white/10 text-stone-400 transition-colors uppercase font-bold tracking-widest mt-2">
-                <MessageCircle size={14} className="text-emerald-400"/> Enviar WhatsApp de Confirmación
-            </button>
-        )}
-    </Card>
-</div>}
+{/* --- MODAL AGENDAR CITA --- */}
+{modal === 'appt' && (
+    <ApptModal 
+        themeMode={themeMode} newAppt={newAppt} setNewAppt={setNewAppt} setModal={setModal}
+        patientRecords={patientRecords} setPatientRecords={setPatientRecords} getPatient={getPatient}
+        savePatientData={savePatientData} notify={notify} appointments={appointments}
+        setAppointments={setAppointments} saveToSupabase={saveToSupabase} sendWhatsApp={sendWhatsApp}
+        getPatientPhone={getPatientPhone}
+    />
+)}
       {/* --- MODAL CARGAR / ELIMINAR PACKS --- */}
       {modal === 'loadPack' && <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
           <Card  className="w-full max-w-sm h-96 flex flex-col">
