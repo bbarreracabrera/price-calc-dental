@@ -3,7 +3,7 @@ import { Loader, Search, Cloud } from 'lucide-react';
 import { supabase } from '../supabase';
 import { THEMES } from '../constants';
 import { InputField } from './UIComponents';
-import LegalText from '../LegalText';
+import LegalText from './LegalText';
 
 // --- COMPONENTE DE SEGURIDAD: URLS FIRMADAS PARA BUCKET PRIVADO ---
 export const PrivateImage = ({ img, onClick }) => {
