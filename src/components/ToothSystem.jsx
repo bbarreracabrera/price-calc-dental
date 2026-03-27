@@ -1,10 +1,17 @@
 import React from 'react';
 
-// --- MOTOR GRÁFICO DEL ODONTOGRAMA (5 CARAS SVG + LÓGICA ANATÓMICA) ---
+// --- MOTOR GRÁFICO DEL ODONTOGRAMA ---
 export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, interactive = false, activeFace = 'o', onFaceClick }) => {
+    const statusArr = Array.isArray(status) ? status : (status ? [status] : []);
+    
+    const isMissing = statusArr.includes('missing');
+    const isCrown = statusArr.includes('crown');
+    
     const getDiagnosticColor = (f) => {
         if (f === 'caries') return '#ef4444'; 
         if (f === 'filled') return '#3b82f6'; 
+        if (f === 'sealant') return '#10b981';
+        if (f === 'fracture') return '#f97316';
         return 'transparent';
     };
 
@@ -14,12 +21,9 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
         return 'transparent';
     };
 
-    const isMissing = status === 'missing';
-    const isCrown = status === 'crown';
-    
     const getFaceColor = (faceId) => {
         if (isMissing) return 'transparent';
-        if (isCrown) return '#eab308'; 
+        if (isCrown && !interactive) return '#eab308';
         if (mode === 'tratamientos' && treatment && treatment.name) return getTreatmentColor();
         return getDiagnosticColor(faces?.[faceId]);
     };
@@ -51,21 +55,45 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
                 <Face id={leftFaceId} points="0,0 25,25 25,75 0,100" />
                 <Face id={rightFaceId} points="100,0 75,25 75,75 100,100" />
                 <Face id="o" points="25,25 75,25 75,75 25,75" />
+
+                {statusArr.includes('crown') && interactive && (
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#eab308" strokeWidth="6" className="pointer-events-none" strokeDasharray="4 2" />
+                )}
+                {statusArr.includes('endo') && (
+                    <circle cx="50" cy="50" r="16" fill="#a855f7" className="pointer-events-none shadow-xl" />
+                )}
+                {statusArr.includes('implant') && (
+                    <g className="pointer-events-none">
+                        <rect x="42" y="10" width="16" height="80" fill="#a1a1aa" rx="4" />
+                        <line x1="35" y1="30" x2="65" y2="30" stroke="#52525b" strokeWidth="4" />
+                        <line x1="35" y1="50" x2="65" y2="50" stroke="#52525b" strokeWidth="4" />
+                        <line x1="35" y1="70" x2="65" y2="70" stroke="#52525b" strokeWidth="4" />
+                    </g>
+                )}
+                {statusArr.includes('extruded') && (
+                    <path d="M50,15 L50,85 M30,35 L50,15 L70,35" stroke="#06b6d4" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none drop-shadow-lg" />
+                )}
+                {statusArr.includes('intruded') && (
+                    <path d="M50,15 L50,85 M30,65 L50,85 L70,65" stroke="#06b6d4" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none drop-shadow-lg" />
+                )}
             </svg>
+            
             {isMissing && <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none text-red-500 font-black text-5xl opacity-80" style={{ height: size }}>X</div>}
             <span className={`text-[11px] font-black mt-1 ${mode === 'tratamientos' && treatment?.name ? 'text-emerald-500' : 'opacity-60 text-stone-500 dark:text-white'}`}>{number}</span>
         </div>
     );
 };
 
-// --- COMPONENTE DIENTE MODO DUAL (Odontograma / Periodontograma) ---
+// --- COMPONENTE DIENTE MODO DUAL ---
 export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, mode, perioFace = 'v' }) => {
     const hasBOP = perioData && Object.values(perioData.bop || {}).some(v => v === true);
     const hasPus = perioData?.pus;
     const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
 
     if (isPerioMode) {
-        const isMissing = status === 'missing' || data?.status === 'missing';
+        // SOLUCIÓN AQUÍ: Verificamos tanto si es la nueva lista como si es la palabra antigua
+        const checkMissing = (s) => Array.isArray(s) ? s.includes('missing') : s === 'missing';
+        const isMissing = checkMissing(status) || checkMissing(data?.status);
         
         if (isMissing) {
             return (
@@ -83,19 +111,12 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
         
         let kLeft, kRight, kCenter;
         if (perioFace === 'v') {
-            kCenter = 'v';
-            kLeft = isLeftQuad ? 'vm' : 'vd';
-            kRight = isLeftQuad ? 'vd' : 'vm';
+            kCenter = 'v'; kLeft = isLeftQuad ? 'vm' : 'vd'; kRight = isLeftQuad ? 'vd' : 'vm';
         } else {
-            kCenter = 'l'; 
-            kLeft = isLeftQuad ? 'lm' : 'ld';
-            kRight = isLeftQuad ? 'ld' : 'lm';
+            kCenter = 'l'; kLeft = isLeftQuad ? 'lm' : 'ld'; kRight = isLeftQuad ? 'ld' : 'lm';
         }
 
-        const mgL = getY(perioData?.mg?.[kLeft]);
-        const mgC = getY(perioData?.mg?.[kCenter]);
-        const mgR = getY(perioData?.mg?.[kRight]);
-        
+        const mgL = getY(perioData?.mg?.[kLeft]); const mgC = getY(perioData?.mg?.[kCenter]); const mgR = getY(perioData?.mg?.[kRight]);
         const pdL = getY((parseInt(perioData?.mg?.[kLeft]) || 0) + (parseInt(perioData?.pd?.[kLeft]) || 0));
         const pdC = getY((parseInt(perioData?.mg?.[kCenter]) || 0) + (parseInt(perioData?.pd?.[kCenter]) || 0));
         const pdR = getY((parseInt(perioData?.mg?.[kRight]) || 0) + (parseInt(perioData?.pd?.[kRight]) || 0));

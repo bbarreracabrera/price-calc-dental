@@ -108,7 +108,11 @@ export default function PerioTab({
                         <div className="flex justify-center gap-1 md:gap-2 flex-wrap">
                             {TEETH_UPPER.map(t => { 
                                 const p = getPatient(selectedPatientId); 
-                                if(p.clinical.teeth[t]?.status === 'missing') return null; 
+                                // SOLUCIÓN: Verifica tanto string como array
+                                const st = p.clinical.teeth[t]?.status;
+                                const isMissing = Array.isArray(st) ? st.includes('missing') : st === 'missing';
+                                
+                                if(isMissing) return null; 
                                 return ( 
                                     <HygieneCell 
                                         key={t} tooth={t} data={p.clinical.hygiene?.[t]} 
@@ -128,7 +132,11 @@ export default function PerioTab({
                         <div className="flex justify-center gap-1 md:gap-2 flex-wrap">
                             {TEETH_LOWER.map(t => { 
                                 const p = getPatient(selectedPatientId); 
-                                if(p.clinical.teeth[t]?.status === 'missing') return null; 
+                                // SOLUCIÓN: Verifica tanto string como array
+                                const st = p.clinical.teeth[t]?.status;
+                                const isMissing = Array.isArray(st) ? st.includes('missing') : st === 'missing';
+                                
+                                if(isMissing) return null; 
                                 return ( 
                                     <HygieneCell 
                                         key={t} tooth={t} data={p.clinical.hygiene?.[t]} 

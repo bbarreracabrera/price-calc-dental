@@ -219,7 +219,10 @@ export default function App() {
     const p = getPatient(selectedPatientId);
     let sites=0, bop=0, faces=0, plaque=0;
     [...TEETH_UPPER, ...TEETH_LOWER].forEach(t => {
-        if (p.clinical.teeth[t]?.status !== 'missing') {
+        const st = p.clinical.teeth[t]?.status;
+        const isMissing = Array.isArray(st) ? st.includes('missing') : st === 'missing';
+        
+        if (!isMissing) {
             sites+=6; faces+=4;
             const perio = p.clinical.perio?.[t] || {}; const hygiene = p.clinical.hygiene?.[t] || {};
             if(perio.bop) Object.values(perio.bop).forEach(v=> {if(v) bop++});
