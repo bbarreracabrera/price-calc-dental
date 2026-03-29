@@ -134,7 +134,7 @@ export const SimpleLineChart = ({ data }) => {
                     type="monotone" 
                     dataKey="ingresos" 
                     // CAMBIO AQUÍ: La línea es el marrón topo premium de Apple
-                    stroke="#9CA3AF" 
+                    stroke="#5B6651"
                     strokeWidth={4} 
                     dot={{ r: 4, fill: '#ffffff', stroke: '#9CA3AF', strokeWidth: 2 }} 
                     activeDot={{ r: 7, fill: '#9CA3AF', stroke: '#ffffff', strokeWidth: 3, boxShadow: '0 0 10px rgba(156,163,175,0.5)' }} 

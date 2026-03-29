@@ -137,14 +137,11 @@ export default function App() {
           await supabase.from('audit_logs').insert({
               user_email: session.user.email, 
               action: action, 
-              // Quitamos patient_id directo para que Supabase no dé error 400 por formato
-              // y lo guardamos dentro de los detalles en formato texto seguro:
               details: { ...details, id_paciente_ref: patientId },
               timestamp: new Date().toISOString(), 
               admin_email: clinicOwner || session.user.email
           });
       } catch (error) { 
-          // Si falla el historial, no rompemos la app, solo avisamos en silencio
           console.warn("Aviso de historial:", error); 
       }
   }, [session, clinicOwner]);
@@ -258,7 +255,7 @@ export default function App() {
       if (id) {
           const p = getPatient(selectedPatientId);
           const tData = p.clinical?.teeth?.[id] || {};
-          const pData = p.clinical?.perio?.[id] || {}; // Buscamos los datos de encías en la base de datos
+          const pData = p.clinical?.perio?.[id] || {}; 
 
           setToothModalData({
               id: id,
@@ -266,7 +263,7 @@ export default function App() {
               ...tData,
               faces: tData.faces || {v:null, l:null, m:null, d:null, o:null},
               treatment: tData.treatment || {name: '', status: 'planned'},
-              perio: pData // <--- ¡AQUÍ ESTABA EL SECRETO! Ahora inyectamos los números a la ventana
+              perio: pData 
           });
           setModal('tooth');
       } else {
@@ -274,7 +271,6 @@ export default function App() {
       }
   };
   
-  // Agregamos 'toothModalData' al final para que la IA sepa exactamente qué diente está abierto
   const { isListening, voiceStatus, isPerioVoiceActive, voiceFeedback, toggleVoice, startPerioDictation } = useVoiceAssistant({ notify, setToothModalData, setPerioData, goToAdjacentTooth, setSelectedToothId, odontogramType, getPatient, selectedPatientId, savePatientData, patientTab, toothModalData });
 
   // --- PUENTES HACIA ARCHIVOS UTILS ---
@@ -286,7 +282,7 @@ export default function App() {
   const saveToSupabaseWrapper = useCallback((t, id, d) => saveToSupabase(t, id, d), [clinicOwner, session]);
 
   // ==========================================
-  // 5. DATOS DERIVADOS (UseMemo)
+  // 5. DATOS DERIVADOS (UseMemo) - AQUÍ CALCULAMOS ALERTAS DE DASHBOARD
   // ==========================================
   const incomeRecords = financialRecords.filter(f => !f.type || f.type === 'income');
   const expenseRecords = financialRecords.filter(f => f.type === 'expense');
@@ -302,14 +298,40 @@ export default function App() {
   const todaysAppointments = appointments.filter(a => a.date === getLocalDate()).sort((a,b) => a.time.localeCompare(b.time));
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
   
-  const getChartData = () => {
-      if (incomeRecords.length === 0) return [{label: 'Ayer', value: 0}, {label: 'Hoy', value: 0}];
-      const recentIncomes = [...incomeRecords].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 6).reverse();
-      return recentIncomes.map(rec => {
-          const paid = (rec.payments || []).reduce((s,p)=>s+p.amount,0) + (rec.paid && !rec.payments ? rec.paid : 0);
-          return { label: rec.patientName.split(' ')[0] || 'Pac', value: paid > 0 ? paid : 1000 };
+  // --- GRÁFICO: CÁLCULO DE ÚLTIMOS 6 MESES CORREGIDO ---
+  const chartData = useMemo(() => {
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const today = new Date();
+      const last6Months = [];
+
+      // 1. Crear el esqueleto de los últimos 6 meses (hacia atrás)
+      // Usamos 'name' y 'ingresos' porque así lo lee UIComponents.jsx
+      for (let i = 5; i >= 0; i--) {
+          const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+          last6Months.push({
+              name: monthNames[d.getMonth()], // El Eje X espera "name"
+              year: d.getFullYear(),
+              month: d.getMonth(),
+              ingresos: 0 // La línea Y espera "ingresos"
+          });
+      }
+
+      // 2. Llenar los meses con los ingresos reales
+      incomeRecords.forEach(rec => {
+          if (!rec.date) return;
+          const recDate = new Date(rec.date);
+          
+          const paid = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0) + (rec.paid && !rec.payments ? Number(rec.paid) : 0);
+
+          const targetMonth = last6Months.find(m => m.month === recDate.getMonth() && m.year === recDate.getFullYear());
+          if (targetMonth) {
+              targetMonth.ingresos += paid; 
+          }
       });
-  };
+
+      // 3. Devolver solo los datos limpios para el componente
+      return last6Months.map(item => ({ name: item.name, ingresos: item.ingresos }));
+  }, [incomeRecords]);
 
   const getRecalls = useMemo(() => {
       const now = new Date(); const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(now.getMonth() - 6);
@@ -320,6 +342,29 @@ export default function App() {
       pastAppts.forEach(a => { if (!latestAppts[a.name] || new Date(a.date) > new Date(latestAppts[a.name].date)) latestAppts[a.name] = a; });
       return Object.values(latestAppts).filter(a => !futurePatientNames.has(a.name));
   }, [appointments]);
+
+  // --- ALERTAS DE INVENTARIO (DIRECTO A LAS PROPIEDADES) ---
+  const lowStockItems = useMemo(() => {
+    return inventory.filter(item => {
+        // 1. Ignorar fantasmas (sin nombre)
+        if (!item || !item.name || item.name.trim() === '') return false;
+
+        // 2. Extraer valores numéricos directamente del objeto item
+        const stockActual = Number(item.stock) || 0;
+        const stockMinimo = Number(item.min) || 0;
+
+        // 3. Evaluar alerta
+        return stockActual <= stockMinimo;
+    });
+  }, [inventory]);
+
+  const pendingLabWorks = useMemo(() => {
+    // Filtramos los que NO son "Entregado", ordenamos por fecha y tomamos los primeros 5
+    return labWorks
+        .filter(work => work.status !== 'Entregado' && work.status !== 'Finalizado')
+        .sort((a, b) => new Date(a.expectedDate) - new Date(b.expectedDate))
+        .slice(0, 5);
+  }, [labWorks]);
 
   // ==========================================
   // 6. RENDERIZADO VISUAL
@@ -361,7 +406,9 @@ export default function App() {
             <div className="w-8"></div>
         </div>
         
-        {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={getChartData()} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} />}
+        {/* AQUÍ INYECTAMOS LAS PROPS AL DASHBOARD */}
+        {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} />}
+        
         {activeTab === 'terms' && <TermsScreen theme={t} />}
         {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant') && <FinanceCenter themeMode={themeMode} t={t} financeTab={financeTab} setFinanceTab={setFinanceTab} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} incomeRecords={incomeRecords} expenseRecords={expenseRecords} totalCollected={totalCollected} totalExpenses={totalExpenses} totalDebt={totalDebt} netProfit={netProfit} patientRecords={patientRecords} saveToSupabase={saveToSupabase} notify={notify} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} onOpenAbonoModal={(record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); }} />}
         {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && <CatalogView themeMode={themeMode} t={t} catalog={catalog} setCatalog={setCatalog} clinicOwner={clinicOwner} session={session} setNewCatalogItem={setNewCatalogItem} setModal={setModal} saveToSupabase={saveToSupabase} notify={notify} />}
@@ -438,7 +485,7 @@ export default function App() {
       {modal === 'appt' && <ApptModal themeMode={themeMode} newAppt={newAppt} setNewAppt={setNewAppt} setModal={setModal} patientRecords={patientRecords} setPatientRecords={setPatientRecords} getPatient={getPatient} savePatientData={savePatientData} notify={notify} appointments={appointments} setAppointments={setAppointments} saveToSupabase={saveToSupabase} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} />}
       {modal === 'abono' && selectedFinancialRecord && <AbonoModal themeMode={themeMode} selectedFinancialRecord={selectedFinancialRecord} setModal={setModal} paymentInput={paymentInput} setPaymentInput={setPaymentInput} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} saveToSupabase={saveToSupabase} notify={notify} />}
       {modal === 'catalogItem' && <CatalogModal themeMode={themeMode} newCatalogItem={newCatalogItem} setNewCatalogItem={setNewCatalogItem} catalog={catalog} setCatalog={setCatalog} setModal={setModal} clinicOwner={clinicOwner} notify={notify} saveToSupabase={saveToSupabase} />}
-      {modal === 'labWork' && <LabWorkModal themeMode={themeMode} newLabWork={newLabWork} setNewLabWork={setNewLabWork} patientRecords={patientRecords} setModal={setModal} clinicOwner={clinicOwner} labWorks={labWorks} setLabWorks={setLabWorks} supabase={supabase} notify={notify} />}
+      {modal === 'labWork' && (<LabWorkModal themeMode={themeMode} newLabWork={newLabWork} setNewLabWork={setNewLabWork} patientRecords={patientRecords} setModal={setModal} clinicOwner={clinicOwner} labWorks={labWorks} setLabWorks={setLabWorks} supabase={supabase} notify={notify} catalog={catalog} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} />)}
       {modal === 'addItem' && <AddItemModal themeMode={themeMode} newItem={newItem} setNewItem={setNewItem} setModal={setModal} inventory={inventory} setInventory={setInventory} saveToSupabase={saveToSupabaseWrapper} supabase={supabase} notify={notify} />}
       {modal === 'loadPack' && <LoadPackModal themeMode={themeMode} setModal={setModal} protocols={protocols} setProtocols={setProtocols} sessionData={sessionData} setSessionData={setSessionData} supabase={supabase} notify={notify} />}
       {modal === 'recovery' && <RecoveryModal newPasswordInput={newPasswordInput} setNewPasswordInput={setNewPasswordInput} supabase={supabase} notify={notify} setModal={setModal} />}

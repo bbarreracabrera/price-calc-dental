@@ -1,11 +1,14 @@
 import React from 'react';
-import { DollarSign, TrendingDown, BarChart2, PieChart, ArrowRight, Clock, CalendarClock, User, Calculator, Wallet, Plus, Calendar } from 'lucide-react';
+import { DollarSign, TrendingDown, BarChart2, PieChart, ArrowRight, Clock, CalendarClock, User, Calculator, Wallet, Plus, Calendar, AlertTriangle, FlaskConical } from 'lucide-react';
 import { Card, Button, SimpleLineChart } from './UIComponents';
 
 export default function DashboardView({ 
     config, userRole, themeMode, t, 
     totalCollected, totalExpenses, netProfit, chartData, todaysAppointments,
-    setActiveTab, setFinanceTab, setModal, setSelectedPatientId, setQuoteMode 
+    setActiveTab, setFinanceTab, setModal, setSelectedPatientId, setQuoteMode,
+    // Nuevas Props Inyectadas
+    lowStockItems = [], // Array de items con stock crítico
+    pendingLabWorks = [] // Array de órdenes de laboratorio pendientes
 }) {
     // Obtenemos la fecha actual formateada elegantemente
     const today = new Date();
@@ -57,7 +60,7 @@ export default function DashboardView({
                         <p className="text-[11px] font-bold text-[#A3968B] mt-2">Gastos Operativos</p>
                     </Card>
                     
-                    {/* --- AQUÍ ESTÁ LA CORRECCIÓN: Cambiamos <Card> por <div> para que el fondo brille --- */}
+                    {/* Tarjeta Utilidad (Con Brillo) */}
                     <div className={`col-span-1 md:col-span-2 relative overflow-hidden text-white shadow-2xl rounded-[2rem] p-8 group transition-colors duration-500 ${netProfit >= 0 ? 'bg-[#312923] shadow-[#312923]/20' : 'bg-red-600 shadow-red-600/20'}`}>
                         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #DFD2C4 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
                         <div className="absolute -right-10 -bottom-10 opacity-5 text-[#DFD2C4] transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
@@ -75,6 +78,88 @@ export default function DashboardView({
                     </div>
                 </div>
             )}
+
+            {/* --- NUEVO: ALERTAS Y LABORATORIO --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Panel de Alertas de Inventario */}
+                <Card className="p-6 rounded-[2rem] border border-[#DFD2C4]/50 shadow-sm bg-white">
+                    <div className="flex justify-between items-end mb-6 border-b border-[#DFD2C4]/50 pb-4">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-[#FDFBF7] text-[#CBAAA2] rounded-2xl border border-[#DFD2C4] shadow-sm"><AlertTriangle size={24}/></div>
+                            <div>
+                                <h3 className="font-black text-[#312923] text-xl tracking-tight">Stock Crítico</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Alertas de Inventario</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                       {lowStockItems.length === 0 ? (
+                            <div className="p-4 bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/50 text-center">
+                                <p className="text-xs font-bold text-[#5B6651]">✅ Stock saludable. No hay alertas.</p>
+                            </div>
+                        ) : (
+                            lowStockItems.map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-red-50 border border-red-100">
+                                    <span className="text-sm font-bold text-red-800">
+                                        {/* Accedemos directo al nombre */}
+                                        {item.name}
+                                    </span>
+                                    <div className="text-right">
+                                        <span className="text-sm font-black text-red-600">
+                                            Quedan {item.stock ?? 0}
+                                        </span>
+                                        <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest mt-1">
+                                            Mínimo: {item.min ?? 0} {item.unit || ''}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    <button onClick={() => setActiveTab('inventory')} className="mt-4 w-full py-3 bg-white border border-[#DFD2C4] rounded-xl text-[10px] font-black uppercase tracking-widest text-[#312923] hover:bg-[#FDFBF7] transition-all flex items-center justify-center gap-2">
+                        Ir al Inventario <ArrowRight size={14}/>
+                    </button>
+                </Card>
+
+                {/* Panel de Resumen de Laboratorio */}
+                <Card className="p-6 rounded-[2rem] border border-[#DFD2C4]/50 shadow-sm bg-white">
+                    <div className="flex justify-between items-end mb-6 border-b border-[#DFD2C4]/50 pb-4">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-[#FDFBF7] text-[#5B6651] rounded-2xl border border-[#DFD2C4] shadow-sm"><FlaskConical size={24}/></div>
+                            <div>
+                                <h3 className="font-black text-[#312923] text-xl tracking-tight">Laboratorio</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Próximas Entregas</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {pendingLabWorks.length === 0 ? (
+                            <div className="p-4 bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/50 text-center">
+                                <p className="text-xs font-bold text-[#9A8F84]">No hay trabajos pendientes.</p>
+                            </div>
+                        ) : (
+                            pendingLabWorks.map((work, idx) => (
+                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-white border border-[#DFD2C4]/50 hover:border-[#5B6651] transition-colors">
+                                    <div>
+                                        <p className="text-sm font-black text-[#312923]">{work.patientName}</p>
+                                        <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1">{work.workType} - {work.labName}</p>
+                                    </div>
+                                    <div className="text-right flex flex-col items-end">
+                                        <span className="bg-[#FDFBF7] border border-[#DFD2C4] text-[#5B6651] text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md">
+                                            {work.status}
+                                        </span>
+                                        <p className="text-[10px] font-bold text-[#312923] mt-1">Llega: {work.expectedDate}</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </Card>
+
+            </div>
             
             {/* --- GRÁFICOS (Solo Admin) --- */}
             {userRole === 'admin' && (
