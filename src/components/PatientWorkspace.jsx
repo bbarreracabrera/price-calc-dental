@@ -143,7 +143,7 @@ export default function PatientWorkspace({
                                 }`}
                             >
                                 {isListening ? <MicOff size={16}/> : <Mic size={16}/>}
-                                {isListening ? 'Detener IA' : 'Activar IA'}
+                                {isListening ? 'Detener' : 'Activar'}
                             </button>
                         </div>
                     </div>
