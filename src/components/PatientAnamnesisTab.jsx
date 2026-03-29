@@ -1,247 +1,259 @@
-import React from 'react';
-import { ArrowLeft, FileText, ArrowRight } from 'lucide-react';
-import { Card, InputField } from './UIComponents';
+import React, { useEffect, useCallback } from 'react';
+import { 
+    AlertCircle, FileText, Syringe, Activity, ChevronDown, 
+    Save, FilePlus2, CheckSquare, ArrowLeft, ArrowRight, History
+} from 'lucide-react';
+import { Card, InputField, Button } from './UIComponents';
 import { ANAMNESIS_TAGS } from '../constants';
 
 export default function PatientAnamnesisTab({
-    themeMode, t, getPatient, selectedPatientId, savePatientData,
+    getPatient, selectedPatientId, savePatientData,
     session, notify, activeFormType, setActiveFormType,
     viewingForm, setViewingForm
 }) {
     const p = getPatient(selectedPatientId);
     
-    // Inicializadores seguros de borradores
-    const drafts = p.anamnesis?.drafts || { general: {}, cirugia: {}, endodoncia: {} };
-    const history = p.anamnesis?.history || [];
+    const anamnesis = p.anamnesis || { conditions: {}, drafts: {}, history: [] };
+    const drafts = anamnesis.drafts || { general: {}, cirugia: {}, endodoncia: {} };
+    const history = anamnesis.history || [];
     
+    useEffect(() => {
+        if (!activeFormType && !viewingForm) setActiveFormType('general');
+    }, [activeFormType, viewingForm, setActiveFormType]);
+
+    const availableForms = [
+        { id: 'general', label: 'Anamnesis General', icon: FileText, quickAccess: true },
+        { id: 'cirugia', label: 'Ficha de Cirugía', icon: Syringe, quickAccess: true },
+        { id: 'endodoncia', label: 'Ficha Endodoncia', icon: Activity, quickAccess: true },
+        { id: 'ortodoncia', label: 'Ortodoncia', icon: FilePlus2, quickAccess: false },
+        { id: 'periodoncia', label: 'Periodoncia', icon: FilePlus2, quickAccess: false },
+        { id: 'implantologia', label: 'Implantología', icon: FilePlus2, quickAccess: false },
+        { id: 'pediatria', label: 'Odontopediatría', icon: FilePlus2, quickAccess: false },
+    ];
+
+    // --- FUNCIÓN CIEGA PARA EVITAR EL BUCLE INFINITO ---
+    const handleConditionToggle = useCallback((tag, isActive) => {
+        const newCond = { ...anamnesis.conditions, [tag]: !isActive }; 
+        savePatientData(selectedPatientId, { ...p, anamnesis: { ...anamnesis, conditions: newCond } }); 
+    }, [anamnesis, p, savePatientData, selectedPatientId]);
+
     const setDraft = (type, field, value) => {
-        savePatientData(selectedPatientId, { ...p, anamnesis: { ...p.anamnesis, drafts: { ...drafts, [type]: { ...drafts[type], [field]: value } } } });
+        savePatientData(selectedPatientId, { 
+            ...p, 
+            anamnesis: { ...anamnesis, drafts: { ...drafts, [type]: { ...drafts[type], [field]: value } } } 
+        });
     };
 
     const saveFinalForm = (type) => {
         if (!window.confirm(`¿Guardar esta Ficha de ${type} como definitiva? No se podrá editar después.`)) return;
-        
-        const newForm = {
-            id: Date.now().toString(),
-            type: type,
-            date: new Date().toLocaleString(),
-            author: session?.user?.email,
-            data: { ...drafts[type] }
-        };
-        
-        // Guardamos en el historial y limpiamos el borrador
-        savePatientData(selectedPatientId, { 
-            ...p, 
-            anamnesis: { 
-                ...p.anamnesis, 
-                history: [newForm, ...history],
-                drafts: { ...drafts, [type]: {} } // Limpia el formulario
-            } 
-        });
-        notify(`Ficha de ${type} guardada en el historial`);
-        setViewingForm(newForm); // Lo abrimos en modo lectura
+        const formLabel = availableForms.find(f => f.id === type)?.label || type;
+        const newForm = { id: Date.now().toString(), type: type, label: formLabel, date: new Date().toLocaleString(), author: session?.user?.email || 'Usuario Clínico', data: { ...drafts[type] } };
+        savePatientData(selectedPatientId, { ...p, anamnesis: { ...anamnesis, history: [newForm, ...history], drafts: { ...drafts, [type]: {} } } });
+        notify(`Ficha de ${formLabel} guardada en el historial`);
+        setViewingForm(newForm); 
     };
 
-    // Datos activos según si estamos viendo el historial o escribiendo un borrador
-    const activeData = viewingForm ? viewingForm.data : drafts[activeFormType];
+    const activeData = viewingForm ? viewingForm.data : (drafts[activeFormType] || {});
     const isReadOnly = viewingForm !== null;
+    const currentFormDef = availableForms.find(f => f.id === (viewingForm ? viewingForm.type : activeFormType)) || availableForms[0];
 
     return (
-        <div className="space-y-4 animate-in fade-in h-full flex flex-col">
-            {/* CABECERA Y NAVEGACIÓN */}
-            <div className="flex justify-between items-center mb-2">
-                {isReadOnly ? (
-                    <div className="flex items-center gap-3">
-                        <button onClick={()=>setViewingForm(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold transition-colors"><ArrowLeft size={14} className="inline mr-1"/> Volver a Edición</button>
-                        <span className="text-sm font-black text-cyan-400 uppercase tracking-widest">Ficha Histórica: {viewingForm.type}</span>
-                        <span className="text-[10px] opacity-50 bg-black/20 px-2 py-1 rounded border border-white/5">{viewingForm.date} • {viewingForm.author}</span>
-                    </div>
-                ) : (
-                    <div className="flex bg-white/5 p-1 rounded-xl overflow-x-auto no-scrollbar w-full">
-                        <button onClick={()=>setActiveFormType('general')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='general'?t.accentBg:'opacity-50'}`}> Ficha General</button>
-                        <button onClick={()=>setActiveFormType('cirugia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='cirugia'?'bg-red-500 text-white':'opacity-50'}`}> Cirugía</button>
-                        <button onClick={()=>setActiveFormType('endodoncia')} className={`flex-1 p-3 rounded-lg text-[11px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${activeFormType==='endodoncia'?'bg-purple-500 text-white':'opacity-50'}`}> Endodoncia</button>
-                    </div>
-                )}
+        <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto pb-10">
+            
+            {/* ALERTAS MÉDICAS */}
+            <div className="bg-[#FDFBF7] border border-[#CBAAA2]/50 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-full bg-[#CBAAA2]"></div>
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="p-2 bg-[#CBAAA2]/10 rounded-xl text-[#CBAAA2]"><AlertCircle size={20} /></div>
+                    <div><h3 className="text-[11px] font-black text-[#312923] uppercase tracking-widest leading-none">Alertas Médicas Activas</h3></div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {ANAMNESIS_TAGS.map(tag => {
+                        const isActive = anamnesis.conditions?.[tag];
+                        return (
+                            <button 
+                                key={tag} 
+                                onClick={() => handleConditionToggle(tag, isActive)} // Usamos la función segura
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${isActive ? 'bg-[#CBAAA2] border-[#CBAAA2] text-white shadow-sm' : 'bg-white border-[#DFD2C4]/50 text-[#9A8F84] hover:border-[#DFD2C4]'}`}
+                            >
+                                {isActive && <CheckSquare size={12} />} {tag}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="bg-white p-1 rounded-2xl border border-[#DFD2C4]/50 focus-within:border-[#CBAAA2] transition-colors">
+                    <input className="w-full bg-transparent border-none outline-none px-4 py-3 text-[11px] font-bold text-[#312923] placeholder-[#9A8F84]/50" placeholder="Ej: Alergia a la Penicilina..." value={anamnesis.remote || ''} onChange={(e) => savePatientData(selectedPatientId, { ...p, anamnesis: { ...anamnesis, remote: e.target.value } })} />
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10 space-y-6">
-                {/* --- 1. FICHA GENERAL EXTENDIDA --- */}
-                {(isReadOnly ? viewingForm.type === 'general' : activeFormType === 'general') && (
-                    <Card theme={themeMode} className="space-y-6 border-t-2 border-t-amber-500 animate-in slide-in-from-left">
-                        <h3 className="font-black text-amber-500 uppercase tracking-widest text-sm border-b border-white/5 pb-2">Anamnesis y Examen General</h3>
-                        
-                        {!isReadOnly && (
-                            <div className="bg-red-500/5 border border-red-500/20 p-4 rounded-2xl mb-4">
-                                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-3">Alertas Médicas Globales</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {ANAMNESIS_TAGS.map(tag => {
-                                        const isActive = getPatient(selectedPatientId).anamnesis?.conditions?.[tag];
-                                        return (
-                                            <button key={tag} onClick={() => { 
-                                                const pat = getPatient(selectedPatientId); 
-                                                const newCond = { ...pat.anamnesis.conditions, [tag]: !isActive }; 
-                                                savePatientData(selectedPatientId, { ...pat, anamnesis: { ...pat.anamnesis, conditions: newCond } }); 
-                                            }} className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${isActive ? 'bg-red-500 border-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-white/5 border-white/10 text-stone-400 hover:border-white/30'}`}>{tag}</button>
-                                        );
-                                    })}
+            {/* CABECERA: NAVEGACIÓN Y SELECTOR */}
+            {isReadOnly ? (
+                <div className="flex items-center justify-between bg-white border border-[#DFD2C4]/50 p-4 rounded-3xl shadow-sm">
+                    <button onClick={() => setViewingForm(null)} className="flex items-center gap-2 px-4 py-2 bg-[#FDFBF7] hover:bg-[#DFD2C4]/30 rounded-xl text-[10px] font-black text-[#9A8F84] uppercase transition-colors"><ArrowLeft size={14}/> Volver a Edición</button>
+                    <div className="text-center"><p className="text-[10px] font-black text-[#5B6651] uppercase mb-1">Archivo Histórico Intocable</p><h2 className="text-lg font-black text-[#312923] capitalize">{viewingForm.label}</h2></div>
+                    <div className="text-right hidden sm:block"><p className="text-[10px] font-bold text-[#9A8F84] uppercase">{viewingForm.date}</p><p className="text-[10px] font-bold text-[#6B615A] uppercase">{viewingForm.author}</p></div>
+                </div>
+            ) : (
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#DFD2C4]/50 pb-6">
+                    <div className="flex bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4] shadow-sm w-full md:w-auto overflow-x-auto hide-scrollbar">
+                        {availableForms.filter(f => f.quickAccess).map(form => {
+                            const isActive = activeFormType === form.id;
+                            return (
+                                <button key={form.id} onClick={() => setActiveFormType(form.id)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${isActive ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#9A8F84] hover:text-[#5B6651]'}`}>
+                                    <form.icon size={16} /> {form.label}
+                                </button>
+                            )
+                        })}
+                    </div>
+                    <div className="relative w-full md:w-64">
+                        <select value={activeFormType} onChange={(e) => setActiveFormType(e.target.value)} className="w-full appearance-none bg-white border border-[#DFD2C4] text-[#312923] text-[10px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl outline-none focus:border-[#5B6651] shadow-sm cursor-pointer">
+                            <optgroup label="Accesos Rápidos">{availableForms.filter(f => f.quickAccess).map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</optgroup>
+                            <optgroup label="Otras Especialidades">{availableForms.filter(f => !f.quickAccess).map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</optgroup>
+                        </select>
+                        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9A8F84] pointer-events-none" />
+                    </div>
+                </div>
+            )}
+
+            {/* LIENZO DE LA FICHA */}
+            <div className="bg-white border border-[#DFD2C4]/40 rounded-[2rem] p-6 md:p-10 shadow-sm relative">
+                {!isReadOnly && (
+                    <div className="flex items-center gap-3 mb-8 border-b border-[#DFD2C4]/40 pb-4">
+                        <div className="p-3 bg-[#5B6651]/10 text-[#5B6651] rounded-xl">{React.createElement(currentFormDef.icon, { size: 24 })}</div>
+                        <div><h2 className="text-2xl font-black text-[#312923] tracking-tight">{currentFormDef.label}</h2><p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">Borrador en edición</p></div>
+                    </div>
+                )}
+
+                <div className="space-y-8">
+                    {(isReadOnly ? viewingForm.type === 'general' : activeFormType === 'general') && (
+                        <>
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black uppercase text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-1">1. Motivo de Consulta</h4>
+                                <InputField textarea label="Motivo de Consulta" disabled={isReadOnly} value={activeData.motivo || ''} onChange={e=>setDraft('general', 'motivo', e.target.value)} />
+                                <InputField textarea label="Historia de la Enfermedad" disabled={isReadOnly} value={activeData.enfermedadActual || ''} onChange={e=>setDraft('general', 'enfermedadActual', e.target.value)} />
+                            </div>
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black uppercase text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-1">2. Antecedentes Remotos</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField textarea label="Médicos y Quirúrgicos" disabled={isReadOnly} value={activeData.medicos || ''} onChange={e=>setDraft('general', 'medicos', e.target.value)} />
+                                    <InputField textarea label="Fármacos y Alergias" disabled={isReadOnly} value={activeData.farmacosAlergias || ''} onChange={e=>setDraft('general', 'farmacosAlergias', e.target.value)} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField textarea label="Hábitos (Tabaco, Bruxismo)" disabled={isReadOnly} value={activeData.habitos || ''} onChange={e=>setDraft('general', 'habitos', e.target.value)} />
+                                    <InputField textarea label="Antecedentes Odontológicos" disabled={isReadOnly} value={activeData.odontologicos || ''} onChange={e=>setDraft('general', 'odontologicos', e.target.value)} />
                                 </div>
                             </div>
-                        )}
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black uppercase text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-1">3. Examen Físico</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField textarea label="Examen Extraoral" disabled={isReadOnly} value={activeData.extraoral || ''} onChange={e=>setDraft('general', 'extraoral', e.target.value)} />
+                                    <InputField textarea label="Examen Intraoral" disabled={isReadOnly} value={activeData.intraoral || ''} onChange={e=>setDraft('general', 'intraoral', e.target.value)} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField textarea label="Examen de Oclusión" disabled={isReadOnly} value={activeData.oclusion || ''} onChange={e=>setDraft('general', 'oclusion', e.target.value)} />
+                                    <InputField textarea label="Periodonto Inicial" disabled={isReadOnly} value={activeData.periodonto || ''} onChange={e=>setDraft('general', 'periodonto', e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="space-y-4 bg-[#FDFBF7] p-5 rounded-[2rem] border border-[#DFD2C4]/50">
+                                <h4 className="text-[10px] font-black uppercase text-[#5B6651] border-b border-[#DFD2C4]/50 pb-1">4. Conclusión</h4>
+                                <InputField textarea label="Diagnóstico Clínico Integral" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('general', 'diagnostico', e.target.value)} />
+                                <InputField textarea label="Plan de Tratamiento" disabled={isReadOnly} value={activeData.plan || ''} onChange={e=>setDraft('general', 'plan', e.target.value)} />
+                            </div>
+                        </>
+                    )}
 
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 border-b border-white/10 pb-1">1. Motivo de Consulta</h4>
-                            <InputField theme={themeMode} textarea label="Motivo de Consulta (En palabras del paciente)" disabled={isReadOnly} value={activeData.motivo || ''} onChange={e=>setDraft('general', 'motivo', e.target.value)} />
-                            <InputField theme={themeMode} textarea label="Historia de la Enfermedad Actual" disabled={isReadOnly} value={activeData.enfermedadActual || ''} onChange={e=>setDraft('general', 'enfermedadActual', e.target.value)} />
+                    {(isReadOnly ? viewingForm.type === 'cirugia' : activeFormType === 'cirugia') && (
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-[#9A8F84] ml-1">ASA</label>
+                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.asa || ''} onChange={e=>setDraft('cirugia', 'asa', e.target.value)}>
+                                        <option value="">Seleccione...</option><option value="I">ASA I</option><option value="II">ASA II</option><option value="III">ASA III</option>
+                                    </select>
+                                </div>
+                                <InputField label="Presión Art." placeholder="120/80" disabled={isReadOnly} value={activeData.pa || ''} onChange={e=>setDraft('cirugia', 'pa', e.target.value)} />
+                                <InputField label="Frec. Card." placeholder="Lpm" disabled={isReadOnly} value={activeData.fc || ''} onChange={e=>setDraft('cirugia', 'fc', e.target.value)} />
+                                <InputField label="HGT" placeholder="mg/dl" disabled={isReadOnly} value={activeData.hgt || ''} onChange={e=>setDraft('cirugia', 'hgt', e.target.value)} />
+                            </div>
+                            <InputField textarea label="Sistemática Radiográfica" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('cirugia', 'rx', e.target.value)} />
+                            <div className="space-y-4 bg-[#CBAAA2]/5 p-5 rounded-[2rem] border border-[#CBAAA2]/20">
+                                <InputField textarea label="Diagnóstico Quirúrgico" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('cirugia', 'diagnostico', e.target.value)} />
+                                <InputField textarea label="Paso a paso (Técnica)" disabled={isReadOnly} value={activeData.tecnica || ''} onChange={e=>setDraft('cirugia', 'tecnica', e.target.value)} />
+                            </div>
+                        </>
+                    )}
+
+                    {(isReadOnly ? viewingForm.type === 'endodoncia' : activeFormType === 'endodoncia') && (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <InputField label="Diente" type="number" placeholder="Ej: 36" disabled={isReadOnly} value={activeData.diente || ''} onChange={e=>setDraft('endodoncia', 'diente', e.target.value)} />
+                                <div className="md:col-span-2"><InputField label="Semiología del Dolor" disabled={isReadOnly} value={activeData.dolor || ''} onChange={e=>setDraft('endodoncia', 'dolor', e.target.value)} /></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-[#9A8F84] ml-1">Sensibilidad (Frío)</label>
+                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.frio || ''} onChange={e=>setDraft('endodoncia', 'frio', e.target.value)}>
+                                        <option value="">Seleccione...</option><option value="Normal">Normal</option><option value="Aumentada (+)">Aumentada (+)</option><option value="Disminuida (-)">Disminuida (-)</option><option value="Sin Respuesta">Sin Respuesta</option>
+                                    </select>
+                                </div>
+                                <InputField label="Percusión / Palpación" disabled={isReadOnly} value={activeData.percusion || ''} onChange={e=>setDraft('endodoncia', 'percusion', e.target.value)} />
+                            </div>
+                            <InputField textarea label="Examen Radiográfico" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('endodoncia', 'rx', e.target.value)} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#FDFBF7] p-5 rounded-[2rem] border border-[#DFD2C4]/50">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-[#5B6651] ml-1">Diagnóstico Pulpar</label>
+                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-white font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.dxPulpar || ''} onChange={e=>setDraft('endodoncia', 'dxPulpar', e.target.value)}>
+                                        <option value="">Seleccione...</option><option value="Pulpa Normal">Pulpa Normal</option><option value="Pulpitis Reversible">Pulpitis Reversible</option><option value="Pulpitis Irreversible Sintomática">Pulpitis Irreversible Sintomática</option><option value="Pulpitis Irreversible Asintomática">Pulpitis Irreversible Asintomática</option><option value="Necrosis Pulpar">Necrosis Pulpar</option><option value="Diente Previamente Tratado">Diente Previamente Tratado</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-[#5B6651] ml-1">Diagnóstico Periapical</label>
+                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-white font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.dxPeriapical || ''} onChange={e=>setDraft('endodoncia', 'dxPeriapical', e.target.value)}>
+                                        <option value="">Seleccione...</option><option value="Tejido Apical Normal">Tejido Apical Normal</option><option value="Periodontitis Apical Sintomática">Periodontitis Apical Sintomática</option><option value="Periodontitis Apical Asintomática">Periodontitis Apical Asintomática</option><option value="Absceso Apical Agudo">Absceso Apical Agudo</option><option value="Absceso Apical Crónico">Absceso Apical Crónico</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {!isReadOnly && !['general', 'cirugia', 'endodoncia'].includes(activeFormType) && (
+                        <div className="text-center py-16 bg-[#FDFBF7] border-2 border-dashed border-[#DFD2C4] rounded-[2.5rem]">
+                            <FilePlus2 className="mx-auto text-[#DFD2C4] mb-4" size={48}/>
+                            <h3 className="text-xl font-black text-[#312923]">Ficha de {currentFormDef.label}</h3>
+                            <p className="text-xs font-bold text-[#9A8F84] mt-2 uppercase tracking-widest">Plantilla en desarrollo</p>
                         </div>
+                    )}
+                </div>
 
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 border-b border-white/10 pb-1">2. Antecedentes Remotos</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InputField theme={themeMode} textarea label="Antecedentes Médicos y Quirúrgicos" disabled={isReadOnly} value={activeData.medicos || ''} onChange={e=>setDraft('general', 'medicos', e.target.value)} />
-                                <InputField theme={themeMode} textarea label="Fármacos en Uso y Alergias Detalladas" disabled={isReadOnly} value={activeData.farmacosAlergias || ''} onChange={e=>setDraft('general', 'farmacosAlergias', e.target.value)} />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InputField theme={themeMode} textarea label="Hábitos (Tabaco, Alcohol, Bruxismo, etc.)" disabled={isReadOnly} value={activeData.habitos || ''} onChange={e=>setDraft('general', 'habitos', e.target.value)} />
-                                <InputField theme={themeMode} textarea label="Antecedentes Odontológicos (Traumas, Ortodoncia previa)" disabled={isReadOnly} value={activeData.odontologicos || ''} onChange={e=>setDraft('general', 'odontologicos', e.target.value)} />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 border-b border-white/10 pb-1">3. Examen Físico</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InputField theme={themeMode} textarea label="Examen Extraoral (ATM, Asimetrías, Ganglios)" disabled={isReadOnly} value={activeData.extraoral || ''} onChange={e=>setDraft('general', 'extraoral', e.target.value)} />
-                                <InputField theme={themeMode} textarea label="Examen Intraoral (Mucosas, Lengua, Piso de boca)" disabled={isReadOnly} value={activeData.intraoral || ''} onChange={e=>setDraft('general', 'intraoral', e.target.value)} />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InputField theme={themeMode} textarea label="Examen de Oclusión (Clase Angle, Overjet, Guías)" disabled={isReadOnly} value={activeData.oclusion || ''} onChange={e=>setDraft('general', 'oclusion', e.target.value)} />
-                                <InputField theme={themeMode} textarea label="Examen Periodontal Inicial (Biotipo, Higiene, Sangrado)" disabled={isReadOnly} value={activeData.periodonto || ''} onChange={e=>setDraft('general', 'periodonto', e.target.value)} />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 bg-amber-500/5 p-4 rounded-2xl border border-amber-500/20">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 border-b border-amber-500/20 pb-1">4. Conclusión</h4>
-                            <InputField theme={themeMode} textarea label="Diagnóstico Clínico Integral" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('general', 'diagnostico', e.target.value)} />
-                            <InputField theme={themeMode} textarea label="Plan de Tratamiento (Fases)" disabled={isReadOnly} value={activeData.plan || ''} onChange={e=>setDraft('general', 'plan', e.target.value)} />
-                        </div>
-                    </Card>
-                )}
-
-                {/* --- 2. FICHA PRE-QUIRÚRGICA --- */}
-                {(isReadOnly ? viewingForm.type === 'cirugia' : activeFormType === 'cirugia') && (
-                    <Card theme={themeMode} className="space-y-6 border-t-2 border-t-red-500">
-                        <h3 className="font-black text-red-500 uppercase tracking-widest text-sm border-b border-white/5 pb-2">Protocolo Pre-Quirúrgico</h3>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">ASA</label>
-                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.asa || ''} onChange={e=>setDraft('cirugia', 'asa', e.target.value)}>
-                                    <option value="">Seleccione...</option><option value="I">ASA I</option><option value="II">ASA II</option><option value="III">ASA III</option>
-                                </select>
-                            </div>
-                            <InputField theme={themeMode} label="Presión Art." placeholder="120/80" disabled={isReadOnly} value={activeData.pa || ''} onChange={e=>setDraft('cirugia', 'pa', e.target.value)} />
-                            <InputField theme={themeMode} label="Frec. Card." placeholder="Lpm" disabled={isReadOnly} value={activeData.fc || ''} onChange={e=>setDraft('cirugia', 'fc', e.target.value)} />
-                            <InputField theme={themeMode} label="HGT (Glicemia)" placeholder="mg/dl" disabled={isReadOnly} value={activeData.hgt || ''} onChange={e=>setDraft('cirugia', 'hgt', e.target.value)} />
-                        </div>
-
-                        <InputField theme={themeMode} textarea label="Sistemática Radiográfica" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('cirugia', 'rx', e.target.value)} />
-                        
-                        <div className="space-y-4 bg-red-500/5 p-4 rounded-2xl border border-red-500/20">
-                            <InputField theme={themeMode} textarea label="Diagnóstico Quirúrgico" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('cirugia', 'diagnostico', e.target.value)} />
-                            <InputField theme={themeMode} textarea label="Paso a paso Quirúrgico (Técnica)" disabled={isReadOnly} value={activeData.tecnica || ''} onChange={e=>setDraft('cirugia', 'tecnica', e.target.value)} />
-                        </div>
-                    </Card>
-                )}
-
-                {/* --- 3. FICHA ENDODONCIA --- */}
-                {(isReadOnly ? viewingForm.type === 'endodoncia' : activeFormType === 'endodoncia') && (
-                    <Card theme={themeMode} className="space-y-6 border-t-2 border-t-purple-500">
-                        <h3 className="font-black text-purple-500 uppercase tracking-widest text-sm border-b border-white/5 pb-2">Evaluación Endodóntica</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <InputField theme={themeMode} label="Diente a Tratar" type="number" placeholder="Ej: 36" disabled={isReadOnly} value={activeData.diente || ''} onChange={e=>setDraft('endodoncia', 'diente', e.target.value)} />
-                            <div className="md:col-span-2">
-                                <InputField theme={themeMode} label="Semiología del Dolor" placeholder="Localización, cronología, alivio..." disabled={isReadOnly} value={activeData.dolor || ''} onChange={e=>setDraft('endodoncia', 'dolor', e.target.value)} />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Pruebas Sensibilidad (Frío)</label>
-                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.frio || ''} onChange={e=>setDraft('endodoncia', 'frio', e.target.value)}>
-                                    <option value="">Seleccione...</option><option value="Normal">Normal</option><option value="Aumentada (+)">Aumentada (+)</option><option value="Disminuida (-)">Disminuida (-)</option><option value="Sin Respuesta">Sin Respuesta</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">Percusión / Palpación</label>
-                                <input className={`w-full p-3 rounded-xl border text-sm font-bold outline-none ${t.inputBg} ${t.text} ${t.border}`} placeholder="Vertical (+), Horizontal (-)..." disabled={isReadOnly} value={activeData.percusion || ''} onChange={e=>setDraft('endodoncia', 'percusion', e.target.value)} />
-                            </div>
-                        </div>
-
-                        <InputField theme={themeMode} textarea label="Examen Radiográfico (Raíces, conductos, zona apical)" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('endodoncia', 'rx', e.target.value)} />
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-purple-500/5 p-4 rounded-2xl border border-purple-500/20">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-purple-400 ml-1">Diagnóstico Pulpar</label>
-                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.dxPulpar || ''} onChange={e=>setDraft('endodoncia', 'dxPulpar', e.target.value)}>
-                                    <option value="">Seleccione...</option>
-                                    <option value="Pulpa Normal">Pulpa Normal</option>
-                                    <option value="Pulpitis Reversible">Pulpitis Reversible</option>
-                                    <option value="Pulpitis Irreversible Sintomática">Pulpitis Irreversible Sintomática</option>
-                                    <option value="Pulpitis Irreversible Asintomática">Pulpitis Irreversible Asintomática</option>
-                                    <option value="Necrosis Pulpar">Necrosis Pulpar</option>
-                                    <option value="Diente Previamente Tratado">Diente Previamente Tratado</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-purple-400 ml-1">Diagnóstico Periapical</label>
-                                <select className={`w-full p-3 rounded-xl border font-bold outline-none text-sm ${t.inputBg} ${t.text} ${t.border}`} disabled={isReadOnly} value={activeData.dxPeriapical || ''} onChange={e=>setDraft('endodoncia', 'dxPeriapical', e.target.value)}>
-                                    <option value="">Seleccione...</option>
-                                    <option value="Tejido Apical Normal">Tejido Apical Normal</option>
-                                    <option value="Periodontitis Apical Sintomática">Periodontitis Apical Sintomática</option>
-                                    <option value="Periodontitis Apical Asintomática">Periodontitis Apical Asintomática</option>
-                                    <option value="Absceso Apical Agudo">Absceso Apical Agudo</option>
-                                    <option value="Absceso Apical Crónico">Absceso Apical Crónico</option>
-                                </select>
-                            </div>
-                        </div>
-                    </Card>
-                )}
-
-                {/* BOTÓN DE GUARDADO (SOLO EN MODO BORRADOR) */}
                 {!isReadOnly && (
-                    <button onClick={() => saveFinalForm(activeFormType)} className="w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30">
-                        💾 GUARDAR FICHA DEFINITIVA
-                    </button>
-                )}
-
-                {/* LISTA DE FICHAS HISTÓRICAS DE ESTE PACIENTE */}
-                {!isReadOnly && (
-                    <div className="pt-6 border-t border-white/10 mt-6">
-                        <h4 className="font-bold text-sm mb-3">Historial de Fichas Guardadas</h4>
-                        {history.length === 0 ? (
-                            <p className="text-xs opacity-50 text-center py-4 border border-dashed border-white/10 rounded-xl">No hay fichas históricas guardadas.</p>
-                        ) : (
-                            <div className="grid gap-2">
-                                {history.map(form => (
-                                    <div key={form.id} onClick={() => setViewingForm(form)} className="p-3 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors group">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${form.type==='general'?'bg-amber-500/20 text-amber-500':form.type==='cirugia'?'bg-red-500/20 text-red-500':'bg-purple-500/20 text-purple-500'}`}>
-                                                <FileText size={16}/>
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-sm capitalize">Ficha {form.type}</p>
-                                                <p className="text-[10px] opacity-50">{form.date}</p>
-                                            </div>
-                                        </div>
-                                        <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-cyan-400"/>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                    <div className="mt-10 flex justify-end border-t border-[#DFD2C4]/40 pt-8">
+                        <Button variant="primary" onClick={() => saveFinalForm(activeFormType)} className="flex items-center gap-3 px-8 py-4 bg-[#5B6651] text-white hover:-translate-y-0.5 rounded-2xl font-black uppercase tracking-[0.15em] text-xs">
+                            <Save size={18} /> CERRAR FICHA DEFINITIVA
+                        </Button>
                     </div>
                 )}
             </div>
+
+            {/* LISTA HISTORIAL */}
+            {!isReadOnly && (
+                <div className="pt-8">
+                    <div className="flex items-center gap-3 mb-6"><History className="text-[#9A8F84]" size={20}/><h4 className="font-black text-xl text-[#312923]">Archivo Clínico</h4></div>
+                    {history.length === 0 ? (
+                        <div className="bg-white border border-[#DFD2C4]/40 rounded-3xl p-10 text-center"><p className="text-sm font-bold text-[#9A8F84]">No hay fichas finalizadas.</p></div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {history.map(form => (
+                                <div key={form.id} onClick={() => setViewingForm(form)} className="p-5 bg-white border border-[#DFD2C4]/50 rounded-[1.5rem] flex items-start gap-4 cursor-pointer hover:border-[#5B6651]">
+                                    <div className="p-3 rounded-2xl bg-[#FDFBF7] text-[#5B6651]"><FileText size={20}/></div>
+                                    <div className="flex-1"><p className="font-black text-sm text-[#312923]">{form.label}</p><p className="text-[10px] font-bold text-[#9A8F84] mt-1">{form.date}</p></div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

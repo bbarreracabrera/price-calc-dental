@@ -1,42 +1,106 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* ==========================================================================
+   SHININGCLOUD DENTAL OS - BOUTIQUE CLINIC (FULL PALETTE)
+   ========================================================================== */
+
+/* 1. RESET DE PANTALLA COMPLETA */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  background-color: #FDFBF7; /* Crema base */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* 2. VARIABLES GLOBALES DE LA PALETA (Inspirado en los tarros de pintura) */
+:root {
+  /* Fondos */
+  --color-bg-light: #FDFBF7; /* Crema muy suave */
+  --color-bg-card: #FFFFFF;  /* Blanco puro */
+  
+  /* Textos Principales */
+  --color-text-dark: #312923; /* Espresso Oscuro (El tarro de arriba a la derecha) */
+  --color-text-stone: #6B615A; /* Piedra cálido para párrafos */
+  
+  /* COLORES PROTAGONISTAS */
+  --color-accent-olive: #5B6651; /* Verde Oliva Profundo (El tarro central derecho) */
+  --color-accent-rose: #CBAAA2; /* Rosa Empolvado / Blush (Los tarros rosados) */
+  --color-accent-taupe: #9A8F84; /* Gris Topo / Arena oscura (El tarro central izquierdo) */
+  --color-accent-sand: #DFD2C4; /* Beige Arena claro */
+  
+  /* Sombras tintadas con Oliva en lugar de negro para dar frescura */
+  --shadow-clinical: 0 10px 25px -5px rgba(91, 102, 81, 0.08), 0 8px 10px -6px rgba(91, 102, 81, 0.04);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* 3. SCROLLBAR ESTILO MAC */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-accent-sand) transparent;
 }
 
-.card {
-  padding: 2em;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.read-the-docs {
-  color: #888;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #DFD2C4;
+  border-radius: 10px;
+}
+
+/* 3. SCROLLBAR ESTILO MAC (Transparente y elegante) */
+.custom-scrollbar {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;  /* Vertical */
+  height: 6px; /* Horizontal */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.6);
+}
+
+/* Ocultar scrollbar completamente pero mantener funcionalidad (Para la lista de dientes) */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 4. UTILIDADES EXTRA PARA EL EFECTO VIDRIO */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 5. Ocultar barra de scroll pero mantener funcionalidad */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE y Edge */
+  scrollbar-width: none;  /* Firefox */
 }

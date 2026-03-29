@@ -1,84 +1,155 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { Button } from './UIComponents'; // Asegúrate que esta ruta apunte bien a tus UIComponents
+import { ChevronLeft, ChevronRight, Plus, CalendarClock } from 'lucide-react';
+import { Button } from './UIComponents';
 
-export default function AgendaView({ themeMode, t, appointments, onOpenModal }) {
+export default function AgendaView({ appointments, onOpenModal }) {
     const [currentDate, setCurrentDate] = useState(new Date());
 
+    const dayNames = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+
+    // Colores de la paleta Boutique integrados para los estados con sombras sutiles
+    const statusColors = {
+        agendado:   'border-l-[#9A8F84] bg-[#FDFBF7] text-[#6B615A] hover:bg-white border border-[#DFD2C4]/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]',
+        confirmado: 'border-l-[#5B6651] bg-[#5B6651]/10 text-[#312923] hover:bg-[#5B6651]/20 border border-[#5B6651]/20 shadow-[0_2px_10px_-4px_rgba(91,102,81,0.2)]',
+        espera:     'border-l-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200 shadow-[0_2px_10px_-4px_rgba(251,191,36,0.2)]',
+        atendiendo: 'border-l-blue-400 bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200 shadow-[0_2px_10px_-4px_rgba(96,165,250,0.2)]',
+        no_asistio: 'border-l-[#CBAAA2] bg-[#CBAAA2]/10 text-[#312923] hover:bg-[#CBAAA2]/20 border border-[#CBAAA2]/30 shadow-[0_2px_10px_-4px_rgba(203,170,162,0.2)]'
+    };
+
     return (
-        <div className="space-y-4 h-full flex flex-col animate-in fade-in">
-            <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-bold">Agenda Semanal</h2>
-                    <div className={`flex items-center gap-2 rounded-xl p-1 border ${t.border} ${t.cardBg}`}>
-                        <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()-7); setCurrentDate(d)}} className="p-2 rounded hover:opacity-50 transition-opacity"><ChevronLeft size={16}/></button>
-                        <button onClick={()=>setCurrentDate(new Date())} className="text-xs font-bold px-2">HOY</button>
-                        <button onClick={()=>{const d=new Date(currentDate); d.setDate(d.getDate()+7); setCurrentDate(d)}} className="p-2 rounded hover:opacity-50 transition-opacity"><ChevronRight size={16}/></button>
+        <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in pb-4">
+            
+            {/* --- ENCABEZADO BOUTIQUE --- */}
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 mb-4 border-b border-[#DFD2C4]/50 shrink-0">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <CalendarClock size={14} className="text-[#A3968B]"/>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Gestión de Citas</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-4xl md:text-5xl font-black text-[#312923] tracking-tighter capitalize">
+                            {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                        </h2>
                     </div>
                 </div>
-                <div className="hidden md:flex gap-2 text-[9px] font-bold uppercase opacity-60">
-                    <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-stone-500"></div>Agendado</span>
-                    <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div>Confirmado</span>
-                    <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-500"></div>En Espera</span>
-                    <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div>Atendiendo</span>
+
+                <div className="flex flex-col items-end gap-4">
+                    {/* Controles de fecha con Paleta y Leyenda */}
+                    <div className="flex flex-wrap items-center justify-end gap-4">
+                        
+                        {/* Leyenda encapsulada */}
+                        <div className="hidden lg:flex gap-4 text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-white px-5 py-3 rounded-2xl border border-[#DFD2C4]/50 shadow-sm">
+                            <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#DFD2C4]"></div>Agendado</span>
+                            <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#5B6651]"></div>Confirmado</span>
+                            <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>Espera</span>
+                            <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div>En Box</span>
+                            <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#CBAAA2]"></div>No Asistió</span>
+                        </div>
+
+                        {/* Botones de Navegación de Fecha */}
+                        <div className="flex items-center p-1.5 bg-white rounded-2xl border border-[#DFD2C4]/60 shadow-sm">
+                            <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate() - 7); setCurrentDate(d); }} className="p-2 rounded-xl hover:bg-[#FDFBF7] text-[#9A8F84] hover:text-[#312923] transition-colors">
+                                <ChevronLeft size={18}/>
+                            </button>
+                            <button onClick={() => setCurrentDate(new Date())} className="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-[#312923] hover:text-[#5B6651] transition-all">
+                                Hoy
+                            </button>
+                            <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate() + 7); setCurrentDate(d); }} className="p-2 rounded-xl hover:bg-[#FDFBF7] text-[#9A8F84] hover:text-[#312923] transition-colors">
+                                <ChevronRight size={18}/>
+                            </button>
+                        </div>
+
+                        <button 
+                            onClick={() => onOpenModal({name: '', treatment: '', date: '', time: '', duration: 60, status: 'agendado', id: null})} 
+                            className="flex items-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
+                        >
+                            <Plus size={16}/> Agendar
+                        </button>
+                    </div>
                 </div>
-                <Button theme={themeMode} onClick={() => onOpenModal({name: '', treatment: '', date: '', time: '', duration: 60, status: 'agendado', id: null})}>
-                    <Plus/> Agendar
-                </Button>
             </div>
             
-            <div className={`flex-1 overflow-auto rounded-2xl border ${t.border} ${t.cardBg} custom-scrollbar`}>
-                <div className="grid grid-cols-8 min-w-[800px]">
-                    <div className={`p-4 border-b border-r ${t.border} text-xs font-bold text-center opacity-50 sticky top-0 z-20 ${t.bg}`}>HORA</div>
-                    {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => (
-                        <div key={d} className={`p-4 border-b ${t.border} text-center sticky top-0 z-20 ${t.bg} ${d.toDateString()===new Date().toDateString() ? t.accent : ''}`}>
-                            <p className="text-xs font-bold opacity-70">{['LUN','MAR','MIE','JUE','VIE','SAB','DOM'][d.getDay()===0?6:d.getDay()-1]}</p>
-                            <p className="text-xl font-black">{d.getDate()}</p>
-                        </div>
-                    ))}
+            {/* --- CUADRÍCULA DEL CALENDARIO --- */}
+            <div className="flex-1 overflow-auto rounded-[2rem] border border-[#DFD2C4]/60 bg-white shadow-xl custom-scrollbar relative" style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.05)' }}>
+                <div className="grid grid-cols-8 min-w-[900px]">
                     
-                    {Array.from({length:12}, (_,i)=>8+i).map(h => (
+                    {/* Header: Esquina vacía */}
+                    <div className="p-2 border-b border-r border-[#DFD2C4]/40 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-center rounded-tl-[2rem]">
+                        <span className="text-[9px] font-black text-[#9A8F84] uppercase tracking-widest">Hora</span>
+                    </div>
+                    
+                    {/* Header: Días */}
+                    {Array.from({length: 7}, (_, i) => {
+                        const d = new Date(currentDate); 
+                        d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i); 
+                        const isToday = d.toDateString() === new Date().toDateString();
+                        
+                        return (
+                            <div key={d} className={`py-3 px-2 border-b border-r border-[#DFD2C4]/40 text-center sticky top-0 z-20 bg-white/95 backdrop-blur-md transition-colors ${isToday ? 'border-b-2 border-b-[#5B6651]' : ''}`}>
+                                <div className="flex flex-col items-center justify-center gap-1">
+                                    <p className={`text-[9px] font-black uppercase tracking-widest ${isToday ? 'text-[#5B6651]' : 'text-[#9A8F84]'}`}>
+                                        {dayNames[i]}
+                                    </p>
+                                    <div className={`w-9 h-9 flex items-center justify-center rounded-full text-lg font-black ${isToday ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#312923] bg-[#FDFBF7] border border-[#DFD2C4]/40'}`}>
+                                        {d.getDate()}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    
+                    {/* Filas de Horas */}
+                    {Array.from({length: 12}, (_, i) => 8 + i).map(h => (
                         <React.Fragment key={h}>
-                            <div className="p-2 border-r border-b border-white/5 text-xs font-bold opacity-50 text-center h-24">{h}:00</div>
-                            {Array.from({length:7}, (_,i)=>{const d=new Date(currentDate); d.setDate(d.getDate()-d.getDay()+1+i); return d;}).map(d => { 
+                            {/* Columna Izquierda (Horas) */}
+                            <div className="border-r border-b border-[#DFD2C4]/40 text-[11px] font-black text-[#A3968B] text-center h-[72px] flex items-start justify-center pt-2 bg-[#FDFBF7]">
+                                {h}:00
+                            </div>
+                            
+                            {/* Celdas de Días */}
+                            {Array.from({length: 7}, (_, i) => {
+                                const d = new Date(currentDate); 
+                                d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i); 
                                 const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; 
+                                
                                 const hourAppts = appointments.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
-
-                                const statusColors = {
-                                    agendado: 'border-stone-500 bg-stone-500/20 text-stone-300',
-                                    confirmado: 'border-emerald-500 bg-emerald-500/20 text-emerald-300',
-                                    espera: 'border-yellow-500 bg-yellow-500/20 text-yellow-300',
-                                    atendiendo: 'border-blue-500 bg-blue-500/20 text-blue-300',
-                                    no_asistio: 'border-red-500 bg-red-500/20 text-red-300'
-                                };
 
                                 return (
                                     <div 
                                         key={d+h} 
-                                        className="border-b border-white/5 border-r relative group h-24 transition-all hover:bg-white/5 cursor-pointer" 
+                                        className="border-b border-r border-[#DFD2C4]/30 relative group h-[72px] transition-colors hover:bg-[#FDFBF7] cursor-pointer" 
                                         onClick={() => onOpenModal({name: '', treatment: '', date: dateStr, time: `${h.toString().padStart(2, '0')}:00`, duration: 60, status: 'agendado', id: null})}
                                     >
                                         {hourAppts.map((appt, index) => {
                                             const minutes = parseInt(appt.time.split(':')[1]) || 0;
                                             const topOffset = (minutes / 60) * 100;
+                                            const heightPercent = (appt.duration || 60) / 60 * 100;
 
                                             return (
                                                 <div 
                                                     key={appt.id || index}
                                                     onClick={(e) => { e.stopPropagation(); onOpenModal(appt); }}
-                                                    className={`absolute left-0 w-full rounded-xl border-l-4 shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-all p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
-                                                    style={{ top: `${topOffset}%`, height: `${(appt.duration || 60) / 60 * 100}%`, minHeight: '60px' }}
+                                                    className={`absolute left-1.5 right-1.5 rounded-xl border-l-[4px] flex flex-col cursor-pointer transition-all hover:-translate-y-[2px] hover:z-30 p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
+                                                    style={{ 
+                                                        top: `calc(${topOffset}% + 2px)`, 
+                                                        height: `calc(${heightPercent}% - 4px)`,
+                                                        minHeight: '28px' 
+                                                    }}
                                                 >
-                                                    <div>
-                                                        <p className="text-xs font-black truncate leading-tight">{appt.name}</p>
-                                                        <p className="text-[9px] opacity-80 truncate">{appt.time} • {appt.treatment}</p>
-                                                    </div>
+                                                    <p className="text-[11px] font-black truncate leading-none">{appt.name}</p>
+                                                    {(appt.duration || 60) >= 30 && (
+                                                        <p className="text-[9px] font-bold opacity-80 truncate mt-1.5 leading-none tracking-wide">{appt.time} • {appt.treatment}</p>
+                                                    )}
                                                 </div>
                                             );
                                         })}
+                                        
+                                        {/* Botón flotante al hacer hover en casilla vacía */}
                                         {hourAppts.length === 0 && (
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                <Plus size={14} className="opacity-50"/>
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center border border-[#DFD2C4] text-[#A3968B] group-hover:scale-110 transition-transform">
+                                                    <Plus size={16}/>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

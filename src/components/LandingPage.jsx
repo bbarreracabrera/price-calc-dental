@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Cloud, Mic, ShieldCheck, Smartphone, Zap, CheckCircle2, GanttChartSquare, Lock, ArrowRight} from 'lucide-react';
+import { Cloud, Mic, ShieldCheck, Smartphone, Zap, CheckCircle2, GanttChartSquare, Lock, ArrowRight } from 'lucide-react';
 import LegalText from './LegalText';
+import { ToothSVG } from './ToothSystem';
 
 export default function LandingPage({ onLoginClick }) {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -12,173 +13,181 @@ export default function LandingPage({ onLoginClick }) {
         }
     }, [onLoginClick]);
 
-    // Componente para pilares de misión
     const FeatureCard = ({ icon: Icon, title, desc }) => (
-        <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/30 transition-all group">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Icon className="text-cyan-400" size={24} />
+        <div className="p-8 rounded-[2rem] bg-white border border-[#DFD2C4]/40 transition-all group relative" style={{ boxShadow: '0 10px 25px -5px rgba(91, 102, 81, 0.05)' }}>
+            <div className="absolute inset-0 bg-[#FDFBF7] rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity -z-10"></div>
+            {/* Icono en Rosa Suave al hacer hover */}
+            <div className="w-14 h-14 rounded-2xl bg-[#FDFBF7] flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[#CBAAA2]/10 group-hover:shadow-sm transition-all border border-[#DFD2C4]/50">
+                <Icon className="text-[#9A8F84] group-hover:text-[#CBAAA2] transition-colors" size={28} strokeWidth={2} />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-white">{title}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+            <h3 className="text-xl font-black mb-3 text-[#312923] tracking-tight">{title}</h3>
+            <p className="text-[#6B615A] text-sm leading-relaxed font-medium">{desc}</p>
         </div>
     );
 
+    const heroFaces = { o: 'caries', m: 'filled', d: null, v: null, l: null };
+    const heroStatus = ['endo', 'crown'];
+
     return (
-        <div className="min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-cyan-500 selection:text-white overflow-x-hidden relative">
+        <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans selection:bg-[#CBAAA2] selection:text-white overflow-x-hidden">
             
-            {/* Navegación */}
-            <nav className="container mx-auto px-6 py-6 flex justify-between items-center relative z-10">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20 flex items-center justify-center">
-                        <Cloud className="text-white" size={20} strokeWidth={2.5} />
+            {/* --- NAVEGACIÓN --- */}
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-[#FDFBF7]/80 backdrop-blur-lg border-b border-[#DFD2C4]/50">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+                        <div className="w-8 h-8 bg-[#5B6651] rounded-xl shadow-sm flex items-center justify-center">
+                            <Cloud className="text-white" size={18} strokeWidth={2.5} />
+                        </div>
+                        <span className="font-black text-xl tracking-tighter text-[#312923]">ShiningCloud<span className="text-[#CBAAA2]">Pro</span></span>
                     </div>
-                    <span className="font-black text-xl tracking-tighter uppercase">ShiningCloud<span className="text-cyan-500">CL</span></span>
-                </div>
-                <button onClick={onLoginClick} className="px-6 py-2 text-xs font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10">
-                    Acceso Profesionales
-                </button>
-            </nav>
-
-            {/* Hero Section - Foco en la Misión */}
-            <div className="relative pt-24 pb-32 text-center px-4 max-w-5xl mx-auto">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/10 blur-[150px] rounded-full pointer-events-none"></div>
-                
-                <span className="inline-block px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/5 text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8 relative z-10">
-                    Odontología Digital para todo Chile
-                </span>
-
-                <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-8 relative z-10 leading-[0.9] text-white">
-                    La consulta digital <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                        ahora es para todos.
-                    </span>
-                </h1>
-
-                <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-12 relative z-10 leading-relaxed">
-                    Democratizamos la tecnología dental eliminando las barreras de costo. ShiningCloud es la herramienta chilena diseñada para transformar tu práctica en una operación <b>100% digital, legal y multiplataforma</b>.
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-                    <button onClick={() => document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' })} className="px-10 py-5 bg-white text-[#0B0F19] font-black rounded-2xl transition-all hover:bg-cyan-400 hover:scale-105 text-lg flex items-center justify-center gap-2">
-                        Digitalizar mi clínica ahora <ArrowRight size={20}/>
+                    <button onClick={onLoginClick} className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest bg-white hover:bg-[#FDFBF7] text-[#5B6651] border border-[#DFD2C4] rounded-full transition-all shadow-sm">
+                        Acceso Profesionales
                     </button>
                 </div>
+            </nav>
+
+            {/* --- HERO SECTION --- */}
+            <div className="relative pt-32 pb-20 md:pt-40 md:pb-32 px-6 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-8">
+                
+                <div className="flex-1 text-center md:text-left z-10 relative">
+                    <span className="inline-block px-4 py-1.5 rounded-full border border-[#CBAAA2]/30 bg-white text-[#CBAAA2] text-[10px] font-black uppercase tracking-[0.2em] mb-6 shadow-sm">
+                        Odontología de Autor Digital
+                    </span>
+
+                    <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 text-[#312923] leading-[1.05]">
+                        La clínica digital <br />
+                        <span className="text-[#CBAAA2] italic">ahora es para todos.</span>
+                    </h1>
+
+                    <p className="text-lg md:text-xl text-[#6B615A] max-w-2xl mx-auto md:mx-0 mb-10 leading-relaxed font-medium">
+                        Democratizamos la tecnología dental eliminando las barreras de costo. ShiningCloud es la plataforma diseñada para transformar tu clínica en una operación <b>100% digital, elegante y segura</b>.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                        {/* Botón Oliva */}
+                        <button onClick={() => document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' })} className="group px-8 py-4 bg-[#5B6651] text-white font-bold rounded-full transition-all hover:bg-[#4a5442] hover:shadow-xl hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-3 text-sm tracking-widest uppercase">
+                            Digitalizar mi clínica <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex-1 flex justify-center md:justify-end w-full relative z-10 scale-100 md:scale-110 mt-12 md:mt-0">
+                    <div className="relative p-12 bg-white rounded-[3rem] border border-[#DFD2C4]/40 group" style={{ boxShadow: '0 25px 50px -12px rgba(91, 102, 81, 0.1)' }}>
+                        
+                        <div className="absolute -top-4 -left-4 md:-left-12 flex gap-3 items-center px-5 py-3 bg-white text-[#312923] border border-[#DFD2C4]/50 rounded-full text-[11px] font-bold shadow-xl z-20">
+                            {/* Punto de pulso Rosa */}
+                            <div className="w-2 h-2 rounded-full bg-[#CBAAA2] animate-pulse"></div>
+                            <span>"Caries Oclusal 16" - <span className="text-[#5B6651]">Guardado</span></span>
+                        </div>
+
+                        <ToothSVG number={16} faces={heroFaces} status={heroStatus} size={180} interactive={false} />
+                        
+                        {/* Glow Rosa Suave de fondo */}
+                        <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-[#CBAAA2]/15 rounded-full blur-3xl pointer-events-none"></div>
+                    </div>
+                </div>
+                
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[800px] h-[600px] bg-[#DFD2C4]/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
             </div>
 
-            {/* Misión y Pilares */}
-            <div id="features" className="container mx-auto px-6 py-32 border-t border-white/5">
-                <div className="grid md:grid-cols-3 gap-8">
-                    <FeatureCard 
-                        icon={ShieldCheck} 
-                        title="Cumplimiento Normativo" 
-                        desc="Diseñado bajo la normativa chilena de Ficha Clínica. Cumplimiento estricto de la Ley 19.628 sobre protección de la vida privada y datos sensibles."
-                    />
-                    <FeatureCard 
-                        icon={Smartphone} 
-                        title="Uso Multiplataforma" 
-                        desc="Sin instalaciones complejas. Accede desde tu laptop en el box, tablet en el sillón o celular, con la fluidez de una aplicación nativa."
-                    />
-                    <FeatureCard 
-                        icon={Mic} 
-                        title="Dictado Clínico Directo" 
-                        desc="Optimiza tu tiempo. Registra evoluciones y periodontogramas mediante voz, permitiendo una atención fluida sin soltar el instrumental."
-                    />
-                    <FeatureCard 
-                        icon={Lock} 
-                        title="Privacidad Multitenant" 
-                        desc="Arquitectura de seguridad avanzada: tus datos clínicos están físicamente aislados y encriptados. Solo tú y tu equipo tienen acceso."
-                    />
-                    <FeatureCard 
-                        icon={GanttChartSquare} 
-                        title="Gestión de Aranceles" 
-                        desc="Democratizamos el orden financiero. Configura tus prestaciones, genera presupuestos al instante y controla el flujo de caja de tu clínica."
-                    />
-                    <FeatureCard 
-                        icon={Zap} 
-                        title="Velocidad Extrema" 
-                        desc="Olvídate de servidores lentos. Nuestra infraestructura en la nube responde al instante, garantizando fluidez en cada diagnóstico."
-                    />
+            {/* --- PILARES DE LA MISIÓN --- */}
+            <div id="features" className="max-w-7xl mx-auto px-6 py-24 border-t border-[#DFD2C4]/30">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-black text-[#312923] tracking-tight mb-4">Ingeniería Clínica de Precisión</h2>
+                    <p className="text-[#9A8F84] font-medium">Todo lo que necesitas para operar, sin la complejidad visual.</p>
+                </div>
+                <div className="grid md:grid-cols-3 gap-6">
+                    <FeatureCard icon={ShieldCheck} title="Cumplimiento Normativo" desc="Diseñado bajo la normativa chilena de Ficha Clínica. Cumplimiento estricto de la Ley 19.628 sobre protección de la vida privada y datos sensibles." />
+                    <FeatureCard icon={Smartphone} title="Uso Multiplataforma" desc="Sin instalaciones complejas. Accede desde tu laptop en el box, tablet en el sillón o celular, con la fluidez de una aplicación nativa." />
+                    <FeatureCard icon={Mic} title="Dictado Clínico Directo" desc="Optimiza tu tiempo. Registra evoluciones y periodontogramas mediante voz, permitiendo una atención fluida sin soltar el instrumental." />
+                    <FeatureCard icon={Lock} title="Privacidad Multitenant" desc="Arquitectura de seguridad avanzada: tus datos clínicos están físicamente aislados y encriptados. Solo tú y tu equipo tienen acceso." />
+                    <FeatureCard icon={GanttChartSquare} title="Gestión de Aranceles" desc="Democratizamos el orden financiero. Configura tus prestaciones, genera presupuestos al instante y controla el flujo de caja de tu clínica." />
+                    <FeatureCard icon={Zap} title="Velocidad Extrema" desc="Olvídate de servidores lentos. Nuestra infraestructura en la nube responde al instante, garantizando fluidez en cada diagnóstico." />
                 </div>
             </div>
 
-            {/* Precios Simplificados */}
-            <div id="pricing" className="container mx-auto px-6 py-24 border-t border-white/5 text-center">
-                <h2 className="text-4xl font-black mb-4">Un solo plan. Sin letras chicas.</h2>
-                <p className="text-slate-400 mb-16 max-w-xl mx-auto text-lg">
-                    Creemos en el acceso justo. Por menos, obtienes una clínica digital completa.
-                </p>
+            {/* --- PRECIOS SIMPLIFICADOS --- */}
+            <div id="pricing" className="bg-white border-y border-[#DFD2C4]/40 py-24">
+                <div className="max-w-7xl mx-auto px-6 text-center">
+                    <h2 className="text-3xl md:text-4xl font-black text-[#312923] mb-4 tracking-tight">Un solo plan. Sin letras chicas.</h2>
+                    <p className="text-[#6B615A] mb-16 max-w-xl mx-auto text-lg font-medium">
+                        Creemos en el acceso justo. Por menos, obtienes una clínica digital completa.
+                    </p>
 
-                <div className="max-w-md mx-auto relative">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-[30px] blur opacity-25"></div>
-                    <div className="relative bg-[#0F172A] p-10 rounded-[28px] border border-white/10">
-                        <h3 className="text-sm font-black uppercase tracking-[0.3em] text-cyan-400 mb-4">Suscripción Profesional</h3>
-                        <div className="flex items-baseline justify-center gap-1 mb-8">
-                            <span className="text-6xl font-black tracking-tighter text-white">$10.000</span>
-                            <span className="text-slate-400 font-bold">CLP/mes</span>
-                        </div>
+                    <div className="max-w-md mx-auto relative group">
+                        {/* Sombra Oliva suave */}
+                        <div className="absolute -inset-2 bg-[#5B6651]/5 rounded-[40px] blur-xl transition-all"></div>
                         
-                        <ul className="text-left space-y-5 mb-10">
-                            {[
-                                'Ficha Clínica y Anamnesis Legal',
-                                'Odontograma y Perio por Voz',
-                                'Agenda y Recordatorios',
-                                'Gestión de Presupuestos y Caja',
-                                'Almacenamiento de RX e Imágenes',
-                                'Usuarios y Asistentes Ilimitados'
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-3 text-sm font-medium text-slate-300">
-                                    <CheckCircle2 size={18} className="text-cyan-500" /> {item}
-                                </li>
-                            ))}
-                        </ul>
+                        <div className="relative bg-[#FDFBF7] p-10 md:p-12 rounded-[2.5rem] border border-[#DFD2C4]/50" style={{ boxShadow: '0 25px 50px -12px rgba(91, 102, 81, 0.1)' }}>
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#CBAAA2] mb-6">Suscripción Profesional</h3>
+                            <div className="flex items-baseline justify-center gap-1 mb-10">
+                                <span className="text-6xl font-black tracking-tighter text-[#312923]">$10.000</span>
+                                <span className="text-[#9A8F84] font-bold text-sm">CLP/mes</span>
+                            </div>
+                            
+                            <ul className="text-left space-y-4 mb-10">
+                                {[
+                                    'Ficha Clínica y Anamnesis Legal',
+                                    'Odontograma y Perio por Voz',
+                                    'Agenda y Recordatorios',
+                                    'Gestión de Presupuestos y Caja',
+                                    'Almacenamiento de RX e Imágenes',
+                                    'Usuarios y Asistentes Ilimitados'
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-start gap-3 text-sm font-semibold text-[#6B615A]">
+                                        <CheckCircle2 size={20} className="text-[#5B6651] shrink-0" /> {item}
+                                    </li>
+                                ))}
+                            </ul>
 
-                        <div className="space-y-6">
-                            <label className="flex items-start gap-3 cursor-pointer group text-left">
-                                <input 
-                                    type="checkbox" 
-                                    checked={acceptedTerms}
-                                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                                    className="mt-1 w-5 h-5 accent-cyan-500 rounded border-white/20 bg-white/5"
-                                />
-                                <span className="text-[11px] text-slate-400 leading-tight">
-                                    Acepto los <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-cyan-400 hover:underline font-bold">Términos de Servicio y Privacidad</button> para operar bajo la normativa legal chilena.
-                                </span>
-                            </label>
+                            <div className="space-y-6">
+                                <label className="flex items-start gap-3 cursor-pointer group text-left bg-white p-5 rounded-2xl border border-[#DFD2C4]/40 hover:border-[#5B6651]/50 transition-colors shadow-sm">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={acceptedTerms}
+                                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                        className="mt-1 w-5 h-5 accent-[#5B6651] rounded border-[#DFD2C4] cursor-pointer"
+                                    />
+                                    <span className="text-xs text-[#6B615A] font-medium leading-relaxed">
+                                        Acepto los <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-[#CBAAA2] hover:underline font-bold">Términos de Servicio</button> para operar.
+                                    </span>
+                                </label>
 
-                            <button 
-                                disabled={!acceptedTerms}
-                                onClick={() => window.location.href = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d"}
-                                className={`w-full py-5 font-black rounded-2xl transition-all text-sm uppercase tracking-widest shadow-xl ${
-                                    acceptedTerms 
-                                    ? "bg-cyan-500 text-black hover:bg-cyan-400" 
-                                    : "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
-                                }`}
-                            >
-                                Iniciar Digitalización
-                            </button>
+                                <button 
+                                    disabled={!acceptedTerms}
+                                    onClick={() => window.location.href = "#"}
+                                    className={`w-full py-4 font-black rounded-full transition-all text-sm uppercase tracking-widest ${
+                                        acceptedTerms 
+                                        ? "bg-[#312923] text-white hover:bg-[#1a1512] shadow-lg shadow-[#312923]/20 active:scale-95" 
+                                        : "bg-[#DFD2C4]/40 text-[#9A8F84] cursor-not-allowed"
+                                    }`}
+                                >
+                                    Iniciar Digitalización
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Modal de Términos */}
+            {/* --- MODAL DE TÉRMINOS --- */}
             {showTerms && (
-                <div className="fixed inset-0 bg-[#0B0F19]/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md">
-                    <div className="bg-[#0F172A] border border-white/10 rounded-[32px] w-full max-w-3xl max-h-[85vh] flex flex-col relative shadow-2xl">
-                        <div className="p-8 border-b border-white/5 flex justify-between items-center">
+                <div className="fixed inset-0 bg-[#312923]/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white border border-[#DFD2C4] rounded-[2rem] w-full max-w-3xl max-h-[85vh] flex flex-col relative shadow-2xl animate-in zoom-in-95">
+                        <div className="p-8 border-b border-[#DFD2C4]/40 flex justify-between items-center bg-[#FDFBF7] rounded-t-[2rem]">
                             <div>
-                                <h2 className="text-2xl font-black text-white tracking-tight">Marco Legal y Privacidad</h2>
-                                <p className="text-xs text-cyan-500 font-bold uppercase tracking-widest mt-1 text-left">ShiningCloud Chile</p>
+                                <h2 className="text-2xl font-black text-[#312923] tracking-tight">Marco Legal y Privacidad</h2>
+                                <p className="text-xs text-[#CBAAA2] font-bold uppercase tracking-widest mt-1 text-left">ShiningCloud Pro</p>
                             </div>
-                            <button onClick={() => setShowTerms(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:text-white transition-colors text-xl">✕</button>
+                            <button onClick={() => setShowTerms(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-[#9A8F84] hover:bg-[#DFD2C4]/30 hover:text-[#312923] transition-colors border border-[#DFD2C4]/50">✕</button>
                         </div>
-                        <div className="p-8 overflow-y-auto custom-scrollbar text-left">
-                            <LegalText isDarkTheme={true} />
+                        <div className="p-8 overflow-y-auto custom-scrollbar text-left text-[#6B615A] bg-white">
+                            <LegalText isDarkTheme={false} />
                         </div>
-                        <div className="p-8 border-t border-white/5">
+                        <div className="p-6 md:p-8 border-t border-[#DFD2C4]/40 bg-[#FDFBF7] rounded-b-[2rem]">
                             <button 
                                 onClick={() => { setAcceptedTerms(true); setShowTerms(false); }} 
-                                className="w-full py-4 bg-cyan-500 text-black font-black uppercase tracking-widest rounded-2xl hover:bg-cyan-400 transition-colors shadow-lg shadow-cyan-500/20"
+                                className="w-full py-4 bg-[#5B6651] text-white font-black uppercase tracking-widest rounded-xl hover:bg-[#4a5442] transition-colors shadow-lg shadow-[#5B6651]/20"
                             >
                                 Entendido y acepto las condiciones
                             </button>
@@ -187,13 +196,14 @@ export default function LandingPage({ onLoginClick }) {
                 </div>
             )}
 
-            <footer className="border-t border-white/5 py-12 text-center">
-                <div className="flex items-center justify-center gap-2 opacity-50 mb-4">
+            {/* --- FOOTER --- */}
+            <footer className="py-10 text-center bg-[#FDFBF7]">
+                <div className="flex items-center justify-center gap-2 opacity-40 mb-3 text-[#312923]">
                     <Cloud size={16} />
                     <span className="font-black text-sm tracking-widest uppercase">ShiningCloud</span>
                 </div>
-                <p className="text-slate-600 text-xs tracking-tight px-4">
-                    © {new Date().getFullYear()} ShiningCloud Dental Chile. Operando bajo estándares de seguridad HIPAA/Ley 19.628.
+                <p className="text-[#9A8F84] text-xs font-medium px-4">
+                    © {new Date().getFullYear()} ShiningCloud Dental.
                 </p>
             </footer>
         </div>

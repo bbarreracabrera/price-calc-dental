@@ -1,18 +1,14 @@
 import React from 'react';
 import { 
-    X, Cloud, Moon, Sun, Droplets, LogOut, TrendingUp, 
-    CalendarClock, User, Users, Wallet, Calculator, 
-    Stethoscope, Library, FlaskConical, Box, Settings, Shield 
+    X, Cloud, LogOut, TrendingUp, CalendarClock, User, Users, 
+    Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield 
 } from 'lucide-react';
-import { THEMES } from '../constants';
 
 export default function Sidebar({
     mobileMenuOpen, setMobileMenuOpen, config, session, userRole,
-    activeTab, setActiveTab, setSelectedPatientId, themeMode, toggleTheme, supabase
+    activeTab, setActiveTab, setSelectedPatientId, supabase,
+    isWorkspaceActive // Recibimos la prop que nos dice si debemos colapsar
 }) {
-    const t = THEMES[themeMode] || THEMES.dark;
-
-    // Movimos la lógica del menú aquí adentro
     const getMenuItems = () => {
         const base = [
             { id: 'dashboard', label: 'Inicio', icon: TrendingUp },
@@ -30,47 +26,82 @@ export default function Sidebar({
         return base;
     };
 
+    // Clases dinámicas dependiendo de si está colapsado o no
+    const sidebarWidth = isWorkspaceActive ? 'w-20' : 'w-64';
+    const hideOnCollapse = isWorkspaceActive ? 'hidden' : 'block';
+    const centerIcons = isWorkspaceActive ? 'justify-center' : '';
+
     return (
-        <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out ${t.card} border-r flex flex-col`}>
-            <div className="p-8 border-b border-white/5 flex flex-col items-center gap-4 relative">
-                <button onClick={() => setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 opacity-50"><X/></button>
-                <div className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl ${t.gradient}`}>
-                    {config.logo ? <img src={config.logo} className="w-full h-full object-contain rounded-2xl" alt="Logo"/> : <Cloud className="text-white" size={32}/>}
+        <aside className={`fixed inset-y-0 left-0 z-50 ${sidebarWidth} transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-all duration-300 ease-in-out bg-white border-r border-[#DFD2C4]/50 flex flex-col shadow-[4px_0_24px_rgba(91,102,81,0.04)]`}>
+            
+            {/* --- CABECERA Y LOGO --- */}
+            <div className={`p-6 border-b border-[#DFD2C4]/40 flex flex-col items-center gap-4 relative bg-[#FDFBF7]/50 ${isWorkspaceActive ? 'px-2' : ''}`}>
+                <button onClick={() => setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 text-[#9A8F84] hover:bg-[#DFD2C4]/30 rounded-full transition-colors">
+                    <X size={20}/>
+                </button>
+                
+                {/* Logo */}
+                <div className={`rounded-2xl flex items-center justify-center shadow-sm bg-gradient-to-br from-[#9A8F84] to-[#5B6651] text-white border border-[#DFD2C4] transition-all ${isWorkspaceActive ? 'w-10 h-10' : 'w-14 h-14'}`}>
+                    {config?.logo ? (
+                        <img src={config.logo} className="w-full h-full object-contain rounded-2xl" alt="Logo"/>
+                    ) : (
+                        <Cloud size={isWorkspaceActive ? 20 : 28} strokeWidth={2.5}/>
+                    )}
                 </div>
-                <div className="text-center">
-                    <h1 className="text-xl font-black tracking-tight">ShiningCloud</h1>
-                    <p className={`text-[10px] uppercase font-bold tracking-widest ${t.subText}`}>Dental OS</p>
+                
+                {/* Textos del Logo (Se ocultan si colapsa) */}
+                <div className={`text-center ${hideOnCollapse}`}>
+                    <h1 className="text-xl font-black tracking-tight text-[#312923]">ShiningCloud</h1>
+                    <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[#CBAAA2] mt-1">Dental</p>
                 </div>
             </div>
             
-            <div className="px-6 py-6">
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${userRole === 'admin' ? 'bg-emerald-500' : userRole === 'dentist' ? 'bg-blue-500' : 'bg-purple-500'}`}>
-                        {session.user.email[0].toUpperCase()}
+            {/* --- PERFIL DE USUARIO --- */}
+            <div className={`px-4 py-5 ${isWorkspaceActive ? 'px-2' : ''}`}>
+                <div className={`flex items-center gap-3 p-3 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4]/60 shadow-sm hover:border-[#CBAAA2]/50 transition-colors ${centerIcons}`}>
+                    <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${userRole === 'admin' ? 'bg-[#312923]' : userRole === 'dentist' ? 'bg-[#5B6651]' : 'bg-[#9A8F84]'}`}>
+                        {session?.user?.email?.[0]?.toUpperCase() || 'U'}
                     </div>
-                    <div className="overflow-hidden">
-                        <p className="text-xs font-bold truncate">{session.user.email.split('@')[0]}</p>
-                        <p className={`text-[9px] font-bold uppercase tracking-wider ${userRole === 'admin' ? 'text-emerald-400' : userRole === 'dentist' ? 'text-blue-400' : 'text-purple-400'}`}>
-                            {userRole === 'admin' ? 'Admin' : userRole === 'dentist' ? 'Dr.' : 'Asist.'}
+                    <div className={`overflow-hidden flex-1 ${hideOnCollapse}`}>
+                        <p className="text-xs font-bold text-[#312923] truncate">{session?.user?.email?.split('@')[0] || 'Usuario'}</p>
+                        <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${userRole === 'admin' ? 'text-[#CBAAA2]' : userRole === 'dentist' ? 'text-[#5B6651]' : 'text-[#9A8F84]'}`}>
+                            {userRole === 'admin' ? 'Administrador' : userRole === 'dentist' ? 'Dentista' : 'Asistente'}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <nav className="px-4 space-y-1 flex-1 overflow-y-auto custom-scrollbar">
-                {getMenuItems().map(item => (
-                    <button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedPatientId(null); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs uppercase tracking-wide transition-all duration-300 group ${activeTab === item.id ? t.activeNav : 'opacity-60 hover:opacity-100 hover:bg-white/5'}`}>
-                        <item.icon size={18} className={`transition-transform group-hover:scale-110 ${activeTab === item.id ? 'text-current' : ''}`}/> {item.label}
-                    </button>
-                ))}
+            {/* --- NAVEGACIÓN PRINCIPAL --- */}
+            <nav className={`px-3 space-y-1 flex-1 overflow-y-auto custom-scrollbar pb-4 ${isWorkspaceActive ? 'px-2' : ''}`}>
+                {getMenuItems().map(item => {
+                    const isActive = activeTab === item.id;
+                    return (
+                        <button 
+                            key={item.id} 
+                            title={isWorkspaceActive ? item.label : ''} // Muestra tooltip en modo icono
+                            onClick={() => { 
+                                setActiveTab(item.id); 
+                                if(item.id !== 'ficha') setSelectedPatientId(null); 
+                                setMobileMenuOpen(false); 
+                            }} 
+                            className={`w-full flex items-center gap-3 py-3.5 rounded-2xl font-bold text-xs transition-all duration-200 group ${centerIcons} ${isActive ? 'bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20' : 'text-[#6B615A] hover:bg-[#FDFBF7] hover:text-[#312923] border border-transparent'} ${isWorkspaceActive ? 'px-0' : 'px-4'}`}
+                        >
+                            <item.icon size={18} className={`shrink-0 transition-transform duration-300 ${isActive ? 'text-[#5B6651] scale-110' : 'text-[#9A8F84] group-hover:text-[#CBAAA2] group-hover:scale-110'}`}/> 
+                            <span className={`mt-0.5 ${hideOnCollapse}`}>{item.label}</span>
+                        </button>
+                    );
+                })}
             </nav>
 
-            <div className="p-4 space-y-2 border-t border-white/5">
-                <button onClick={toggleTheme} className="w-full p-3 rounded-2xl bg-white/5 flex items-center justify-center gap-2 text-xs font-bold transition-all hover:bg-white/10 hover:scale-[1.02]">
-                    {themeMode === 'dark' ? <Moon size={14}/> : themeMode === 'light' ? <Sun size={14}/> : <Droplets size={14}/>} TEMA
-                </button>
-                <button onClick={() => supabase.auth.signOut()} className="w-full p-3 rounded-2xl bg-red-500/10 text-red-400 font-bold text-xs transition-all hover:bg-red-500/20 hover:scale-[1.02]">
-                    <LogOut size={14} className="inline mr-2"/> SALIR
+            {/* --- BOTÓN SALIR --- */}
+            <div className={`p-4 space-y-2 border-t border-[#DFD2C4]/40 bg-[#FDFBF7]/30 ${isWorkspaceActive ? 'px-2' : ''}`}>
+                <button 
+                    title={isWorkspaceActive ? "Cerrar Sesión" : ""}
+                    onClick={() => supabase.auth.signOut()} 
+                    className={`w-full p-4 rounded-2xl bg-white border border-[#DFD2C4]/50 text-[#6B615A] font-bold text-xs transition-all hover:bg-[#CBAAA2]/10 hover:text-[#312923] hover:border-[#CBAAA2]/40 flex items-center gap-2 ${centerIcons}`}
+                >
+                    <LogOut size={16} className="text-[#CBAAA2] shrink-0"/> 
+                    <span className={hideOnCollapse}>CERRAR SESIÓN</span>
                 </button>
             </div>
         </aside>
