@@ -357,7 +357,7 @@ export default function App() {
       <main className={`flex-1 p-6 md:p-10 h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-64'}`}>
         <div className="md:hidden flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-stone-100">
             <button onClick={()=>setMobileMenuOpen(true)} className={`p-2 rounded-xl bg-[#FDFBF7] text-[#5C544D]`}><Menu/></button>
-            <span className="font-black text-lg tracking-tight">ShiningCloud <span className="text-[#A3968B]">Pro</span></span>
+            <span className="font-black text-lg tracking-tight">ShiningCloud <span className="text-[#A3968B]">Dental</span></span>
             <div className="w-8"></div>
         </div>
         
