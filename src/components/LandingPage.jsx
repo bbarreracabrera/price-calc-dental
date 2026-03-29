@@ -97,8 +97,8 @@ export default function LandingPage({ onLoginClick }) {
                             <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-6 backdrop-blur-md border border-white/10">
                                 <Activity className="text-[#DFD2C4]" size={28} />
                             </div>
-                            <h3 className="text-2xl md:text-3xl font-black text-white mb-3 tracking-tight">Dictado Clínico por IA</h3>
-                            <p className="text-[#A3968B] font-medium max-w-md leading-relaxed">Habla con naturalidad. La Inteligencia Artificial escucha tus hallazgos y los inyecta directamente en el odontograma y la ficha periodontal en tiempo real.</p>
+                            <h3 className="text-2xl md:text-3xl font-black text-white mb-3 tracking-tight">Dictado Clínico en directo</h3>
+                            <p className="text-[#A3968B] font-medium max-w-md leading-relaxed">Habla con naturalidad. La aplicación escucha tus hallazgos y los inyecta directamente en el odontograma y la ficha periodontal en tiempo real.</p>
                         </div>
                     </div>
 
