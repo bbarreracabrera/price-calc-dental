@@ -1,20 +1,18 @@
 import React from 'react';
-import { X, FlaskConical } from 'lucide-react';
-import { getLocalDate } from '../constants'; // Importamos esto aquí
+import { X, FlaskConical, Save } from 'lucide-react';
+import { getLocalDate } from '../constants'; 
 
 export default function LabWorkModal({ 
     themeMode, newLabWork, setNewLabWork, patientRecords, setModal, clinicOwner, labWorks, setLabWorks, supabase, notify 
 }) {
-    const isLight = themeMode === 'light';
-    const inputClass = `w-full p-3 rounded-xl border text-sm font-bold outline-none transition-colors ${isLight ? 'bg-gray-50 border-gray-200 focus:border-cyan-500 text-black' : 'bg-black/20 border-white/10 focus:border-cyan-400 text-white'}`;
-    const labelClass = "text-[10px] font-black uppercase tracking-widest opacity-50";
+    const inputClass = "w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors appearance-none";
+    const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
 
     const handleSave = async () => {
         if(newLabWork.patientId && newLabWork.workType && newLabWork.expectedDate){
             const id = newLabWork.id || Date.now().toString();
             const data = { ...newLabWork, id, admin_email: clinicOwner };
             
-            // Usamos supabase directamente aquí
             const { error } = await supabase.from('lab_works').insert([data]);
             
             if (error) {
@@ -23,7 +21,6 @@ export default function LabWorkModal({
             } else {
                 setLabWorks([...labWorks, data]);
                 setModal(null);
-                // Reseteamos el formulario
                 setNewLabWork({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: getLocalDate(), expectedDate: '', status: 'sent', id: null });
                 if(typeof notify === 'function') notify("✅ Trabajo enviado y guardado en la nube");
             }
@@ -33,64 +30,81 @@ export default function LabWorkModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className={`w-full max-w-md space-y-4 relative p-6 rounded-3xl border shadow-2xl ${isLight ? 'bg-white border-gray-200 text-black' : 'bg-[#1a1a1a] border-white/10 text-white'}`}>
-                <button onClick={()=>setModal(null)} className="absolute top-4 right-4 opacity-50 hover:opacity-100 transition-opacity"><X size={20}/></button>
-                <h3 className="text-xl font-bold flex items-center gap-2"><FlaskConical size={24} className="text-cyan-500"/> Enviar a Laboratorio</h3>
+        <div className="fixed inset-0 z-[100] bg-[#312923]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="w-full max-w-lg bg-white border border-[#DFD2C4]/50 rounded-[2rem] shadow-2xl p-8 animate-in zoom-in-95 duration-200">
                 
-                {/* Paciente */}
-                <div className="space-y-1">
-                    <label className={labelClass}>Paciente</label>
-                    <select 
-                        className={inputClass}
-                        value={newLabWork.patientId}
-                        onChange={(e) => {
-                            const p = Object.values(patientRecords).find(pat => pat.id === e.target.value);
-                            if (p) setNewLabWork({...newLabWork, patientId: p.id, patientName: p.personal?.legalName || p.name});
-                        }}
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#DFD2C4]/50">
+                    <div>
+                        <h3 className="font-black text-2xl text-[#312923] tracking-tight flex items-center gap-2">
+                            <FlaskConical className="text-[#CBAAA2]"/> Enviar a Laboratorio
+                        </h3>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Nuevo Registro de Envío</p>
+                    </div>
+                    <button onClick={()=>setModal(null)} className="p-2 text-[#9A8F84] hover:bg-[#FDFBF7] hover:text-[#312923] rounded-xl transition-all">
+                        <X size={20}/>
+                    </button>
+                </div>
+                
+                <div className="space-y-5">
+                    {/* Paciente */}
+                    <div>
+                        <label className={labelClass}>1. Paciente</label>
+                        <select 
+                            className={`${inputClass} cursor-pointer`}
+                            value={newLabWork.patientId}
+                            onChange={(e) => {
+                                const p = Object.values(patientRecords).find(pat => pat.id === e.target.value);
+                                if (p) setNewLabWork({...newLabWork, patientId: p.id, patientName: p.personal?.legalName || p.name});
+                            }}
+                        >
+                            <option value="">Selecciona un paciente de tu lista...</option>
+                            {Object.values(patientRecords).map(p => (
+                                <option key={p.id} value={p.id}>
+                                    {p.personal?.legalName || p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    
+                    {/* Tipo de Trabajo */}
+                    <div>
+                        <label className={labelClass}>2. Trabajo Solicitado</label>
+                        <input type="text" placeholder="Ej: Corona de Porcelana, Placa Miorelajante..." className={inputClass} value={newLabWork.workType} onChange={e=>setNewLabWork({...newLabWork, workType:e.target.value})}/>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Diente */}
+                        <div>
+                            <label className={labelClass}>N° Diente (Opcional)</label>
+                            <input type="text" placeholder="Ej: 18, 24..." className={inputClass} value={newLabWork.tooth} onChange={e=>setNewLabWork({...newLabWork, tooth:e.target.value})}/>
+                        </div>
+                        {/* Laboratorio */}
+                        <div>
+                            <label className={labelClass}>Nombre Lab</label>
+                            <input type="text" placeholder="Ej: Lab. Dentalis" className={inputClass} value={newLabWork.labName} onChange={e=>setNewLabWork({...newLabWork, labName:e.target.value})}/>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 border-t border-[#DFD2C4]/50 pt-5">
+                        {/* Fecha Envío */}
+                        <div>
+                            <label className={labelClass}>Fecha de Envío</label>
+                            <input type="date" className={inputClass} value={newLabWork.sendDate} onChange={e=>setNewLabWork({...newLabWork, sendDate:e.target.value})}/>
+                        </div>
+                        {/* Entrega Esperada */}
+                        <div>
+                            <label className={labelClass}>Llegada Esperada</label>
+                            <input type="date" className={inputClass} value={newLabWork.expectedDate} onChange={e=>setNewLabWork({...newLabWork, expectedDate:e.target.value})}/>
+                        </div>
+                    </div>
+
+                    <button 
+                        className="w-full mt-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white bg-[#5B6651] hover:bg-[#4a5442] shadow-lg shadow-[#5B6651]/20 active:scale-95 transition-all flex items-center justify-center gap-2" 
+                        onClick={handleSave}
                     >
-                        <option value="" className={isLight ? 'text-black' : 'bg-gray-900 text-white'}>Selecciona un paciente...</option>
-                        {Object.values(patientRecords).map(p => (
-                            <option key={p.id} value={p.id} className={isLight ? 'text-black' : 'bg-gray-900 text-white'}>
-                                {p.personal?.legalName || p.name}
-                            </option>
-                        ))}
-                    </select>
+                        <Save size={16}/> REGISTRAR Y ENVIAR
+                    </button>
                 </div>
-                
-                {/* Tipo de Trabajo */}
-                <div className="space-y-1">
-                    <label className={labelClass}>Tipo de Trabajo</label>
-                    <input type="text" placeholder="Ej: Corona de Porcelana, Placa..." className={inputClass} value={newLabWork.workType} onChange={e=>setNewLabWork({...newLabWork, workType:e.target.value})}/>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                    {/* Diente */}
-                    <div className="space-y-1">
-                        <label className={labelClass}>Diente (Opcional)</label>
-                        <input type="text" placeholder="N°" className={inputClass} value={newLabWork.tooth} onChange={e=>setNewLabWork({...newLabWork, tooth:e.target.value})}/>
-                    </div>
-                    {/* Laboratorio */}
-                    <div className="space-y-1">
-                        <label className={labelClass}>Laboratorio</label>
-                        <input type="text" placeholder="Nombre Lab" className={inputClass} value={newLabWork.labName} onChange={e=>setNewLabWork({...newLabWork, labName:e.target.value})}/>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                    {/* Fecha Envío */}
-                    <div className="space-y-1">
-                        <label className={labelClass}>Fecha de Envío</label>
-                        <input type="date" className={inputClass} value={newLabWork.sendDate} onChange={e=>setNewLabWork({...newLabWork, sendDate:e.target.value})}/>
-                    </div>
-                    {/* Entrega Esperada */}
-                    <div className="space-y-1">
-                        <label className={labelClass}>Entrega Esperada</label>
-                        <input type="date" className={inputClass} value={newLabWork.expectedDate} onChange={e=>setNewLabWork({...newLabWork, expectedDate:e.target.value})}/>
-                    </div>
-                </div>
-
-                <button className="w-full mt-4 p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-bold tracking-widest uppercase transition-colors shadow-lg shadow-cyan-500/30" onClick={handleSave}>GUARDAR Y ENVIAR</button>
             </div>
         </div>
     );

@@ -20,7 +20,7 @@ export default function DashboardView({
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         <Calendar size={14} className="text-[#A3968B]"/>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] capitalize">{formattedDate}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">{formattedDate}</p>
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black text-[#312923] tracking-tighter">Hola, {config.name.split(' ')[0]} 👋</h1>
                 </div>
@@ -57,8 +57,8 @@ export default function DashboardView({
                         <p className="text-[11px] font-bold text-[#A3968B] mt-2">Gastos Operativos</p>
                     </Card>
                     
-                    {/* Tarjeta Utilidad (Premium Dark) */}
-                    <Card className="col-span-1 md:col-span-2 relative overflow-hidden bg-[#312923] text-white shadow-2xl shadow-[#312923]/20 border-0 rounded-[2rem] p-8 group">
+                    {/* --- AQUÍ ESTÁ LA CORRECCIÓN: Cambiamos <Card> por <div> para que el fondo brille --- */}
+                    <div className={`col-span-1 md:col-span-2 relative overflow-hidden text-white shadow-2xl rounded-[2rem] p-8 group transition-colors duration-500 ${netProfit >= 0 ? 'bg-[#312923] shadow-[#312923]/20' : 'bg-red-600 shadow-red-600/20'}`}>
                         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #DFD2C4 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
                         <div className="absolute -right-10 -bottom-10 opacity-5 text-[#DFD2C4] transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
                             <DollarSign size={200} strokeWidth={1}/>
@@ -72,7 +72,7 @@ export default function DashboardView({
                             <h2 className="text-6xl font-black mt-2 tracking-tighter text-white drop-shadow-md">${netProfit.toLocaleString()}</h2>
                             <p className="text-xs font-bold text-[#A3968B] mt-4 uppercase tracking-widest border-t border-white/10 pt-4 w-fit">Balance Financiero Real</p>
                         </div>
-                    </Card>
+                    </div>
                 </div>
             )}
             

@@ -1,61 +1,155 @@
-import React from 'react';
-import { Library, Plus, Edit3, Trash2 } from 'lucide-react';
-import { Card, Button } from './UIComponents';
+import React, { useState } from 'react';
+import { Library, Plus, Edit3, Trash2, Search, Tag } from 'lucide-react';
+import { Card } from './UIComponents';
 import { DEFAULT_CATALOG } from '../constants';
 
 export default function CatalogView({ 
     themeMode, t, catalog, setCatalog, clinicOwner, session, 
     setNewCatalogItem, setModal, saveToSupabase, notify 
 }) {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeCategory, setActiveCategory] = useState('Todos');
+
+    const CATEGORIES = ['Todos', 'Examen', 'Preventivo', 'Cirugía', 'Endodoncia', 'Implantología', 'Rehabilitación', 'Periodoncia', 'Ortodoncia', 'Otros'];
+
+    // Filtramos el catálogo según lo que escribas y la pestaña que elijas
+    const filteredCatalog = catalog.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const itemCat = item.category || 'Otros';
+        const matchesCategory = activeCategory === 'Todos' || itemCat === activeCategory;
+        return matchesSearch && matchesCategory;
+    });
+
     return (
-        <div className="space-y-6 animate-in fade-in h-full flex flex-col">
-            <div className="flex justify-between items-center">
+        <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
+            
+            {/* --- ENCABEZADO BOUTIQUE --- */}
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#DFD2C4]/50 shrink-0">
                 <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-2"><Library className={t.accent}/> Arancel de Prestaciones</h2>
-                    <p className="text-xs opacity-50 mt-1">Administra tus tratamientos y precios fijos.</p>
+                    <div className="flex items-center gap-2 mb-2">
+                        <Library size={14} className="text-[#A3968B]"/>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Gestión Comercial</p>
+                    </div>
+                    <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Arancel de Prestaciones</h2>
                 </div>
-                <Button theme={themeMode} onClick={() => { setNewCatalogItem({name:'', price:'', id:null}); setModal('catalogItem'); }}>
-                    <Plus/> Nuevo Tratamiento
-                </Button>
+                <button 
+                    onClick={() => { setNewCatalogItem({name:'', price:'', category:'Examen', id:null}); setModal('catalogItem'); }}
+                    className="flex items-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
+                >
+                    <Plus size={16}/> Nuevo Tratamiento
+                </button>
             </div>
-            <div className="grid gap-2 overflow-y-auto custom-scrollbar pb-10">
+
+            {/* --- CONTROLES DE BÚSQUEDA Y FILTROS --- */}
+            {catalog.length > 0 && (
+                <div className="space-y-4 shrink-0">
+                    <div className="relative">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#A3968B]" size={20}/>
+                        <input 
+                            type="text" 
+                            placeholder="Buscar tratamiento por nombre..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full p-4 pl-14 rounded-2xl bg-white border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                        />
+                    </div>
+                    
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                        {CATEGORIES.map(cat => (
+                            <button 
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all shadow-sm border ${
+                                    activeCategory === cat 
+                                    ? 'bg-[#5B6651] text-white border-[#5B6651]' 
+                                    : 'bg-[#FDFBF7] text-[#9A8F84] border-[#DFD2C4]/60 hover:border-[#A3968B] hover:text-[#312923]'
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* --- LISTA DE TRATAMIENTOS --- */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                 {catalog.length === 0 ? (
-                    <div className="p-10 border border-dashed border-cyan-500/30 rounded-3xl text-center flex flex-col items-center bg-cyan-500/5">
-                        <Library size={48} className="mb-4 text-cyan-500 opacity-50"/>
-                        <h3 className="font-black text-lg mb-2">Tu arancel está vacío</h3>
-                        <p className="text-xs opacity-70 mb-6 max-w-sm">No pierdas tiempo escribiendo desde cero. Carga un arancel base referencial y luego ajusta los precios a la realidad de tu clínica.</p>
-                        
-                        <Button theme={themeMode} onClick={async () => {
-                            notify("Cargando arancel referencial...");
-                            const newItems = [];
-                            for (const item of DEFAULT_CATALOG) {
-                                const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                                const fullItem = { ...item, id, admin_email: clinicOwner || session?.user?.email };
-                                newItems.push(fullItem);
-                                await saveToSupabase('catalog', id, fullItem);
-                            }
-                            setCatalog(newItems);
-                            notify("¡Arancel base cargado con éxito!");
-                        }}>
-                            <Plus size={18} /> CARGAR ARANCEL REFERENCIAL (51 ÍTEMS)
-                        </Button>
+                    <div className="p-12 border border-dashed border-[#DFD2C4] bg-[#FDFBF7]/50 rounded-[2rem] text-center flex flex-col items-center gap-5 mt-4">
+                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-[#DFD2C4]/50 text-[#CBAAA2]">
+                            <Library size={32} strokeWidth={1.5}/>
+                        </div>
+                        <div>
+                            <h3 className="font-black text-[#312923] text-2xl tracking-tight">Tu arancel está vacío</h3>
+                            <p className="text-sm text-[#9A8F84] mt-2 font-bold max-w-md mx-auto leading-relaxed">
+                                No pierdas tiempo escribiendo desde cero. Carga un arancel base referencial y luego ajusta los precios a la realidad de tu clínica.
+                            </p>
+                        </div>
+                        <button 
+                            onClick={async () => {
+                                notify("Cargando arancel referencial...");
+                                const newItems = [];
+                                for (const item of DEFAULT_CATALOG) {
+                                    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                                    // A los de por defecto les ponemos 'Otros' o los dejamos sin categoría para que se editen luego
+                                    const fullItem = { ...item, category: 'Otros', id, admin_email: clinicOwner || session?.user?.email };
+                                    newItems.push(fullItem);
+                                    await saveToSupabase('catalog', id, fullItem);
+                                }
+                                setCatalog(newItems);
+                                notify("¡Arancel base cargado con éxito!");
+                            }}
+                            className="mt-4 flex items-center gap-2 px-6 py-3.5 bg-[#5B6651] text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-[#4a5442] transition-all shadow-md"
+                        >
+                            <Plus size={16} /> Cargar Arancel Referencial (51 Ítems)
+                        </button>
+                    </div>
+                ) : filteredCatalog.length === 0 ? (
+                    <div className="text-center py-20">
+                        <p className="text-lg font-bold text-[#A3968B]">No se encontraron tratamientos.</p>
+                        <p className="text-xs font-medium text-[#9A8F84] mt-2">Intenta con otra palabra clave o cambia de categoría.</p>
                     </div>
                 ) : (
-                    catalog.sort((a,b)=>a.name.localeCompare(b.name)).map(item => (
-                        <Card key={item.id} theme={themeMode} className="flex justify-between items-center p-4 hover:border-cyan-500/50 transition-colors">
-                            <div><h4 className="font-bold">{item.name}</h4></div>
-                            <div className="flex items-center gap-4">
-                                <span className="font-black text-emerald-400">${Number(item.price).toLocaleString()}</span>
-                                <button onClick={() => { setNewCatalogItem(item); setModal('catalogItem'); }} className="p-2 text-stone-400 hover:text-cyan-400 transition-colors"><Edit3 size={16}/></button>
-                                <button onClick={async () => {
-                                    setCatalog(catalog.filter(c => c.id !== item.id));
-                                    // Asumiendo que importaste supabase o lo pasaste como prop, pero en este caso lo manejamos en App.jsx o pasamos la función de borrado. 
-                                    // Para mantenerlo simple, llamemos a una función de borrado que pasaremos por prop, o importamos supabase aquí.
-                                    // Lo ideal es que el componente reciba la función de borrado.
-                                }} className="p-2 text-stone-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {filteredCatalog.sort((a,b)=>a.name.localeCompare(b.name)).map(item => (
+                            <div key={item.id} className="group flex justify-between items-center p-5 bg-white rounded-2xl border border-[#DFD2C4]/50 hover:border-[#A3968B] hover:shadow-md transition-all">
+                                <div className="flex-1 pr-4">
+                                    <h4 className="font-black text-[#312923] text-sm md:text-base leading-tight group-hover:text-[#5B6651] transition-colors">{item.name}</h4>
+                                    <div className="flex items-center gap-1.5 mt-2">
+                                        <Tag size={12} className="text-[#CBAAA2]"/>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] px-2 py-0.5 rounded-md border border-[#DFD2C4]/40">
+                                            {item.category || 'Otros'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-5">
+                                    <div className="text-right">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] block mb-0.5">Valor</span>
+                                        <span className="font-black text-[#5B6651] text-lg tracking-tighter">${Number(item.price).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 border-l border-[#DFD2C4]/50 pl-4">
+                                        <button 
+                                            onClick={() => { setNewCatalogItem({ ...item, category: item.category || 'Otros' }); setModal('catalogItem'); }} 
+                                            className="p-2.5 rounded-xl text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] transition-all"
+                                            title="Editar"
+                                        >
+                                            <Edit3 size={18}/>
+                                        </button>
+                                        <button 
+                                            onClick={async () => {
+                                                setCatalog(catalog.filter(c => c.id !== item.id));
+                                                notify("Tratamiento eliminado");
+                                            }} 
+                                            className="p-2.5 rounded-xl text-[#9A8F84] hover:text-red-500 hover:bg-red-50 transition-all"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={18}/>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </Card>
-                    ))
+                        ))}
+                    </div>
                 )}
             </div>
         </div>

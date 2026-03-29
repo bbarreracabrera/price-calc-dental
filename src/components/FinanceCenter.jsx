@@ -14,10 +14,71 @@ export default function FinanceCenter({
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
 
     const exportToExcel = () => {
-        const ws = XLSX.utils.json_to_sheet(financialRecords); 
-        const wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "Finanzas"); 
-        XLSX.writeFile(wb, `Reporte_Finanzas_${getLocalDate()}.xlsx`);
+        // 1. Mapeamos y limpiamos los datos para que el Excel sea legible por humanos
+        const formattedData = financialRecords.map(record => {
+            const isIncome = record.type === 'income';
+            
+            // Calculamos lo realmente pagado si es ingreso
+            let incomeAmount = 0;
+            if (isIncome) {
+                incomeAmount = (record.payments || []).reduce((s,p) => s + p.amount, 0) + (record.paid && !record.payments ? record.paid : 0);
+            }
+            
+            const expenseAmount = !isIncome ? Number(record.amount) : 0;
+
+            return {
+                "Fecha": record.date || getLocalDate(),
+                "Tipo de Movimiento": isIncome ? 'Ingreso (Abono/Pago)' : 'Egreso (Gasto)',
+                "Descripción": record.description || record.treatment || 'Sin descripción',
+                "Categoría": record.category || (isIncome ? 'Atención Clínica' : 'General'),
+                "Paciente Asociado": record.patientName || record.patientRef || '---',
+                "Ingresos ($)": isIncome ? incomeAmount : 0,
+                "Egresos ($)": !isIncome ? expenseAmount : 0,
+            };
+        });
+
+        // 2. Agregamos filas de resumen al final del Excel
+        formattedData.push({ "Fecha": "", "Tipo de Movimiento": "", "Descripción": "", "Categoría": "", "Paciente Asociado": "", "Ingresos ($)": "", "Egresos ($)": "" });
+        formattedData.push({ 
+            "Fecha": "RESUMEN", 
+            "Tipo de Movimiento": "", 
+            "Descripción": "", 
+            "Categoría": "", 
+            "Paciente Asociado": "TOTALES:", 
+            "Ingresos ($)": totalCollected, 
+            "Egresos ($)": totalExpenses 
+        });
+        formattedData.push({ 
+            "Fecha": "", 
+            "Tipo de Movimiento": "", 
+            "Descripción": "", 
+            "Categoría": "", 
+            "Paciente Asociado": "UTILIDAD NETA:", 
+            "Ingresos ($)": netProfit, 
+            "Egresos ($)": "" 
+        });
+
+        // 3. Creamos la hoja
+        const ws = XLSX.utils.json_to_sheet(formattedData);
+        
+        // 4. Ajustamos el ancho de las columnas para que no salgan apretadas
+        const colWidths = [
+            { wch: 12 }, // Fecha
+            { wch: 22 }, // Tipo
+            { wch: 45 }, // Descripción
+            { wch: 20 }, // Categoría
+            { wch: 25 }, // Paciente
+            { wch: 15 }, // Ingresos
+            { wch: 15 }, // Egresos
+        ];
+        ws['!cols'] = colWidths;
+
+        // 5. Generamos y descargamos el archivo
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Flujo de Caja");
+        XLSX.writeFile(wb, `Reporte_Financiero_ShiningCloud_${getLocalDate()}.xlsx`);
+        
+        notify("📊 Reporte Excel generado con éxito");
     };
 
     return (
@@ -92,7 +153,8 @@ export default function FinanceCenter({
                             </Card>
                         </div>
 
-                        <Card className={`relative overflow-hidden rounded-[2.5rem] py-12 text-center border-0 shadow-2xl transition-all duration-500 ${
+                        {/* --- AQUÍ ESTÁ LA CORRECCIÓN: Cambiamos <Card> por <div> --- */}
+                        <div className={`relative overflow-hidden rounded-[2.5rem] py-12 text-center shadow-2xl transition-all duration-500 ${
                             netProfit >= 0 ? 'bg-[#312923] text-white' : 'bg-red-600 text-white'
                         }`}>
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
@@ -103,7 +165,9 @@ export default function FinanceCenter({
                                     {netProfit >= 0 ? 'Balance Positivo' : 'Balance en Negativo'}
                                 </div>
                             </div>
-                        </Card>
+                        </div>
+                        {/* --------------------------------------------------------- */}
+                        
                     </div>
                 )}
 
