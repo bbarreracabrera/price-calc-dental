@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; 
-import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User } from 'lucide-react';
+import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { getLocalDate } from '../constants'; 
@@ -10,21 +10,17 @@ export default function FinanceCenter({
     themeMode, t, financialRecords, setFinancialRecords, 
     incomeRecords, expenseRecords, totalCollected, totalExpenses, totalDebt, netProfit,
     patientRecords, saveToSupabase, notify, onOpenAbonoModal, sendWhatsApp, getPatientPhone, financeTab, setFinanceTab,
-    session, team = [] // <-- NUEVOS CABLES
+    session, team = [], userRole
 }) {
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
 
     const exportToExcel = () => {
-        // 1. Mapeamos y limpiamos los datos para que el Excel sea legible por humanos
         const formattedData = financialRecords.map(record => {
             const isIncome = record.type === 'income';
-            
-            // Calculamos lo realmente pagado si es ingreso
             let incomeAmount = 0;
             if (isIncome) {
                 incomeAmount = (record.payments || []).reduce((s,p) => s + p.amount, 0) + (record.paid && !record.payments ? record.paid : 0);
             }
-            
             const expenseAmount = !isIncome ? Number(record.amount) : 0;
 
             return {
@@ -35,55 +31,48 @@ export default function FinanceCenter({
                 "Paciente Asociado": record.patientName || record.patientRef || '---',
                 "Ingresos ($)": isIncome ? incomeAmount : 0,
                 "Egresos ($)": !isIncome ? expenseAmount : 0,
-                "Registrado Por": record.created_by || 'Desconocido' // Añadido al Excel
+                "Registrado Por": record.created_by || 'Desconocido'
             };
         });
 
-        // 2. Agregamos filas de resumen al final del Excel
         formattedData.push({ "Fecha": "", "Tipo de Movimiento": "", "Descripción": "", "Categoría": "", "Paciente Asociado": "", "Ingresos ($)": "", "Egresos ($)": "", "Registrado Por": "" });
-        formattedData.push({ 
-            "Fecha": "RESUMEN", 
-            "Tipo de Movimiento": "", 
-            "Descripción": "", 
-            "Categoría": "", 
-            "Paciente Asociado": "TOTALES:", 
-            "Ingresos ($)": totalCollected, 
-            "Egresos ($)": totalExpenses,
-            "Registrado Por": ""
-        });
-        formattedData.push({ 
-            "Fecha": "", 
-            "Tipo de Movimiento": "", 
-            "Descripción": "", 
-            "Categoría": "", 
-            "Paciente Asociado": "UTILIDAD NETA:", 
-            "Ingresos ($)": netProfit, 
-            "Egresos ($)": "",
-            "Registrado Por": "" 
-        });
+        formattedData.push({ "Fecha": "RESUMEN", "Tipo de Movimiento": "", "Descripción": "", "Categoría": "", "Paciente Asociado": "TOTALES:", "Ingresos ($)": totalCollected, "Egresos ($)": totalExpenses, "Registrado Por": "" });
+        formattedData.push({ "Fecha": "", "Tipo de Movimiento": "", "Descripción": "", "Categoría": "", "Paciente Asociado": "UTILIDAD NETA:", "Ingresos ($)": netProfit, "Egresos ($)": "", "Registrado Por": "" });
 
-        // 3. Creamos la hoja
         const ws = XLSX.utils.json_to_sheet(formattedData);
-        
-        // 4. Ajustamos el ancho de las columnas para que no salgan apretadas
-        const colWidths = [
-            { wch: 12 }, // Fecha
-            { wch: 22 }, // Tipo
-            { wch: 45 }, // Descripción
-            { wch: 20 }, // Categoría
-            { wch: 25 }, // Paciente
-            { wch: 15 }, // Ingresos
-            { wch: 15 }, // Egresos
-            { wch: 25 }, // Registrado Por
-        ];
-        ws['!cols'] = colWidths;
-
-        // 5. Generamos y descargamos el archivo
+        ws['!cols'] = [ { wch: 12 }, { wch: 22 }, { wch: 45 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 25 } ];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Flujo de Caja");
         XLSX.writeFile(wb, `Reporte_Financiero_ShiningCloud_${getLocalDate()}.xlsx`);
         
         notify("📊 Reporte Excel generado con éxito");
+    };
+
+    // --- LÓGICA DE CÁLCULO DE HONORARIOS ---
+    const getDentistsCommissions = () => {
+        let dentistas = team.filter(m => m.role === 'dentist');
+        
+        if(userRole === 'dentist') {
+            dentistas = dentistas.filter(m => m.email === session?.user?.email);
+        }
+
+        return dentistas.map(doc => {
+            const tratamientosDelDoc = incomeRecords.filter(inc => inc.created_by === doc.email);
+            
+            const produccionReal = tratamientosDelDoc.reduce((acc, inc) => {
+                const pago = (inc.payments || []).reduce((s, p) => s + p.amount, 0) + (inc.paid && !inc.payments ? inc.paid : 0);
+                return acc + pago;
+            }, 0);
+
+            const porcentaje = doc.commission || 0;
+            const aPagar = (produccionReal * porcentaje) / 100;
+
+            return {
+                ...doc,
+                produccion: produccionReal,
+                aPagar: aPagar
+            };
+        });
     };
 
     return (
@@ -98,26 +87,24 @@ export default function FinanceCenter({
                     </div>
                     <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Centro Financiero</h2>
                 </div>
-                <button 
-                    onClick={exportToExcel}
-                    className="flex items-center gap-2 px-5 py-3 bg-white border border-[#DFD2C4] hover:bg-[#FDFBF7] text-[#312923] text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm"
-                >
+                <button onClick={exportToExcel} className="flex items-center gap-2 px-5 py-3 bg-white border border-[#DFD2C4] hover:bg-[#FDFBF7] text-[#312923] text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm">
                     <FileSpreadsheet size={16}/> Exportar Excel
                 </button>
             </div>
 
             {/* --- NAVEGACIÓN (TABS BOUTIQUE) --- */}
-            <div className="flex bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/60 shadow-inner shrink-0">
+            <div className="flex flex-wrap bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/60 shadow-inner shrink-0 gap-1 md:gap-0">
                 {[
                     { id: 'resumen', label: 'Resumen', color: 'bg-[#312923]' },
                     { id: 'ingresos', label: 'Ingresos y Caja', color: 'bg-[#5B6651]' },
                     { id: 'deudores', label: 'Cuentas x Cobrar', color: 'bg-red-500' },
-                    { id: 'gastos', label: 'Gastos / Lab', color: 'bg-[#A3968B]' }
+                    { id: 'gastos', label: 'Gastos / Lab', color: 'bg-[#A3968B]' },
+                    { id: 'honorarios', label: 'Honorarios y Comisiones', color: 'bg-indigo-600' }
                 ].map(tab => (
                     <button 
                         key={tab.id}
                         onClick={() => setFinanceTab(tab.id)}
-                        className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        className={`flex-1 min-w-[120px] py-3 px-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                             financeTab === tab.id 
                             ? `${tab.color} text-white shadow-md` 
                             : 'text-[#9A8F84] hover:text-[#312923]'
@@ -129,6 +116,7 @@ export default function FinanceCenter({
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+                
                 {/* --- TAB 1: RESUMEN --- */}
                 {financeTab === 'resumen' && (
                     <div className="space-y-6 animate-in fade-in">
@@ -192,7 +180,7 @@ export default function FinanceCenter({
                                                 <p className="font-black text-[#312923] text-lg">{h.patientName}</p>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{h.date} • Total: ${h.total?.toLocaleString()}</p>
-                                                    {/* HUELLA DIGITAL */}
+                                                    {/* HUELLA DIGITAL RESTAURADA */}
                                                     {h.created_by && (
                                                         <span className="text-[8px] bg-[#DFD2C4]/30 text-[#A3968B] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
                                                             Gen: {team.find(m => m.email === h.created_by)?.name || h.created_by.split('@')[0]}
@@ -249,6 +237,7 @@ export default function FinanceCenter({
                                                 <span className="text-[9px] font-black text-red-400 uppercase tracking-widest block">Saldo</span>
                                                 <p className="font-black text-red-500 text-2xl tracking-tighter">${pending.toLocaleString()}</p>
                                             </div>
+                                            {/* WHATSAPP RESTAURADO */}
                                             <button 
                                                 onClick={()=>{ sendWhatsApp(getPatientPhone(h.patientName), `Hola ${h.patientName}, nos comunicamos de la Clínica. Le recordamos amablemente que su ficha registra un saldo pendiente de $${pending.toLocaleString()}. ¿Desea que le enviemos los datos de pago?`); }} 
                                                 className="flex items-center gap-2 px-6 py-3 bg-[#5B6651] hover:bg-[#4a5442] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#5B6651]/20 transition-all"
@@ -342,9 +331,9 @@ export default function FinanceCenter({
                                             <div>
                                                 <p className="font-black text-[#312923]">{ex.description}</p>
                                                 <div className="flex items-center gap-2 mt-1">
+                                                    {/* TODAS LAS ETIQUETAS RESTAURADAS */}
                                                     <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{ex.date} • {ex.category}</p>
                                                     {ex.patientRef && <span className="text-[9px] bg-[#CBAAA2]/20 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black">PAC: {ex.patientRef}</span>}
-                                                    {/* HUELLA DIGITAL */}
                                                     {ex.created_by && (
                                                         <span className="text-[9px] bg-[#DFD2C4]/30 text-[#A3968B] px-2 py-0.5 rounded-full font-black uppercase tracking-widest flex items-center gap-1">
                                                             <User size={8}/> {team.find(m => m.email === ex.created_by)?.name || ex.created_by.split('@')[0]}
@@ -355,6 +344,7 @@ export default function FinanceCenter({
                                         </div>
                                         <div className="flex items-center gap-6">
                                             <span className="font-black text-red-500 text-xl tracking-tighter">-${Number(ex.amount).toLocaleString()}</span>
+                                            {/* BOTÓN TRASH RESTAURADO */}
                                             <button 
                                                 onClick={async()=>{ 
                                                     const filtered = financialRecords.filter(f=>f.id!==ex.id); 
@@ -373,6 +363,57 @@ export default function FinanceCenter({
                         </div>
                     </div>
                 )}
+
+                {/* --- NUEVA PESTAÑA: HONORARIOS (BUSINESS INTELLIGENCE) --- */}
+                {financeTab === 'honorarios' && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom">
+                        <div className="p-8 bg-indigo-50 rounded-[2rem] border border-indigo-100 flex flex-col justify-center items-center text-center gap-2 mb-6">
+                            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-500 mb-2">
+                                <Calculator size={32} />
+                            </div>
+                            <h3 className="text-indigo-900 font-black text-2xl tracking-tight">Cálculo de Honorarios</h3>
+                            <p className="text-xs text-indigo-600/80 font-bold uppercase tracking-widest max-w-md mx-auto">
+                                Se calcula multiplicando los PAGOS REALES recibidos de pacientes por el % de comisión de cada odontólogo.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {getDentistsCommissions().length === 0 ? (
+                                <div className="col-span-full text-center py-10 opacity-40 font-bold uppercase tracking-widest text-[#312923]">
+                                    No hay odontólogos con comisiones configuradas.
+                                </div>
+                            ) : (
+                                getDentistsCommissions().map(doc => (
+                                    <Card key={doc.email} className="rounded-3xl border border-[#DFD2C4]/60 bg-white p-6 shadow-sm hover:border-indigo-200 hover:shadow-lg transition-all flex flex-col justify-between">
+                                        <div className="flex justify-between items-start border-b border-[#DFD2C4]/40 pb-4 mb-4">
+                                            <div>
+                                                <h4 className="font-black text-xl text-[#312923] capitalize">Dr. {doc.name.split(' ')[0]}</h4>
+                                                <span className="text-[10px] bg-[#FDFBF7] border border-[#DFD2C4]/50 px-2 py-1 rounded-full font-black text-[#9A8F84] uppercase tracking-widest mt-2 inline-block">
+                                                    Comisión: {doc.commission || 0}%
+                                                </span>
+                                            </div>
+                                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center font-black text-indigo-400">
+                                                {doc.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] mb-0.5">Producción (Pagada)</p>
+                                                <p className="font-black text-[#5B6651] text-xl">${doc.produccion.toLocaleString()}</p>
+                                            </div>
+                                            <div className="pt-4 border-t border-dashed border-[#DFD2C4]">
+                                                <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-1">Total a Pagar al Profesional</p>
+                                                <h3 className="font-black text-indigo-600 text-3xl tracking-tighter">${doc.aPagar.toLocaleString()}</h3>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+
             </div>
         </div>
     );

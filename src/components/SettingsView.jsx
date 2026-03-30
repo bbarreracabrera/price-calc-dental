@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature } from 'lucide-react';
+import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent } from 'lucide-react';
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
 import { supabase } from '../supabase';
@@ -124,36 +124,43 @@ export default function SettingsView({
                                 <Shield className="text-[#CBAAA2]"/> Gestión de Accesos y Equipo
                             </h3>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#FDFBF7] p-5 rounded-3xl border border-[#DFD2C4]/50 mb-8 shadow-inner">
-                                <div className="md:col-span-4 space-y-1">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#FDFBF7] p-5 rounded-3xl border border-[#DFD2C4]/50 mb-8 shadow-inner items-end">
+                                <div className="md:col-span-3 space-y-1">
                                     <label className={labelClass}>Nombre</label>
-                                    <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="Nombre completo" value={newMember.name} onChange={e=>setNewMember({...newMember, name:e.target.value})}/>
+                                    <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="Nombre completo" value={newMember.name || ''} onChange={e=>setNewMember({...newMember, name:e.target.value})}/>
                                 </div>
-                                <div className="md:col-span-4 space-y-1">
+                                <div className="md:col-span-3 space-y-1">
                                     <label className={labelClass}>Correo Electrónico</label>
-                                    <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="usuario@clinica.com" value={newMember.email} onChange={e=>setNewMember({...newMember, email:e.target.value})}/>
+                                    <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="usuario@clinica.com" value={newMember.email || ''} onChange={e=>setNewMember({...newMember, email:e.target.value})}/>
                                 </div>
                                 <div className="md:col-span-2 space-y-1">
                                     <label className={labelClass}>Rol</label>
-                                    <select className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors appearance-none cursor-pointer" value={newMember.role} onChange={e=>setNewMember({...newMember, role:e.target.value})}>
+                                    <select className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors appearance-none cursor-pointer" value={newMember.role || 'dentist'} onChange={e=>setNewMember({...newMember, role:e.target.value})}>
                                         <option value="admin">Administrador</option>
                                         <option value="dentist">Dentista</option>
                                         <option value="assistant">Asistente</option>
                                     </select>
                                 </div>
-                                <div className="md:col-span-2 flex items-end">
+                                <div className={`md:col-span-2 space-y-1 transition-opacity ${newMember.role === 'dentist' ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+                                    <label className={labelClass}>Comisión %</label>
+                                    <div className="relative">
+                                        <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                        <input type="number" min="0" max="100" className="w-full pl-9 pr-3 py-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="0" value={newMember.commission || ''} onChange={e=>setNewMember({...newMember, commission: Number(e.target.value)})}/>
+                                    </div>
+                                </div>
+                                <div className="md:col-span-2">
                                     <button 
                                         className="w-full h-[50px] bg-[#5B6651] hover:bg-[#4a5442] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#5B6651]/20 flex items-center justify-center gap-2"
                                         onClick={async()=>{ 
                                             if(newMember.email && newMember.name){ 
                                                 const id = Date.now().toString(); 
-                                                const u = { ...newMember, id }; 
+                                                // Si no es dentista, comisión es 0
+                                                const comisionAsignada = newMember.role === 'dentist' ? (newMember.commission || 0) : 0;
+                                                const u = { ...newMember, id, commission: comisionAsignada }; 
                                                 
-                                                // 1. Guardar en estado local y Supabase
                                                 setTeam([...team, u]); 
                                                 await saveToSupabase('team', id, u); 
                                                 
-                                                // 2. MAGIA: Enviar correo de invitación (Magic Link)
                                                 const { error } = await supabase.auth.signInWithOtp({
                                                     email: newMember.email,
                                                     options: { emailRedirectTo: window.location.origin }
@@ -162,7 +169,7 @@ export default function SettingsView({
                                                 if(error) {
                                                     notify("Error enviando invitación: " + error.message);
                                                 } else {
-                                                    setNewMember({name:'', email:'', role:'dentist'}); 
+                                                    setNewMember({name:'', email:'', role:'dentist', commission: 0}); 
                                                     notify("Usuario agregado e Invitación enviada 📩"); 
                                                 }
                                             } else {
@@ -189,13 +196,18 @@ export default function SettingsView({
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
-                                            <span className={`text-[9px] uppercase font-black px-3 py-1.5 rounded-full border tracking-widest ${
-                                                member.role === 'admin' ? 'bg-[#5B6651]/10 text-[#5B6651] border-[#5B6651]/20' : 
-                                                member.role === 'dentist' ? 'bg-[#A3968B]/10 text-[#A3968B] border-[#A3968B]/20' : 
-                                                'bg-[#CBAAA2]/10 text-[#CBAAA2] border-[#CBAAA2]/20'
-                                            }`}>
-                                                {member.role === 'admin' ? 'Administrador' : member.role === 'dentist' ? 'Odontólogo' : 'Asistente'}
-                                            </span>
+                                            <div className="flex flex-col items-end gap-1">
+                                                <span className={`text-[9px] uppercase font-black px-3 py-1.5 rounded-full border tracking-widest ${
+                                                    member.role === 'admin' ? 'bg-[#5B6651]/10 text-[#5B6651] border-[#5B6651]/20' : 
+                                                    member.role === 'dentist' ? 'bg-[#A3968B]/10 text-[#A3968B] border-[#A3968B]/20' : 
+                                                    'bg-[#CBAAA2]/10 text-[#CBAAA2] border-[#CBAAA2]/20'
+                                                }`}>
+                                                    {member.role === 'admin' ? 'Administrador' : member.role === 'dentist' ? 'Odontólogo' : 'Asistente'}
+                                                </span>
+                                                {member.role === 'dentist' && (
+                                                    <span className="text-[9px] font-black text-[#9A8F84] pr-2">Comisión: {member.commission || 0}%</span>
+                                                )}
+                                            </div>
                                             <button 
                                                 onClick={async()=>{ 
                                                     if(window.confirm(`¿Estás seguro de eliminar a ${member.name}?`)){
