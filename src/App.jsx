@@ -112,16 +112,30 @@ export default function App() {
 
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
   
+  // Manejo de Sesión Limpio
   useEffect(() => {
       if (window.location.hash.includes('type=recovery')) setModal('recovery');
-      supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+
+      supabase.auth.getSession().then(({ data: { session } }) => {
+          setSession(session);
+      });
+
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'PASSWORD_RECOVERY') setModal('recovery');
           setSession(session);
+          
+          // Limpiamos los estados de la clínica al cerrar sesión
+          if (!session) {
+              setClinicOwner('');
+              setUserRole('admin');
+              setTeam([]);
+          }
       });
+
       return () => subscription.unsubscribe();
   }, []);
   
+  // EL CEREBRO: Aquí le pasamos la sesión a useClinicData para que descargue todo
   useClinicData({
       session, setTeam, setUserRole, setClinicOwner, setConfigLocal,
       setPatientRecords, setAppointments, setFinancialRecords,
@@ -298,38 +312,29 @@ export default function App() {
   const todaysAppointments = appointments.filter(a => a.date === getLocalDate()).sort((a,b) => a.time.localeCompare(b.time));
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
   
-  // --- GRÁFICO: CÁLCULO DE ÚLTIMOS 6 MESES CORREGIDO ---
   const chartData = useMemo(() => {
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const today = new Date();
       const last6Months = [];
 
-      // 1. Crear el esqueleto de los últimos 6 meses (hacia atrás)
-      // Usamos 'name' y 'ingresos' porque así lo lee UIComponents.jsx
       for (let i = 5; i >= 0; i--) {
           const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
           last6Months.push({
-              name: monthNames[d.getMonth()], // El Eje X espera "name"
+              name: monthNames[d.getMonth()], 
               year: d.getFullYear(),
               month: d.getMonth(),
-              ingresos: 0 // La línea Y espera "ingresos"
+              ingresos: 0 
           });
       }
 
-      // 2. Llenar los meses con los ingresos reales
       incomeRecords.forEach(rec => {
           if (!rec.date) return;
           const recDate = new Date(rec.date);
-          
           const paid = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0) + (rec.paid && !rec.payments ? Number(rec.paid) : 0);
-
           const targetMonth = last6Months.find(m => m.month === recDate.getMonth() && m.year === recDate.getFullYear());
-          if (targetMonth) {
-              targetMonth.ingresos += paid; 
-          }
+          if (targetMonth) targetMonth.ingresos += paid; 
       });
 
-      // 3. Devolver solo los datos limpios para el componente
       return last6Months.map(item => ({ name: item.name, ingresos: item.ingresos }));
   }, [incomeRecords]);
 
@@ -343,23 +348,16 @@ export default function App() {
       return Object.values(latestAppts).filter(a => !futurePatientNames.has(a.name));
   }, [appointments]);
 
-  // --- ALERTAS DE INVENTARIO (DIRECTO A LAS PROPIEDADES) ---
   const lowStockItems = useMemo(() => {
     return inventory.filter(item => {
-        // 1. Ignorar fantasmas (sin nombre)
         if (!item || !item.name || item.name.trim() === '') return false;
-
-        // 2. Extraer valores numéricos directamente del objeto item
         const stockActual = Number(item.stock) || 0;
         const stockMinimo = Number(item.min) || 0;
-
-        // 3. Evaluar alerta
         return stockActual <= stockMinimo;
     });
   }, [inventory]);
 
   const pendingLabWorks = useMemo(() => {
-    // Filtramos los que NO son "Entregado", ordenamos por fecha y tomamos los primeros 5
     return labWorks
         .filter(work => work.status !== 'Entregado' && work.status !== 'Finalizado')
         .sort((a, b) => new Date(a.expectedDate) - new Date(b.expectedDate))
@@ -406,7 +404,6 @@ export default function App() {
             <div className="w-8"></div>
         </div>
         
-        {/* AQUÍ INYECTAMOS LAS PROPS AL DASHBOARD */}
         {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} />}
         
         {activeTab === 'terms' && <TermsScreen theme={t} />}

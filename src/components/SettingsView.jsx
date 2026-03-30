@@ -146,13 +146,28 @@ export default function SettingsView({
                                         className="w-full h-[50px] bg-[#5B6651] hover:bg-[#4a5442] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#5B6651]/20 flex items-center justify-center gap-2"
                                         onClick={async()=>{ 
                                             if(newMember.email && newMember.name){ 
-                                                const id=Date.now().toString(); 
-                                                const u={...newMember, id}; 
+                                                const id = Date.now().toString(); 
+                                                const u = { ...newMember, id }; 
+                                                
+                                                // 1. Guardar en estado local y Supabase
                                                 setTeam([...team, u]); 
                                                 await saveToSupabase('team', id, u); 
-                                                setNewMember({name:'', email:'', role:'dentist'}); 
-                                                notify("Usuario Agregado exitosamente"); 
-                                            } 
+                                                
+                                                // 2. MAGIA: Enviar correo de invitación (Magic Link)
+                                                const { error } = await supabase.auth.signInWithOtp({
+                                                    email: newMember.email,
+                                                    options: { emailRedirectTo: window.location.origin }
+                                                });
+
+                                                if(error) {
+                                                    notify("Error enviando invitación: " + error.message);
+                                                } else {
+                                                    setNewMember({name:'', email:'', role:'dentist'}); 
+                                                    notify("Usuario agregado e Invitación enviada 📩"); 
+                                                }
+                                            } else {
+                                                alert("Por favor ingresa un nombre y correo electrónico válidos.");
+                                            }
                                         }}
                                     >
                                         <UserPlus size={16}/> Añadir

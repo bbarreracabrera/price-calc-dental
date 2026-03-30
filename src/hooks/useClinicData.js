@@ -10,22 +10,32 @@ export function useClinicData({
         if (!session) return;
         
         const load = async () => {
-            // 1. PRIMERO: Averiguar quién soy y quién es el dueño de mi clínica
-            const { data: t } = await supabase.from('team').select('*');
-            let myClinicAdmin = session.user.email; 
-            
-            if (t) {
-                const allTeamData = t.map(r => ({...r.data, id: r.id}));
-                const me = allTeamData.find(u => u.email === session.user.email);
-                if (me) myClinicAdmin = me.admin_email; 
-                const myTeam = allTeamData.filter(u => u.admin_email === myClinicAdmin);
-                setTeam(myTeam);
-                setUserRole(me ? me.role : 'admin');
-            }
-            setClinicOwner(myClinicAdmin);
+            const userEmail = session.user.email;
+            let myClinicAdmin = userEmail; 
+            let myRole = 'admin';
 
-            // 2. SEGUNDO: Descargar SOLO los datos que le pertenecen a mi clínica
-            const { data: s } = await supabase.from('settings').select('*').eq('id', 'general').maybeSingle();
+            // 1. PRIMERO: Averiguar si soy empleado de alguien más
+            // Buscamos en la tabla team donde mi correo coincida dentro del JSON "data"
+            const { data: myTeamRecord } = await supabase
+                .from('team')
+                .select('admin_email, data')
+                .eq('data->>email', userEmail)
+                .maybeSingle();
+            
+            if (myTeamRecord) {
+                myClinicAdmin = myTeamRecord.admin_email; // Soy empleado, uso la clínica de mi jefe
+                myRole = myTeamRecord.data?.role || 'assistant';
+            }
+            
+            setClinicOwner(myClinicAdmin);
+            setUserRole(myRole);
+
+            // 2. OBTENER EL EQUIPO COMPLETO (Para mostrar en Ajustes)
+            const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin);
+            if (t) setTeam(t.map(r => ({ ...r.data, id: r.id })));
+
+            // 3. SEGUNDO: Descargar SOLO los datos que le pertenecen a esta clínica (Jefe)
+            const { data: s } = await supabase.from('settings').select('*').eq('id', 'general').eq('admin_email', myClinicAdmin).maybeSingle();
             if (s) setConfigLocal(s.data);
             
             const { data: p } = await supabase.from('patients').select('*').eq('admin_email', myClinicAdmin).order('id', { ascending: false }).limit(50);
@@ -51,5 +61,5 @@ export function useClinicData({
         };
         
         load();
-    }, [session]); // Se vuelve a ejecutar solo si cambia la sesión
+    }, [session]); 
 }
