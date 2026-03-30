@@ -9,7 +9,8 @@ import { supabase } from '../supabase';
 export default function FinanceCenter({ 
     themeMode, t, financialRecords, setFinancialRecords, 
     incomeRecords, expenseRecords, totalCollected, totalExpenses, totalDebt, netProfit,
-    patientRecords, saveToSupabase, notify, onOpenAbonoModal, sendWhatsApp, getPatientPhone, financeTab, setFinanceTab
+    patientRecords, saveToSupabase, notify, onOpenAbonoModal, sendWhatsApp, getPatientPhone, financeTab, setFinanceTab,
+    session, team = [] // <-- NUEVOS CABLES
 }) {
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
 
@@ -34,11 +35,12 @@ export default function FinanceCenter({
                 "Paciente Asociado": record.patientName || record.patientRef || '---',
                 "Ingresos ($)": isIncome ? incomeAmount : 0,
                 "Egresos ($)": !isIncome ? expenseAmount : 0,
+                "Registrado Por": record.created_by || 'Desconocido' // Añadido al Excel
             };
         });
 
         // 2. Agregamos filas de resumen al final del Excel
-        formattedData.push({ "Fecha": "", "Tipo de Movimiento": "", "Descripción": "", "Categoría": "", "Paciente Asociado": "", "Ingresos ($)": "", "Egresos ($)": "" });
+        formattedData.push({ "Fecha": "", "Tipo de Movimiento": "", "Descripción": "", "Categoría": "", "Paciente Asociado": "", "Ingresos ($)": "", "Egresos ($)": "", "Registrado Por": "" });
         formattedData.push({ 
             "Fecha": "RESUMEN", 
             "Tipo de Movimiento": "", 
@@ -46,7 +48,8 @@ export default function FinanceCenter({
             "Categoría": "", 
             "Paciente Asociado": "TOTALES:", 
             "Ingresos ($)": totalCollected, 
-            "Egresos ($)": totalExpenses 
+            "Egresos ($)": totalExpenses,
+            "Registrado Por": ""
         });
         formattedData.push({ 
             "Fecha": "", 
@@ -55,7 +58,8 @@ export default function FinanceCenter({
             "Categoría": "", 
             "Paciente Asociado": "UTILIDAD NETA:", 
             "Ingresos ($)": netProfit, 
-            "Egresos ($)": "" 
+            "Egresos ($)": "",
+            "Registrado Por": "" 
         });
 
         // 3. Creamos la hoja
@@ -70,6 +74,7 @@ export default function FinanceCenter({
             { wch: 25 }, // Paciente
             { wch: 15 }, // Ingresos
             { wch: 15 }, // Egresos
+            { wch: 25 }, // Registrado Por
         ];
         ws['!cols'] = colWidths;
 
@@ -153,7 +158,6 @@ export default function FinanceCenter({
                             </Card>
                         </div>
 
-                        {/* --- AQUÍ ESTÁ LA CORRECCIÓN: Cambiamos <Card> por <div> --- */}
                         <div className={`relative overflow-hidden rounded-[2.5rem] py-12 text-center shadow-2xl transition-all duration-500 ${
                             netProfit >= 0 ? 'bg-[#312923] text-white' : 'bg-red-600 text-white'
                         }`}>
@@ -166,8 +170,6 @@ export default function FinanceCenter({
                                 </div>
                             </div>
                         </div>
-                        {/* --------------------------------------------------------- */}
-                        
                     </div>
                 )}
 
@@ -188,7 +190,15 @@ export default function FinanceCenter({
                                             </div>
                                             <div>
                                                 <p className="font-black text-[#312923] text-lg">{h.patientName}</p>
-                                                <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1">{h.date} • Total: ${h.total?.toLocaleString()}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{h.date} • Total: ${h.total?.toLocaleString()}</p>
+                                                    {/* HUELLA DIGITAL */}
+                                                    {h.created_by && (
+                                                        <span className="text-[8px] bg-[#DFD2C4]/30 text-[#A3968B] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+                                                            Gen: {team.find(m => m.email === h.created_by)?.name || h.created_by.split('@')[0]}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -299,7 +309,12 @@ export default function FinanceCenter({
                                         onClick={async()=>{ 
                                             if(newExpense.description && newExpense.amount){ 
                                                 const id = Date.now().toString(); 
-                                                const ex = {...newExpense, id, type: 'expense', amount: Number(newExpense.amount)};
+                                                
+                                                // HUELLA DIGITAL
+                                                const autor = session?.user?.email || 'Desconocido';
+
+                                                const ex = {...newExpense, id, type: 'expense', amount: Number(newExpense.amount), created_by: autor};
+                                                
                                                 setFinancialRecords([...financialRecords, ex]); 
                                                 await saveToSupabase('financials', id, ex); 
                                                 setNewExpense({description:'', amount:'', category:'Insumos', date: getLocalDate(), patientRef:''}); 
@@ -329,6 +344,12 @@ export default function FinanceCenter({
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{ex.date} • {ex.category}</p>
                                                     {ex.patientRef && <span className="text-[9px] bg-[#CBAAA2]/20 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black">PAC: {ex.patientRef}</span>}
+                                                    {/* HUELLA DIGITAL */}
+                                                    {ex.created_by && (
+                                                        <span className="text-[9px] bg-[#DFD2C4]/30 text-[#A3968B] px-2 py-0.5 rounded-full font-black uppercase tracking-widest flex items-center gap-1">
+                                                            <User size={8}/> {team.find(m => m.email === ex.created_by)?.name || ex.created_by.split('@')[0]}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

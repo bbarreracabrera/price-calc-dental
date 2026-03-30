@@ -3,7 +3,8 @@ import { Search, Plus, AlertTriangle, Box, Minus, Edit3, PackageOpen } from 'luc
 
 export default function InventoryView({ 
     themeMode, t, inventory, setInventory, filteredInventory, 
-    inventorySearch, setInventorySearch, setNewItem, setModal, saveToSupabase 
+    inventorySearch, setInventorySearch, setNewItem, setModal, saveToSupabase,
+    session, team 
 }) {
     return (
         <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
@@ -71,8 +72,14 @@ export default function InventoryView({
                                         <div>
                                             <h4 className={`font-black text-lg leading-tight ${isLow ? 'text-red-700' : 'text-[#312923]'}`}>{item.name}</h4>
                                             <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isLow ? 'text-red-500' : 'text-[#9A8F84]'}`}>
-                                                Stock Mínimo Seguro: {item.min} {item.unit}
+                                                Min: {item.min} {item.unit}
                                             </p>
+                                            {/* MOSTRAR HUELLA DIGITAL CON NOMBRE REAL */}
+                                            {item.last_modified_by && (
+                                                <p className="text-[8px] font-black uppercase text-[#A3968B] mt-1 tracking-wider opacity-60">
+                                                  Últ. mov: {team?.find(m => m.email === item.last_modified_by)?.name || item.last_modified_by.split('@')[0]}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
 
@@ -83,7 +90,9 @@ export default function InventoryView({
                                         <div className={`flex items-center rounded-xl p-1 shadow-inner border ${isLow ? 'bg-white border-red-200' : 'bg-[#FDFBF7] border-[#DFD2C4]/60'}`}>
                                             <button 
                                                 onClick={async()=>{ 
-                                                    const n = Math.max(0, (item.stock||0)-1); const u = {...item, stock:n}; 
+                                                    const autor = session?.user?.email || 'Desconocido';
+                                                    const n = Math.max(0, (item.stock||0)-1); 
+                                                    const u = {...item, stock:n, last_modified_by: autor}; 
                                                     setInventory(inventory.map(i=>i.id===u.id?u:i)); 
                                                     await saveToSupabase('inventory', u.id, u); 
                                                 }} 
@@ -98,7 +107,9 @@ export default function InventoryView({
                                             
                                             <button 
                                                 onClick={async()=>{ 
-                                                    const n = (item.stock||0)+1; const u = {...item, stock:n}; 
+                                                    const autor = session?.user?.email || 'Desconocido';
+                                                    const n = (item.stock||0)+1; 
+                                                    const u = {...item, stock:n, last_modified_by: autor}; 
                                                     setInventory(inventory.map(i=>i.id===u.id?u:i)); 
                                                     await saveToSupabase('inventory', u.id, u); 
                                                 }} 

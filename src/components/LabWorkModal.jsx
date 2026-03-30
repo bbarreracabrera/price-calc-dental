@@ -7,7 +7,8 @@ export default function LabWorkModal({
     labWorks, setLabWorks, supabase, notify,
     catalog = [], 
     financialRecords = [], 
-    setFinancialRecords 
+    setFinancialRecords,
+    session // <-- NUEVO CABLE: Recibimos la sesión actual
 }) {
     // Estados Financieros
     const [labCost, setLabCost] = useState("");
@@ -24,8 +25,16 @@ export default function LabWorkModal({
             const labId = newLabWork.id || `lab_${Date.now()}`;
             let nuevosRegistrosFinancieros = [...financialRecords];
             
-            // 1. Guardamos el Trabajo de Laboratorio (Sin alterar Supabase)
-            const labData = { ...newLabWork, id: labId, admin_email: clinicOwner };
+            // LA HUELLA DIGITAL: ¿Quién está guardando esto?
+            const autor = session?.user?.email || 'Desconocido';
+            
+            // 1. Guardamos el Trabajo de Laboratorio
+            const labData = { 
+                ...newLabWork, 
+                id: labId, 
+                admin_email: clinicOwner,
+                created_by: autor // <-- Huella en Lab
+            };
             const { error: labError } = await supabase.from('lab_works').insert([labData]);
             
             if (labError) return alert("Hubo un error al guardar en la nube: " + labError.message);
@@ -38,7 +47,8 @@ export default function LabWorkModal({
                     amount: Number(labCost), 
                     date: getLocalDate(),
                     patientName: newLabWork.patientName || "Laboratorio",
-                    description: `Costo Lab: ${newLabWork.workType}`
+                    description: `Costo Lab: ${newLabWork.workType}`,
+                    created_by: autor // <-- Huella en Finanzas (Egreso)
                 };
 
                 const { error: finError1 } = await supabase.from('financials').insert([{ id: expenseData.id, data: expenseData, admin_email: clinicOwner }]);
@@ -54,9 +64,10 @@ export default function LabWorkModal({
                     patientName: newLabWork.patientName,
                     treatment: newLabWork.workType,
                     total: Number(patientPrice),
-                    paid: 0, // Inicia con 0 pagado (es una deuda)
+                    paid: 0, 
                     payments: [],
-                    date: getLocalDate()
+                    date: getLocalDate(),
+                    created_by: autor // <-- Huella en Finanzas (Ingreso)
                 };
 
                 const { error: finError2 } = await supabase.from('financials').insert([{ id: incomeData.id, data: incomeData, admin_email: clinicOwner }]);

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, CalendarClock } from 'lucide-react';
-import { Button } from './UIComponents';
+import { ChevronLeft, ChevronRight, Plus, CalendarClock, Filter } from 'lucide-react';
 
-export default function AgendaView({ appointments, onOpenModal }) {
+export default function AgendaView({ appointments, onOpenModal, team }) {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [selectedDentistFilter, setSelectedDentistFilter] = useState('all');
 
     const dayNames = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
-    // Colores de la paleta Boutique integrados para los estados con sombras sutiles
     const statusColors = {
         agendado:   'border-l-[#9A8F84] bg-[#FDFBF7] text-[#6B615A] hover:bg-white border border-[#DFD2C4]/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]',
         confirmado: 'border-l-[#5B6651] bg-[#5B6651]/10 text-[#312923] hover:bg-[#5B6651]/20 border border-[#5B6651]/20 shadow-[0_2px_10px_-4px_rgba(91,102,81,0.2)]',
@@ -15,6 +14,11 @@ export default function AgendaView({ appointments, onOpenModal }) {
         atendiendo: 'border-l-blue-400 bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200 shadow-[0_2px_10px_-4px_rgba(96,165,250,0.2)]',
         no_asistio: 'border-l-[#CBAAA2] bg-[#CBAAA2]/10 text-[#312923] hover:bg-[#CBAAA2]/20 border border-[#CBAAA2]/30 shadow-[0_2px_10px_-4px_rgba(203,170,162,0.2)]'
     };
+
+    // Aplicamos el filtro: Si es 'all' muestra todos, sino, solo los del dentista seleccionado
+    const filteredAppts = appointments.filter(a => 
+        selectedDentistFilter === 'all' || a.dentist_email === selectedDentistFilter
+    );
 
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in pb-4">
@@ -26,18 +30,31 @@ export default function AgendaView({ appointments, onOpenModal }) {
                         <CalendarClock size={14} className="text-[#A3968B]"/>
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Gestión de Citas</p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
                         <h2 className="text-4xl md:text-5xl font-black text-[#312923] tracking-tighter capitalize">
                             {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                         </h2>
+                        
+                        {/* Filtro de Doctores */}
+                        <div className="flex items-center bg-white border border-[#DFD2C4] rounded-xl px-3 py-1 shadow-sm mt-2 md:mt-0">
+                            <Filter size={14} className="text-[#A3968B] mr-2"/>
+                            <select 
+                                className="bg-transparent text-[11px] font-bold text-[#312923] outline-none cursor-pointer"
+                                value={selectedDentistFilter}
+                                onChange={(e) => setSelectedDentistFilter(e.target.value)}
+                            >
+                                <option value="all">Todas las agendas</option>
+                                {(team || []).filter(m => m.role === 'admin' || m.role === 'dentist').map(doc => (
+                                    <option key={doc.email} value={doc.email}>Agenda Dr. {doc.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-4">
-                    {/* Controles de fecha con Paleta y Leyenda */}
                     <div className="flex flex-wrap items-center justify-end gap-4">
                         
-                        {/* Leyenda encapsulada */}
                         <div className="hidden lg:flex gap-4 text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-white px-5 py-3 rounded-2xl border border-[#DFD2C4]/50 shadow-sm">
                             <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#DFD2C4]"></div>Agendado</span>
                             <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#5B6651]"></div>Confirmado</span>
@@ -46,7 +63,6 @@ export default function AgendaView({ appointments, onOpenModal }) {
                             <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#CBAAA2]"></div>No Asistió</span>
                         </div>
 
-                        {/* Botones de Navegación de Fecha */}
                         <div className="flex items-center p-1.5 bg-white rounded-2xl border border-[#DFD2C4]/60 shadow-sm">
                             <button onClick={() => { const d = new Date(currentDate); d.setDate(d.getDate() - 7); setCurrentDate(d); }} className="p-2 rounded-xl hover:bg-[#FDFBF7] text-[#9A8F84] hover:text-[#312923] transition-colors">
                                 <ChevronLeft size={18}/>
@@ -73,12 +89,10 @@ export default function AgendaView({ appointments, onOpenModal }) {
             <div className="flex-1 overflow-auto rounded-[2rem] border border-[#DFD2C4]/60 bg-white shadow-xl custom-scrollbar relative" style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.05)' }}>
                 <div className="grid grid-cols-8 min-w-[900px]">
                     
-                    {/* Header: Esquina vacía */}
                     <div className="p-2 border-b border-r border-[#DFD2C4]/40 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-center rounded-tl-[2rem]">
                         <span className="text-[9px] font-black text-[#9A8F84] uppercase tracking-widest">Hora</span>
                     </div>
                     
-                    {/* Header: Días */}
                     {Array.from({length: 7}, (_, i) => {
                         const d = new Date(currentDate); 
                         d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i); 
@@ -98,21 +112,18 @@ export default function AgendaView({ appointments, onOpenModal }) {
                         );
                     })}
                     
-                    {/* Filas de Horas */}
                     {Array.from({length: 12}, (_, i) => 8 + i).map(h => (
                         <React.Fragment key={h}>
-                            {/* Columna Izquierda (Horas) */}
                             <div className="border-r border-b border-[#DFD2C4]/40 text-[11px] font-black text-[#A3968B] text-center h-[72px] flex items-start justify-center pt-2 bg-[#FDFBF7]">
                                 {h}:00
                             </div>
                             
-                            {/* Celdas de Días */}
                             {Array.from({length: 7}, (_, i) => {
                                 const d = new Date(currentDate); 
                                 d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i); 
                                 const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; 
                                 
-                                const hourAppts = appointments.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
+                                const hourAppts = filteredAppts.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
 
                                 return (
                                     <div 
@@ -129,22 +140,29 @@ export default function AgendaView({ appointments, onOpenModal }) {
                                                 <div 
                                                     key={appt.id || index}
                                                     onClick={(e) => { e.stopPropagation(); onOpenModal(appt); }}
-                                                    className={`absolute left-1.5 right-1.5 rounded-xl border-l-[4px] flex flex-col cursor-pointer transition-all hover:-translate-y-[2px] hover:z-30 p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
+                                                    className={`absolute left-1.5 right-1.5 rounded-xl border-l-[4px] flex flex-col justify-between cursor-pointer transition-all hover:-translate-y-[2px] hover:z-30 p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
                                                     style={{ 
                                                         top: `calc(${topOffset}% + 2px)`, 
                                                         height: `calc(${heightPercent}% - 4px)`,
-                                                        minHeight: '28px' 
+                                                        minHeight: '40px' 
                                                     }}
                                                 >
-                                                    <p className="text-[11px] font-black truncate leading-none">{appt.name}</p>
-                                                    {(appt.duration || 60) >= 30 && (
-                                                        <p className="text-[9px] font-bold opacity-80 truncate mt-1.5 leading-none tracking-wide">{appt.time} • {appt.treatment}</p>
+                                                    <div>
+                                                        <p className="text-[11px] font-black truncate leading-none">{appt.name}</p>
+                                                        {(appt.duration || 60) >= 30 && (
+                                                            <p className="text-[9px] font-bold opacity-80 truncate mt-1.5 leading-none tracking-wide">{appt.time} • {appt.treatment}</p>
+                                                        )}
+                                                    </div>
+                                                    {/* Mostrar el dentista si la duración permite el espacio visual */}
+                                                    {(appt.duration || 60) >= 45 && appt.dentist_name && (
+                                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mt-1 truncate">
+                                                            👨‍⚕️ Dr. {appt.dentist_name.split(' ')[0]}
+                                                        </p>
                                                     )}
                                                 </div>
                                             );
                                         })}
                                         
-                                        {/* Botón flotante al hacer hover en casilla vacía */}
                                         {hourAppts.length === 0 && (
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center border border-[#DFD2C4] text-[#A3968B] group-hover:scale-110 transition-transform">

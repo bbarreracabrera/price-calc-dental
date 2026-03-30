@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Trash2, MessageCircle, CalendarDays, Clock, FileText, Activity } from 'lucide-react';
+import { X, Trash2, MessageCircle, CalendarDays, Clock, FileText, Activity, Stethoscope } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { supabase } from '../supabase';
@@ -7,7 +7,7 @@ import { supabase } from '../supabase';
 export default function ApptModal({
     themeMode, newAppt, setNewAppt, setModal, patientRecords, setPatientRecords,
     getPatient, savePatientData, notify, appointments, setAppointments,
-    saveToSupabase, sendWhatsApp, getPatientPhone
+    saveToSupabase, sendWhatsApp, getPatientPhone, team, session
 }) {
     return (
         <div className="fixed inset-0 z-[100] bg-[#312923]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -68,6 +68,28 @@ export default function ApptModal({
                         placeholder="Ej. Limpieza, Ortodoncia..."
                         icon={FileText}
                     />
+
+                    {/* ODONTÓLOGO TRATANTE */}
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] ml-1">Odontólogo Tratante</label>
+                        <div className="relative">
+                            <Stethoscope size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                            <select 
+                                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-bold text-[#312923] text-sm appearance-none cursor-pointer" 
+                                value={newAppt.dentist_email || ''} 
+                                onChange={e => {
+                                    const selectedDoc = team.find(m => m.email === e.target.value);
+                                    setNewAppt({...newAppt, dentist_email: e.target.value, dentist_name: selectedDoc ? selectedDoc.name : ''});
+                                }}
+                            >
+                                <option value="">Selecciona al Doctor...</option>
+                                {/* Filtramos solo a los que pueden atender pacientes */}
+                                {(team || []).filter(m => m.role === 'admin' || m.role === 'dentist').map(doc => (
+                                    <option key={doc.email} value={doc.email}>Dr/a. {doc.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
@@ -188,7 +210,7 @@ export default function ApptModal({
                     <button 
                         onClick={(e) => { 
                             e.stopPropagation(); 
-                            sendWhatsApp(getPatientPhone(newAppt.name), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`); 
+                            sendWhatsApp(getPatientPhone(newAppt.name), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita con el/la Dr/a. ${newAppt.dentist_name || ''} para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`); 
                         }} 
                         className="w-full flex items-center justify-center gap-2 text-[11px] bg-[#5B6651]/5 border border-[#5B6651]/10 py-3 rounded-2xl hover:bg-[#5B6651]/10 text-[#5B6651] transition-colors font-bold uppercase tracking-widest mt-4"
                     >

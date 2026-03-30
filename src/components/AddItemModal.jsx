@@ -1,21 +1,23 @@
 import React from 'react';
 import { X, Trash2 } from 'lucide-react';
-import { Card, InputField, Button } from './UIComponents'; // Importamos componentes UI
+import { Card, InputField, Button } from './UIComponents';
 
 export default function AddItemModal({ 
-    themeMode, newItem, setNewItem, setModal, inventory, setInventory, saveToSupabase, supabase, notify 
+    themeMode, newItem, setNewItem, setModal, inventory, setInventory, saveToSupabase, supabase, notify,
+    session // <-- NUEVO CABLE
 }) {
     const handleSave = async () => { 
         if(newItem.name){ 
             const id = newItem.id || Date.now().toString(); 
-            const itemData = { ...newItem, id }; 
+            const autor = session?.user?.email || 'Desconocido'; // <-- HUELLA DIGITAL
+
+            const itemData = { ...newItem, id, last_modified_by: autor }; 
             let updatedInventory; 
             if (newItem.id) { updatedInventory = inventory.map(i => i.id === id ? itemData : i); } 
             else { updatedInventory = [...inventory, itemData]; } 
             
             setInventory(updatedInventory); 
             
-            // Usamos saveToSupabaseWrapper o saveToSupabase directamente si se pasa como prop
             if(typeof saveToSupabase === 'function') await saveToSupabase('inventory', id, itemData); 
             
             setModal(null); 
@@ -29,7 +31,6 @@ export default function AddItemModal({
     const handleDelete = async () => { 
         const filtered = inventory.filter(i=>i.id!==newItem.id); 
         setInventory(filtered); 
-        // Usamos supabase directamente
         await supabase.from('inventory').delete().eq('id', newItem.id); 
         setModal(null); 
         if(typeof notify === 'function') notify("Eliminado"); 

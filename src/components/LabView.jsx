@@ -1,11 +1,12 @@
 import React from 'react';
-import { FlaskConical, Trash2, Plus, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { FlaskConical, Trash2, Plus, AlertCircle, CheckCircle2, Clock, User } from 'lucide-react';
 import { Card } from './UIComponents';
 import { supabase } from '../supabase';
 import { getLocalDate } from '../constants';
 
 export default function LabView({ 
-    themeMode, t, labWorks, setLabWorks, setNewLabWork, setModal, notify 
+    themeMode, t, labWorks, setLabWorks, setNewLabWork, setModal, notify,
+    team // <-- NUEVO CABLE PARA LOS NOMBRES
 }) {
     return (
         <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
@@ -59,12 +60,23 @@ export default function LabView({
                                 return (
                                     <div key={work.id} className={`grid grid-cols-12 gap-4 p-5 items-center border-b border-[#DFD2C4]/30 hover:bg-[#FDFBF7] transition-colors ${isLate ? 'bg-red-50/30' : ''}`}>
                                         
-                                        {/* Paciente */}
-                                        <div className="col-span-2 pl-2 flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isReceived ? 'bg-[#5B6651]/10 text-[#5B6651]' : isLate ? 'bg-red-100 text-red-500' : 'bg-[#DFD2C4]/30 text-[#A3968B]'}`}>
-                                                {work.patientName.charAt(0).toUpperCase()}
+                                        {/* Paciente y Quién Pide */}
+                                        <div className="col-span-2 pl-2 flex flex-col justify-center">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isReceived ? 'bg-[#5B6651]/10 text-[#5B6651]' : isLate ? 'bg-red-100 text-red-500' : 'bg-[#DFD2C4]/30 text-[#A3968B]'}`}>
+                                                    {work.patientName.charAt(0).toUpperCase()}
+                                                </div>
+                                                <p className="font-black text-[#312923] truncate">{work.patientName}</p>
                                             </div>
-                                            <p className="font-black text-[#312923] truncate">{work.patientName}</p>
+                                            {/* HUELLA DIGITAL */}
+                                            {work.created_by && (
+                                                <div className="flex items-center gap-1 mt-1.5 ml-11 opacity-60">
+                                                    <User size={10} className="text-[#A3968B]"/>
+                                                    <p className="text-[8px] font-black uppercase tracking-widest text-[#A3968B] truncate">
+                                                        Ped: {team?.find(m => m.email === work.created_by)?.name || work.created_by.split('@')[0]}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                         
                                         {/* Trabajo y Pieza */}
