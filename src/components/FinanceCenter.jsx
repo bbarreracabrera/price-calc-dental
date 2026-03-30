@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; 
-import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator } from 'lucide-react';
+import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2 } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { getLocalDate } from '../constants'; 
@@ -48,7 +48,7 @@ export default function FinanceCenter({
         notify("📊 Reporte Excel generado con éxito");
     };
 
-    // --- LÓGICA DE CÁLCULO DE HONORARIOS ---
+    // --- LÓGICA AVANZADA DE HONORARIOS ---
     const getDentistsCommissions = () => {
         let dentistas = team.filter(m => m.role === 'dentist');
         
@@ -57,6 +57,7 @@ export default function FinanceCenter({
         }
 
         return dentistas.map(doc => {
+            // 1. Buscamos lo que ha producido históricamente
             const tratamientosDelDoc = incomeRecords.filter(inc => inc.created_by === doc.email);
             
             const produccionReal = tratamientosDelDoc.reduce((acc, inc) => {
@@ -65,12 +66,22 @@ export default function FinanceCenter({
             }, 0);
 
             const porcentaje = doc.commission || 0;
-            const aPagar = (produccionReal * porcentaje) / 100;
+            const comisionTotalHistorica = (produccionReal * porcentaje) / 100;
+
+            // 2. Buscamos cuánto YA LE HEMOS PAGADO leyendo los egresos que tienen su email
+            const pagosYaRealizados = expenseRecords
+                .filter(ex => ex.category === 'Sueldos' && ex.doctor_email === doc.email)
+                .reduce((acc, ex) => acc + Number(ex.amount), 0);
+
+            // 3. Calculamos la diferencia
+            const saldoPendiente = comisionTotalHistorica - pagosYaRealizados;
 
             return {
                 ...doc,
                 produccion: produccionReal,
-                aPagar: aPagar
+                comisionTotal: comisionTotalHistorica,
+                pagado: pagosYaRealizados,
+                aPagar: saldoPendiente > 0 ? saldoPendiente : 0
             };
         });
     };
@@ -92,7 +103,7 @@ export default function FinanceCenter({
                 </button>
             </div>
 
-            {/* --- NAVEGACIÓN (TABS BOUTIQUE) --- */}
+            {/* --- NAVEGACIÓN --- */}
             <div className="flex flex-wrap bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/60 shadow-inner shrink-0 gap-1 md:gap-0">
                 {[
                     { id: 'resumen', label: 'Resumen', color: 'bg-[#312923]' },
@@ -132,7 +143,7 @@ export default function FinanceCenter({
                             <Card className="rounded-[2rem] border border-[#DFD2C4]/50 p-6 flex flex-col justify-between bg-white">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-red-50 text-red-500 rounded-2xl"><ArrowDownRight size={20}/></div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">Egresos</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">Egresos Totales</span>
                                 </div>
                                 <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${totalExpenses.toLocaleString()}</h2>
                             </Card>
@@ -151,10 +162,10 @@ export default function FinanceCenter({
                         }`}>
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
                             <div className="relative z-10">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-60 mb-3">Utilidad Real del Periodo</p>
+                                <p className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-60 mb-3">Utilidad Real de la Clínica</p>
                                 <h2 className="text-7xl font-black tracking-tighter mb-4">${netProfit.toLocaleString()}</h2>
                                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${netProfit >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/20 text-white'}`}>
-                                    {netProfit >= 0 ? 'Balance Positivo' : 'Balance en Negativo'}
+                                    {netProfit >= 0 ? 'Caja en Positivo' : 'Caja en Negativo'}
                                 </div>
                             </div>
                         </div>
@@ -180,7 +191,6 @@ export default function FinanceCenter({
                                                 <p className="font-black text-[#312923] text-lg">{h.patientName}</p>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{h.date} • Total: ${h.total?.toLocaleString()}</p>
-                                                    {/* HUELLA DIGITAL RESTAURADA */}
                                                     {h.created_by && (
                                                         <span className="text-[8px] bg-[#DFD2C4]/30 text-[#A3968B] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
                                                             Gen: {team.find(m => m.email === h.created_by)?.name || h.created_by.split('@')[0]}
@@ -237,7 +247,6 @@ export default function FinanceCenter({
                                                 <span className="text-[9px] font-black text-red-400 uppercase tracking-widest block">Saldo</span>
                                                 <p className="font-black text-red-500 text-2xl tracking-tighter">${pending.toLocaleString()}</p>
                                             </div>
-                                            {/* WHATSAPP RESTAURADO */}
                                             <button 
                                                 onClick={()=>{ sendWhatsApp(getPatientPhone(h.patientName), `Hola ${h.patientName}, nos comunicamos de la Clínica. Le recordamos amablemente que su ficha registra un saldo pendiente de $${pending.toLocaleString()}. ¿Desea que le enviemos los datos de pago?`); }} 
                                                 className="flex items-center gap-2 px-6 py-3 bg-[#5B6651] hover:bg-[#4a5442] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#5B6651]/20 transition-all"
@@ -275,7 +284,7 @@ export default function FinanceCenter({
                                         <option value="Laboratorio">Gastos de Laboratorio</option>
                                         <option value="Arriendo">Arriendo y Servicios</option>
                                         <option value="Marketing">Publicidad y Marketing</option>
-                                        <option value="Sueldos">Honorarios Personal</option>
+                                        <option value="Sueldos">Sueldos y Honorarios</option>
                                         <option value="Otros">Otros Egresos</option>
                                     </select>
                                 </div>
@@ -298,10 +307,7 @@ export default function FinanceCenter({
                                         onClick={async()=>{ 
                                             if(newExpense.description && newExpense.amount){ 
                                                 const id = Date.now().toString(); 
-                                                
-                                                // HUELLA DIGITAL
                                                 const autor = session?.user?.email || 'Desconocido';
-
                                                 const ex = {...newExpense, id, type: 'expense', amount: Number(newExpense.amount), created_by: autor};
                                                 
                                                 setFinancialRecords([...financialRecords, ex]); 
@@ -320,7 +326,7 @@ export default function FinanceCenter({
                         
                         <div className="grid gap-3">
                             {expenseRecords.length === 0 ? (
-                                <div className="text-center py-10 opacity-30 text-xs font-bold uppercase tracking-widest">No hay egresos este mes</div>
+                                <div className="text-center py-10 opacity-30 text-xs font-bold uppercase tracking-widest">No hay egresos registrados</div>
                             ) : (
                                 [...expenseRecords].reverse().map(ex => (
                                     <div key={ex.id} className="flex justify-between items-center p-5 rounded-3xl bg-white border border-[#DFD2C4]/40 hover:shadow-md transition-all group">
@@ -331,7 +337,6 @@ export default function FinanceCenter({
                                             <div>
                                                 <p className="font-black text-[#312923]">{ex.description}</p>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    {/* TODAS LAS ETIQUETAS RESTAURADAS */}
                                                     <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{ex.date} • {ex.category}</p>
                                                     {ex.patientRef && <span className="text-[9px] bg-[#CBAAA2]/20 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black">PAC: {ex.patientRef}</span>}
                                                     {ex.created_by && (
@@ -344,7 +349,6 @@ export default function FinanceCenter({
                                         </div>
                                         <div className="flex items-center gap-6">
                                             <span className="font-black text-red-500 text-xl tracking-tighter">-${Number(ex.amount).toLocaleString()}</span>
-                                            {/* BOTÓN TRASH RESTAURADO */}
                                             <button 
                                                 onClick={async()=>{ 
                                                     const filtered = financialRecords.filter(f=>f.id!==ex.id); 
@@ -364,16 +368,16 @@ export default function FinanceCenter({
                     </div>
                 )}
 
-                {/* --- NUEVA PESTAÑA: HONORARIOS (BUSINESS INTELLIGENCE) --- */}
+                {/* --- PESTAÑA: HONORARIOS (CON BOTÓN DE LIQUIDACIÓN MÁGICA) --- */}
                 {financeTab === 'honorarios' && (
                     <div className="space-y-6 animate-in slide-in-from-bottom">
                         <div className="p-8 bg-indigo-50 rounded-[2rem] border border-indigo-100 flex flex-col justify-center items-center text-center gap-2 mb-6">
                             <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-500 mb-2">
                                 <Calculator size={32} />
                             </div>
-                            <h3 className="text-indigo-900 font-black text-2xl tracking-tight">Cálculo de Honorarios</h3>
+                            <h3 className="text-indigo-900 font-black text-2xl tracking-tight">Liquidación de Honorarios</h3>
                             <p className="text-xs text-indigo-600/80 font-bold uppercase tracking-widest max-w-md mx-auto">
-                                Se calcula multiplicando los PAGOS REALES recibidos de pacientes por el % de comisión de cada odontólogo.
+                                Descuenta automáticamente los pagos realizados para evitar pagos dobles y mantener tu caja al día.
                             </p>
                         </div>
 
@@ -398,14 +402,54 @@ export default function FinanceCenter({
                                         </div>
                                         
                                         <div className="space-y-4">
-                                            <div>
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] mb-0.5">Producción (Pagada)</p>
-                                                <p className="font-black text-[#5B6651] text-xl">${doc.produccion.toLocaleString()}</p>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#9A8F84] mb-0.5">Producción</p>
+                                                    <p className="font-black text-[#5B6651] text-lg">${doc.produccion.toLocaleString()}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#9A8F84] mb-0.5">Ya Pagado</p>
+                                                    <p className="font-black text-[#A3968B] text-lg">${doc.pagado.toLocaleString()}</p>
+                                                </div>
                                             </div>
+                                            
                                             <div className="pt-4 border-t border-dashed border-[#DFD2C4]">
-                                                <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-1">Total a Pagar al Profesional</p>
+                                                <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-1">Saldo por Pagar</p>
                                                 <h3 className="font-black text-indigo-600 text-3xl tracking-tighter">${doc.aPagar.toLocaleString()}</h3>
                                             </div>
+
+                                            {/* BOTÓN MÁGICO DE LIQUIDACIÓN */}
+                                            {userRole === 'admin' && doc.aPagar > 0 && (
+                                                <button 
+                                                    onClick={async () => {
+                                                        if(window.confirm(`¿Quieres registrar el pago de $${doc.aPagar.toLocaleString()} al Dr. ${doc.name}?\n\nEsto se descontará de la caja automáticamente.`)) {
+                                                            const exId = Date.now().toString();
+                                                            const newEx = {
+                                                                id: exId,
+                                                                type: 'expense',
+                                                                description: `Honorarios Clínicos: Dr. ${doc.name}`,
+                                                                amount: doc.aPagar,
+                                                                category: 'Sueldos',
+                                                                date: getLocalDate(),
+                                                                created_by: session?.user?.email,
+                                                                doctor_email: doc.email // Dato clave para que el sistema sepa que ya se le pagó
+                                                            };
+                                                            setFinancialRecords([...financialRecords, newEx]);
+                                                            await saveToSupabase('financials', exId, newEx);
+                                                            notify(`Honorarios liquidados con éxito 💰`);
+                                                        }
+                                                    }}
+                                                    className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2"
+                                                >
+                                                    <Wallet size={16}/> Liquidar Saldo
+                                                </button>
+                                            )}
+
+                                            {doc.aPagar === 0 && (
+                                                <div className="w-full mt-4 py-3 bg-emerald-50 text-emerald-500 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-100">
+                                                    <CheckCircle2 size={16}/> Pagos al Día
+                                                </div>
+                                            )}
                                         </div>
                                     </Card>
                                 ))

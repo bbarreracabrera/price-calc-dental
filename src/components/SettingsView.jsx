@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent } from 'lucide-react';
+import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy } from 'lucide-react';
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
 import { supabase } from '../supabase';
@@ -11,10 +11,26 @@ export default function SettingsView({
     const inputClass = "w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm";
     const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
 
+    const defaultSchedule = {
+        Lunes: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
+        Martes: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
+        Miércoles: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
+        Jueves: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
+        Viernes: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
+        Sábado: { active: false, start1: '09:00', end1: '14:00', start2: '', end2: '' },
+        Domingo: { active: false, start1: '', end1: '', start2: '', end2: '' }
+    };
+
+    const schedule = config.schedule || defaultSchedule;
+
+    const handleScheduleChange = (day, field, value) => {
+        const updatedSchedule = { ...schedule, [day]: { ...schedule[day], [field]: value } };
+        setConfigLocal({ ...config, schedule: updatedSchedule });
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
             
-            {/* --- ENCABEZADO BOUTIQUE --- */}
             <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#DFD2C4]/50 shrink-0">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -25,7 +41,12 @@ export default function SettingsView({
                 </div>
                 {userRole === 'admin' && (
                     <button 
-                        onClick={()=>{saveToSupabase('settings', 'general', config); notify("Ajustes Guardados con éxito");}}
+                        onClick={()=>{
+                            // MAGIA: Forzamos a que siempre se guarde el horario, aunque el usuario no lo haya tocado
+                            const configToSave = { ...config, schedule: config.schedule || defaultSchedule };
+                            saveToSupabase('settings', 'general', configToSave); 
+                            notify("Ajustes Guardados con éxito");
+                        }}
                         className="flex items-center gap-2 px-8 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
                     >
                         <Save size={16}/> Guardar Cambios
@@ -41,11 +62,7 @@ export default function SettingsView({
                             <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2">
                                 <Camera className="text-[#CBAAA2]"/> Identidad Visual
                             </h3>
-                            
-                            <div 
-                                onClick={()=>logoInputRef.current.click()} 
-                                className="w-full max-w-md p-8 border-2 border-dashed border-[#DFD2C4] bg-[#FDFBF7] rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:bg-white hover:border-[#A3968B] transition-all shadow-inner group"
-                            >
+                            <div onClick={()=>logoInputRef.current.click()} className="w-full max-w-md p-8 border-2 border-dashed border-[#DFD2C4] bg-[#FDFBF7] rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:bg-white hover:border-[#A3968B] transition-all shadow-inner group">
                                 <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload}/>
                                 {config.logo ? (
                                     <div className="flex flex-col items-center gap-4">
@@ -54,9 +71,7 @@ export default function SettingsView({
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                                        <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-[#A3968B] border border-[#DFD2C4] group-hover:scale-110 transition-transform">
-                                            <Camera size={28}/>
-                                        </div>
+                                        <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-[#A3968B] border border-[#DFD2C4] group-hover:scale-110 transition-transform"><Camera size={28}/></div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Click para subir logo</span>
                                         <p className="text-xs font-bold text-[#9A8F84]">Formato PNG transparente recomendado</p>
                                     </div>
@@ -64,82 +79,120 @@ export default function SettingsView({
                             </div>
                         </Card>
 
-                        {/* --- DATOS GENERALES --- */}
+                        {/* --- DATOS GENERALES Y LINK PÚBLICO --- */}
                         <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
                             <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
                                 <Building2 className="text-[#A3968B]"/> Datos de la Clínica
                             </h3>
-                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                
+                                {/* NUEVO: ENLACE PÚBLICO CON BOTÓN DE COPIAR */}
+                                <div className="md:col-span-2 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl mb-2">
+                                    <div className="flex justify-between items-center mb-2 ml-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-indigo-800/60 block">Link de Reservas (Slug)</label>
+                                    </div>
+                                    
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <div className="relative flex items-center flex-1">
+                                            <Link size={16} className="absolute left-4 text-indigo-400" />
+                                            <span className="absolute left-11 text-indigo-900/40 font-bold text-sm hidden sm:block">?reserva=</span>
+                                            <input 
+                                                className={`${inputClass} !bg-white !border-indigo-100 !text-indigo-900 focus:!border-indigo-400 sm:pl-[100px] pl-11`} 
+                                                placeholder="clinica-shining" 
+                                                value={config.publicSlug || ''} 
+                                                onChange={e => {
+                                                    const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                                                    setConfigLocal({...config, publicSlug: slug});
+                                                }} 
+                                            />
+                                        </div>
+                                        
+                                        <button 
+                                            onClick={() => {
+                                                if(!config.publicSlug) {
+                                                    notify("Primero escribe un nombre para tu enlace.");
+                                                    return;
+                                                }
+                                                // Arma el link detectando automáticamente si estás en localhost o en Vercel
+                                                const fullLink = `${window.location.origin}/?reserva=${config.publicSlug}`;
+                                                navigator.clipboard.writeText(fullLink);
+                                                notify("🔗 Enlace copiado al portapapeles");
+                                            }}
+                                            className="px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2"
+                                        >
+                                            <Copy size={16} /> Copiar Link
+                                        </button>
+                                    </div>
+                                    <p className="text-[9px] text-indigo-800/50 font-bold mt-3 ml-2 uppercase tracking-widest">
+                                        Pega este enlace en tu Instagram o envíalo por WhatsApp a tus pacientes.
+                                    </p>
+                                </div>
+
+                                <div><label className={labelClass}>Nombre Clínica / Doctor</label><input className={inputClass} placeholder="Ej: Clínica ShiningCloud" value={config.name || ''} onChange={e=>setConfigLocal({...config, name:e.target.value})} /></div>
+                                <div><label className={labelClass}>RUT Profesional / Empresa</label><input className={inputClass} placeholder="12.345.678-9" value={config.rut || ''} onChange={e=>setConfigLocal({...config, rut: formatRUT(e.target.value)})} /></div>
+                                <div><label className={labelClass}>Especialidad Principal</label><input className={inputClass} placeholder="Ej: Odontología Integral" value={config.specialty || ''} onChange={e=>setConfigLocal({...config, specialty:e.target.value})} /></div>
+                                <div><label className={labelClass}>Teléfono de Contacto</label><input className={inputClass} placeholder="+56 9 1234 5678" value={config.phone || ''} onChange={e=>setConfigLocal({...config, phone:e.target.value})} /></div>
+                                <div className="md:col-span-2"><label className={labelClass}>Dirección Física</label><input className={inputClass} placeholder="Av. Siempre Viva 123, Oficina 405" value={config.address || ''} onChange={e=>setConfigLocal({...config, address:e.target.value})} /></div>
+                            </div>
+                        </Card>
+
+                        {/* --- HORARIOS DE ATENCIÓN --- */}
+                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-[#FDFBF7] p-8 shadow-inner">
+                            <div className="flex justify-between items-center mb-6 border-b border-[#DFD2C4]/50 pb-4">
                                 <div>
-                                    <label className={labelClass}>Nombre Clínica / Doctor</label>
-                                    <input className={inputClass} placeholder="Ej: Clínica ShiningCloud" value={config.name || ''} onChange={e=>setConfigLocal({...config, name:e.target.value})} />
+                                    <h3 className="font-black text-xl text-[#312923] flex items-center gap-2"><CalendarDays className="text-[#5B6651]"/> Horarios de Atención Online</h3>
+                                    <p className="text-xs text-[#9A8F84] font-bold mt-1">Configura los bloques en los que los pacientes podrán agendar automáticamente.</p>
                                 </div>
-                                <div>
-                                    <label className={labelClass}>RUT Profesional / Empresa</label>
-                                    <input className={inputClass} placeholder="12.345.678-9" value={config.rut || ''} onChange={e=>setConfigLocal({...config, rut: formatRUT(e.target.value)})} />
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Especialidad Principal</label>
-                                    <input className={inputClass} placeholder="Ej: Odontología Integral" value={config.specialty || ''} onChange={e=>setConfigLocal({...config, specialty:e.target.value})} />
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Teléfono de Contacto</label>
-                                    <input className={inputClass} placeholder="+56 9 1234 5678" value={config.phone || ''} onChange={e=>setConfigLocal({...config, phone:e.target.value})} />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className={labelClass}>Dirección Física</label>
-                                    <input className={inputClass} placeholder="Av. Siempre Viva 123, Oficina 405" value={config.address || ''} onChange={e=>setConfigLocal({...config, address:e.target.value})} />
-                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                {Object.keys(defaultSchedule).map((day) => (
+                                    <div key={day} className={`flex flex-col xl:flex-row items-start xl:items-center gap-4 p-4 rounded-2xl border transition-colors ${schedule[day].active ? 'bg-white border-[#DFD2C4]/80 shadow-sm' : 'bg-stone-50 border-stone-200 opacity-60'}`}>
+                                        <div className="flex items-center gap-3 w-40 shrink-0">
+                                            <div className={`w-10 h-5 rounded-full flex items-center cursor-pointer transition-colors px-0.5 ${schedule[day].active ? 'bg-[#5B6651]' : 'bg-stone-300'}`} onClick={() => handleScheduleChange(day, 'active', !schedule[day].active)}>
+                                                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${schedule[day].active ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                            </div>
+                                            <span className={`font-black text-sm ${schedule[day].active ? 'text-[#312923]' : 'text-[#9A8F84]'}`}>{day}</span>
+                                        </div>
+                                        <div className={`flex flex-wrap md:flex-nowrap items-center gap-3 transition-opacity ${schedule[day].active ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+                                            <div className="flex items-center gap-2 bg-[#FDFBF7] px-3 py-2 rounded-xl border border-[#DFD2C4]/50">
+                                                <Clock size={12} className="text-[#A3968B]"/><span className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mr-1">Mañana:</span>
+                                                <input type="time" className="bg-transparent font-bold text-xs text-[#312923] outline-none" value={schedule[day].start1} onChange={(e) => handleScheduleChange(day, 'start1', e.target.value)} />
+                                                <span className="text-[#DFD2C4] font-bold">-</span>
+                                                <input type="time" className="bg-transparent font-bold text-xs text-[#312923] outline-none" value={schedule[day].end1} onChange={(e) => handleScheduleChange(day, 'end1', e.target.value)} />
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-[#FDFBF7] px-3 py-2 rounded-xl border border-[#DFD2C4]/50">
+                                                <Clock size={12} className="text-[#A3968B]"/><span className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mr-1">Tarde:</span>
+                                                <input type="time" className="bg-transparent font-bold text-xs text-[#312923] outline-none" value={schedule[day].start2} onChange={(e) => handleScheduleChange(day, 'start2', e.target.value)} />
+                                                <span className="text-[#DFD2C4] font-bold">-</span>
+                                                <input type="time" className="bg-transparent font-bold text-xs text-[#312923] outline-none" value={schedule[day].end2} onChange={(e) => handleScheduleChange(day, 'end2', e.target.value)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </Card>
 
                         {/* --- INFORMACIÓN LEGAL MINSAL --- */}
-                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-[#FDFBF7] p-8 shadow-inner">
+                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
                             <div className="flex justify-between items-center mb-6 border-b border-[#DFD2C4]/50 pb-4">
-                                <h3 className="font-black text-xl text-[#312923] flex items-center gap-2">
-                                    <FileSignature className="text-[#5B6651]"/> Información Legal para Recetas
-                                </h3>
-                                <span className="text-[9px] font-black uppercase tracking-widest bg-white border border-[#DFD2C4] px-3 py-1 rounded-full text-[#9A8F84]">Requisito MINSAL</span>
+                                <h3 className="font-black text-xl text-[#312923] flex items-center gap-2"><FileSignature className="text-[#5B6651]"/> Información Legal para Recetas</h3>
+                                <span className="text-[9px] font-black uppercase tracking-widest bg-[#FDFBF7] border border-[#DFD2C4] px-3 py-1 rounded-full text-[#9A8F84]">Requisito MINSAL</span>
                             </div>
-                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                                <div>
-                                    <label className={labelClass}>Registro Minsal (RNPI)</label>
-                                    <input className={`${inputClass} bg-white`} placeholder="N° de Registro" value={config.rnpi || ''} onChange={e=>setConfigLocal({...config, rnpi:e.target.value})} />
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Universidad de Egreso</label>
-                                    <input className={`${inputClass} bg-white`} placeholder="Ej: Universidad de Chile" value={config.university || ''} onChange={e=>setConfigLocal({...config, university:e.target.value})} />
-                                </div>
+                                <div><label className={labelClass}>Registro Minsal (RNPI)</label><input className={inputClass} placeholder="N° de Registro" value={config.rnpi || ''} onChange={e=>setConfigLocal({...config, rnpi:e.target.value})} /></div>
+                                <div><label className={labelClass}>Universidad de Egreso</label><input className={inputClass} placeholder="Ej: Universidad de Chile" value={config.university || ''} onChange={e=>setConfigLocal({...config, university:e.target.value})} /></div>
                             </div>
-                            <p className="text-xs text-[#A3968B] font-bold">
-                                * El RUT, RNPI y la Universidad son obligatorios en Chile para que las recetas generadas por el sistema sean válidas en farmacias.
-                            </p>
                         </Card>
 
                         {/* --- GESTIÓN DE EQUIPO --- */}
                         <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
-                            <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
-                                <Shield className="text-[#CBAAA2]"/> Gestión de Accesos y Equipo
-                            </h3>
-                            
+                            <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4"><Shield className="text-[#CBAAA2]"/> Gestión de Accesos y Equipo</h3>
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#FDFBF7] p-5 rounded-3xl border border-[#DFD2C4]/50 mb-8 shadow-inner items-end">
-                                <div className="md:col-span-3 space-y-1">
-                                    <label className={labelClass}>Nombre</label>
-                                    <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="Nombre completo" value={newMember.name || ''} onChange={e=>setNewMember({...newMember, name:e.target.value})}/>
-                                </div>
-                                <div className="md:col-span-3 space-y-1">
-                                    <label className={labelClass}>Correo Electrónico</label>
-                                    <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="usuario@clinica.com" value={newMember.email || ''} onChange={e=>setNewMember({...newMember, email:e.target.value})}/>
-                                </div>
+                                <div className="md:col-span-3 space-y-1"><label className={labelClass}>Nombre</label><input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="Nombre completo" value={newMember.name || ''} onChange={e=>setNewMember({...newMember, name:e.target.value})}/></div>
+                                <div className="md:col-span-3 space-y-1"><label className={labelClass}>Correo Electrónico</label><input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="usuario@clinica.com" value={newMember.email || ''} onChange={e=>setNewMember({...newMember, email:e.target.value})}/></div>
                                 <div className="md:col-span-2 space-y-1">
                                     <label className={labelClass}>Rol</label>
-                                    <select className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors appearance-none cursor-pointer" value={newMember.role || 'dentist'} onChange={e=>setNewMember({...newMember, role:e.target.value})}>
-                                        <option value="admin">Administrador</option>
-                                        <option value="dentist">Dentista</option>
-                                        <option value="assistant">Asistente</option>
-                                    </select>
+                                    <select className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors appearance-none cursor-pointer" value={newMember.role || 'dentist'} onChange={e=>setNewMember({...newMember, role:e.target.value})}><option value="admin">Administrador</option><option value="dentist">Dentista</option><option value="assistant">Asistente</option></select>
                                 </div>
                                 <div className={`md:col-span-2 space-y-1 transition-opacity ${newMember.role === 'dentist' ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
                                     <label className={labelClass}>Comisión %</label>
@@ -154,31 +207,16 @@ export default function SettingsView({
                                         onClick={async()=>{ 
                                             if(newMember.email && newMember.name){ 
                                                 const id = Date.now().toString(); 
-                                                // Si no es dentista, comisión es 0
                                                 const comisionAsignada = newMember.role === 'dentist' ? (newMember.commission || 0) : 0;
                                                 const u = { ...newMember, id, commission: comisionAsignada }; 
-                                                
                                                 setTeam([...team, u]); 
                                                 await saveToSupabase('team', id, u); 
-                                                
-                                                const { error } = await supabase.auth.signInWithOtp({
-                                                    email: newMember.email,
-                                                    options: { emailRedirectTo: window.location.origin }
-                                                });
-
-                                                if(error) {
-                                                    notify("Error enviando invitación: " + error.message);
-                                                } else {
-                                                    setNewMember({name:'', email:'', role:'dentist', commission: 0}); 
-                                                    notify("Usuario agregado e Invitación enviada 📩"); 
-                                                }
-                                            } else {
-                                                alert("Por favor ingresa un nombre y correo electrónico válidos.");
-                                            }
+                                                const { error } = await supabase.auth.signInWithOtp({ email: newMember.email, options: { emailRedirectTo: window.location.origin } });
+                                                if(error) { notify("Error enviando invitación: " + error.message); } 
+                                                else { setNewMember({name:'', email:'', role:'dentist', commission: 0}); notify("Usuario agregado e Invitación enviada 📩"); }
+                                            } else { alert("Por favor ingresa un nombre y correo electrónico válidos."); }
                                         }}
-                                    >
-                                        <UserPlus size={16}/> Añadir
-                                    </button>
+                                    ><UserPlus size={16}/> Añadir</button>
                                 </div>
                             </div>
                             
@@ -187,9 +225,7 @@ export default function SettingsView({
                                 {team.map(member => (
                                     <div key={member.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-5 bg-white rounded-2xl border border-[#DFD2C4]/40 hover:border-[#A3968B] transition-all shadow-sm group">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-[#FDFBF7] border border-[#DFD2C4] flex items-center justify-center font-black text-[#A3968B]">
-                                                {member.name.charAt(0).toUpperCase()}
-                                            </div>
+                                            <div className="w-10 h-10 rounded-full bg-[#FDFBF7] border border-[#DFD2C4] flex items-center justify-center font-black text-[#A3968B]">{member.name.charAt(0).toUpperCase()}</div>
                                             <div>
                                                 <p className="font-black text-[#312923]">{member.name}</p>
                                                 <p className="text-[10px] font-bold text-[#9A8F84] mt-0.5">{member.email}</p>
@@ -197,31 +233,12 @@ export default function SettingsView({
                                         </div>
                                         <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
                                             <div className="flex flex-col items-end gap-1">
-                                                <span className={`text-[9px] uppercase font-black px-3 py-1.5 rounded-full border tracking-widest ${
-                                                    member.role === 'admin' ? 'bg-[#5B6651]/10 text-[#5B6651] border-[#5B6651]/20' : 
-                                                    member.role === 'dentist' ? 'bg-[#A3968B]/10 text-[#A3968B] border-[#A3968B]/20' : 
-                                                    'bg-[#CBAAA2]/10 text-[#CBAAA2] border-[#CBAAA2]/20'
-                                                }`}>
+                                                <span className={`text-[9px] uppercase font-black px-3 py-1.5 rounded-full border tracking-widest ${member.role === 'admin' ? 'bg-[#5B6651]/10 text-[#5B6651] border-[#5B6651]/20' : member.role === 'dentist' ? 'bg-[#A3968B]/10 text-[#A3968B] border-[#A3968B]/20' : 'bg-[#CBAAA2]/10 text-[#CBAAA2] border-[#CBAAA2]/20'}`}>
                                                     {member.role === 'admin' ? 'Administrador' : member.role === 'dentist' ? 'Odontólogo' : 'Asistente'}
                                                 </span>
-                                                {member.role === 'dentist' && (
-                                                    <span className="text-[9px] font-black text-[#9A8F84] pr-2">Comisión: {member.commission || 0}%</span>
-                                                )}
+                                                {member.role === 'dentist' && <span className="text-[9px] font-black text-[#9A8F84] pr-2">Comisión: {member.commission || 0}%</span>}
                                             </div>
-                                            <button 
-                                                onClick={async()=>{ 
-                                                    if(window.confirm(`¿Estás seguro de eliminar a ${member.name}?`)){
-                                                        const f=team.filter(t=>t.id!==member.id); 
-                                                        setTeam(f); 
-                                                        await supabase.from('team').delete().eq('id', member.id); 
-                                                        notify("Usuario Eliminado"); 
-                                                    }
-                                                }} 
-                                                className="p-2 text-[#DFD2C4] hover:bg-red-50 hover:text-red-500 rounded-lg transition-all"
-                                                title="Eliminar Usuario"
-                                            >
-                                                <Trash2 size={18}/>
-                                            </button>
+                                            <button onClick={async()=>{ if(window.confirm(`¿Estás seguro de eliminar a ${member.name}?`)){ const f=team.filter(t=>t.id!==member.id); setTeam(f); await supabase.from('team').delete().eq('id', member.id); notify("Usuario Eliminado"); } }} className="p-2 text-[#DFD2C4] hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" title="Eliminar Usuario"><Trash2 size={18}/></button>
                                         </div>
                                     </div>
                                 ))}
