@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileSignature, Printer, FileText, CheckCircle2, FileX } from 'lucide-react';
+import { FileSignature, Printer, FileText, CheckCircle2, FileX, PenTool } from 'lucide-react';
 import { Card, SignaturePad } from './UIComponents';
 import { CONSENT_TEMPLATES } from '../constants';
 
@@ -153,6 +153,3 @@ export default function PatientConsentTab({
         </div>
     );
 }
-
-// Para que funcione el ícono que usamos en el título
-import { PenTool } from 'lucide-react';

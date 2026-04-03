@@ -60,23 +60,17 @@ export default function OdontogramTab({
 
             // --- LÓGICA DE SUPERPOSICIÓN DE ESTADOS CLÍNICOS ---
             if (activeTool === 'sano') {
-                // Sano limpia absolutamente todo
                 updatedTooth.status = [];
                 updatedTooth.faces = { v: null, l: null, m: null, d: null, o: null };
             } 
             else if (['missing', 'crown'].includes(activeTool)) {
-                // Ausente o Corona son absolutos: reemplazan todo
                 updatedTooth.status = [activeTool]; 
                 updatedTooth.faces = { v: null, l: null, m: null, d: null, o: null }; 
             } 
             else if (['extrusion', 'intrusion', 'mesioversion', 'distoversion', 'diastema'].includes(activeTool)) {
-                // Estas son modificaciones posicionales. Se añaden al Array sin borrar caras ni otros estados.
-                // Si el diente estaba 'missing', lo revive, porque no puedes mover un diente que no existe.
                 if (currentStatus.includes('missing')) {
                     currentStatus = currentStatus.filter(s => s !== 'missing');
                 }
-                
-                // Si la herramienta ya estaba aplicada, la quita (efecto Toggle)
                 if (currentStatus.includes(activeTool)) {
                     currentStatus = currentStatus.filter(s => s !== activeTool);
                 } else {
@@ -85,11 +79,7 @@ export default function OdontogramTab({
                 updatedTooth.status = currentStatus;
             } 
             else if (['caries', 'filled'].includes(activeTool)) {
-                // Pinta la cara exacta
                 updatedTooth.faces = { ...(updatedTooth.faces || {}), [clickedFace]: activeTool };
-                
-                // Si estaba ausente, revivimos el diente (si le pones resina, el diente existe)
-                // Pero NO borramos extrusiones o diastemas
                 if (currentStatus.includes('missing')) {
                     currentStatus = currentStatus.filter(s => s !== 'missing');
                     updatedTooth.status = currentStatus;
@@ -109,7 +99,6 @@ export default function OdontogramTab({
         }
     };
 
-    // Solución CSS para ocultar Scrollbars en el Contenedor
     const hideScrollStyles = {
         msOverflowStyle: 'none',  
         scrollbarWidth: 'none',  
@@ -169,14 +158,16 @@ export default function OdontogramTab({
                 className="w-full flex flex-col items-center gap-8 py-10 bg-white border-[#DFD2C4]/40 shadow-sm overflow-x-auto relative"
                 style={{ ...hideScrollStyles, boxShadow: 'inset 0 10px 30px -5px rgba(91,102,81,0.03)' }}
             >
-                <div className="flex flex-col items-center gap-6 w-max px-4" style={hideScrollStyles}>
+                <div className="flex flex-col items-center gap-8 w-max px-4" style={hideScrollStyles}>
                     
                     {/* Superior Adulto */}
                     {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
                         <div className="flex gap-1 md:gap-2 flex-nowrap justify-center w-max mx-auto">
                             {TEETH_UPPER.map(n => (
-                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform">
+                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
+                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
                                     <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">P</span>
                                 </div>
                             ))}
                         </div>
@@ -184,10 +175,12 @@ export default function OdontogramTab({
                     
                     {/* Superior Pediátrico */}
                     {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
-                        <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-4 rounded-[2rem] border border-[#CBAAA2]/20 w-max mx-auto">
+                        <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-6 rounded-[2.5rem] border border-[#CBAAA2]/20 w-max mx-auto">
                             {TEETH_UPPER_PED.map(n => (
-                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform">
+                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
+                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
                                     <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">P</span>
                                 </div>
                             ))}
                         </div>
@@ -197,10 +190,12 @@ export default function OdontogramTab({
 
                     {/* Inferior Pediátrico */}
                     {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
-                        <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-4 rounded-[2rem] border border-[#CBAAA2]/20 w-max mx-auto">
+                        <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-6 rounded-[2.5rem] border border-[#CBAAA2]/20 w-max mx-auto">
                             {TEETH_LOWER_PED.map(n => (
-                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform">
+                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
+                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">L</span>
                                     <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
                                 </div>
                             ))}
                         </div>
@@ -210,8 +205,10 @@ export default function OdontogramTab({
                     {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
                         <div className="flex gap-1 md:gap-2 flex-nowrap justify-center w-max mx-auto">
                             {TEETH_LOWER.map(n => (
-                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform">
+                                <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
+                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">L</span>
                                     <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
                                 </div>
                             ))}
                         </div>
@@ -254,16 +251,25 @@ export default function OdontogramTab({
                         const toothData = patient.clinical.teeth[n];
                         if (!toothData) return null;
                         
-                        // Parsear estado para mostrar nombres amigables en la lista
+                        // PARSEO DE ESTADOS MEJORADO (Ahora lee si es caries o resina desde las caras)
                         const renderStatuses = () => {
-                            let sArray = Array.isArray(toothData.status) ? toothData.status : [toothData.status];
+                            let sArray = Array.isArray(toothData.status) ? [...toothData.status] : [toothData.status];
                             sArray = sArray.filter(Boolean); // Quita nulos
-                            if (sArray.length === 0) return 'Pieza Activa';
+                            
+                            // MAGIA: Leer las caras para ver si el dentista pintó Caries o Resina
+                            if (toothData.faces) {
+                                const faceValues = Object.values(toothData.faces);
+                                if (faceValues.includes('caries') && !sArray.includes('caries')) sArray.push('caries');
+                                if (faceValues.includes('filled') && !sArray.includes('filled')) sArray.push('filled');
+                            }
+
+                            if (sArray.length === 0) return 'Hallazgo Registrado';
                             
                             const names = {
                                 missing: 'Ausente', crown: 'Corona', extrusion: 'Extrusión',
                                 intrusion: 'Intrusión', mesioversion: 'Mesioversión',
-                                distoversion: 'Distoversión', diastema: 'Diastema'
+                                distoversion: 'Distoversión', diastema: 'Diastema',
+                                caries: 'Caries', filled: 'Resina'
                             };
                             return sArray.map(s => names[s] || s).join(' + ');
                         };

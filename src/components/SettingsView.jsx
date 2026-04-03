@@ -1,5 +1,5 @@
-import React from 'react';
-import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy } from 'lucide-react';
+import React, { useState } from 'react';
+import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail } from 'lucide-react';
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
 import { supabase } from '../supabase';
@@ -10,6 +10,9 @@ export default function SettingsView({
 }) {
     const inputClass = "w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm";
     const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
+
+    // Estado local para el formulario de nuevo laboratorio
+    const [newLab, setNewLab] = useState({ name: '', email: '', phone: '' });
 
     const defaultSchedule = {
         Lunes: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
@@ -22,10 +25,26 @@ export default function SettingsView({
     };
 
     const schedule = config.schedule || defaultSchedule;
+    const laboratories = config.laboratories || []; // Extraemos los laboratorios guardados
 
     const handleScheduleChange = (day, field, value) => {
         const updatedSchedule = { ...schedule, [day]: { ...schedule[day], [field]: value } };
         setConfigLocal({ ...config, schedule: updatedSchedule });
+    };
+
+    const handleAddLab = () => {
+        if (!newLab.name) return notify("El nombre del laboratorio es obligatorio");
+        const updatedLabs = [...laboratories, { ...newLab, id: Date.now().toString() }];
+        setConfigLocal({ ...config, laboratories: updatedLabs });
+        setNewLab({ name: '', email: '', phone: '' });
+        notify("Laboratorio agregado a la lista. Recuerda Guardar Cambios arriba.");
+    };
+
+    const handleDeleteLab = (id) => {
+        if (window.confirm("¿Seguro que deseas eliminar este laboratorio?")) {
+            const updatedLabs = laboratories.filter(l => l.id !== id);
+            setConfigLocal({ ...config, laboratories: updatedLabs });
+        }
     };
 
     return (
@@ -42,7 +61,7 @@ export default function SettingsView({
                 {userRole === 'admin' && (
                     <button 
                         onClick={()=>{
-                            // MAGIA: Forzamos a que siempre se guarde el horario, aunque el usuario no lo haya tocado
+                            // Guardamos todo (Incluyendo los nuevos laboratorios)
                             const configToSave = { ...config, schedule: config.schedule || defaultSchedule };
                             saveToSupabase('settings', 'general', configToSave); 
                             notify("Ajustes Guardados con éxito");
@@ -86,7 +105,7 @@ export default function SettingsView({
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 
-                                {/* NUEVO: ENLACE PÚBLICO CON BOTÓN DE COPIAR */}
+                                {/* ENLACE PÚBLICO CON BOTÓN DE COPIAR */}
                                 <div className="md:col-span-2 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl mb-2">
                                     <div className="flex justify-between items-center mb-2 ml-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-indigo-800/60 block">Link de Reservas (Slug)</label>
@@ -113,7 +132,6 @@ export default function SettingsView({
                                                     notify("Primero escribe un nombre para tu enlace.");
                                                     return;
                                                 }
-                                                // Arma el link detectando automáticamente si estás en localhost o en Vercel
                                                 const fullLink = `${window.location.origin}/?reserva=${config.publicSlug}`;
                                                 navigator.clipboard.writeText(fullLink);
                                                 notify("🔗 Enlace copiado al portapapeles");
@@ -181,6 +199,65 @@ export default function SettingsView({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                                 <div><label className={labelClass}>Registro Minsal (RNPI)</label><input className={inputClass} placeholder="N° de Registro" value={config.rnpi || ''} onChange={e=>setConfigLocal({...config, rnpi:e.target.value})} /></div>
                                 <div><label className={labelClass}>Universidad de Egreso</label><input className={inputClass} placeholder="Ej: Universidad de Chile" value={config.university || ''} onChange={e=>setConfigLocal({...config, university:e.target.value})} /></div>
+                            </div>
+                        </Card>
+
+                        {/* --- NUEVO: DIRECTORIO DE LABORATORIOS --- */}
+                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
+                            <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
+                                <FlaskConical className="text-[#5B6651]"/> Directorio de Laboratorios
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#FDFBF7] p-5 rounded-3xl border border-[#DFD2C4]/50 mb-8 shadow-inner items-end">
+                                <div className="md:col-span-4 space-y-1">
+                                    <label className={labelClass}>Nombre del Lab</label>
+                                    <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="Ej: Lab Cerámico Sur" value={newLab.name} onChange={e=>setNewLab({...newLab, name:e.target.value})}/>
+                                </div>
+                                <div className="md:col-span-4 space-y-1">
+                                    <label className={labelClass}>Correo (Opcional)</label>
+                                    <div className="relative">
+                                        <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                        <input className="w-full pl-10 pr-3 py-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="contacto@lab.com" value={newLab.email} onChange={e=>setNewLab({...newLab, email:e.target.value})}/>
+                                    </div>
+                                </div>
+                                <div className="md:col-span-4 space-y-1">
+                                    <label className={labelClass}>Teléfono (Opcional)</label>
+                                    <div className="relative">
+                                        <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                        <input className="w-full pl-10 pr-3 py-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="+56 9..." value={newLab.phone} onChange={e=>setNewLab({...newLab, phone:e.target.value})}/>
+                                    </div>
+                                </div>
+                                <div className="md:col-span-12 mt-2">
+                                    <button 
+                                        className="w-full h-[50px] bg-[#CBAAA2] hover:bg-[#b09088] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#CBAAA2]/30 flex items-center justify-center gap-2"
+                                        onClick={handleAddLab}
+                                    >
+                                        <Plus size={16}/> Añadir a la lista
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                <label className={labelClass}>Laboratorios Registrados ({laboratories.length})</label>
+                                {laboratories.length === 0 ? (
+                                    <p className="text-xs text-[#9A8F84] font-bold py-4 text-center border-2 border-dashed border-[#DFD2C4] rounded-2xl bg-[#FDFBF7]">Aún no has registrado laboratorios.</p>
+                                ) : (
+                                    laboratories.map(lab => (
+                                        <div key={lab.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-5 bg-white rounded-2xl border border-[#DFD2C4]/40 hover:border-[#5B6651] transition-all shadow-sm group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-[#5B6651]/10 flex items-center justify-center text-[#5B6651]"><FlaskConical size={20}/></div>
+                                                <div>
+                                                    <p className="font-black text-[#312923]">{lab.name}</p>
+                                                    <div className="flex gap-3 mt-1">
+                                                        {lab.email && <span className="text-[10px] font-bold text-[#9A8F84]">{lab.email}</span>}
+                                                        {lab.phone && <span className="text-[10px] font-bold text-[#9A8F84]">{lab.phone}</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => handleDeleteLab(lab.id)} className="p-2 text-[#DFD2C4] hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" title="Eliminar Laboratorio"><Trash2 size={18}/></button>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </Card>
 

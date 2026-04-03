@@ -1,12 +1,13 @@
 import React from 'react';
-import { FlaskConical, Trash2, Plus, AlertCircle, CheckCircle2, Clock, User } from 'lucide-react';
+import { FlaskConical, Trash2, Plus, AlertCircle, CheckCircle2, Clock, User, Send, Paperclip } from 'lucide-react';
 import { Card } from './UIComponents';
 import { supabase } from '../supabase';
 import { getLocalDate } from '../constants';
 
 export default function LabView({ 
-    themeMode, t, labWorks, setLabWorks, setNewLabWork, setModal, notify,
-    team // <-- NUEVO CABLE PARA LOS NOMBRES
+    themeMode, t, labWorks, setLabWorks, setNewLabWork, setModal, notify, team,
+    // NUEVOS CABLES NECESARIOS:
+    sendWhatsApp, config 
 }) {
     return (
         <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
@@ -38,11 +39,11 @@ export default function LabView({
                     {/* Header de Tabla */}
                     <div className="grid grid-cols-12 gap-4 p-5 border-b border-[#DFD2C4]/50 bg-[#FDFBF7]/90 backdrop-blur-md sticky top-0 z-30">
                         <div className="col-span-2 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest pl-2">Paciente</div>
-                        <div className="col-span-3 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest">Trabajo y Pieza</div>
+                        <div className="col-span-3 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest">Trabajo y Adjuntos</div>
                         <div className="col-span-2 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest">Laboratorio</div>
                         <div className="col-span-2 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest text-center">Fechas (Envío / Entrega)</div>
-                        <div className="col-span-2 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest text-center">Estado</div>
-                        <div className="col-span-1 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest text-right pr-2">Acción</div>
+                        <div className="col-span-1 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest text-center">Estado</div>
+                        <div className="col-span-2 text-[10px] font-black text-[#9A8F84] uppercase tracking-widest text-right pr-2">Acciones</div>
                     </div>
                     
                     {/* Cuerpo de Tabla */}
@@ -79,14 +80,21 @@ export default function LabView({
                                             )}
                                         </div>
                                         
-                                        {/* Trabajo y Pieza */}
+                                        {/* Trabajo y Pieza + Archivo Adjunto */}
                                         <div className="col-span-3">
                                             <p className="font-bold text-[#312923] truncate" title={work.workType}>{work.workType}</p>
-                                            {work.tooth && (
-                                                <span className="inline-block mt-1 text-[9px] bg-[#CBAAA2]/10 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black border border-[#CBAAA2]/20">
-                                                    Pieza {work.tooth}
-                                                </span>
-                                            )}
+                                            <div className="flex items-center gap-2 mt-1">
+                                                {work.tooth && (
+                                                    <span className="inline-block text-[9px] bg-[#CBAAA2]/10 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black border border-[#CBAAA2]/20">
+                                                        Pieza {work.tooth}
+                                                    </span>
+                                                )}
+                                                {work.file_url && (
+                                                    <a href={work.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[9px] bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-0.5 rounded-full font-black border border-indigo-200 transition-colors" title={work.file_name}>
+                                                        <Paperclip size={10}/> Archivo Adjunto
+                                                    </a>
+                                                )}
+                                            </div>
                                         </div>
                                         
                                         {/* Laboratorio */}
@@ -107,15 +115,49 @@ export default function LabView({
                                         </div>
                                         
                                         {/* Estado */}
-                                        <div className="col-span-2 flex justify-center">
+                                        <div className="col-span-1 flex justify-center">
                                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${isReceived ? 'bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20' : isLate ? 'bg-red-100 text-red-600 border border-red-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}>
                                                 {isReceived ? <CheckCircle2 size={12}/> : isLate ? <AlertCircle size={12}/> : <Clock size={12}/>}
-                                                {isReceived ? 'Recibido' : isLate ? 'Atrasado' : 'En Tránsito'}
+                                                <span className="hidden xl:inline">{isReceived ? 'Recibido' : isLate ? 'Atrasado' : 'Enviado'}</span>
                                             </div>
                                         </div>
                                         
                                         {/* Acciones */}
-                                        <div className="col-span-1 pr-2 flex items-center justify-end gap-2">
+                                        <div className="col-span-2 pr-2 flex items-center justify-end gap-2">
+                                            
+                                            {/* NUEVO BOTÓN: Enviar WhatsApp */}
+                                            <button 
+                                                onClick={() => {
+                                                    // Buscamos si tenemos el teléfono del laboratorio guardado
+                                                    const labData = config?.laboratories?.find(l => l.name === work.labName);
+                                                    const labPhone = labData ? labData.phone : null;
+
+                                                    // Armamos el texto profesional
+                                                    let message = `Hola${work.labName ? ` ${work.labName}` : ''}, te enviamos una nueva orden de trabajo clínico desde *${config?.name || 'la clínica'}*.\n\n`;
+                                                    message += `🦷 *Trabajo Solicitado:* ${work.workType}\n`;
+                                                    if (work.tooth) message += `📍 *Pieza Dental:* ${work.tooth}\n`;
+                                                    message += `🗓️ *Fecha Esperada:* ${work.expectedDate.split('-').reverse().join('/')}\n\n`;
+                                                    
+                                                    if (work.file_url) {
+                                                        message += `📁 *Archivo Adjunto (Rx / Escáner 3D):*\n${work.file_url}\n\n`;
+                                                    }
+                                                    
+                                                    message += `Por favor confirmar recepción. ¡Saludos!`;
+
+                                                    if(labPhone) {
+                                                        sendWhatsApp(labPhone, message);
+                                                    } else {
+                                                        // Si no hay teléfono registrado, preguntamos a dónde enviarlo
+                                                        const manualPhone = window.prompt("No tenemos el teléfono de este laboratorio. Ingrésalo a continuación para enviar:");
+                                                        if (manualPhone) sendWhatsApp(manualPhone, message);
+                                                    }
+                                                }}
+                                                className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl shadow-sm border border-emerald-200 hover:border-emerald-500 transition-all"
+                                                title="Enviar Orden por WhatsApp"
+                                            >
+                                                <Send size={16}/>
+                                            </button>
+
                                             {!isReceived && (
                                                 <button onClick={async () => {
                                                     const updated = { ...work, status: 'received' };
@@ -128,6 +170,7 @@ export default function LabView({
                                                     <CheckCircle2 size={16}/>
                                                 </button>
                                             )}
+                                            
                                             <button onClick={async () => {
                                                 if(window.confirm("¿Seguro que deseas eliminar este registro?")){
                                                     setLabWorks(labWorks.filter(w => w.id !== work.id));
