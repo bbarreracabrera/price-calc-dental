@@ -2,7 +2,7 @@ import React from 'react';
 import { 
     ArrowLeft, AlertTriangle, User, FileQuestion, Activity, 
     FileBarChart, FileText, FileSignature, ImageIcon,
-    Mic, MicOff, Sparkles // <-- Nuevos íconos de IA importados
+    Mic, MicOff, Sparkles 
 } from 'lucide-react';
 
 // --- IMPORTACIÓN DE PESTAÑAS (Movidas desde App.jsx) ---
@@ -35,8 +35,8 @@ export default function PatientWorkspace({
     getPatient, savePatientData, setPatientRecords, setModal, setQuoteItems,
     setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
     
-    // Puentes (Wrappers)
-    handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg
+    // Puentes (Wrappers) y Configuración
+    handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg, config
 }) {
     const p = getPatient(selectedPatientId);
 
@@ -149,10 +149,10 @@ export default function PatientWorkspace({
                     </div>
                 )}
 
-                {patientTab === 'personal' && <PatientPersonalTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} sendWhatsApp={sendWhatsApp} />}
+                {patientTab === 'personal' && <PatientPersonalTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} sendWhatsApp={sendWhatsApp} config={config} />}
                 {patientTab === 'anamnesis' && <PatientAnamnesisTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} session={session} notify={notify} activeFormType={activeFormType} setActiveFormType={setActiveFormType} viewingForm={viewingForm} setViewingForm={setViewingForm} />}
                 {patientTab === 'clinical' && <OdontogramTab themeMode={themeMode} odontogramMode={odontogramMode} setOdontogramMode={setOdontogramMode} odontogramType={odontogramType} setOdontogramType={setOdontogramType} getPatient={getPatient} selectedPatientId={selectedPatientId} setToothModalData={setToothModalData} setModal={setModal} userRole={userRole} catalog={catalog} setQuoteItems={setQuoteItems} notify={notify} setActiveTab={setActiveTab} sessionData={sessionData} setSessionData={setSessionData} savePatientData={savePatientData} />}
-                {patientTab === 'perio' && <PerioTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} savePerioSnapshot={savePerioSnapshot} getPerioStats={getPerioStats} setToothModalData={setToothModalData} setPerioData={setPerioData} setModal={setModal} restoreSnapshot={restoreSnapshot} />}               
+                {patientTab === 'perio' && <PerioTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} savePerioSnapshot={savePerioSnapshot} getPerioStats={getPerioStats} setToothModalData={setToothModalData} setPerioData={setPerioData} setModal={setModal} restoreSnapshot={restoreSnapshot} />}              
                 {patientTab === 'evolution' && <PatientEvolutionTab themeMode={themeMode} newEvolution={newEvolution} setNewEvolution={setNewEvolution} isListening={isListening} toggleVoice={toggleVoice} voiceStatus={voiceStatus} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} session={session} logAction={logAction} />}
                 {patientTab === 'consent' && <PatientConsentTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} modal={modal} setModal={setModal} consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate} consentText={consentText} setConsentText={setConsentText} generatePDF={handleGeneratePDF} />}
                 {patientTab === 'images' && <PatientImagesTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} activeFolder={activeFolder} setActiveFolder={setActiveFolder} handleImageUpload={handleImageUpload} uploading={uploading} setSelectedImg={setSelectedImg} notify={notify} />}

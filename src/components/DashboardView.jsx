@@ -1,19 +1,25 @@
 import React from 'react';
-import { DollarSign, TrendingDown, BarChart2, PieChart, ArrowRight, Clock, CalendarClock, User, Calculator, Wallet, Plus, Calendar, AlertTriangle, FlaskConical } from 'lucide-react';
+import { DollarSign, TrendingDown, BarChart2, PieChart, ArrowRight, Clock, CalendarClock, User, Calculator, Wallet, Plus, Calendar, AlertTriangle, FlaskConical, AlertCircle, Box } from 'lucide-react';
 import { Card, Button, SimpleLineChart } from './UIComponents';
 
 export default function DashboardView({ 
     config, userRole, themeMode, t, 
     totalCollected, totalExpenses, netProfit, chartData, todaysAppointments,
     setActiveTab, setFinanceTab, setModal, setSelectedPatientId, setQuoteMode,
-    // Nuevas Props Inyectadas
-    lowStockItems = [], // Array de items con stock crítico
-    pendingLabWorks = [] // Array de órdenes de laboratorio pendientes
+    lowStockItems = [], 
+    pendingLabWorks = [],
+    // MAGIA: Recibimos el semáforo de vencimientos
+    expirationAlerts = { expired: [], near: [] } 
 }) {
     // Obtenemos la fecha actual formateada elegantemente
     const today = new Date();
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const formattedDate = today.toLocaleDateString('es-CL', dateOptions);
+
+    const hasLowStock = lowStockItems && lowStockItems.length > 0;
+    const hasExpired = expirationAlerts?.expired?.length > 0;
+    const hasNearExpiry = expirationAlerts?.near?.length > 0;
+    const noAlerts = !hasLowStock && !hasExpired && !hasNearExpiry;
 
     return (
         <div className="space-y-8 animate-in fade-in custom-scrollbar pb-10">
@@ -79,43 +85,85 @@ export default function DashboardView({
                 </div>
             )}
 
-            {/* --- NUEVO: ALERTAS Y LABORATORIO --- */}
+            {/* --- ALERTAS Y LABORATORIO --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                {/* Panel de Alertas de Inventario */}
+                {/* Panel de Alertas Clínicas e Inventario */}
                 <Card className="p-6 rounded-[2rem] border border-[#DFD2C4]/50 shadow-sm bg-white">
                     <div className="flex justify-between items-end mb-6 border-b border-[#DFD2C4]/50 pb-4">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-[#FDFBF7] text-[#CBAAA2] rounded-2xl border border-[#DFD2C4] shadow-sm"><AlertTriangle size={24}/></div>
+                            <div className={`p-3 rounded-2xl shadow-sm border ${hasExpired ? 'bg-red-50 text-red-600 border-red-200' : hasNearExpiry ? 'bg-amber-50 text-amber-500 border-amber-200' : 'bg-[#FDFBF7] text-[#CBAAA2] border-[#DFD2C4]'}`}>
+                                <AlertTriangle size={24} className={hasExpired ? "animate-pulse" : ""}/>
+                            </div>
                             <div>
-                                <h3 className="font-black text-[#312923] text-xl tracking-tight">Stock Crítico</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Alertas de Inventario</p>
+                                <h3 className="font-black text-[#312923] text-xl tracking-tight">Centro de Alertas</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Seguridad e Inventario</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div className="space-y-3">
-                       {lowStockItems.length === 0 ? (
-                            <div className="p-4 bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/50 text-center">
-                                <p className="text-xs font-bold text-[#5B6651]">✅ Stock saludable. No hay alertas.</p>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                        {noAlerts ? (
+                            <div className="p-4 bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/50 text-center flex flex-col items-center gap-2">
+                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#5B6651] shadow-sm"><Box size={18}/></div>
+                                <p className="text-xs font-bold text-[#5B6651]">Stock saludable. Sin vencimientos.</p>
                             </div>
                         ) : (
-                            lowStockItems.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-red-50 border border-red-100">
-                                    <span className="text-sm font-bold text-red-800">
-                                        {/* Accedemos directo al nombre */}
-                                        {item.name}
-                                    </span>
-                                    <div className="text-right">
-                                        <span className="text-sm font-black text-red-600">
-                                            Quedan {item.stock ?? 0}
+                            <>
+                                {/* 1. Vencidos (Rojo) */}
+                                {expirationAlerts?.expired?.map((item, idx) => (
+                                    <div key={`exp-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-red-50 border border-red-200">
+                                        <span className="text-sm font-bold text-red-800 flex items-center gap-2">
+                                            <AlertCircle size={14} className="text-red-500"/>
+                                            {item.name}
                                         </span>
-                                        <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest mt-1">
-                                            Mínimo: {item.min ?? 0} {item.unit || ''}
-                                        </p>
+                                        <div className="text-right">
+                                            <span className="text-[10px] font-black text-white bg-red-500 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm">
+                                                VENCIDO
+                                            </span>
+                                            <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest mt-1">
+                                                Lote: {item.batch.barcode || 'N/A'}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                ))}
+
+                                {/* 2. Por Vencer (Amarillo) */}
+                                {expirationAlerts?.near?.map((item, idx) => (
+                                    <div key={`near-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-amber-50 border border-amber-200">
+                                        <span className="text-sm font-bold text-amber-800 flex items-center gap-2">
+                                            <Clock size={14} className="text-amber-500"/>
+                                            {item.name}
+                                        </span>
+                                        <div className="text-right">
+                                            <span className="text-xs font-black text-amber-600">
+                                                Vence: {item.batch.expiry.split('-').reverse().join('/')}
+                                            </span>
+                                            <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mt-1">
+                                                Lote: {item.batch.barcode || 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* 3. Stock Bajo (Naranjo) */}
+                                {lowStockItems?.map((item, idx) => (
+                                    <div key={`low-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-[#FDFBF7] border border-[#DFD2C4]/80">
+                                        <span className="text-sm font-bold text-[#6B615A] flex items-center gap-2">
+                                            <Box size={14} className="text-[#A3968B]"/>
+                                            {item.name}
+                                        </span>
+                                        <div className="text-right">
+                                            <span className="text-xs font-black text-[#A3968B]">
+                                                Quedan {item.stock ?? 0} {item.unit || ''}
+                                            </span>
+                                            <p className="text-[9px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1">
+                                                Mínimo: {item.min ?? 0}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </>
                         )}
                     </div>
                     <button onClick={() => setActiveTab('inventory')} className="mt-4 w-full py-3 bg-white border border-[#DFD2C4] rounded-xl text-[10px] font-black uppercase tracking-widest text-[#312923] hover:bg-[#FDFBF7] transition-all flex items-center justify-center gap-2">

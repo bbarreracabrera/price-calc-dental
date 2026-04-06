@@ -1,7 +1,8 @@
-import React from 'react';
-import { ChevronLeft, ChevronRight, X, Mic, MicOff, Droplets } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, X, Mic, MicOff, Droplets, Image as ImageIcon, ZoomIn, Calendar } from 'lucide-react';
 import { Card } from './UIComponents';
 import { ToothSVG } from './ToothSystem';
+import { PrivateImage } from './SystemModals'; // <-- Importamos para ver las fotos seguras
 
 export default function ToothModal({
     themeMode, toothModalData, setToothModalData, setModal, activeTab,
@@ -9,6 +10,15 @@ export default function ToothModal({
     startPerioDictation, voiceFeedback, isListening, toggleVoice, catalog,
     getPatient, selectedPatientId, savePatientData, notify, goToAdjacentTooth
 }) {
+    const patient = getPatient(selectedPatientId);
+    
+    // Estado local para abrir la foto en grande sin salir del modal
+    const [localZoomImg, setLocalZoomImg] = useState(null);
+
+    // --- MAGIA: Buscar radiografías asociadas a este diente y ordenarlas ---
+    const relatedImages = patient.images?.filter(img => img.tooth === toothModalData.id.toString())
+        .sort((a, b) => b.id - a.id) || []; // Ordenamos de más nueva a más antigua
+
     // --- FUNCIÓN PARA B.O.P. Y PUS POR SITIO ESPECÍFICO ---
     const handlePerioToggle = (face, field, index) => {
         setToothModalData(prev => {
@@ -27,7 +37,7 @@ export default function ToothModal({
             <Card className="w-full max-w-md h-full relative z-10 shadow-2xl border-l border-[#DFD2C4]/50 flex flex-col animate-in slide-in-from-right duration-300 rounded-none bg-white">
                 
                 {/* ENCABEZADO CON NAVEGACIÓN RÁPIDA */}
-                <div className="p-6 border-b border-[#DFD2C4]/40 flex justify-between items-center bg-[#FDFBF7]">
+                <div className="p-6 border-b border-[#DFD2C4]/40 flex justify-between items-center bg-[#FDFBF7] shrink-0">
                     <div className="flex items-center gap-3">
                         <button onClick={() => goToAdjacentTooth(-1)} className="p-2 bg-white hover:bg-[#DFD2C4]/30 border border-[#DFD2C4]/50 text-[#9A8F84] rounded-xl transition-all"><ChevronLeft size={20} /></button>
                         <h3 className="text-3xl font-black tracking-tighter w-20 text-center text-[#312923]">{toothModalData.id}</h3>
@@ -35,6 +45,43 @@ export default function ToothModal({
                     </div>
                     <button onClick={() => setModal(null)} className="p-2 text-[#9A8F84] hover:bg-[#DFD2C4]/30 hover:text-[#312923] rounded-xl transition-all border border-transparent hover:border-[#DFD2C4]/50"><X size={24} /></button>
                 </div>
+
+                {/* --- NUEVO: CARRUSEL HISTÓRICO DE RADIOGRAFÍAS --- */}
+                {relatedImages.length > 0 && (
+                    <div className="px-6 pt-5 pb-2 bg-white border-b border-[#DFD2C4]/30 shrink-0">
+                        <div className="flex justify-between items-end mb-3">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#5B6651] flex items-center gap-2">
+                                <ImageIcon size={14}/> Historial Radiográfico
+                            </h4>
+                            <span className="text-[9px] font-bold text-[#9A8F84] bg-[#FDFBF7] px-2 py-0.5 rounded-md border border-[#DFD2C4]/50">
+                                {relatedImages.length} {relatedImages.length === 1 ? 'Archivo' : 'Archivos'}
+                            </span>
+                        </div>
+                        
+                        <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3 hide-scrollbar">
+                            {relatedImages.map(img => {
+                                // Intentamos extraer una fecha legible si existe
+                                const dateStr = img.created_at ? new Date(img.created_at).toLocaleDateString('es-CL') : 'Histórico';
+                                
+                                return (
+                                    <div 
+                                        key={img.id} 
+                                        className="relative shrink-0 w-24 h-24 rounded-2xl overflow-hidden border border-[#DFD2C4] bg-[#FDFBF7] shadow-sm group cursor-pointer hover:border-[#CBAAA2] transition-colors"
+                                    >
+                                        <div className="w-full h-full object-cover">
+                                            {/* Usamos el componente PrivateImage y le pasamos nuestra función local de zoom */}
+                                            <PrivateImage img={img} onClick={setLocalZoomImg} />
+                                        </div>
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#312923]/80 to-transparent p-2 pt-6 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end pointer-events-none">
+                                            <ZoomIn size={14} className="text-white mx-auto mb-1"/>
+                                            <span className="text-[8px] font-black text-white text-center tracking-widest uppercase">{dateStr}</span>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-white">
                     
@@ -48,7 +95,6 @@ export default function ToothModal({
                                 </button>
                             </h3>
 
-                            {/* TABLAS VESTIBULAR Y LINGUAL/PALATINO */}
                             {['v', 'l'].map(face => (
                                 <div key={face} className="mb-6 bg-white p-4 rounded-2xl border border-[#DFD2C4]/50 relative mt-5 shadow-sm">
                                     <h4 className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-wider mb-2 text-center absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FDFBF7] px-4 py-1 rounded-full border border-[#DFD2C4]/50">
@@ -108,7 +154,7 @@ export default function ToothModal({
                                 </div>
                             ))}
 
-                            {/* ALERTAS GLOBALES DEL DIENTE (Movilidad y Furca) */}
+                            {/* ALERTAS GLOBALES DEL DIENTE */}
                             <div className="grid grid-cols-2 gap-3 mt-4">
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] ml-1">Movilidad</label>
@@ -122,7 +168,7 @@ export default function ToothModal({
                         </div>
                     )}
 
-                    {/* --- SECCIÓN 2: ODONTOGRAMA (SOLO SE MUESTRA SI NO ES PERIO) --- */}
+                    {/* --- SECCIÓN 2: ODONTOGRAMA --- */}
                     {toothModalData.mode !== 'perio' && (
                         <>
                             <div className="flex bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/50 shadow-sm">
@@ -175,7 +221,7 @@ export default function ToothModal({
                     )}
                 </div>
 
-                <div className="p-6 border-t border-[#DFD2C4]/40 bg-[#FDFBF7]">
+                <div className="p-6 border-t border-[#DFD2C4]/40 bg-[#FDFBF7] shrink-0">
                     <button 
                         onClick={() => {
                             const p = getPatient(selectedPatientId); 
@@ -189,7 +235,7 @@ export default function ToothModal({
                                 treatment: toothModalData.treatment 
                             }}; 
                             
-                            // 2. Guardamos la parte del Periodontograma (¡Esto faltaba!)
+                            // 2. Guardamos la parte del Periodontograma
                             const updatedPerio = {
                                 ...p.clinical.perio, 
                                 [toothModalData.id]: toothModalData.perio || {}
@@ -214,6 +260,17 @@ export default function ToothModal({
                     </button>
                 </div>
             </Card>
+
+            {/* --- VISOR LOCAL DE IMAGEN EN GRANDE --- */}
+            {localZoomImg && (
+                <div className="fixed inset-0 z-[200] bg-[#2A2421]/95 backdrop-blur-md flex flex-col items-center justify-center p-4 cursor-pointer animate-in fade-in" onClick={()=>setLocalZoomImg(null)}>
+                    <img src={localZoomImg} className="max-w-full max-h-[85%] rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95" alt="Radiografía Ampliada" />
+                    <span className="mt-6 px-6 py-2 rounded-full bg-white/10 text-white font-bold text-xs uppercase tracking-widest backdrop-blur-sm border border-white/20">
+                        Cerrar Radiografía
+                    </span>
+                </div>
+            )}
+
         </div>
     );
 }

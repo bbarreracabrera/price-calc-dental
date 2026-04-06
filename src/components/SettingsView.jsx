@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail } from 'lucide-react';
+import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail, MessageCircle } from 'lucide-react';
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
 import { supabase } from '../supabase';
@@ -25,7 +25,7 @@ export default function SettingsView({
     };
 
     const schedule = config.schedule || defaultSchedule;
-    const laboratories = config.laboratories || []; // Extraemos los laboratorios guardados
+    const laboratories = config.laboratories || []; 
 
     const handleScheduleChange = (day, field, value) => {
         const updatedSchedule = { ...schedule, [day]: { ...schedule[day], [field]: value } };
@@ -61,7 +61,7 @@ export default function SettingsView({
                 {userRole === 'admin' && (
                     <button 
                         onClick={()=>{
-                            // Guardamos todo (Incluyendo los nuevos laboratorios)
+                            // Guardamos todo en Supabase
                             const configToSave = { ...config, schedule: config.schedule || defaultSchedule };
                             saveToSupabase('settings', 'general', configToSave); 
                             notify("Ajustes Guardados con éxito");
@@ -105,12 +105,10 @@ export default function SettingsView({
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 
-                                {/* ENLACE PÚBLICO CON BOTÓN DE COPIAR */}
                                 <div className="md:col-span-2 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl mb-2">
                                     <div className="flex justify-between items-center mb-2 ml-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-indigo-800/60 block">Link de Reservas (Slug)</label>
                                     </div>
-                                    
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <div className="relative flex items-center flex-1">
                                             <Link size={16} className="absolute left-4 text-indigo-400" />
@@ -125,7 +123,6 @@ export default function SettingsView({
                                                 }} 
                                             />
                                         </div>
-                                        
                                         <button 
                                             onClick={() => {
                                                 if(!config.publicSlug) {
@@ -151,6 +148,70 @@ export default function SettingsView({
                                 <div><label className={labelClass}>Especialidad Principal</label><input className={inputClass} placeholder="Ej: Odontología Integral" value={config.specialty || ''} onChange={e=>setConfigLocal({...config, specialty:e.target.value})} /></div>
                                 <div><label className={labelClass}>Teléfono de Contacto</label><input className={inputClass} placeholder="+56 9 1234 5678" value={config.phone || ''} onChange={e=>setConfigLocal({...config, phone:e.target.value})} /></div>
                                 <div className="md:col-span-2"><label className={labelClass}>Dirección Física</label><input className={inputClass} placeholder="Av. Siempre Viva 123, Oficina 405" value={config.address || ''} onChange={e=>setConfigLocal({...config, address:e.target.value})} /></div>
+                            </div>
+                        </Card>
+
+                        {/* --- NUEVO: PLANTILLAS DE WHATSAPP --- */}
+                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
+                            <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
+                                <MessageCircle className="text-[#5B6651]"/> Plantillas de WhatsApp (Zero-Cost)
+                            </h3>
+                            <p className="text-xs text-[#9A8F84] font-bold mb-4">Configura los mensajes automáticos. El sistema abrirá WhatsApp Web/App con el texto listo para enviar.</p>
+                            
+                            <div className="bg-[#CBAAA2]/10 p-4 rounded-2xl border border-[#CBAAA2]/30 mb-6 flex items-center gap-3">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[#CBAAA2]">Variables mágicas:</span>
+                                <div className="flex gap-2 flex-wrap">
+                                    <span className="bg-white px-2 py-1 rounded-md text-[10px] font-bold text-[#312923] shadow-sm">{'{paciente}'}</span>
+                                    <span className="bg-white px-2 py-1 rounded-md text-[10px] font-bold text-[#312923] shadow-sm">{'{clinica}'}</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className={labelClass}>Mensaje de Contacto General</label>
+                                    <textarea 
+                                        className={`${inputClass} resize-none h-24`} 
+                                        placeholder="Hola {paciente}, nos comunicamos de {clinica}..." 
+                                        value={config.wpGreeting || 'Hola {paciente}, nos comunicamos de {clinica}...'} 
+                                        onChange={e=>setConfigLocal({...config, wpGreeting:e.target.value})} 
+                                    />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Mensaje de Envío de Presupuesto</label>
+                                    <textarea 
+                                        className={`${inputClass} resize-none h-24`} 
+                                        placeholder="Hola {paciente}, te adjuntamos tu plan de tratamiento..." 
+                                        value={config.wpBudget || 'Hola {paciente}, te enviamos tu presupuesto dental de {clinica}. ¡Quedamos atentos a tus dudas!'} 
+                                        onChange={e=>setConfigLocal({...config, wpBudget:e.target.value})} 
+                                    />
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* --- NUEVO: BIOSEGURIDAD Y ESTERILIZACIÓN --- */}
+                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
+                            <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
+                                <Shield className="text-[#A3968B]"/> Bioseguridad y Caducidad
+                            </h3>
+                            <p className="text-xs text-[#9A8F84] font-bold mb-6">Ajusta los tiempos de caducidad del material estéril según el protocolo y tipo de envoltorio de tu clínica (Norma MINSAL).</p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className={labelClass}>Tiempo de Caducidad Estéril</label>
+                                    <div className="relative">
+                                        <select 
+                                            className={`${inputClass} cursor-pointer appearance-none`}
+                                            value={config.sterilizationDays || 30} 
+                                            onChange={e=>setConfigLocal({...config, sterilizationDays: Number(e.target.value)})}
+                                        >
+                                            <option value={15}>15 Días (Bolsa de Papel Simple)</option>
+                                            <option value={30}>30 Días (Manga Mixta Estándar)</option>
+                                            <option value={60}>60 Días (Manga Mixta Doble)</option>
+                                            <option value={90}>90 Días (Contenedor Rígido con Filtro)</option>
+                                            <option value={180}>6 Meses (Empaque Especializado)</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </Card>
 
@@ -202,7 +263,7 @@ export default function SettingsView({
                             </div>
                         </Card>
 
-                        {/* --- NUEVO: DIRECTORIO DE LABORATORIOS --- */}
+                        {/* --- DIRECTORIO DE LABORATORIOS --- */}
                         <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
                             <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
                                 <FlaskConical className="text-[#5B6651]"/> Directorio de Laboratorios

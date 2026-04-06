@@ -41,8 +41,8 @@ export const Button = ({ onClick, children, variant = "primary", className = "",
     ); 
 };
 
-// --- INPUT DINÁMICO ---
-export const InputField = ({ label, icon: Icon, theme, textarea, className="", ...props }) => { 
+// --- INPUT DINÁMICO (CORREGIDO PARA SOPORTAR onBlur Y AUTOGUARDADO) ---
+export const InputField = ({ label, icon: Icon, theme, textarea, className="", value, onChange, onBlur, ...props }) => { 
     return (
         <div className={`w-full flex flex-col gap-1.5 ${className}`}>
             {label && <label className="text-[11px] font-bold uppercase tracking-widest ml-1 text-[#9A8F84]">{label}</label>}
@@ -52,11 +52,17 @@ export const InputField = ({ label, icon: Icon, theme, textarea, className="", .
                 {textarea ? 
                     <textarea 
                         {...props} 
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur} // <-- CLAVE: Exponer el evento onBlur para el auto-guardado
                         rows="3" 
                         className={`w-full p-4 ${Icon ? 'pl-11' : 'pl-4'} rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-medium text-[#312923] resize-none text-sm`}
                     /> : 
                     <input 
                         {...props} 
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur} // <-- CLAVE: Exponer el evento onBlur para el auto-guardado
                         className={`w-full p-4 ${Icon ? 'pl-11' : 'pl-4'} rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-medium text-[#312923] text-sm`}
                     />
                 }
@@ -65,7 +71,7 @@ export const InputField = ({ label, icon: Icon, theme, textarea, className="", .
     ); 
 };
 
-// --- PANEL DE FIRMA DIGITAL (Adaptado a Paleta Terrosa) ---
+// --- PANEL DE FIRMA DIGITAL ---
 export const SignaturePad = ({ onSave, onCancel, theme }) => {
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -76,7 +82,6 @@ export const SignaturePad = ({ onSave, onCancel, theme }) => {
             canvas.width = canvas.offsetWidth; 
             canvas.height = canvas.offsetHeight; 
             const ctx = canvas.getContext('2d'); 
-            // CAMBIO AQUÍ: La firma ahora es el gris verdoso oscuro profundo de la paleta
             ctx.strokeStyle = '#374151'; 
             ctx.lineWidth = 3; 
             ctx.lineCap = 'round'; 
@@ -102,12 +107,11 @@ export const SignaturePad = ({ onSave, onCancel, theme }) => {
     );
 };
 
-// --- GRÁFICO FINANCIERO (Adaptado a Paleta Terrosa) ---
+// --- GRÁFICO FINANCIERO ---
 export const SimpleLineChart = ({ data }) => {
     if (!data || data.length === 0 || data.every(d => !d.ingresos || d.ingresos === 0)) {
         return (
             <div className="w-full h-[250px] flex flex-col items-center justify-center text-gray-400 border border-gray-100 rounded-3xl bg-gray-50">
-                {/* CAMBIO AQUÍ: Icono en el marrón topo premium */}
                 <BarChart2 size={48} className="mb-4 opacity-20 text-[#9CA3AF]" />
                 <p className="text-xs font-black uppercase tracking-widest text-gray-500">Sin datos financieros</p>
                 <p className="text-[11px] mt-1 font-medium text-gray-400">Registra tratamientos completados para ver la gráfica</p>
@@ -118,22 +122,16 @@ export const SimpleLineChart = ({ data }) => {
     return (
         <ResponsiveContainer width="100%" height={250}>
             <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                {/* Grilla gris muy clara */}
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                {/* Textos de los ejes en gris medio */}
                 <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} fontWeight="600" />
                 <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value/1000}k`} fontWeight="600" />
-                {/* Tooltip con fondo blanco y sombra suave */}
                 <Tooltip 
                     contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #f3f4f6', borderRadius: '16px', fontSize: '13px', fontWeight: 'bold', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} 
-                    // CAMBIO AQUÍ: Título en el marrón topo premium de Apple
                     itemStyle={{ color: '#9CA3AF' }} 
                 />
-                {/* Línea en el marrón topo premium de Apple con puntos interactivos */}
                 <Line 
                     type="monotone" 
                     dataKey="ingresos" 
-                    // CAMBIO AQUÍ: La línea es el marrón topo premium de Apple
                     stroke="#5B6651"
                     strokeWidth={4} 
                     dot={{ r: 4, fill: '#ffffff', stroke: '#9CA3AF', strokeWidth: 2 }} 

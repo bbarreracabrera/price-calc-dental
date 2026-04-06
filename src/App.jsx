@@ -27,7 +27,8 @@ import PrescriptionView from './components/PrescriptionView';
 import CRMView from './components/CRMView';
 import Sidebar from './components/Sidebar';
 import PatientWorkspace from './components/PatientWorkspace';
-import PublicBooking from './components/PublicBooking'; // <--- NUEVO PORTAL PÚBLICO
+import PublicBooking from './components/PublicBooking'; 
+import SterilizationView from './components/SterilizationView'; 
 
 // --- MODALS ---
 import ToothModal from './components/ToothModal';
@@ -55,7 +56,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [modal, setModal] = useState(null);
-  const [publicClinicId, setPublicClinicId] = useState(null); // <--- ESTADO PARA EL PORTAL PÚBLICO
+  const [publicClinicId, setPublicClinicId] = useState(null); 
   
   // Data
   const [config, setConfigLocal] = useState({ logo: null, hourlyRate: 25000, profitMargin: 30, name: "Dr. Benjamín" });
@@ -64,6 +65,7 @@ export default function App() {
   const [financialRecords, setFinancialRecords] = useState([]); 
   const [protocols, setProtocols] = useState([]);
   const [inventory, setInventory] = useState([]); 
+  const [sterilizationItems, setSterilizationItems] = useState([]); 
   const [catalog, setCatalog] = useState([]);
   const [labWorks, setLabWorks] = useState([]);
   const [team, setTeam] = useState([]); 
@@ -114,16 +116,13 @@ export default function App() {
 
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
   
-  // Manejo de Sesión y Detección de URL Pública
   useEffect(() => {
-      // 1. Detección de ruta de Reservas Públicas
       const params = new URLSearchParams(window.location.search);
       if (params.get('reserva')) {
           setPublicClinicId(params.get('reserva'));
-          return; // Detenemos la carga normal de la app privada
+          return; 
       }
 
-      // 2. Carga normal del sistema privado
       if (window.location.hash.includes('type=recovery')) setModal('recovery');
 
       supabase.auth.getSession().then(({ data: { session } }) => {
@@ -149,6 +148,18 @@ export default function App() {
       setPatientRecords, setAppointments, setFinancialRecords,
       setProtocols, setInventory, setCatalog, setLabWorks
   });
+
+  useEffect(() => {
+      if (session && clinicOwner) {
+          const fetchSterilization = async () => {
+              const { data, error } = await supabase.from('sterilization').select('id, data').eq('admin_email', clinicOwner);
+              if (data && !error) {
+                  setSterilizationItems(data.map(d => d.data));
+              }
+          };
+          fetchSterilization();
+      }
+  }, [session, clinicOwner]);
 
   // ==========================================
   // 3. FUNCIONES DE BASE DE DATOS Y LÓGICA CORE
@@ -364,6 +375,28 @@ export default function App() {
     });
   }, [inventory]);
 
+  const expirationAlerts = useMemo(() => {
+      const today = new Date();
+      const nextMonth = new Date();
+      nextMonth.setDate(today.getDate() + 30);
+
+      const alerts = { expired: [], near: [] };
+
+      inventory.forEach(item => {
+          item.batches?.forEach(batch => {
+              if (batch.expiry) {
+                  const expiryDate = new Date(batch.expiry);
+                  if (expiryDate <= today) {
+                      alerts.expired.push({ ...item, batch });
+                  } else if (expiryDate <= nextMonth) {
+                      alerts.near.push({ ...item, batch });
+                  }
+              }
+          });
+      });
+      return alerts;
+  }, [inventory]);
+
   const pendingLabWorks = useMemo(() => {
     return labWorks
         .filter(work => work.status !== 'Entregado' && work.status !== 'Finalizado')
@@ -375,7 +408,6 @@ export default function App() {
   // 6. RENDERIZADO VISUAL
   // ==========================================
   
-  // Si estamos en la ruta pública de agendamiento, dibujamos SOLO el portal.
   if (publicClinicId) {
       return (
           <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans selection:bg-[#CBAAA2] selection:text-white flex flex-col">
@@ -422,16 +454,32 @@ export default function App() {
             <div className="w-8"></div>
         </div>
         
-        {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} />}
+        {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} expirationAlerts={expirationAlerts} />}
         {activeTab === 'terms' && <TermsScreen theme={t} />}
         {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <FinanceCenter themeMode={themeMode} t={t} financeTab={financeTab} setFinanceTab={setFinanceTab} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} incomeRecords={incomeRecords} expenseRecords={expenseRecords} totalCollected={totalCollected} totalExpenses={totalExpenses} totalDebt={totalDebt} netProfit={netProfit} patientRecords={patientRecords} saveToSupabase={saveToSupabase} notify={notify} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} onOpenAbonoModal={(record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); }} session={session} team={team} userRole={userRole} />}
         {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && <CatalogView themeMode={themeMode} t={t} catalog={catalog} setCatalog={setCatalog} clinicOwner={clinicOwner} session={session} setNewCatalogItem={setNewCatalogItem} setModal={setModal} saveToSupabase={saveToSupabase} notify={notify} />}
         {activeTab === 'inventory' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <InventoryView themeMode={themeMode} t={t} inventory={inventory} setInventory={setInventory} filteredInventory={filteredInventory} inventorySearch={inventorySearch} setInventorySearch={setInventorySearch} setNewItem={setNewItem} setModal={setModal} saveToSupabase={saveToSupabase} session={session} team={team} />}        
-        {activeTab === 'lab' && <LabView themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks} setNewLabWork={setNewLabWork} setModal={setModal} notify={notify} team={team} sendWhatsApp={sendWhatsApp} config={config} />}        {activeTab === 'settings' && <SettingsView themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal} logoInputRef={logoInputRef} handleLogoUpload={handleLogoUploadWrapper} userRole={userRole} saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam} newMember={newMember} setNewMember={setNewMember} />}
+        {activeTab === 'lab' && <LabView themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks} setNewLabWork={setNewLabWork} setModal={setModal} notify={notify} team={team} sendWhatsApp={sendWhatsApp} config={config} />}        
+        {activeTab === 'settings' && <SettingsView themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal} logoInputRef={logoInputRef} handleLogoUpload={handleLogoUploadWrapper} userRole={userRole} saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam} newMember={newMember} setNewMember={setNewMember} />}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <QuoteView themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems} newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog} patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData} getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase} notify={notify} generatePDF={handleGeneratePDF} setActiveTab={setActiveTab} />}
         {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} />}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} />}
         {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <CRMView themeMode={themeMode} t={t} getRecalls={getRecalls} patientRecords={patientRecords} setActiveTab={setActiveTab} setSelectedPatientId={setSelectedPatientId} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} />}
+        
+        {/* --- NUEVO: RENDERIZAMOS LA VISTA DE ESTERILIZACIÓN --- */}
+        {activeTab === 'sterilization' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && (
+            <SterilizationView 
+                themeMode={themeMode} 
+                t={t} 
+                sterilizationItems={sterilizationItems} 
+                setSterilizationItems={setSterilizationItems} 
+                saveToSupabase={saveToSupabaseWrapper}
+                supabase={supabase}
+                notify={notify}
+                session={session}
+                config={config} 
+            />
+        )}
 
         {activeTab === 'ficha' && !selectedPatientId && (
             <div className="space-y-4 animate-in slide-in-from-bottom">
@@ -490,15 +538,15 @@ export default function App() {
                 getPerioStats={getPerioStats} logAction={logAction}
                 handleGeneratePDF={handleGeneratePDF} handleImageUpload={handleImageUploadWrapper}
                 notify={notify} sendWhatsApp={sendWhatsApp} setSelectedImg={setSelectedImg}
+                config={config} 
             />
         )}
       </main>
 
-      {modal === 'tooth' && <ToothModal themeMode={themeMode} t={t} toothModalData={toothModalData} setToothModalData={setToothModalData} setModal={setModal} activeTab={activeTab} perioData={perioData} setPerioData={setPerioData} handlePerioChange={handlePerioChange} calcNIC={calcNIC} isPerioVoiceActive={isPerioVoiceActive} startPerioDictation={startPerioDictation} voiceFeedback={voiceFeedback} isListening={isListening} toggleVoice={toggleVoice} catalog={catalog} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} goToAdjacentTooth={goToAdjacentTooth} />}
+      {modal === 'tooth' && <ToothModal themeMode={themeMode} t={t} toothModalData={toothModalData} setToothModalData={setToothModalData} setModal={setModal} activeTab={activeTab} perioData={perioData} setPerioData={setPerioData} handlePerioChange={handlePerioChange} calcNIC={calcNIC} isPerioVoiceActive={isPerioVoiceActive} startPerioDictation={startPerioDictation} voiceFeedback={voiceFeedback} isListening={isListening} toggleVoice={toggleVoice}  catalog={catalog} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} goToAdjacentTooth={goToAdjacentTooth} setActiveTab={() => {setActiveTab('ficha'); setPatientTab('images');}}/>}   
       {modal === 'appt' && <ApptModal themeMode={themeMode} newAppt={newAppt} setNewAppt={setNewAppt} setModal={setModal} patientRecords={patientRecords} setPatientRecords={setPatientRecords} getPatient={getPatient} savePatientData={savePatientData} notify={notify} appointments={appointments} setAppointments={setAppointments} saveToSupabase={saveToSupabase} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} team={team} session={session} />}
       {modal === 'abono' && selectedFinancialRecord && <AbonoModal themeMode={themeMode} selectedFinancialRecord={selectedFinancialRecord} setModal={setModal} paymentInput={paymentInput} setPaymentInput={setPaymentInput} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} saveToSupabase={saveToSupabase} notify={notify} session={session} team={team} />}      
       {modal === 'catalogItem' && <CatalogModal themeMode={themeMode} newCatalogItem={newCatalogItem} setNewCatalogItem={setNewCatalogItem} catalog={catalog} setCatalog={setCatalog} setModal={setModal} clinicOwner={clinicOwner} notify={notify} saveToSupabase={saveToSupabase} />}
-      {/* MAGIA: Le inyectamos la lista de laboratorios (laboratories={config.laboratories}) */}
       {modal === 'labWork' && (<LabWorkModal themeMode={themeMode} newLabWork={newLabWork} setNewLabWork={setNewLabWork} patientRecords={patientRecords} setModal={setModal} clinicOwner={clinicOwner} labWorks={labWorks} setLabWorks={setLabWorks} supabase={supabase} notify={notify} catalog={catalog} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} session={session} laboratories={config.laboratories || []} />)}
       {modal === 'addItem' && <AddItemModal themeMode={themeMode} newItem={newItem} setNewItem={setNewItem} setModal={setModal} inventory={inventory} setInventory={setInventory} saveToSupabase={saveToSupabaseWrapper} supabase={supabase} notify={notify} session={session} />}       
       {modal === 'loadPack' && <LoadPackModal themeMode={themeMode} setModal={setModal} protocols={protocols} setProtocols={setProtocols} sessionData={sessionData} setSessionData={setSessionData} supabase={supabase} notify={notify} />}

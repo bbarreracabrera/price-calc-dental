@@ -18,6 +18,25 @@ export default function PatientImagesTab({
 
     const currentImages = patient.images?.filter(img => (img.folder || 'Otros') === activeFolder) || [];
 
+    // Array de dientes para el selector rápido
+    const adultTeeth = [
+        18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28, 
+        48,47,46,45,44,43,42,41, 38,37,36,35,34,33,32,31
+    ];
+
+    // Función para etiquetar una imagen con un número de diente
+    const handleToothChange = async (imgId, newTooth) => {
+        const updatedImages = patient.images.map(img => 
+            img.id === imgId ? { ...img, tooth: newTooth } : img
+        );
+        await savePatientData(selectedPatientId, { ...patient, images: updatedImages });
+        if (newTooth) {
+            notify(`Etiquetada como Pieza ${newTooth} 🦷`);
+        } else {
+            notify('Etiqueta removida (General) 📸');
+        }
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in h-full flex flex-col max-w-6xl mx-auto pb-10">
             
@@ -72,12 +91,12 @@ export default function PatientImagesTab({
                          onChange={(e) => {
                              const file = e.target.files[0];
                              if (file) {
-                            handleImageUpload(file); // Extraemos la foto y mandamos SOLO la foto
-                              }
-                           e.target.value = ''; 
+                                 handleImageUpload(file);
+                             }
+                             e.target.value = ''; 
                          }} 
                          disabled={uploading}
-                          title="Haz clic o arrastra un archivo aquí"
+                         title="Haz clic o arrastra un archivo aquí"
                         />
                         
                         {uploading ? (
@@ -114,14 +133,35 @@ export default function PatientImagesTab({
                             {currentImages.map(img => (
                                 <div key={img.id} className="relative group rounded-3xl overflow-hidden aspect-square border border-[#DFD2C4]/60 bg-[#FDFBF7] shadow-sm hover:shadow-md transition-shadow">
                                     
-                                    <div className="w-full h-full object-cover">
+                                    {/* ETIQUETA DE DIENTE PERMANENTE (Si existe) */}
+                                    {img.tooth && (
+                                        <div className="absolute top-3 left-3 bg-[#5B6651] text-white px-2 py-1 rounded-lg text-[10px] font-black shadow-md z-10 flex items-center gap-1">
+                                            🦷 Pieza {img.tooth}
+                                        </div>
+                                    )}
+
+                                    <div className="w-full h-full object-cover cursor-pointer">
                                         <PrivateImage img={img} onClick={setSelectedImg} />
                                     </div>
                                     
-                                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-[#312923]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                        <p className="text-[10px] font-bold text-white truncate">
+                                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-[#312923]/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-20 flex flex-col justify-end">
+                                        <p className="text-[10px] font-bold text-white truncate mb-2 pointer-events-none">
                                             {img.name || 'Archivo Adjunto'}
                                         </p>
+                                        
+                                        {/* NUEVO: SELECTOR DE DIENTE */}
+                                        <select 
+                                            value={img.tooth || ''}
+                                            onChange={(e) => handleToothChange(img.id, e.target.value)}
+                                            className="w-full text-[10px] font-black uppercase tracking-widest bg-white/20 text-white border border-white/30 rounded-lg px-2 py-1.5 outline-none cursor-pointer hover:bg-white/30 transition-colors backdrop-blur-sm appearance-none"
+                                        >
+                                            <option value="" className="text-black">General (Sin pieza)</option>
+                                            <optgroup label="Seleccionar Pieza Dental" className="text-black">
+                                                {adultTeeth.map(t => (
+                                                    <option key={t} value={t}>Pieza {t}</option>
+                                                ))}
+                                            </optgroup>
+                                        </select>
                                     </div>
                                     
                                     <button 

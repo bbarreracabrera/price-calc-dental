@@ -1,13 +1,13 @@
 import React from 'react';
 import { 
     X, Cloud, LogOut, TrendingUp, CalendarClock, User, Users, 
-    Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield 
+    Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield, ShieldCheck 
 } from 'lucide-react';
 
 export default function Sidebar({
     mobileMenuOpen, setMobileMenuOpen, config, session, userRole,
     activeTab, setActiveTab, setSelectedPatientId, supabase,
-    isWorkspaceActive // Recibimos la prop que nos dice si debemos colapsar
+    isWorkspaceActive 
 }) {
     const getMenuItems = () => {
         const base = [
@@ -21,12 +21,13 @@ export default function Sidebar({
         if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'clinical', label: 'Recetas', icon: Stethoscope }); }
         if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'catalog', label: 'Arancel', icon: Library }); }
         if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'lab', label: 'Laboratorio', icon: FlaskConical }); }
+        // NUEVO: Módulo de Bioseguridad y Esterilización
+        if (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') { base.push({ id: 'sterilization', label: 'Esterilización', icon: ShieldCheck }); }
         if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
         base.push({ id: 'terms', label: 'Legal', icon: Shield });
         return base;
     };
 
-    // Clases dinámicas dependiendo de si está colapsado o no
     const sidebarWidth = isWorkspaceActive ? 'w-20' : 'w-64';
     const hideOnCollapse = isWorkspaceActive ? 'hidden' : 'block';
     const centerIcons = isWorkspaceActive ? 'justify-center' : '';
@@ -78,7 +79,7 @@ export default function Sidebar({
                     return (
                         <button 
                             key={item.id} 
-                            title={isWorkspaceActive ? item.label : ''} // Muestra tooltip en modo icono
+                            title={isWorkspaceActive ? item.label : ''} 
                             onClick={() => { 
                                 setActiveTab(item.id); 
                                 if(item.id !== 'ficha') setSelectedPatientId(null); 
