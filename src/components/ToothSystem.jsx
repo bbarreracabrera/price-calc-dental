@@ -1,30 +1,33 @@
 import React from 'react';
 
-// --- MOTOR GRÁFICO DEL ODONTOGRAMA (¡INTACTO!) ---
+// --- MOTOR GRÁFICO DEL ODONTOGRAMA (UPGRADE ENTERPRISE) ---
 export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, interactive = false, activeFace = 'o', onFaceClick }) => {
     const statusArr = Array.isArray(status) ? status : (status ? [status] : []);
     
+    // Estados que afectan a todo el diente
     const isMissing = statusArr.includes('missing');
     const isCrown = statusArr.includes('crown');
+    const isExtracting = statusArr.includes('extract'); 
+    const isEndo = statusArr.includes('endo'); 
+    const isImplant = statusArr.includes('implant'); 
     
-    // Usamos los colores Boutique de nuestra paleta
     const getDiagnosticColor = (f) => {
-        if (f === 'caries') return '#ef4444'; // Mantenemos el rojo clínico para caries
-        if (f === 'filled') return '#60a5fa'; // Azul suave para resinas
-        if (f === 'sealant') return '#10b981';
-        if (f === 'fracture') return '#f97316';
+        if (f === 'caries') return '#ef4444'; 
+        if (f === 'filled') return '#60a5fa'; 
+        if (f === 'sealant') return '#10b981'; // Verde para sellantes
+        if (f === 'veneer') return '#fde047';  // Amarillo pastel para carillas
         return 'transparent';
     };
 
     const getTreatmentColor = () => {
-        if (treatment?.status === 'planned') return '#CBAAA2'; // Rosa Empolvado para planificado
-        if (treatment?.status === 'completed') return '#5B6651'; // Verde Oliva para completado
+        if (treatment?.status === 'planned') return '#CBAAA2'; 
+        if (treatment?.status === 'completed') return '#5B6651'; 
         return 'transparent';
     };
 
     const getFaceColor = (faceId) => {
         if (isMissing) return 'transparent';
-        if (isCrown && !interactive) return '#eab308'; // Mantenemos dorado para corona
+        if (isCrown && !interactive) return '#eab308'; 
         if (mode === 'tratamientos' && treatment && treatment.name) return getTreatmentColor();
         return getDiagnosticColor(faces?.[faceId]);
     };
@@ -44,7 +47,6 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
             strokeWidth="4" 
             className={`transition-all duration-300 ${interactive ? 'cursor-pointer hover:fill-[#DFD2C4]/50' : ''} ${interactive && activeFace === id && !isMissing && !isCrown ? 'stroke-[#5B6651] stroke-[8px]' : ''}`}
             onClick={(e) => { 
-                // Esto permite que el clic en la cara funcione si onFaceClick existe
                 if(interactive && onFaceClick) { 
                     e.stopPropagation(); 
                     onFaceClick(id); 
@@ -56,58 +58,78 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
 
     return (
         <div className="relative flex flex-col items-center" style={{ width: size, height: size + 20 }}>
-            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm overflow-visible">
-                <Face id="v" points="0,0 100,0 75,25 25,25" />
-                <Face id="l" points="0,100 25,75 75,75 100,100" />
-                <Face id={leftFaceId} points="0,0 25,25 25,75 0,100" />
-                <Face id={rightFaceId} points="100,0 75,25 75,75 100,100" />
-                <Face id="o" points="25,25 75,25 75,75 25,75" />
+            {/* TORNILLO DE IMPLANTE (Si aplica, se dibuja arriba o abajo dependiendo del cuadrante) */}
+            {isImplant && (
+                <svg viewBox="0 0 100 40" className={`absolute w-full h-8 ${num < 30 ? '-top-6' : '-bottom-6 rotate-180'} pointer-events-none drop-shadow-md z-0`}>
+                    <path d="M 35,5 L 65,5 L 60,35 L 40,35 Z" fill="#9ca3af" stroke="#4b5563" strokeWidth="2"/>
+                    <line x1="37" y1="10" x2="63" y2="10" stroke="#4b5563" strokeWidth="2"/>
+                    <line x1="38" y1="18" x2="62" y2="18" stroke="#4b5563" strokeWidth="2"/>
+                    <line x1="39" y1="26" x2="61" y2="26" stroke="#4b5563" strokeWidth="2"/>
+                </svg>
+            )}
 
-                {statusArr.includes('crown') && interactive && (
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm overflow-visible z-10 relative">
+                {/* Caras del Diente */}
+                {!isMissing && (
+                    <>
+                        <Face id="v" points="0,0 100,0 75,25 25,25" />
+                        <Face id="l" points="0,100 25,75 75,75 100,100" />
+                        <Face id={leftFaceId} points="0,0 25,25 25,75 0,100" />
+                        <Face id={rightFaceId} points="100,0 75,25 75,75 100,100" />
+                        <Face id="o" points="25,25 75,25 75,75 25,75" />
+                    </>
+                )}
+
+                {/* ENDODONCIA (Línea roja central) */}
+                {isEndo && !isMissing && (
+                    <line x1="50" y1="20" x2="50" y2="80" stroke="#dc2626" strokeWidth="8" strokeLinecap="round" className="pointer-events-none drop-shadow-sm" />
+                )}
+
+                {/* CORONA */}
+                {isCrown && interactive && !isMissing && (
                     <circle cx="50" cy="50" r="42" fill="none" stroke="#eab308" strokeWidth="6" className="pointer-events-none" strokeDasharray="4 2" />
                 )}
                 
-                {/* --- NUEVAS FLECHAS Y DIBUJOS --- */}
-                {/* Extrusión (Flecha Arriba) */}
+                {/* --- MOVIMIENTOS DENTARIOS --- */}
                 {(statusArr.includes('extrusion') || statusArr.includes('extruded')) && (
                     <path d="M50,85 L50,15 M30,35 L50,15 L70,35" stroke="#06b6d4" strokeWidth="10" fill="none" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none drop-shadow-md" />
                 )}
-                {/* Intrusión (Flecha Abajo) */}
                 {(statusArr.includes('intrusion') || statusArr.includes('intruded')) && (
                     <path d="M50,15 L50,85 M30,65 L50,85 L70,65" stroke="#06b6d4" strokeWidth="10" fill="none" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none drop-shadow-md" />
                 )}
-                
-                {/* Mesioversión (Flecha Curva Hacia Mesial) - Depende del cuadrante */}
                 {statusArr.includes('mesioversion') && (
                     <path d={isRightQuadrant ? "M80,80 Q50,110 20,80 M40,65 L20,80 L35,95" : "M20,80 Q50,110 80,80 M60,65 L80,80 L65,95"} stroke="#a855f7" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none drop-shadow-md" />
                 )}
-
-                {/* Distoversión (Flecha Curva Hacia Distal) - Depende del cuadrante */}
                 {statusArr.includes('distoversion') && (
                     <path d={isRightQuadrant ? "M20,80 Q50,110 80,80 M60,65 L80,80 L65,95" : "M80,80 Q50,110 20,80 M40,65 L20,80 L35,95"} stroke="#a855f7" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none drop-shadow-md" />
                 )}
-
-                {/* Diastema (Dos líneas paralelas separadas) */}
                 {statusArr.includes('diastema') && (
                     <g className="pointer-events-none drop-shadow-sm">
                         <line x1={isRightQuadrant ? "110" : "-10"} y1="20" x2={isRightQuadrant ? "110" : "-10"} y2="80" stroke="#9A8F84" strokeWidth="6" strokeLinecap="round" />
                         <line x1={isRightQuadrant ? "125" : "-25"} y1="20" x2={isRightQuadrant ? "125" : "-25"} y2="80" stroke="#9A8F84" strokeWidth="6" strokeLinecap="round" />
                     </g>
                 )}
+
+                {/* EXTRACCIÓN INDICADA (Cruz Roja) */}
+                {isExtracting && !isMissing && (
+                    <g className="pointer-events-none drop-shadow-md">
+                        <line x1="20" y1="80" x2="80" y2="20" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" />
+                        <line x1="20" y1="20" x2="80" y2="80" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" />
+                    </g>
+                )}
             </svg>
             
-            {isMissing && <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none text-red-500 font-black text-5xl opacity-80" style={{ height: size }}>X</div>}
+            {/* AUSENTE (Giant X) */}
+            {isMissing && <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none text-[#9A8F84] font-black text-5xl opacity-80 z-20" style={{ height: size }}>X</div>}
             
-            {interactive && <span className={`text-[11px] font-black mt-1 text-[#312923]`}>{number}</span>}
+            {interactive && <span className={`text-[11px] font-black mt-1 z-20 relative ${isMissing ? 'text-[#9A8F84] opacity-50' : 'text-[#312923]'}`}>{number}</span>}
         </div>
     );
 };
 
-// --- COMPONENTE DIENTE MODO DUAL ---
+// --- COMPONENTE DIENTE MODO DUAL (Periodontograma) ---
 export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, data, mode, perioFace = 'v' }) => {
     
-    // --- NUEVO LECTOR DE B.O.P. Y PUS PARA LA VISTA PERIO ---
-    // Ahora busca específicamente en la cara (ej: bop_v o bop_l)
     const hasBOP = perioData && perioData[`bop_${perioFace}`] && perioData[`bop_${perioFace}`].some(v => v === true);
     const hasPus = perioData && perioData[`pus_${perioFace}`] && perioData[`pus_${perioFace}`].some(v => v === true);
     const hasAlert = (perioData?.mobility > 0) || (perioData?.furcation > 0);
@@ -127,23 +149,14 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
             );
         }
 
-        // --- EL NUEVO MOTOR DE LÍNEAS DE PERIO ---
-        // '30' es la altura de la encía sana. 
-        // Cada mm baja la línea 5 píxeles (multiplicador).
         const getY = (val) => 30 + ((parseInt(val) || 0) * 5); 
         
-        // Identificamos si es cuadrante izquierdo o derecho para saber de qué lado leer el array
-        // Cuadrantes 1 y 4 (11-18, 41-48) tienen Distal a la Izquierda.
-        // Cuadrantes 2 y 3 (21-28, 31-38) tienen Mesial a la Izquierda.
         const num = parseInt(number);
         const isLeftQuad = (num >= 21 && num <= 28) || (num >= 31 && num <= 38) || (num >= 61 && num <= 65) || (num >= 71 && num <= 75); 
         
-        // Extraemos los arreglos de 3 posiciones para la cara actual
         const mgArray = perioData?.[`mg_${perioFace}`] || ['','',''];
         const pdArray = perioData?.[`pd_${perioFace}`] || ['','',''];
 
-        // En el nuevo sistema, el array SIEMPRE es [Distal, Centro, Mesial].
-        // Si estamos en un cuadrante izquierdo, visualmente en la pantalla debemos invertir [M, C, D]
         let mgL, mgC, mgR, pdL, pdC, pdR;
 
         if (isLeftQuad) {
@@ -158,7 +171,6 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
             pdR = getY((parseInt(mgArray[2]) || 0) + (parseInt(pdArray[2]) || 0));
         }
 
-        // Verificamos si hay al menos un número ingresado para dibujar la línea
         const hasData = pdArray.some(val => val !== '') || mgArray.some(val => val !== '');
 
         return (
@@ -176,19 +188,13 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
                 </span>
 
                 <svg viewBox="0 0 100 80" className="w-full h-12 drop-shadow-sm mt-2 overflow-visible">
-                    {/* El Diente Gris de Fondo */}
                     <path d="M 15,25 Q 50,-5 85,25 L 80,75 Q 50,90 20,75 Z" fill={'#e5e7eb'} fillOpacity={0.6} />
-                    {/* Línea blanca punteada (Unión Amelocementaria teórica) */}
                     <line x1="0" y1="30" x2="100" y2="30" stroke="white" strokeWidth="2" strokeDasharray="4" opacity="0.3" />
                     
-                    {/* ¡LAS LÍNEAS DE PERIO RECUPERADAS! */}
                     {hasData && (
                         <>
-                            {/* Relleno rojo entre Margen y Profundidad */}
                             <polygon points={`0,${mgL} 50,${mgC} 100,${mgR} 100,${pdR} 50,${pdC} 0,${pdL}`} fill="#ef4444" fillOpacity="0.4" />
-                            {/* Línea Azul de Margen (Recesión) */}
                             <polyline points={`0,${mgL} 50,${mgC} 100,${mgR}`} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                            {/* Línea Roja de Profundidad de Sondaje */}
                             <polyline points={`0,${pdL} 50,${pdC} 100,${pdR}`} fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                         </>
                     )}
@@ -198,7 +204,7 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
         );
     }
     
-    // --- ODONTOGRAMA NORMAL (INTACTO) ---
+    // --- ODONTOGRAMA NORMAL ---
     return (
         <div onClick={onClick} className="relative group">
             <ToothSVG 

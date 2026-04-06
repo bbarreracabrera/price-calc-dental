@@ -2,10 +2,10 @@ import React from 'react';
 import { 
     ArrowLeft, AlertTriangle, User, FileQuestion, Activity, 
     FileBarChart, FileText, FileSignature, ImageIcon,
-    Mic, MicOff, Sparkles 
+    Mic, MicOff, Sparkles, Calculator 
 } from 'lucide-react';
 
-// --- IMPORTACIÓN DE PESTAÑAS (Movidas desde App.jsx) ---
+// --- IMPORTACIÓN DE PESTAÑAS ---
 import PatientPersonalTab from './PatientPersonalTab';
 import PatientAnamnesisTab from './PatientAnamnesisTab';
 import OdontogramTab from './OdontogramTab';
@@ -13,6 +13,7 @@ import PerioTab from './PerioTab';
 import PatientEvolutionTab from './PatientEvolutionTab';
 import PatientConsentTab from './PatientConsentTab';
 import PatientImagesTab from './PatientImagesTab';
+import ActiveQuotesTab from './ActiveQuotesTab'; // <-- Nuevo componente
 
 export default function PatientWorkspace({
     // Datos y Estado
@@ -40,12 +41,13 @@ export default function PatientWorkspace({
 }) {
     const p = getPatient(selectedPatientId);
 
-    // Configuración de botones de pestañas
+    // Configuración de botones de pestañas (Incluimos 'Presupuestos')
     const tabButtons = [
         {id:'personal', label:'Datos', icon: User}, 
         {id:'anamnesis', label:'Fichas / Anam.', icon: FileQuestion, restricted: true}, 
         {id:'clinical', label:'Odontograma', icon: Activity}, 
         {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, 
+        {id:'quotes', label:'Presupuestos', icon: Calculator}, // <-- NUEVA PESTAÑA
         {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, 
         {id:'consent', label:'Consentimientos', icon: FileSignature}, 
         {id:'images', label:'Galería', icon: ImageIcon}
@@ -56,7 +58,6 @@ export default function PatientWorkspace({
             
             {/* --- ENCABEZADO DEL DOSSIER --- */}
             <div className="flex flex-col gap-3 border-b border-[#DFD2C4]/50 pb-5">
-                {/* Botón Volver (Estilo Boutique) */}
                 <button 
                     onClick={() => setSelectedPatientId(null)} 
                     className="flex items-center gap-2 text-[11px] font-bold text-[#9A8F84] hover:text-[#5B6651] transition-colors w-fit tracking-widest uppercase"
@@ -64,9 +65,10 @@ export default function PatientWorkspace({
                     <ArrowLeft size={14}/> VOLVER AL BUSCADOR
                 </button>
                 
-                {/* Nombre Paciente */}
                 <div className="flex justify-between items-start">
-                    <h2 className="text-4xl font-black text-[#312923] tracking-tight capitalize">{p.personal?.legalName || 'Paciente'}</h2>
+                    <h2 className="text-4xl font-black text-[#312923] tracking-tight capitalize">
+                        {p.personal?.legalName || 'Paciente'}
+                    </h2>
                 </div>
             </div>
 
@@ -91,10 +93,10 @@ export default function PatientWorkspace({
                 return null;
             })()}
 
-            {/* --- NAVEGACIÓN DE PESTAÑAS (Estilo "Folders" de Archivo) --- */}
+            {/* --- NAVEGACIÓN DE PESTAÑAS --- */}
             <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar border-b border-[#DFD2C4]/30">
                 {tabButtons.map(b => {
-                    if (userRole === 'assistant' && b.restricted) return null; // Role Protection
+                    if (userRole === 'assistant' && b.restricted) return null; 
                     const isActive = patientTab === b.id;
                     return (
                         <button 
@@ -115,7 +117,7 @@ export default function PatientWorkspace({
             {/* --- ÁREA DE RENDERIZADO DE PESTAÑAS --- */}
             <div className="bg-white rounded-b-[2rem] rounded-tr-[2rem] p-6 sm:p-8 border border-[#DFD2C4]/40 shadow-sm" style={{ boxShadow: '0 10px 25px -5px rgba(91, 102, 81, 0.05)', marginTop: '-1px' }}>
                 
-                {/* --- BANNER DE ASISTENTE DE VOZ GLOBAL (Solo visible en Clínico y Perio) --- */}
+                {/* Asistente de Voz Global (Solo en Odontograma y Perio) */}
                 {(patientTab === 'clinical' || patientTab === 'perio') && (
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-gradient-to-r from-[#FDFBF7] to-white border border-[#DFD2C4]/60 p-4 rounded-3xl shadow-sm gap-4 mb-8 animate-in fade-in">
                         <div className="flex items-center gap-4">
@@ -149,12 +151,22 @@ export default function PatientWorkspace({
                     </div>
                 )}
 
+                {/* Renderizado de Componentes */}
                 {patientTab === 'personal' && <PatientPersonalTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} sendWhatsApp={sendWhatsApp} config={config} />}
+                
                 {patientTab === 'anamnesis' && <PatientAnamnesisTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} session={session} notify={notify} activeFormType={activeFormType} setActiveFormType={setActiveFormType} viewingForm={viewingForm} setViewingForm={setViewingForm} />}
+                
                 {patientTab === 'clinical' && <OdontogramTab themeMode={themeMode} odontogramMode={odontogramMode} setOdontogramMode={setOdontogramMode} odontogramType={odontogramType} setOdontogramType={setOdontogramType} getPatient={getPatient} selectedPatientId={selectedPatientId} setToothModalData={setToothModalData} setModal={setModal} userRole={userRole} catalog={catalog} setQuoteItems={setQuoteItems} notify={notify} setActiveTab={setActiveTab} sessionData={sessionData} setSessionData={setSessionData} savePatientData={savePatientData} />}
+                
                 {patientTab === 'perio' && <PerioTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} savePerioSnapshot={savePerioSnapshot} getPerioStats={getPerioStats} setToothModalData={setToothModalData} setPerioData={setPerioData} setModal={setModal} restoreSnapshot={restoreSnapshot} />}              
+                
+                {/* --- NUEVO: PESTAÑA DE PRESUPUESTOS EN PROCESO --- */}
+                {patientTab === 'quotes' && <ActiveQuotesTab getPatient={getPatient} selectedPatientId={selectedPatientId} />} 
+                
                 {patientTab === 'evolution' && <PatientEvolutionTab themeMode={themeMode} newEvolution={newEvolution} setNewEvolution={setNewEvolution} isListening={isListening} toggleVoice={toggleVoice} voiceStatus={voiceStatus} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} session={session} logAction={logAction} />}
+                
                 {patientTab === 'consent' && <PatientConsentTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} modal={modal} setModal={setModal} consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate} consentText={consentText} setConsentText={setConsentText} generatePDF={handleGeneratePDF} />}
+                
                 {patientTab === 'images' && <PatientImagesTab themeMode={themeMode} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} activeFolder={activeFolder} setActiveFolder={setActiveFolder} handleImageUpload={handleImageUpload} uploading={uploading} setSelectedImg={setSelectedImg} notify={notify} />}
             </div>
         </div>

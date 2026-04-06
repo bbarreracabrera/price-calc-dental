@@ -4,7 +4,8 @@ import { Tooth } from './ToothSystem';
 import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED } from '../constants';
 import { 
     Search, PenTool, LayoutGrid, MousePointer2, ArrowUp, ArrowDown, 
-    ArrowLeft, ArrowRight, ArrowLeftRight, X, Check, Circle 
+    ArrowLeft, ArrowRight, ArrowLeftRight, X, Check, Circle, 
+    Minus, Scissors, Layers, Shield 
 } from 'lucide-react';
 
 export default function OdontogramTab({
@@ -15,15 +16,20 @@ export default function OdontogramTab({
 }) {
     const patient = getPatient(selectedPatientId);
     
-    // Estado para la herramienta seleccionada
     const [activeTool, setActiveTool] = useState('pointer');
 
+    // LISTA DE HERRAMIENTAS ACTUALIZADA (ENTERPRISE)
     const tools = [
         { id: 'pointer', label: 'Ver Detalle', icon: MousePointer2, color: 'text-[#5B6651]' },
         { id: 'caries', label: 'Caries', dot: 'bg-red-500', isFace: true },
         { id: 'filled', label: 'Resina', dot: 'bg-blue-400', isFace: true },
+        { id: 'sealant', label: 'Sellante', icon: Shield, color: 'text-emerald-500', isFace: true },
+        { id: 'veneer', label: 'Carilla', icon: Layers, color: 'text-yellow-400', isFace: true },
+        { id: 'endo', label: 'Endodoncia', icon: Minus, color: 'text-red-600' },
         { id: 'crown', label: 'Corona', icon: Circle, color: 'text-amber-400' },
-        { id: 'missing', label: 'Ausente', icon: X, color: 'text-red-400' },
+        { id: 'implant', label: 'Implante', icon: ArrowDown, color: 'text-gray-500' },
+        { id: 'extract', label: 'Ind. Extracción', icon: Scissors, color: 'text-red-500' },
+        { id: 'missing', label: 'Ausente', icon: X, color: 'text-[#9A8F84]' },
         { id: 'sano', label: 'Sano / Limpiar', icon: Check, color: 'text-emerald-400' },
         { id: 'extrusion', label: 'Extrusión', icon: ArrowUp, color: 'text-cyan-500' },
         { id: 'intrusion', label: 'Intrusión', icon: ArrowDown, color: 'text-cyan-500' },
@@ -33,7 +39,7 @@ export default function OdontogramTab({
     ];
 
     const handleToothClick = (n, clickedFace = 'o') => {
-        const toothData = patient.clinical.teeth[n] || {};
+        const toothData = patient.clinical?.teeth?.[n] || {};
 
         if (activeTool === 'pointer') {
             setToothModalData({ 
@@ -49,23 +55,28 @@ export default function OdontogramTab({
 
         if (savePatientData) {
             let updatedTooth = { ...toothData };
-            
-            // Convertimos el status actual a un Array para permitir múltiples estados (ej. ['extrusion', 'diastema'])
-            let currentStatus = [];
-            if (Array.isArray(updatedTooth.status)) {
-                currentStatus = [...updatedTooth.status];
-            } else if (updatedTooth.status) {
-                currentStatus = [updatedTooth.status];
-            }
+            let currentStatus = Array.isArray(updatedTooth.status) ? [...updatedTooth.status] : (updatedTooth.status ? [updatedTooth.status] : []);
 
-            // --- LÓGICA DE SUPERPOSICIÓN DE ESTADOS CLÍNICOS ---
+            // LÓGICA DE SUPERPOSICIÓN ACTUALIZADA
             if (activeTool === 'sano') {
                 updatedTooth.status = [];
                 updatedTooth.faces = { v: null, l: null, m: null, d: null, o: null };
             } 
-            else if (['missing', 'crown'].includes(activeTool)) {
-                updatedTooth.status = [activeTool]; 
-                updatedTooth.faces = { v: null, l: null, m: null, d: null, o: null }; 
+            else if (['missing', 'crown', 'endo', 'implant', 'extract'].includes(activeTool)) {
+                if (activeTool === 'missing') {
+                    updatedTooth.status = ['missing']; 
+                    updatedTooth.faces = { v: null, l: null, m: null, d: null, o: null }; 
+                } else {
+                    if (currentStatus.includes('missing')) {
+                        currentStatus = currentStatus.filter(s => s !== 'missing');
+                    }
+                    if (currentStatus.includes(activeTool)) {
+                        currentStatus = currentStatus.filter(s => s !== activeTool);
+                    } else {
+                        currentStatus.push(activeTool);
+                    }
+                    updatedTooth.status = currentStatus;
+                }
             } 
             else if (['extrusion', 'intrusion', 'mesioversion', 'distoversion', 'diastema'].includes(activeTool)) {
                 if (currentStatus.includes('missing')) {
@@ -78,7 +89,7 @@ export default function OdontogramTab({
                 }
                 updatedTooth.status = currentStatus;
             } 
-            else if (['caries', 'filled'].includes(activeTool)) {
+            else if (['caries', 'filled', 'sealant', 'veneer'].includes(activeTool)) {
                 updatedTooth.faces = { ...(updatedTooth.faces || {}), [clickedFace]: activeTool };
                 if (currentStatus.includes('missing')) {
                     currentStatus = currentStatus.filter(s => s !== 'missing');
@@ -90,7 +101,7 @@ export default function OdontogramTab({
                 ...patient,
                 clinical: {
                     ...patient.clinical,
-                    teeth: { ...patient.clinical.teeth, [n]: updatedTooth }
+                    teeth: { ...patient.clinical?.teeth, [n]: updatedTooth }
                 }
             };
             savePatientData(selectedPatientId, updatedPatient);
@@ -108,7 +119,7 @@ export default function OdontogramTab({
     return (
         <div className="flex flex-col gap-5 animate-in fade-in pb-10">
             
-            {/* --- CONTROLES SUPERIORES BOUTIQUE --- */}
+            {/* CONTROLES SUPERIORES */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
                 <div className="flex bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4] shadow-sm w-full md:w-auto">
                     <button onClick={() => setOdontogramMode('hallazgos')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${odontogramMode === 'hallazgos' ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#9A8F84] hover:text-[#5B6651]'}`}>
@@ -128,9 +139,9 @@ export default function OdontogramTab({
                 </div>
             </div>
 
-            {/* --- TOOLBAR SUPERIOR HORIZONTAL --- */}
+            {/* TOOLBAR SUPERIOR HORIZONTAL */}
             <div className="w-full bg-white p-3 rounded-[1.5rem] border border-[#DFD2C4]/60 shadow-sm flex flex-wrap items-center justify-center gap-2 relative z-10">
-                <span className="text-[9px] font-black text-[#9A8F84] uppercase tracking-widest mr-2 hidden xl:block">Acción Rápida:</span>
+                <span className="text-[9px] font-black text-[#9A8F84] uppercase tracking-widest mr-2 hidden xl:block">Herramientas:</span>
                 
                 {tools.map(tool => (
                     <button 
@@ -153,12 +164,12 @@ export default function OdontogramTab({
                 ))}
             </div>
 
-            {/* --- LIENZO DEL ODONTOGRAMA --- */}
+            {/* LIENZO DEL ODONTOGRAMA */}
             <Card 
                 className="w-full flex flex-col items-center gap-8 py-10 bg-white border-[#DFD2C4]/40 shadow-sm overflow-x-auto relative"
                 style={{ ...hideScrollStyles, boxShadow: 'inset 0 10px 30px -5px rgba(91,102,81,0.03)' }}
             >
-                <div className="flex flex-col items-center gap-8 w-max px-4" style={hideScrollStyles}>
+                <div className="flex flex-col items-center gap-8 w-max px-4 pt-4" style={hideScrollStyles}>
                     
                     {/* Superior Adulto */}
                     {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
@@ -166,7 +177,7 @@ export default function OdontogramTab({
                             {TEETH_UPPER.map(n => (
                                 <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
                                     <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
-                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical?.teeth?.[n]?.status} data={{...patient.clinical?.teeth?.[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
                                     <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">P</span>
                                 </div>
                             ))}
@@ -179,7 +190,7 @@ export default function OdontogramTab({
                             {TEETH_UPPER_PED.map(n => (
                                 <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
                                     <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
-                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical?.teeth?.[n]?.status} data={{...patient.clinical?.teeth?.[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
                                     <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">P</span>
                                 </div>
                             ))}
@@ -194,7 +205,7 @@ export default function OdontogramTab({
                             {TEETH_LOWER_PED.map(n => (
                                 <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
                                     <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">L</span>
-                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical?.teeth?.[n]?.status} data={{...patient.clinical?.teeth?.[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
                                     <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
                                 </div>
                             ))}
@@ -207,7 +218,7 @@ export default function OdontogramTab({
                             {TEETH_LOWER.map(n => (
                                 <div key={n} className="flex flex-col items-center group cursor-pointer hover:scale-105 transition-transform relative pt-4 pb-4">
                                     <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">L</span>
-                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical.teeth[n]?.status} data={{...patient.clinical.teeth[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
+                                    <Tooth number={n} mode={odontogramMode} status={patient.clinical?.teeth?.[n]?.status} data={{...patient.clinical?.teeth?.[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
                                     <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
                                 </div>
                             ))}
@@ -216,7 +227,7 @@ export default function OdontogramTab({
                 </div>
             </Card>
             
-            {/* --- LISTA DE RESUMEN Y ACCIÓN --- */}
+            {/* LISTA DE RESUMEN Y ACCIÓN */}
             <div className="w-full mt-2 space-y-4">
                 <div className="flex justify-between items-end border-b border-[#DFD2C4] pb-4">
                     <div>
@@ -248,33 +259,36 @@ export default function OdontogramTab({
                 {/* Lista de Detalles */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
                     {[...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].map(n => {
-                        const toothData = patient.clinical.teeth[n];
+                        const toothData = patient.clinical?.teeth?.[n];
                         if (!toothData) return null;
                         
-                        // PARSEO DE ESTADOS MEJORADO (Ahora lee si es caries o resina desde las caras)
                         const renderStatuses = () => {
                             let sArray = Array.isArray(toothData.status) ? [...toothData.status] : [toothData.status];
-                            sArray = sArray.filter(Boolean); // Quita nulos
+                            sArray = sArray.filter(Boolean); 
                             
-                            // MAGIA: Leer las caras para ver si el dentista pintó Caries o Resina
                             if (toothData.faces) {
                                 const faceValues = Object.values(toothData.faces);
                                 if (faceValues.includes('caries') && !sArray.includes('caries')) sArray.push('caries');
                                 if (faceValues.includes('filled') && !sArray.includes('filled')) sArray.push('filled');
+                                if (faceValues.includes('sealant') && !sArray.includes('sealant')) sArray.push('sealant');
+                                if (faceValues.includes('veneer') && !sArray.includes('veneer')) sArray.push('veneer');
                             }
 
                             if (sArray.length === 0) return 'Hallazgo Registrado';
                             
+                            // NOMBRES ACTUALIZADOS
                             const names = {
                                 missing: 'Ausente', crown: 'Corona', extrusion: 'Extrusión',
                                 intrusion: 'Intrusión', mesioversion: 'Mesioversión',
                                 distoversion: 'Distoversión', diastema: 'Diastema',
-                                caries: 'Caries', filled: 'Resina'
+                                caries: 'Caries', filled: 'Resina', endo: 'Endodoncia',
+                                implant: 'Implante', extract: 'Ext. Indicada',
+                                sealant: 'Sellante', veneer: 'Carilla'
                             };
                             return sArray.map(s => names[s] || s).join(' + ');
                         };
 
-                        const hasContent = toothData.status || (toothData.faces && Object.values(toothData.faces).some(v => v)) || (toothData.notes?.trim()) || toothData.treatment?.name;
+                        const hasContent = toothData.status?.length > 0 || (toothData.faces && Object.values(toothData.faces).some(v => v)) || (toothData.notes?.trim()) || toothData.treatment?.name;
                         
                         if (hasContent) {
                             return (

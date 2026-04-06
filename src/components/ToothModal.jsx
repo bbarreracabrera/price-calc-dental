@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, X, Mic, MicOff, Droplets, Image as ImageIcon, ZoomIn, Calendar } from 'lucide-react';
 import { Card } from './UIComponents';
 import { ToothSVG } from './ToothSystem';
-import { PrivateImage } from './SystemModals'; // <-- Importamos para ver las fotos seguras
+import { PrivateImage } from './SystemModals'; 
 
 export default function ToothModal({
     themeMode, toothModalData, setToothModalData, setModal, activeTab,
@@ -12,20 +12,18 @@ export default function ToothModal({
 }) {
     const patient = getPatient(selectedPatientId);
     
-    // Estado local para abrir la foto en grande sin salir del modal
+    // Visor de radiografías
     const [localZoomImg, setLocalZoomImg] = useState(null);
 
-    // --- MAGIA: Buscar radiografías asociadas a este diente y ordenarlas ---
     const relatedImages = patient.images?.filter(img => img.tooth === toothModalData.id.toString())
-        .sort((a, b) => b.id - a.id) || []; // Ordenamos de más nueva a más antigua
+        .sort((a, b) => b.id - a.id) || []; 
 
-    // --- FUNCIÓN PARA B.O.P. Y PUS POR SITIO ESPECÍFICO ---
     const handlePerioToggle = (face, field, index) => {
         setToothModalData(prev => {
             const currentPerio = prev.perio || {};
-            const key = `${field}_${face}`; // Ej: 'bop_v' o 'pus_l'
+            const key = `${field}_${face}`; 
             const newArray = [...(currentPerio[key] || [false, false, false])];
-            newArray[index] = !newArray[index]; // Alterna true/false
+            newArray[index] = !newArray[index]; 
             return { ...prev, perio: { ...currentPerio, [key]: newArray } };
         });
     };
@@ -36,7 +34,7 @@ export default function ToothModal({
 
             <Card className="w-full max-w-md h-full relative z-10 shadow-2xl border-l border-[#DFD2C4]/50 flex flex-col animate-in slide-in-from-right duration-300 rounded-none bg-white">
                 
-                {/* ENCABEZADO CON NAVEGACIÓN RÁPIDA */}
+                {/* --- ENCABEZADO Y NAVEGACIÓN --- */}
                 <div className="p-6 border-b border-[#DFD2C4]/40 flex justify-between items-center bg-[#FDFBF7] shrink-0">
                     <div className="flex items-center gap-3">
                         <button onClick={() => goToAdjacentTooth(-1)} className="p-2 bg-white hover:bg-[#DFD2C4]/30 border border-[#DFD2C4]/50 text-[#9A8F84] rounded-xl transition-all"><ChevronLeft size={20} /></button>
@@ -46,7 +44,7 @@ export default function ToothModal({
                     <button onClick={() => setModal(null)} className="p-2 text-[#9A8F84] hover:bg-[#DFD2C4]/30 hover:text-[#312923] rounded-xl transition-all border border-transparent hover:border-[#DFD2C4]/50"><X size={24} /></button>
                 </div>
 
-                {/* --- NUEVO: CARRUSEL HISTÓRICO DE RADIOGRAFÍAS --- */}
+                {/* --- CARRUSEL DE RADIOGRAFÍAS --- */}
                 {relatedImages.length > 0 && (
                     <div className="px-6 pt-5 pb-2 bg-white border-b border-[#DFD2C4]/30 shrink-0">
                         <div className="flex justify-between items-end mb-3">
@@ -60,16 +58,13 @@ export default function ToothModal({
                         
                         <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-3 hide-scrollbar">
                             {relatedImages.map(img => {
-                                // Intentamos extraer una fecha legible si existe
                                 const dateStr = img.created_at ? new Date(img.created_at).toLocaleDateString('es-CL') : 'Histórico';
-                                
                                 return (
                                     <div 
                                         key={img.id} 
                                         className="relative shrink-0 w-24 h-24 rounded-2xl overflow-hidden border border-[#DFD2C4] bg-[#FDFBF7] shadow-sm group cursor-pointer hover:border-[#CBAAA2] transition-colors"
                                     >
                                         <div className="w-full h-full object-cover">
-                                            {/* Usamos el componente PrivateImage y le pasamos nuestra función local de zoom */}
                                             <PrivateImage img={img} onClick={setLocalZoomImg} />
                                         </div>
                                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#312923]/80 to-transparent p-2 pt-6 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end pointer-events-none">
@@ -85,7 +80,7 @@ export default function ToothModal({
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-white">
                     
-                    {/* --- SECCIÓN 1: PERIODONTOGRAMA --- */}
+                    {/* --- PERIODONTOGRAMA --- */}
                     {toothModalData.mode === 'perio' && (
                         <div className="p-5 border border-[#DFD2C4]/50 rounded-[2rem] bg-[#FDFBF7] shadow-inner animate-in fade-in">
                             <h3 className="text-xs font-black text-[#5B6651] uppercase tracking-widest mb-4 border-b border-[#DFD2C4]/50 pb-2 flex items-center justify-between">
@@ -154,7 +149,6 @@ export default function ToothModal({
                                 </div>
                             ))}
 
-                            {/* ALERTAS GLOBALES DEL DIENTE */}
                             <div className="grid grid-cols-2 gap-3 mt-4">
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] ml-1">Movilidad</label>
@@ -168,7 +162,7 @@ export default function ToothModal({
                         </div>
                     )}
 
-                    {/* --- SECCIÓN 2: ODONTOGRAMA --- */}
+                    {/* --- ODONTOGRAMA Y DETALLE CLINICO --- */}
                     {toothModalData.mode !== 'perio' && (
                         <>
                             <div className="flex bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/50 shadow-sm">
@@ -184,18 +178,25 @@ export default function ToothModal({
                                             <p className="text-[10px] font-black text-[#9A8F84] uppercase tracking-[0.2em]">Cara: <span className="text-[#5B6651] ml-2">{toothModalData.activeFace === 'v' ? 'Vestibular' : toothModalData.activeFace === 'l' ? 'Lingual/Palatino' : toothModalData.activeFace === 'm' ? 'Mesial' : toothModalData.activeFace === 'd' ? 'Distal' : 'Oclusal'}</span></p>
                                         </div>
                                     </div>
+                                    
+                                    {/* --- BOTONES ENTERPRISE --- */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2.5">
                                             <span className="text-[10px] font-black text-[#9A8F84] uppercase tracking-widest ml-1 border-b border-[#DFD2C4]/50 pb-1 block">En Cara</span>
-                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'caries'}})} className="w-full p-3.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white border border-red-200 rounded-2xl text-[11px] font-black transition-all shadow-sm">🔴 CARIES</button>
-                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'filled'}})} className="w-full p-3.5 bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-200 rounded-2xl text-[11px] font-black transition-all shadow-sm">🔵 RESINA</button>
-                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: null}})} className="w-full p-3.5 bg-[#FDFBF7] text-[#6B615A] hover:bg-white hover:text-[#312923] border border-[#DFD2C4] rounded-2xl text-[11px] font-black transition-all shadow-sm">⚪ LIMPIAR CARA</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'caries'}})} className="w-full p-2.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white border border-red-200 rounded-xl text-[10px] font-black transition-all shadow-sm">🔴 CARIES</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'filled'}})} className="w-full p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-200 rounded-xl text-[10px] font-black transition-all shadow-sm">🔵 RESINA</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'sealant'}})} className="w-full p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 rounded-xl text-[10px] font-black transition-all shadow-sm">🛡️ SELLANTE</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: 'veneer'}})} className="w-full p-2.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-400 hover:text-white border border-yellow-200 rounded-xl text-[10px] font-black transition-all shadow-sm">✨ CARILLA</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, faces: {...toothModalData.faces, [toothModalData.activeFace || 'o']: null}})} className="w-full p-2.5 bg-[#FDFBF7] text-[#6B615A] hover:bg-white hover:text-[#312923] border border-[#DFD2C4] rounded-xl text-[10px] font-black transition-all shadow-sm">⚪ LIMPIAR CARA</button>
                                         </div>
                                         <div className="space-y-2.5">
                                             <span className="text-[10px] font-black text-[#9A8F84] uppercase tracking-widest ml-1 border-b border-[#DFD2C4]/50 pb-1 block">En Pieza Entera</span>
-                                            <button onClick={() => setToothModalData({...toothModalData, status: ['crown']})} className="w-full p-3.5 bg-amber-50 text-amber-600 hover:bg-amber-400 hover:text-white border border-amber-200 rounded-2xl text-[11px] font-black transition-all shadow-sm">🟡 CORONA</button>
-                                            <button onClick={() => setToothModalData({...toothModalData, status: ['missing'], faces: {}})} className="w-full p-3.5 bg-[#FDFBF7] text-[#9A8F84] hover:bg-[#9A8F84] hover:text-white border border-[#DFD2C4] rounded-2xl text-[11px] font-black transition-all shadow-sm">❌ AUSENTE</button>
-                                            <button onClick={() => setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status: []})} className="w-full p-3.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 rounded-2xl text-[11px] font-black transition-all shadow-sm">✅ SANO / LIMPIAR</button>
+                                            <button onClick={() => setToothModalData(prev => ({...prev, status: prev.status?.includes('endo') ? prev.status.filter(s=>s!=='endo') : [...(prev.status||[]), 'endo']}))} className="w-full p-2.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white border border-rose-200 rounded-xl text-[10px] font-black transition-all shadow-sm">⚡ ENDODONCIA</button>
+                                            <button onClick={() => setToothModalData(prev => ({...prev, status: prev.status?.includes('implant') ? prev.status.filter(s=>s!=='implant') : [...(prev.status||[]), 'implant']}))} className="w-full p-2.5 bg-slate-100 text-slate-600 hover:bg-slate-500 hover:text-white border border-slate-300 rounded-xl text-[10px] font-black transition-all shadow-sm">🔩 IMPLANTE</button>
+                                            <button onClick={() => setToothModalData(prev => ({...prev, status: prev.status?.includes('crown') ? prev.status.filter(s=>s!=='crown') : [...(prev.status||[]), 'crown']}))} className="w-full p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-400 hover:text-white border border-amber-200 rounded-xl text-[10px] font-black transition-all shadow-sm">🟡 CORONA</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, status: ['extract'], faces: {}})} className="w-full p-2.5 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white border border-red-200 rounded-xl text-[10px] font-black transition-all shadow-sm">✂️ EXT. INDICADA</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, status: ['missing'], faces: {}})} className="w-full p-2.5 bg-[#FDFBF7] text-[#9A8F84] hover:bg-[#9A8F84] hover:text-white border border-[#DFD2C4] rounded-xl text-[10px] font-black transition-all shadow-sm">❌ AUSENTE</button>
+                                            <button onClick={() => setToothModalData({...toothModalData, faces: {v:null,l:null,m:null,d:null,o:null}, status: []})} className="w-full p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 rounded-xl text-[10px] font-black transition-all shadow-sm">✅ SANO / LIMPIAR</button>
                                         </div>
                                     </div>
                                     <div className="pt-2">
@@ -214,20 +215,20 @@ export default function ToothModal({
                                             <button onClick={() => setToothModalData({...toothModalData, treatment: {...toothModalData.treatment, status: 'completed'}})} className={`p-3.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${toothModalData.treatment?.status === 'completed' ? 'bg-[#5B6651] border-[#5B6651] text-white shadow-md' : 'bg-white text-[#9A8F84] border-[#DFD2C4]'}`}>Realizado</button>
                                         </div>
                                     </div>
-                                    <button onClick={() => setToothModalData({...toothModalData, treatment: null})} className="w-full p-3 bg-red-50 text-red-500 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-red-100">Eliminar Tratamiento</button>
+                                    <button onClick={() => setToothModalData({...toothModalData, treatment: null})} className="w-full p-3 bg-red-50 text-red-500 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-red-100 hover:bg-red-500 hover:text-white transition-all shadow-sm">Eliminar Tratamiento</button>
                                 </div>
                             )}
                         </>
                     )}
                 </div>
 
+                {/* --- BOTÓN DE GUARDADO --- */}
                 <div className="p-6 border-t border-[#DFD2C4]/40 bg-[#FDFBF7] shrink-0">
                     <button 
                         onClick={() => {
                             const p = getPatient(selectedPatientId); 
                             
-                            // 1. Guardamos la parte del Odontograma
-                            const updatedTeeth = {...p.clinical.teeth, [toothModalData.id]: {
+                            const updatedTeeth = {...p.clinical?.teeth, [toothModalData.id]: {
                                 id: toothModalData.id,
                                 status: toothModalData.status, 
                                 faces: toothModalData.faces, 
@@ -235,13 +236,11 @@ export default function ToothModal({
                                 treatment: toothModalData.treatment 
                             }}; 
                             
-                            // 2. Guardamos la parte del Periodontograma
                             const updatedPerio = {
-                                ...p.clinical.perio, 
+                                ...p.clinical?.perio, 
                                 [toothModalData.id]: toothModalData.perio || {}
                             };
                             
-                            // 3. Empaquetamos y mandamos a Supabase
                             savePatientData(selectedPatientId, {
                                 ...p, 
                                 clinical: {
@@ -261,7 +260,7 @@ export default function ToothModal({
                 </div>
             </Card>
 
-            {/* --- VISOR LOCAL DE IMAGEN EN GRANDE --- */}
+            {/* --- VISOR ZOOM DE RADIOGRAFÍAS --- */}
             {localZoomImg && (
                 <div className="fixed inset-0 z-[200] bg-[#2A2421]/95 backdrop-blur-md flex flex-col items-center justify-center p-4 cursor-pointer animate-in fade-in" onClick={()=>setLocalZoomImg(null)}>
                     <img src={localZoomImg} className="max-w-full max-h-[85%] rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95" alt="Radiografía Ampliada" />

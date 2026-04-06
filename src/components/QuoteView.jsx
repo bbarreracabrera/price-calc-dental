@@ -100,7 +100,8 @@ export default function QuoteView({
                                 <button 
                                     onClick={()=>{
                                         if(newQuoteItem.name && newQuoteItem.price) {
-                                            setQuoteItems([...quoteItems, { id: Date.now(), name: newQuoteItem.name, tooth: newQuoteItem.tooth, price: Number(newQuoteItem.price) }]);
+                                            // INYECTAMOS UN ESTADO 'pending' A CADA ÍTEM CUANDO SE AGREGA
+                                            setQuoteItems([...quoteItems, { id: Date.now(), name: newQuoteItem.name, tooth: newQuoteItem.tooth, price: Number(newQuoteItem.price), status: 'pending' }]);
                                             setNewQuoteItem({name:'', price:'', tooth:''});
                                         }
                                     }}
@@ -151,14 +152,36 @@ export default function QuoteView({
                                         const id = Date.now().toString(); 
                                         const detalle = quoteItems.map(i => `${i.name}${i.tooth ? ` (D${i.tooth})` : ''}`).join(' + ');
                                         
+                                        // 1. MANDAR LA DEUDA A CAJA (FINANZAS)
                                         await saveToSupabase('financials', id, {
                                             id, total: total, paid: 0, payments: [], patientName: sessionData.patientName, 
-                                            date: getLocalDate(), type: 'income', description: detalle
+                                            date: getLocalDate(), type: 'income', description: detalle,
+                                            patientId: sessionData.patientId // <-- Importante guardar el ID del paciente para cruzar info
                                         }); 
                                         
-                                        notify("Aprobado y enviado a Caja"); 
+                                        // 2. GUARDAR EL PRESUPUESTO EN LA FICHA DEL PACIENTE (CLÍNICO)
+                                        const p = getPatient(sessionData.patientId);
+                                        const newClinicalQuote = {
+                                            id: id,
+                                            date: getLocalDate(),
+                                            total: total,
+                                            status: 'en_proceso', // Nace 'en_proceso'
+                                            items: quoteItems.map(item => ({...item, status: 'pending'})) // Todos los ítems nacen 'pending'
+                                        };
+                                        
+                                        const updatedQuotesList = [newClinicalQuote, ...(p.clinical?.quotes || [])];
+                                        
+                                        savePatientData(sessionData.patientId, {
+                                            ...p,
+                                            clinical: {
+                                                ...p.clinical,
+                                                quotes: updatedQuotesList
+                                            }
+                                        });
+                                        
+                                        notify("Presupuesto guardado en ficha clínica y enviado a Caja"); 
                                         setQuoteItems([]);
-                                        setActiveTab('history');
+                                        setActiveTab('history'); // Asumo que 'history' es donde ves las finanzas. 
                                     }}
                                     className={`py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
                                         quoteItems.length === 0 

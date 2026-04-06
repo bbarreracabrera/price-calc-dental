@@ -43,7 +43,7 @@ export const PrivateImage = ({ img, onClick }) => {
     return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick(signedUrl)} alt="Ficha" />;
 };
 
-// --- PESTAÑA DE TÉRMINOS Y CONDICIONES (Actualizada a Paleta Boutique) ---
+// --- PESTAÑA DE TÉRMINOS Y CONDICIONES ---
 export const TermsScreen = ({ theme }) => {
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-fade-in">
@@ -65,7 +65,7 @@ export const TermsScreen = ({ theme }) => {
     );
 };
 
-// --- EL BUSCADOR INTELIGENTE (Actualizado a Paleta Boutique) ---
+// --- EL BUSCADOR INTELIGENTE (Corregido para Modales) ---
 export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Paciente..." }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
@@ -105,14 +105,29 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
     }, [query, patients, dbResults]);
     
     return (
-        <div className="relative w-full z-20">
-            <InputField icon={Search} placeholder={placeholder} value={query} onChange={e => { setQuery(e.target.value); setShowResults(true); }} onFocus={() => setShowResults(true)} />
+        <div className="w-full">
+            <InputField 
+                icon={Search} 
+                placeholder={placeholder} 
+                value={query} 
+                onChange={e => { setQuery(e.target.value); setShowResults(true); }} 
+                onFocus={() => setShowResults(true)} 
+            />
             {showResults && query && (
-                <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-[#DFD2C4]/50 max-h-48 overflow-y-auto shadow-xl bg-white custom-scrollbar z-50">
-                    {isSearching && <div className="p-4 text-xs text-[#9A8F84] font-medium text-center flex items-center justify-center gap-2"><Loader size={14} className="animate-spin"/> Buscando en base de datos...</div>}
+                <div className="mt-2 rounded-2xl border border-[#DFD2C4]/70 max-h-60 overflow-y-auto shadow-inner bg-white custom-scrollbar transition-all animate-in fade-in slide-in-from-top-2">
+                    
+                    {isSearching && (
+                        <div className="p-4 text-xs text-[#9A8F84] font-medium text-center flex items-center justify-center gap-2">
+                            <Loader size={14} className="animate-spin"/> Buscando en base de datos...
+                        </div>
+                    )}
                     
                     {!isSearching && combinedResults.length > 0 ? combinedResults.map(p => (
-                        <div key={p.id} onClick={() => { onSelect(p); setQuery(p.personal?.legalName); setShowResults(false); }} className="p-4 hover:bg-[#FDFBF7] cursor-pointer border-b border-[#DFD2C4]/30 last:border-0 flex justify-between items-center group transition-colors">
+                        <div 
+                            key={p.id} 
+                            onClick={() => { onSelect(p); setQuery(p.personal?.legalName); setShowResults(false); }} 
+                            className="p-4 hover:bg-[#FDFBF7] cursor-pointer border-b border-[#DFD2C4]/30 last:border-0 flex justify-between items-center group transition-colors"
+                        >
                             <p className="font-bold text-sm text-[#312923] group-hover:text-[#5B6651]">{p.personal?.legalName}</p>
                             {!patients[p.id] && <span className="text-[9px] bg-[#DFD2C4]/30 text-[#9A8F84] border border-[#DFD2C4] px-2 py-0.5 rounded-full font-black tracking-widest">NUBE</span>}
                         </div>
@@ -127,7 +142,7 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
     );
 };
 
-// --- PANTALLA DE AUTENTICACIÓN (AJUSTE DE PROPORCIONES) ---
+// --- PANTALLA DE AUTENTICACIÓN ---
 export const AuthScreen = () => {
     const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState(''); 
@@ -181,17 +196,13 @@ export const AuthScreen = () => {
     return (
         <div className="fixed inset-0 bg-[#FDFBF7] flex items-center justify-center p-4 sm:p-6 z-[100] overflow-y-auto selection:bg-[#CBAAA2] selection:text-white">
             
-            {/* Elementos Decorativos de Fondo */}
             <div className="fixed top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full bg-[#DFD2C4]/30 blur-[100px] pointer-events-none"></div>
             <div className="fixed bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#CBAAA2]/15 blur-[120px] pointer-events-none"></div>
 
-            {/* Redujimos el py-10 a py-4 para que no choque con el techo */}
             <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-500 py-4">    
                 
-                {/* Redujimos el padding vertical (py) pero mantuvimos el horizontal (px) */}
                 <Card className="w-full px-8 py-8 sm:px-10 sm:py-10 shadow-2xl bg-white/95 backdrop-blur-xl border-[#DFD2C4]/50 flex flex-col items-center">
                     
-                    {/* Logo un poco más sutil (w-16 en vez de w-20) */}
                     <div className="w-16 h-16 bg-[#5B6651] rounded-2xl flex items-center justify-center shadow-lg shadow-[#5B6651]/20 mb-5 border border-[#DFD2C4]/40">
                         <Cloud className="text-white" size={32} strokeWidth={2.5} />
                     </div>
@@ -207,8 +218,7 @@ export const AuthScreen = () => {
                     ) : (
                         <p className="text-[#9A8F84] text-sm font-medium mb-8 text-center tracking-wide">Acceso a Clínica Digital</p>
                     )}
-      
-                    {/* space-y-4 en lugar de space-y-6 para juntar suavemente los inputs */}
+       
                     <form onSubmit={handleAuth} className="space-y-4 w-full">
                         
                         {msg && (
@@ -247,7 +257,6 @@ export const AuthScreen = () => {
                         )}
                         
                         <div className="pt-2">
-                            {/* Botón un poco más esbelto (py-3.5) */}
                             <Button 
                                 type="submit" 
                                 disabled={loading} 
@@ -261,7 +270,6 @@ export const AuthScreen = () => {
                     </form>
                 </Card>
   
-                {/* Footer del Formulario ajustado (mt-6 en lugar de mt-12) */}
                 {!vieneDePago && (
                     <div className="mt-6 text-center">
                         <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mb-3">

@@ -15,8 +15,11 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         phone: '',
         reason: '',
         date: '',
-        time: '' // Guardará el ID de la hora (ej: "14:30")
+        time: '' 
     });
+
+    // --- 🛡️ NUEVO: ESTADO HONEYPOT PARA BLOQUEAR BOTS ---
+    const [honeypot, setHoneypot] = useState('');
 
     const [availableTimes, setAvailableTimes] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +53,6 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         fetchClinicData();
     }, [clinicId, supabase, notify]);
 
-    // MAGIA VISUAL: Ahora generamos un Objeto con la hora de inicio y el texto visual del Rango
     const generateTimeSlots = (start, end) => {
         if (!start || !end) return [];
         const slots = [];
@@ -63,22 +65,19 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         const endLimit = new Date();
         endLimit.setHours(endHour, endMin, 0, 0);
 
-        // La duración de los bloques es de 30 minutos (ajustable)
         const SLOT_DURATION_MINS = 30;
 
         while (current < endLimit) {
             const startTimeStr = current.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
             
-            // Calculamos el límite del bloque sumando los minutos
             const next = new Date(current);
             next.setMinutes(next.getMinutes() + SLOT_DURATION_MINS);
             const endTimeStr = next.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-            // Solo agregamos el bloque si NO se pasa de la hora de cierre
             if (next <= endLimit) {
                 slots.push({
-                    id: startTimeStr, // Esto se guarda en la base de datos ("14:30")
-                    display: `${startTimeStr} - ${endTimeStr}` // Esto es lo que ve el paciente ("14:30 - 15:00")
+                    id: startTimeStr, 
+                    display: `${startTimeStr} - ${endTimeStr}` 
                 });
             }
             
@@ -117,7 +116,6 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
             if (takenTimes && takenTimes.length > 0) {
                 const timesToBlock = takenTimes.map(t => t.occupied_time);
-                // Filtramos comparando contra la propiedad "id" de nuestro nuevo objeto
                 allSlots = allSlots.filter(slot => !timesToBlock.includes(slot.id));
             }
         } catch (err) {
@@ -128,6 +126,13 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     };
 
     const handleSubmit = async () => {
+        // --- 🛡️ LÓGICA HONEYPOT: SI ESTÁ LLENO, ES UN BOT ---
+        if (honeypot !== '') {
+            console.warn("🤖 Bot detectado por Honeypot. Bloqueando inserción.");
+            setStep(4); // Falso éxito: lo mandamos al final para que deje de molestar
+            return; 
+        }
+
         if (!formData.name || !formData.phone || !formData.date || !formData.time) {
             return alert("Por favor completa todos los campos requeridos.");
         }
@@ -140,8 +145,8 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                 name: formData.name,
                 treatment: formData.reason || 'Consulta General (Agendado Online)',
                 date: formData.date,
-                time: formData.time, // Guardamos la hora limpia ("14:30")
-                duration: 30, // Coherente con los bloques de 30 mins
+                time: formData.time, 
+                duration: 30, 
                 status: 'agendado'
             };
 
@@ -216,6 +221,20 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                             </div>
                         </div>
 
+                        {/* --- 🛡️ CAMPO HONEYPOT INVISIBLE --- */}
+                        <div style={{ opacity: 0, position: 'absolute', top: 0, left: 0, height: 0, width: 0, zIndex: -1, overflow: 'hidden' }}>
+                            <label htmlFor="confirm_email_field" aria-hidden="true">No llenar este campo</label>
+                            <input 
+                                type="text" 
+                                id="confirm_email_field" 
+                                name="confirm_email_field" 
+                                value={honeypot} 
+                                onChange={(e) => setHoneypot(e.target.value)} 
+                                tabIndex="-1" 
+                                autoComplete="off" 
+                            />
+                        </div>
+
                         <button 
                             disabled={!formData.name || !formData.phone}
                             onClick={() => setStep(2)}
@@ -273,7 +292,6 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                                 {availableTimes.length === 0 ? (
                                     <p className="text-center p-4 bg-red-50 text-red-500 rounded-xl font-bold text-sm">No hay horarios disponibles este día.</p>
                                 ) : (
-                                    /* Cambiamos a grid-cols-2 para que el rango de horas se vea perfecto */
                                     <div className="grid grid-cols-2 gap-3 mt-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
                                         {availableTimes.map(slot => (
                                             <button 

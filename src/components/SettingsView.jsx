@@ -154,7 +154,7 @@ export default function SettingsView({
                         {/* --- NUEVO: PLANTILLAS DE WHATSAPP --- */}
                         <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
                             <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
-                                <MessageCircle className="text-[#5B6651]"/> Plantillas de WhatsApp (Zero-Cost)
+                                <MessageCircle className="text-[#5B6651]"/> Plantillas de WhatsApp
                             </h3>
                             <p className="text-xs text-[#9A8F84] font-bold mb-4">Configura los mensajes automáticos. El sistema abrirá WhatsApp Web/App con el texto listo para enviar.</p>
                             
