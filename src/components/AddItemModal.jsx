@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trash2, Barcode, CalendarDays, PackagePlus, Edit3, AlertTriangle, Save, Camera, StopCircle } from 'lucide-react';
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 export default function AddItemModal({ 
     themeMode, newItem, setNewItem, setModal, inventory, setInventory, saveToSupabase, supabase, notify,
@@ -12,17 +12,37 @@ export default function AddItemModal({
     const inputClass = "w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm";
     const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
 
-    // --- LÓGICA DEL ESCÁNER POR CÁMARA ---
+    // --- LÓGICA DEL ESCÁNER POR CÁMARA (NIVEL ENTERPRISE) ---
     useEffect(() => {
         let scanner = null;
         if (showScanner) {
+            // Configuramos el escáner para ser implacable con códigos de barras de cajas
             scanner = new Html5QrcodeScanner("reader", { 
-                fps: 10, 
-                qrbox: { width: 250, height: 150 }, 
-                aspectRatio: 1.777778 
-            });
+                fps: 15, // Más cuadros por segundo para evitar borrosidad por movimiento
+                qrbox: { width: 300, height: 150 }, // Rectángulo apaisado, ideal para barras
+                aspectRatio: 1.777778,
+                videoConstraints: {
+                    facingMode: "environment", // Usar cámara trasera si es móvil
+                    focusMode: "continuous" // Vital para cajas brillantes
+                },
+                // ¡AQUÍ ESTÁ LA MAGIA! Forzamos que lea los formatos comerciales
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            }, false); // El "false" apaga los logs innecesarios en consola
 
             scanner.render((decodedText) => {
+                // Alerta de éxito (bip visual)
+                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); 
+                // (Omití el base64 de un bip real para no llenar de código, pero puedes agregar uno local)
+                // audio.play().catch(e=>console.log(e));
+                
                 setBatchInput(prev => ({ ...prev, barcode: decodedText }));
                 setShowScanner(false); 
                 scanner.clear();
@@ -190,11 +210,14 @@ export default function AddItemModal({
                             </div>
                         </div>
 
-                        {/* --- ÁREA DEL VISOR DE CÁMARA --- */}
+                        {/* --- ÁREA DEL VISOR DE CÁMARA MEJORADO --- */}
                         {showScanner && (
                             <div className="mt-4 overflow-hidden rounded-2xl border-2 border-[#5B6651] bg-black">
-                                <div id="reader" className="w-full"></div>
-                                <p className="p-2 text-center text-[10px] text-white font-bold animate-pulse">Apunta al código de barras del producto</p>
+                                <div id="reader" className="w-full h-auto"></div>
+                                <p className="p-3 text-center text-[10px] text-white font-bold bg-[#312923] flex items-center justify-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                    Enfocando... Acércalo a 15cm
+                                </p>
                             </div>
                         )}
                     </div>
