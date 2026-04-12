@@ -1,20 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck, ListTodo, CheckCircle2 } from 'lucide-react';
 import { Button } from './UIComponents';
-import { supabase } from '../supabase'; // Asegúrate de que esta ruta sea correcta
+import { supabase } from '../supabase';
 
 export default function PatientEvolutionTab({ 
     newEvolution, setNewEvolution, 
-    getPatient, selectedPatientId, session, logAction
+    getPatient, selectedPatientId, savePatientData, session, logAction
 }) {
     const patient = getPatient(selectedPatientId);
     
-    // Ahora las evoluciones vienen de Supabase, no del objeto patient local
     const [evolutions, setEvolutions] = useState([]);
     const [loadingEvo, setLoadingEvo] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    // --- CARGAR EVOLUCIONES DESDE LA BÓVEDA ---
+    // NUEVO: Estado para los tratamientos que el doctor selecciona hoy
+    const [linkedItems, setLinkedItems] = useState([]);
+
+    // --- CARGAR EVOLUCIONES (TU CÓDIGO ORIGINAL) ---
     useEffect(() => {
         let isMounted = true;
         const fetchEvolutions = async () => {
@@ -39,7 +41,37 @@ export default function PatientEvolutionTab({
         return () => { isMounted = false; };
     }, [selectedPatientId]);
 
-    // --- MOTOR DE DICTADO EXCLUSIVO ---
+    // --- MAGIA: BUSCAR TRATAMIENTOS PENDIENTES DEL PLAN ---
+    const pendingTreatments = useMemo(() => {
+        if (!patient.clinical?.quotes) return [];
+        let pending = [];
+        
+        patient.clinical.quotes.forEach(quote => {
+            if (quote.status === 'en_proceso') {
+                quote.items.forEach(item => {
+                    // Solo traemos los que nacieron 'pending' (como programamos en la vista de presupuestos)
+                    if (item.status === 'pending') {
+                        pending.push({ ...item, quoteId: quote.id });
+                    }
+                });
+            }
+        });
+        return pending;
+    }, [patient.clinical?.quotes]);
+
+    // Lógica para vincular tratamientos al texto
+    const handleLinkTreatment = (item) => {
+        if (linkedItems.find(i => i.id === item.id)) return;
+        setLinkedItems([...linkedItems, item]);
+        const prefix = `[Realizado: ${item.name}${item.tooth ? ` - Pieza ${item.tooth}` : ''}] `;
+        setNewEvolution(prev => prev ? `${prev}\n${prefix}` : prefix);
+    };
+
+    const handleRemoveLink = (itemId) => {
+        setLinkedItems(linkedItems.filter(i => i.id !== itemId));
+    };
+
+    // --- MOTOR DE DICTADO (TU CÓDIGO ORIGINAL) ---
     const [isDictating, setIsDictating] = useState(false);
     const recognitionRef = useRef(null);
 
@@ -81,7 +113,7 @@ export default function PatientEvolutionTab({
         recognitionRef.current = recognition;
     };
 
-    // --- FUNCIÓN CRIPTOGRÁFICA (EL SELLO) ---
+    // --- FUNCIÓN CRIPTOGRÁFICA (TU CÓDIGO ORIGINAL) ---
     const generateHash = async (text) => {
         const encoder = new TextEncoder();
         const data = encoder.encode(text + Date.now().toString());
@@ -90,16 +122,15 @@ export default function PatientEvolutionTab({
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     };
 
-    // --- GUARDADO SEGURO ---
+    // --- GUARDADO SEGURO + CIERRE DE TRATAMIENTO ---
     const handleSave = async () => {
         if (!newEvolution.trim()) return;
         setIsSaving(true);
         
         try {
             const authorEmail = session?.user?.email || 'Usuario Clínico';
-            const clinicEmail = patient.admin_email || authorEmail; // Asumiendo que guardas el admin_email en el paciente
+            const clinicEmail = patient.admin_email || authorEmail; 
             
-            // Generamos el sello de seguridad
             const signature = await generateHash(newEvolution + authorEmail + selectedPatientId);
 
             const newRecord = {
@@ -110,7 +141,7 @@ export default function PatientEvolutionTab({
                 signature_hash: signature
             };
 
-            // Inyectamos directo a la base de datos blindada
+            // 1. Guardamos la evolución en su tabla blindada
             const { data, error } = await supabase
                 .from('clinical_evolutions')
                 .insert([newRecord])
@@ -118,9 +149,38 @@ export default function PatientEvolutionTab({
 
             if (error) throw error;
 
-            // Actualizamos la vista localmente
+            // 2. MAGIA: Si el doctor seleccionó tratamientos, los marcamos como completados en el JSON
+            if (linkedItems.length > 0 && patient.clinical?.quotes) {
+                const updatedQuotes = patient.clinical.quotes.map(quote => {
+                    let quoteHasChanges = false;
+                    const newItems = quote.items.map(item => {
+                        if (linkedItems.find(link => link.id === item.id)) {
+                            quoteHasChanges = true;
+                            return { ...item, status: 'completed' }; // Cambiamos de pending a completed
+                        }
+                        return item;
+                    });
+                    
+                    const allCompleted = newItems.every(i => i.status === 'completed');
+                    
+                    return quoteHasChanges ? { 
+                        ...quote, 
+                        items: newItems,
+                        status: allCompleted ? 'completado' : quote.status
+                    } : quote;
+                });
+
+                // Guardamos el JSON actualizado usando tu función global
+                await savePatientData(selectedPatientId, {
+                    ...patient,
+                    clinical: { ...patient.clinical, quotes: updatedQuotes }
+                });
+            }
+
+            // 3. Actualizamos la vista localmente
             setEvolutions([data[0], ...evolutions]);
             setNewEvolution(''); 
+            setLinkedItems([]); // Limpiamos la selección
             logAction('ADD_EVOLUTION', { text_preview: newEvolution.substring(0,20) }, selectedPatientId);
             
         } catch (err) {
@@ -131,7 +191,6 @@ export default function PatientEvolutionTab({
         }
     };
 
-    // Formateador de fecha seguro
     const formatDate = (isoString) => {
         return new Date(isoString).toLocaleString('es-CL', {
             year: 'numeric', month: 'short', day: 'numeric',
@@ -142,7 +201,6 @@ export default function PatientEvolutionTab({
     return (
         <div className="space-y-8 animate-in fade-in max-w-4xl mx-auto pb-10">
             
-            {/* --- ENCABEZADO --- */}
             <div className="border-b border-[#DFD2C4]/50 pb-4 flex justify-between items-end">
                 <div>
                     <h2 className="text-2xl font-black text-[#312923] tracking-tight flex items-center gap-3">
@@ -157,17 +215,46 @@ export default function PatientEvolutionTab({
                 </div>
             </div>
 
-            {/* --- ÁREA DE REDACCIÓN --- */}
             <div className="bg-white border border-[#DFD2C4]/60 rounded-[2rem] p-6 shadow-sm relative">
-                <div className="flex justify-between items-center mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Nueva Entrada</span>
-                    <div className="h-6 flex items-center"> 
-                        {isDictating && (
-                            <span className="text-[10px] text-white animate-pulse font-bold bg-red-500 px-3 py-1 rounded-full shadow-sm">
-                                Dictando... (Hable claro)
+                
+                {/* --- PANEL DE ASISTENCIA CLÍNICA --- */}
+                {pendingTreatments.length > 0 && (
+                    <div className="mb-6 p-4 bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-2xl">
+                        <div className="flex items-center gap-2 mb-3">
+                            <ListTodo size={16} className="text-[#A3968B]" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#312923]">
+                                Plan de Tratamiento: Tareas Pendientes
                             </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {pendingTreatments.map(item => {
+                                const isLinked = linkedItems.some(i => i.id === item.id);
+                                return (
+                                    <button 
+                                        key={item.id}
+                                        onClick={() => isLinked ? handleRemoveLink(item.id) : handleLinkTreatment(item)}
+                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 border ${
+                                            isLinked 
+                                            ? 'bg-[#5B6651] text-white border-[#5B6651] shadow-sm' 
+                                            : 'bg-white text-[#9A8F84] border-[#DFD2C4] hover:border-[#5B6651] hover:text-[#5B6651]'
+                                        }`}
+                                    >
+                                        {isLinked && <CheckCircle2 size={12} />}
+                                        {item.name} {item.tooth && `(P: ${item.tooth})`}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {linkedItems.length > 0 && (
+                            <p className="text-[9px] text-[#A3968B] mt-3 font-bold">
+                                * Al firmar, se marcarán como completados en el presupuesto.
+                            </p>
                         )}
                     </div>
+                )}
+
+                <div className="flex justify-between items-center mb-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Nueva Entrada</span>
                 </div>
                 
                 <div className="relative bg-[#FDFBF7] border border-[#DFD2C4]/50 rounded-2xl p-5 focus-within:border-[#5B6651]/50 transition-colors shadow-inner">
@@ -210,7 +297,7 @@ export default function PatientEvolutionTab({
                 </div>
             </div>
 
-            {/* --- HISTORIAL --- */}
+            {/* --- HISTORIAL (TU CÓDIGO ORIGINAL) --- */}
             <div className="pt-6">
                 {loadingEvo ? (
                     <div className="text-center py-12 text-[#9A8F84] text-xs font-bold uppercase tracking-widest animate-pulse">
