@@ -46,15 +46,28 @@ export default function NetworkMonitor() {
         console.log(`Iniciando sincronización de ${queue.length} elementos...`);
 
         const failedItems = [];
+        
+        // Obtenemos el correo del admin para no perder los permisos RLS
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentEmail = session?.user?.email;
 
         for (const item of queue) {
             try {
+                let payload = { id: item.id };
+                
+                if (['clinic_config', 'clinical_evolutions'].includes(item.table)) {
+                    payload = { id: item.id, ...item.data };
+                } else {
+                    payload.data = item.data;
+                    if (currentEmail) payload.admin_email = currentEmail;
+                }
+
                 // Intentamos subirlo a Supabase
-                const { error } = await supabase.from(item.table).upsert([{ id: item.id, ...item.data }]);
+                const { error } = await supabase.from(item.table).upsert([payload]);
                 if (error) throw error;
             } catch (err) {
                 console.error("Error sincronizando ítem:", err);
-                failedItems.push(item); // Si falla uno, lo devolvemos a la fila
+                failedItems.push(item); // Si falla, se queda en la mochila
             }
         }
 
@@ -63,7 +76,6 @@ export default function NetworkMonitor() {
         setPendingItems(failedItems.length);
         setSyncing(false);
     };
-
     // Si hay internet y no hay nada que sincronizar, nos hacemos invisibles
     if (isOnline && pendingItems === 0 && !syncing) return null;
 

@@ -183,24 +183,35 @@ export default function App() {
   const toggleTheme = () => { const modes = ['dark', 'light', 'blue']; const next = modes[(modes.indexOf(themeMode) + 1) % modes.length]; setThemeMode(next); localStorage.setItem('sc_theme_mode', next); };
   
   // La nueva versión inteligente de saveToSupabase
-const saveToSupabase = async (table, id, data) => {
-    // 1. SI HAY INTERNET -> Guardamos directo en Supabase
+const saveToSupabase = async (tableName, id, dataObj) => {
+    // 1. SI HAY INTERNET
     if (navigator.onLine) {
         try {
-            const { error } = await supabase.from(table).upsert([{ id: id, ...data }]);
+            // Empaquetamos según tu arquitectura de base de datos
+            let payload = { id: id };
+            
+            // Si son tablas nuevas con columnas planas, desempaquetamos
+            if (['clinic_config', 'clinical_evolutions'].includes(tableName)) {
+                payload = { id: id, ...dataObj };
+            } else {
+                // Para pacientes, agenda, finanzas, etc. Todo va a la columna JSON 'data'
+                payload.data = dataObj;
+                payload.admin_email = clinicOwner || session?.user?.email;
+            }
+
+            const { error } = await supabase.from(tableName).upsert([payload]);
             if (error) throw error;
             return true;
         } catch (err) {
-            console.error(`Error guardando en ${table}:`, err);
-            // Si falla Supabase por micro-cortes, lo mandamos a la bóveda local también
-            saveToOfflineVault(table, id, data);
+            console.error(`Error guardando en ${tableName}:`, err);
+            saveToOfflineVault(tableName, id, dataObj);
             return false;
         }
     } 
-    // 2. SI NO HAY INTERNET -> Guardamos en la Bóveda Local
+    // 2. SI NO HAY INTERNET
     else {
-        saveToOfflineVault(table, id, data);
-        return false; // Retorna false para que la UI sepa que fue un guardado offline
+        saveToOfflineVault(tableName, id, dataObj);
+        return false; 
     }
 };
 
