@@ -29,6 +29,7 @@ import Sidebar from './components/Sidebar';
 import PatientWorkspace from './components/PatientWorkspace';
 import PublicBooking from './components/PublicBooking'; 
 import SterilizationView from './components/SterilizationView'; 
+import NetworkMonitor from './components/NetworkMonitor'; // <-- Radar Offline
 
 // --- MODALS ---
 import ToothModal from './components/ToothModal';
@@ -181,9 +182,43 @@ export default function App() {
 
   const toggleTheme = () => { const modes = ['dark', 'light', 'blue']; const next = modes[(modes.indexOf(themeMode) + 1) % modes.length]; setThemeMode(next); localStorage.setItem('sc_theme_mode', next); };
   
-  const saveToSupabase = async (t, id, d) => { 
-      await supabase.from(t).upsert({ id: id.toString(), data: d, admin_email: clinicOwner || session.user.email }); 
-  };
+  // La nueva versión inteligente de saveToSupabase
+const saveToSupabase = async (table, id, data) => {
+    // 1. SI HAY INTERNET -> Guardamos directo en Supabase
+    if (navigator.onLine) {
+        try {
+            const { error } = await supabase.from(table).upsert([{ id: id, ...data }]);
+            if (error) throw error;
+            return true;
+        } catch (err) {
+            console.error(`Error guardando en ${table}:`, err);
+            // Si falla Supabase por micro-cortes, lo mandamos a la bóveda local también
+            saveToOfflineVault(table, id, data);
+            return false;
+        }
+    } 
+    // 2. SI NO HAY INTERNET -> Guardamos en la Bóveda Local
+    else {
+        saveToOfflineVault(table, id, data);
+        return false; // Retorna false para que la UI sepa que fue un guardado offline
+    }
+};
+
+// Función auxiliar para la Bóveda Local
+const saveToOfflineVault = (table, id, data) => {
+    console.warn(`Modo Offline: Guardando en bóveda local [Tabla: ${table}]`);
+    const queue = JSON.parse(localStorage.getItem('shining_offline_queue') || '[]');
+    
+    // Agregamos la tarea a la cola de sincronización
+    queue.push({
+        table,
+        id,
+        data,
+        timestamp: new Date().toISOString()
+    });
+    
+    localStorage.setItem('shining_offline_queue', JSON.stringify(queue));
+};
   
   const getPatient = useCallback((id) => {
       const base = { id, personal: { legalName: id }, anamnesis: { recent: '', remote: '', conditions: {} }, clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, consents: [], images: [] };
@@ -460,7 +495,7 @@ export default function App() {
         {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && <CatalogView themeMode={themeMode} t={t} catalog={catalog} setCatalog={setCatalog} clinicOwner={clinicOwner} session={session} setNewCatalogItem={setNewCatalogItem} setModal={setModal} saveToSupabase={saveToSupabase} notify={notify} />}
         {activeTab === 'inventory' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <InventoryView themeMode={themeMode} t={t} inventory={inventory} setInventory={setInventory} filteredInventory={filteredInventory} inventorySearch={inventorySearch} setInventorySearch={setInventorySearch} setNewItem={setNewItem} setModal={setModal} saveToSupabase={saveToSupabase} session={session} team={team} />}        
         {activeTab === 'lab' && <LabView themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks} setNewLabWork={setNewLabWork} setModal={setModal} notify={notify} team={team} sendWhatsApp={sendWhatsApp} config={config} />}        
-        {activeTab === 'settings' && <SettingsView themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal} logoInputRef={logoInputRef} handleLogoUpload={handleLogoUploadWrapper} userRole={userRole} saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam} newMember={newMember} setNewMember={setNewMember} />}
+        {activeTab === 'settings' && <SettingsView themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal} logoInputRef={logoInputRef} handleLogoUpload={handleLogoUploadWrapper} userRole={userRole} saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam} newMember={newMember} setNewMember={setNewMember} session={session} />}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <QuoteView themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems} newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog} patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData} getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase} notify={notify} generatePDF={handleGeneratePDF} setActiveTab={setActiveTab} />}
         {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} />}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} />}
@@ -543,6 +578,10 @@ export default function App() {
         )}
       </main>
 
+      {/* --- RENDERIZADO DEL RADAR OFFLINE --- */}
+      <NetworkMonitor />
+
+      {/* --- MODALES --- */}
       {modal === 'tooth' && <ToothModal themeMode={themeMode} t={t} toothModalData={toothModalData} setToothModalData={setToothModalData} setModal={setModal} activeTab={activeTab} perioData={perioData} setPerioData={setPerioData} handlePerioChange={handlePerioChange} calcNIC={calcNIC} isPerioVoiceActive={isPerioVoiceActive} startPerioDictation={startPerioDictation} voiceFeedback={voiceFeedback} isListening={isListening} toggleVoice={toggleVoice}  catalog={catalog} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} goToAdjacentTooth={goToAdjacentTooth} setActiveTab={() => {setActiveTab('ficha'); setPatientTab('images');}}/>}   
       {modal === 'appt' && <ApptModal themeMode={themeMode} newAppt={newAppt} setNewAppt={setNewAppt} setModal={setModal} patientRecords={patientRecords} setPatientRecords={setPatientRecords} getPatient={getPatient} savePatientData={savePatientData} notify={notify} appointments={appointments} setAppointments={setAppointments} saveToSupabase={saveToSupabase} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} team={team} session={session} />}
       {modal === 'abono' && selectedFinancialRecord && <AbonoModal themeMode={themeMode} selectedFinancialRecord={selectedFinancialRecord} setModal={setModal} paymentInput={paymentInput} setPaymentInput={setPaymentInput} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} saveToSupabase={saveToSupabase} notify={notify} session={session} team={team} />}      

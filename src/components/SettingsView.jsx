@@ -6,12 +6,11 @@ import { supabase } from '../supabase';
 
 export default function SettingsView({
     themeMode, t, config, setConfigLocal, logoInputRef, handleLogoUpload,
-    userRole, saveToSupabase, notify, team, setTeam, newMember, setNewMember
+    userRole, saveToSupabase, notify, team, setTeam, newMember, setNewMember, session
 }) {
     const inputClass = "w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm";
     const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
 
-    // Estado local para el formulario de nuevo laboratorio
     const [newLab, setNewLab] = useState({ name: '', email: '', phone: '' });
 
     const defaultSchedule = {
@@ -61,9 +60,10 @@ export default function SettingsView({
                 {userRole === 'admin' && (
                     <button 
                         onClick={()=>{
-                            // Guardamos todo en Supabase
+                            // Guardamos en Settings y también en Clinic Config (para el visor radiológico)
                             const configToSave = { ...config, schedule: config.schedule || defaultSchedule };
                             saveToSupabase('settings', 'general', configToSave); 
+                            saveToSupabase('clinic_config', session?.user?.email || 'general', configToSave);
                             notify("Ajustes Guardados con éxito");
                         }}
                         className="flex items-center gap-2 px-8 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
@@ -151,7 +151,7 @@ export default function SettingsView({
                             </div>
                         </Card>
 
-                        {/* --- NUEVO: PLANTILLAS DE WHATSAPP --- */}
+                        {/* --- PLANTILLAS DE WHATSAPP --- */}
                         <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
                             <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
                                 <MessageCircle className="text-[#5B6651]"/> Plantillas de WhatsApp
@@ -188,7 +188,7 @@ export default function SettingsView({
                             </div>
                         </Card>
 
-                        {/* --- NUEVO: BIOSEGURIDAD Y ESTERILIZACIÓN --- */}
+                        {/* --- BIOSEGURIDAD Y ESTERILIZACIÓN --- */}
                         <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
                             <h3 className="font-black text-xl text-[#312923] mb-6 flex items-center gap-2 border-b border-[#DFD2C4]/50 pb-4">
                                 <Shield className="text-[#A3968B]"/> Bioseguridad y Caducidad
@@ -346,13 +346,28 @@ export default function SettingsView({
                                             if(newMember.email && newMember.name){ 
                                                 const id = Date.now().toString(); 
                                                 const comisionAsignada = newMember.role === 'dentist' ? (newMember.commission || 0) : 0;
-                                                const u = { ...newMember, id, commission: comisionAsignada }; 
+                                                
+                                                // Aseguramos que el email se guarde en minúsculas para el RLS
+                                                const u = { 
+                                                    ...newMember, 
+                                                    id, 
+                                                    commission: comisionAsignada,
+                                                    email: newMember.email.toLowerCase().trim()
+                                                }; 
+                                                
                                                 setTeam([...team, u]); 
                                                 await saveToSupabase('team', id, u); 
-                                                const { error } = await supabase.auth.signInWithOtp({ email: newMember.email, options: { emailRedirectTo: window.location.origin } });
-                                                if(error) { notify("Error enviando invitación: " + error.message); } 
-                                                else { setNewMember({name:'', email:'', role:'dentist', commission: 0}); notify("Usuario agregado e Invitación enviada 📩"); }
-                                            } else { alert("Por favor ingresa un nombre y correo electrónico válidos."); }
+                                                
+                                                const { error } = await supabase.auth.signInWithOtp({ email: u.email, options: { emailRedirectTo: window.location.origin } });
+                                                if(error) { 
+                                                    notify("Error enviando invitación: " + error.message); 
+                                                } else { 
+                                                    setNewMember({name:'', email:'', role:'dentist', commission: 0}); 
+                                                    notify("Usuario agregado e Invitación enviada 📩"); 
+                                                }
+                                            } else { 
+                                                alert("Por favor ingresa un nombre y correo electrónico válidos."); 
+                                            }
                                         }}
                                     ><UserPlus size={16}/> Añadir</button>
                                 </div>
@@ -363,7 +378,7 @@ export default function SettingsView({
                                 {team.map(member => (
                                     <div key={member.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-5 bg-white rounded-2xl border border-[#DFD2C4]/40 hover:border-[#A3968B] transition-all shadow-sm group">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-[#FDFBF7] border border-[#DFD2C4] flex items-center justify-center font-black text-[#A3968B]">{member.name.charAt(0).toUpperCase()}</div>
+                                            <div className="w-10 h-10 rounded-full bg-[#FDFBF7] border border-[#DFD2C4] flex items-center justify-center font-black text-[#A3968B]">{member.name ? member.name.charAt(0).toUpperCase() : '?'}</div>
                                             <div>
                                                 <p className="font-black text-[#312923]">{member.name}</p>
                                                 <p className="text-[10px] font-bold text-[#9A8F84] mt-0.5">{member.email}</p>
@@ -376,7 +391,20 @@ export default function SettingsView({
                                                 </span>
                                                 {member.role === 'dentist' && <span className="text-[9px] font-black text-[#9A8F84] pr-2">Comisión: {member.commission || 0}%</span>}
                                             </div>
-                                            <button onClick={async()=>{ if(window.confirm(`¿Estás seguro de eliminar a ${member.name}?`)){ const f=team.filter(t=>t.id!==member.id); setTeam(f); await supabase.from('team').delete().eq('id', member.id); notify("Usuario Eliminado"); } }} className="p-2 text-[#DFD2C4] hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" title="Eliminar Usuario"><Trash2 size={18}/></button>
+                                            <button 
+                                                onClick={async()=>{ 
+                                                    if(window.confirm(`¿Estás seguro de eliminar a ${member.name}? Perderá acceso a la clínica.`)){ 
+                                                        const f = team.filter(t => t.id !== member.id); 
+                                                        setTeam(f); 
+                                                        await supabase.from('team').delete().eq('id', member.id); 
+                                                        notify("Usuario Eliminado"); 
+                                                    } 
+                                                }} 
+                                                className="p-2 text-[#DFD2C4] hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" 
+                                                title="Eliminar Usuario"
+                                            >
+                                                <Trash2 size={18}/>
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
