@@ -6,9 +6,20 @@ import { getLocalDate } from '../constants';
 
 export default function LabView({ 
     themeMode, t, labWorks, setLabWorks, setNewLabWork, setModal, notify, team,
-    // NUEVOS CABLES NECESARIOS:
     sendWhatsApp, config 
 }) {
+
+    // Normalizador de Status para que la clínica entienda los estados del Kanban
+    const getStatusText = (status) => {
+        const s = status?.toLowerCase() || '';
+        if (s === 'enviado' || s === 'sent') return 'Enviado';
+        if (s === 'recibido' || s === 'received') return 'Recibido por Lab';
+        if (s === 'cad_cam') return 'En Diseño CAD/CAM';
+        if (s === 'ceramica') return 'En Cerámica';
+        if (s === 'listo' || s === 'despachado') return 'Terminado / Despachado';
+        return 'Enviado';
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
             
@@ -55,8 +66,10 @@ export default function LabView({
                             </div>
                         ) : (
                             labWorks.sort((a,b) => new Date(a.expectedDate) - new Date(b.expectedDate)).map(work => {
-                                const isLate = new Date(work.expectedDate) < new Date() && work.status === 'sent';
-                                const isReceived = work.status === 'received';
+                                // Aquí nos aseguramos de que el doctor vea el estado real de la DB, o el que tiene guardado localmente
+                                const workStatus = work.data?.status || work.status; 
+                                const isLate = new Date(work.expectedDate) < new Date() && (workStatus === 'sent' || workStatus === 'enviado');
+                                const isReceivedOrProgress = workStatus !== 'sent' && workStatus !== 'enviado';
 
                                 return (
                                     <div key={work.id} className={`grid grid-cols-12 gap-4 p-5 items-center border-b border-[#DFD2C4]/30 hover:bg-[#FDFBF7] transition-colors ${isLate ? 'bg-red-50/30' : ''}`}>
@@ -64,7 +77,7 @@ export default function LabView({
                                         {/* Paciente y Quién Pide */}
                                         <div className="col-span-2 pl-2 flex flex-col justify-center">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isReceived ? 'bg-[#5B6651]/10 text-[#5B6651]' : isLate ? 'bg-red-100 text-red-500' : 'bg-[#DFD2C4]/30 text-[#A3968B]'}`}>
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isReceivedOrProgress ? 'bg-[#5B6651]/10 text-[#5B6651]' : isLate ? 'bg-red-100 text-red-500' : 'bg-[#DFD2C4]/30 text-[#A3968B]'}`}>
                                                     {work.patientName.charAt(0).toUpperCase()}
                                                 </div>
                                                 <p className="font-black text-[#312923] truncate">{work.patientName}</p>
@@ -107,7 +120,7 @@ export default function LabView({
                                             <div className="flex flex-col items-center justify-center">
                                                 <span className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{work.sendDate.split('-').reverse().join('/')}</span>
                                                 <span className="text-stone-300 my-0.5">|</span>
-                                                <div className={`flex items-center gap-1 text-[11px] font-black ${isLate ? 'text-red-500' : isReceived ? 'text-[#5B6651]' : 'text-[#312923]'}`}>
+                                                <div className={`flex items-center gap-1 text-[11px] font-black ${isLate ? 'text-red-500' : isReceivedOrProgress ? 'text-[#5B6651]' : 'text-[#312923]'}`}>
                                                     {isLate && <AlertCircle size={12}/>}
                                                     <span>{work.expectedDate.split('-').reverse().join('/')}</span>
                                                 </div>
@@ -116,9 +129,9 @@ export default function LabView({
                                         
                                         {/* Estado */}
                                         <div className="col-span-1 flex justify-center">
-                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${isReceived ? 'bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20' : isLate ? 'bg-red-100 text-red-600 border border-red-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}>
-                                                {isReceived ? <CheckCircle2 size={12}/> : isLate ? <AlertCircle size={12}/> : <Clock size={12}/>}
-                                                <span className="hidden xl:inline">{isReceived ? 'Recibido' : isLate ? 'Atrasado' : 'Enviado'}</span>
+                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${workStatus === 'listo' || workStatus === 'despachado' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : isReceivedOrProgress ? 'bg-blue-100 text-blue-600 border border-blue-200' : isLate ? 'bg-red-100 text-red-600 border border-red-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}>
+                                                {isReceivedOrProgress ? <CheckCircle2 size={12}/> : isLate ? <AlertCircle size={12}/> : <Clock size={12}/>}
+                                                <span className="hidden xl:inline">{getStatusText(workStatus)}</span>
                                             </div>
                                         </div>
                                         
@@ -128,11 +141,9 @@ export default function LabView({
                                             {/* NUEVO BOTÓN: Enviar WhatsApp */}
                                             <button 
                                                 onClick={() => {
-                                                    // Buscamos si tenemos el teléfono del laboratorio guardado
                                                     const labData = config?.laboratories?.find(l => l.name === work.labName);
                                                     const labPhone = labData ? labData.phone : null;
 
-                                                    // Armamos el texto profesional
                                                     let message = `Hola${work.labName ? ` ${work.labName}` : ''}, te enviamos una nueva orden de trabajo clínico desde *${config?.name || 'la clínica'}*.\n\n`;
                                                     message += `🦷 *Trabajo Solicitado:* ${work.workType}\n`;
                                                     if (work.tooth) message += `📍 *Pieza Dental:* ${work.tooth}\n`;
@@ -142,23 +153,22 @@ export default function LabView({
                                                         message += `📁 *Archivo Adjunto (Rx / Escáner 3D):*\n${work.file_url}\n\n`;
                                                     }
                                                     
-                                                    message += `Por favor confirmar recepción. ¡Saludos!`;
+                                                    message += `Por favor revisar en tu panel técnico. ¡Saludos!`;
 
                                                     if(labPhone) {
                                                         sendWhatsApp(labPhone, message);
                                                     } else {
-                                                        // Si no hay teléfono registrado, preguntamos a dónde enviarlo
                                                         const manualPhone = window.prompt("No tenemos el teléfono de este laboratorio. Ingrésalo a continuación para enviar:");
                                                         if (manualPhone) sendWhatsApp(manualPhone, message);
                                                     }
                                                 }}
                                                 className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl shadow-sm border border-emerald-200 hover:border-emerald-500 transition-all"
-                                                title="Enviar Orden por WhatsApp"
+                                                title="Avisar por WhatsApp"
                                             >
                                                 <Send size={16}/>
                                             </button>
 
-                                            {!isReceived && (
+                                            {!isReceivedOrProgress && (
                                                 <button onClick={async () => {
                                                     const updated = { ...work, status: 'received' };
                                                     setLabWorks(labWorks.map(w => w.id === work.id ? updated : w));
@@ -166,7 +176,7 @@ export default function LabView({
                                                     notify("Trabajo marcado como RECIBIDO");
                                                 }} 
                                                 className="p-2 bg-[#5B6651] text-white rounded-xl shadow-md hover:-translate-y-0.5 transition-all"
-                                                title="Marcar como Recibido">
+                                                title="Marcar Recepción Manual">
                                                     <CheckCircle2 size={16}/>
                                                 </button>
                                             )}

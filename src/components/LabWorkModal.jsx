@@ -9,7 +9,7 @@ export default function LabWorkModal({
     financialRecords = [], 
     setFinancialRecords,
     session,
-    laboratories = [] // <-- NUEVO CABLE: Lista de laboratorios desde los ajustes
+    laboratories = [] // <-- Lista de laboratorios desde los ajustes
 }) {
     // Estados Financieros
     const [labCost, setLabCost] = useState("");
@@ -35,7 +35,6 @@ export default function LabWorkModal({
         try {
             const fileExt = file.name.split('.').pop();
             const safeName = `lab_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-            // Usamos tu bucket existente (patient_images) pero en una subcarpeta
             const filePath = `lab_files/${clinicOwner}/${safeName}`;
 
             const { error: uploadError } = await supabase.storage
@@ -62,15 +61,22 @@ export default function LabWorkModal({
             
             const autor = session?.user?.email || 'Desconocido';
             
-            // 1. Guardamos el Trabajo de Laboratorio (AHORA INCLUYE ARCHIVO Y LAB DESTINO)
+            // --- MAGIA: BUSCAMOS EL CORREO DEL LABORATORIO ---
+            const selectedLab = laboratories.find(l => l.name === newLabWork.labName);
+            const emailDelLaboratorio = selectedLab ? selectedLab.email : null;
+            
+            // 1. Guardamos el Trabajo de Laboratorio
             const labData = { 
                 ...newLabWork, 
                 id: labId, 
                 admin_email: clinicOwner,
                 created_by: autor,
-                file_url: fileUrl,    // <-- Guardamos el link de descarga
-                file_name: fileName   // <-- Guardamos el nombre del archivo
+                file_url: fileUrl,    
+                file_name: fileName,
+                lab_email: emailDelLaboratorio // <-- ESTE ES EL ENLACE CRÍTICO PARA EL CABALLO DE TROYA
             };
+            
+            // Aquí se envía la información a Supabase (¡con el lab_email!)
             const { error: labError } = await supabase.from('lab_works').insert([labData]);
             
             if (labError) return alert("Hubo un error al guardar en la nube: " + labError.message);
