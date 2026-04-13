@@ -9,7 +9,7 @@ export default function LabWorkModal({
     financialRecords = [], 
     setFinancialRecords,
     session,
-    laboratories = [] // <-- Lista de laboratorios desde los ajustes
+    laboratories = [] 
 }) {
     // Estados Financieros
     const [labCost, setLabCost] = useState("");
@@ -37,13 +37,15 @@ export default function LabWorkModal({
             const safeName = `lab_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `lab_files/${clinicOwner}/${safeName}`;
 
+            // ¡CORREGIDO: Usamos patient-images con guion medio!
             const { error: uploadError } = await supabase.storage
-                .from('patient_images') 
+                .from('patient-images') 
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
-            const { data } = supabase.storage.from('patient_images').getPublicUrl(filePath);
+            // ¡CORREGIDO: Usamos patient-images con guion medio!
+            const { data } = supabase.storage.from('patient-images').getPublicUrl(filePath);
             setFileUrl(data.publicUrl);
             setFileName(file.name);
             notify("✅ Archivo adjuntado correctamente.");
@@ -73,10 +75,9 @@ export default function LabWorkModal({
                 created_by: autor,
                 file_url: fileUrl,    
                 file_name: fileName,
-                lab_email: emailDelLaboratorio // <-- ESTE ES EL ENLACE CRÍTICO PARA EL CABALLO DE TROYA
+                lab_email: emailDelLaboratorio 
             };
             
-            // Aquí se envía la información a Supabase (¡con el lab_email!)
             const { error: labError } = await supabase.from('lab_works').insert([labData]);
             
             if (labError) return alert("Hubo un error al guardar en la nube: " + labError.message);

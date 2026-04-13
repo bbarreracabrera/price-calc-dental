@@ -31,21 +31,28 @@ export default function SettingsView({
         setConfigLocal({ ...config, schedule: updatedSchedule });
     };
 
-    // --- MAGIA DEL CABALLO DE TROYA AQUÍ ---
+    // --- GUARDADO AUTOMÁTICO AL AÑADIR LAB ---
     const handleAddLab = async () => {
         if (!newLab.name) return notify("El nombre del laboratorio es obligatorio");
         
         const labId = Date.now().toString();
         const updatedLabs = [...laboratories, { ...newLab, id: labId }];
-        setConfigLocal({ ...config, laboratories: updatedLabs });
+        
+        // 1. Actualizamos el estado local
+        const updatedConfig = { ...config, laboratories: updatedLabs };
+        setConfigLocal(updatedConfig);
+        
+        // 2. Forzamos el Guardado Automático en Supabase
+        await saveToSupabase('settings', 'general', updatedConfig); 
+        await saveToSupabase('clinic_config', session?.user?.email || 'general', updatedConfig);
         
         if (newLab.email) {
-            // Si el dentista pone un correo, registramos al laboratorio como usuario del sistema
+            // Si el dentista pone un correo, registramos al laboratorio en el equipo
             const u = { 
                 id: labId, 
                 name: newLab.name, 
                 email: newLab.email.toLowerCase().trim(), 
-                role: 'lab', // <- El rol clave
+                role: 'lab',
                 phone: newLab.phone || ''
             }; 
             setTeam([...team, u]); 
@@ -56,19 +63,29 @@ export default function SettingsView({
             if(error) { 
                 notify("Laboratorio guardado, pero falló el envío de invitación: " + error.message); 
             } else { 
-                notify("Laboratorio agregado y acceso gratuito enviado 📩"); 
+                notify("✅ Laboratorio guardado e invitación enviada."); 
             }
         } else {
-            notify("Laboratorio agregado a la lista local. (Recuerda Guardar Cambios)");
+            notify("✅ Laboratorio agregado exitosamente.");
         }
         
         setNewLab({ name: '', email: '', phone: '' });
     };
 
-    const handleDeleteLab = (id) => {
-        if (window.confirm("¿Seguro que deseas eliminar este laboratorio?")) {
+    // --- GUARDADO AUTOMÁTICO AL ELIMINAR LAB ---
+    const handleDeleteLab = async (id) => {
+        if (window.confirm("¿Seguro que deseas eliminar este laboratorio de tu directorio?")) {
             const updatedLabs = laboratories.filter(l => l.id !== id);
-            setConfigLocal({ ...config, laboratories: updatedLabs });
+            
+            // 1. Actualizamos el estado local
+            const updatedConfig = { ...config, laboratories: updatedLabs };
+            setConfigLocal(updatedConfig);
+
+            // 2. Forzamos el Guardado Automático en Supabase
+            await saveToSupabase('settings', 'general', updatedConfig); 
+            await saveToSupabase('clinic_config', session?.user?.email || 'general', updatedConfig);
+
+            notify("🗑️ Laboratorio eliminado correctamente.");
         }
     };
 
@@ -93,7 +110,7 @@ export default function SettingsView({
                         }}
                         className="flex items-center gap-2 px-8 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
                     >
-                        <Save size={16}/> Guardar Cambios
+                        <Save size={16}/> Guardar Resto de Cambios
                     </button>
                 )}
             </div>
@@ -318,7 +335,7 @@ export default function SettingsView({
                                         className="w-full h-[50px] bg-[#CBAAA2] hover:bg-[#b09088] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#CBAAA2]/30 flex items-center justify-center gap-2"
                                         onClick={handleAddLab}
                                     >
-                                        <Plus size={16}/> Enviar Invitación al Laboratorio
+                                        <Plus size={16}/> Añadir Laboratorio
                                     </button>
                                 </div>
                             </div>
