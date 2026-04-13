@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader, Search, Cloud, Lock, Mail, ArrowRight, FileText } from 'lucide-react';
+import { Loader, Search, Cloud, Lock, Mail, ArrowRight, FileText, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
 import { supabase } from '../supabase';
 import { THEMES } from '../constants';
 import { InputField, Button, Card } from './UIComponents';
@@ -65,7 +65,7 @@ export const TermsScreen = ({ theme }) => {
     );
 };
 
-// --- EL BUSCADOR INTELIGENTE (Corregido para Modales) ---
+// --- EL BUSCADOR INTELIGENTE ---
 export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Paciente..." }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
@@ -142,7 +142,7 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
     );
 };
 
-// --- PANTALLA DE AUTENTICACIÓN ---
+// --- PANTALLA DE AUTENTICACIÓN (DISEÑO PREMIUM + TU LÓGICA) ---
 export const AuthScreen = () => {
     const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState(''); 
@@ -171,7 +171,7 @@ export const AuthScreen = () => {
                 if (error) throw error; 
             } 
         } catch (error) { 
-            setMsg(error.message); 
+            setMsg(error.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error.message); 
         } finally { 
             setLoading(false); 
         } 
@@ -194,95 +194,173 @@ export const AuthScreen = () => {
     };
    
     return (
-        <div className="fixed inset-0 bg-[#FDFBF7] flex items-center justify-center p-4 sm:p-6 z-[100] overflow-y-auto selection:bg-[#CBAAA2] selection:text-white">
+        <div className="fixed inset-0 w-full min-h-screen flex bg-[#FDFBF7] font-sans selection:bg-[#CBAAA2] selection:text-white z-[100] overflow-y-auto">
             
-            <div className="fixed top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full bg-[#DFD2C4]/30 blur-[100px] pointer-events-none"></div>
-            <div className="fixed bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#CBAAA2]/15 blur-[120px] pointer-events-none"></div>
+            {/* --- PANEL IZQUIERDO (VISUAL Y BRANDING) - Oculto en móviles --- */}
+            <div className="hidden lg:flex w-1/2 bg-[#312923] relative flex-col justify-between p-12 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+                <div className="absolute -left-32 -bottom-32 w-96 h-96 bg-[#5B6651]/40 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute top-20 right-10 w-64 h-64 bg-[#CBAAA2]/20 rounded-full blur-[80px] pointer-events-none"></div>
 
-            <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-500 py-4">    
-                
-                <Card className="w-full px-8 py-8 sm:px-10 sm:py-10 shadow-2xl bg-white/95 backdrop-blur-xl border-[#DFD2C4]/50 flex flex-col items-center">
-                    
-                    <div className="w-16 h-16 bg-[#5B6651] rounded-2xl flex items-center justify-center shadow-lg shadow-[#5B6651]/20 mb-5 border border-[#DFD2C4]/40">
-                        <Cloud className="text-white" size={32} strokeWidth={2.5} />
+                <div className="relative z-10 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
+                        <Cloud className="text-white" size={20} strokeWidth={2.5} />
                     </div>
-                    <h1 className="text-3xl font-black text-[#312923] tracking-tight mb-1 text-center">ShiningCloud<span className="text-[#CBAAA2]">Pro</span></h1>
+                    <span className="font-black text-2xl tracking-tighter text-white">ShiningCloud<span className="text-[#DFD2C4]">Dental</span></span>
+                </div>
+
+                <div className="relative z-10 max-w-md animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 text-white/80 text-[10px] font-black uppercase tracking-[0.2em] mb-6 backdrop-blur-md">
+                        <Sparkles size={14} className="text-[#CBAAA2]"/> Entorno Seguro
+                    </div>
+                    <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter mb-6 leading-tight">
+                        Tu clínica en la <br/>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#DFD2C4] to-[#CBAAA2]">bóveda digital.</span>
+                    </h1>
+                    <p className="text-[#DFD2C4] font-medium text-lg leading-relaxed">
+                        Encriptación de grado bancario y trazabilidad absoluta. Todo lo que necesitas para dirigir tu ecosistema médico, protegido bajo los estándares más estrictos.
+                    </p>
+                </div>
+
+                <div className="relative z-10 flex gap-6 text-[#DFD2C4]/60 font-black text-xs uppercase tracking-widest">
+                    <span className="flex items-center gap-2"><ShieldCheck size={16}/> MINSAL Ready</span>
+                    <span className="flex items-center gap-2"><Lock size={16}/> AES-256</span>
+                </div>
+            </div>
+
+            {/* --- PANEL DERECHO (FORMULARIO DE ACCESO) --- */}
+            <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 relative min-h-screen">
+                
+                {/* Botón Volver a la Landing (Útil si el usuario quiere salir de la pantalla completa) */}
+                <div className="absolute top-6 right-6 z-20">
+                    <button onClick={() => window.location.reload()} className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] hover:text-[#312923] transition-colors">
+                        Volver al inicio
+                    </button>
+                </div>
+
+                <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
                     
-                    {vieneDePago ? (
-                        <div className="text-center mb-6">
-                            <p className="text-[#5B6651] text-xs font-bold bg-[#5B6651]/10 px-4 py-2 rounded-full border border-[#5B6651]/20 inline-block mb-2">
-                                ¡Suscripción confirmada! 💳
-                            </p>
-                            <p className="text-[#6B615A] text-xs font-medium">Crea tu contraseña para entrar al sistema.</p>
+                    <div className="text-center lg:text-left mb-8">
+                        <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
+                            <div className="w-12 h-12 bg-[#312923] rounded-xl flex items-center justify-center shadow-md">
+                                <Cloud className="text-white" size={24} strokeWidth={2.5} />
+                            </div>
                         </div>
-                    ) : (
-                        <p className="text-[#9A8F84] text-sm font-medium mb-8 text-center tracking-wide">Acceso a Clínica Digital</p>
+
+                        {vieneDePago ? (
+                            <>
+                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-3">Comienza tu viaje.</h2>
+                                <p className="text-[#5B6651] text-xs font-bold bg-[#5B6651]/10 px-4 py-2 rounded-full border border-[#5B6651]/20 inline-block">
+                                    ¡Suscripción confirmada! 💳
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-2">
+                                    {isSignUp ? 'Crear Clínica' : 'Bienvenido de vuelta.'}
+                                </h2>
+                                <p className="text-[#6B615A] font-medium">
+                                    {isSignUp ? 'Registra tu clínica en el sistema.' : 'Ingresa tus credenciales para acceder.'}
+                                </p>
+                            </>
+                        )}
+                    </div>
+
+                    {vieneDePago && (
+                        <div className="mb-6 p-4 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl flex items-start gap-3 shadow-sm">
+                            <AlertCircle size={18} className="text-[#5B6651] shrink-0 mt-0.5"/>
+                            <p className="text-xs font-bold text-[#6B615A] leading-relaxed">
+                                Crea el correo y contraseña con el que administrarás tu clínica a partir de hoy.
+                            </p>
+                        </div>
                     )}
-       
-                    <form onSubmit={handleAuth} className="space-y-4 w-full">
+
+                    <form onSubmit={handleAuth} className="space-y-5">
                         
                         {msg && (
-                            <div className="p-3 bg-[#FDFBF7] border border-[#DFD2C4] text-[#6B615A] text-xs rounded-xl text-center font-bold">
+                            <div className={`p-4 rounded-xl text-xs font-bold text-center border ${msg.includes('Error') || msg.includes('incorrectos') ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
                                 {msg}
                             </div>
                         )}
-                        
-                        <InputField 
-                            icon={Mail}
-                            type="email" 
-                            placeholder="correo@clinica.cl" 
-                            value={email} 
-                            onChange={e=>setEmail(e.target.value)} 
-                            required 
-                            label="Correo Electrónico"
-                        />
-                        
-                        <InputField 
-                            icon={Lock}
-                            type="password" 
-                            placeholder="Mínimo 6 caracteres" 
-                            value={password} 
-                            onChange={e=>setPassword(e.target.value)} 
-                            required 
-                            minLength={6} 
-                            label="Contraseña"
-                        />
-                        
-                        {!isSignUp && (
-                            <div className="flex justify-end pt-1">
-                                <button type="button" onClick={handleResetPassword} disabled={loading} className="text-[11px] font-bold text-[#CBAAA2] hover:text-[#9A8F84] transition-colors underline-offset-4 hover:underline">
-                                    ¿Olvidaste tu contraseña?
-                                </button>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-1">Correo Electrónico</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Mail size={18} className="text-[#A3968B] group-focus-within:text-[#5B6651] transition-colors"/>
+                                </div>
+                                <input
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="doctor@clinica.cl"
+                                    className="w-full pl-11 pr-4 py-4 bg-white border border-[#DFD2C4] rounded-2xl text-[#312923] font-medium placeholder:text-[#DFD2C4] focus:outline-none focus:ring-2 focus:ring-[#5B6651]/30 focus:border-[#5B6651] transition-all shadow-sm"
+                                />
                             </div>
-                        )}
-                        
-                        <div className="pt-2">
-                            <Button 
-                                type="submit" 
-                                disabled={loading} 
-                                className="w-full py-3.5 text-sm tracking-widest uppercase shadow-xl shadow-[#5B6651]/20 hover:-translate-y-0.5"
-                                variant="primary"
-                            >
-                                {loading ? 'Procesando...' : (isSignUp ? 'Crear Mi Clínica' : 'Entrar al Sistema')}
-                                {!loading && <ArrowRight size={18} className="ml-2"/>}
-                            </Button>
                         </div>
-                    </form>
-                </Card>
-  
-                {!vieneDePago && (
-                    <div className="mt-6 text-center">
-                        <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mb-3">
-                            ¿Aún no tienes cuenta?
-                        </p>
+
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center ml-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Contraseña</label>
+                                {!isSignUp && (
+                                    <button type="button" onClick={handleResetPassword} disabled={loading} className="text-[10px] font-black uppercase tracking-widest text-[#CBAAA2] hover:text-[#312923] transition-colors">
+                                        ¿Olvidaste tu clave?
+                                    </button>
+                                )}
+                            </div>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Lock size={18} className="text-[#A3968B] group-focus-within:text-[#5B6651] transition-colors"/>
+                                </div>
+                                <input
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    minLength={6}
+                                    className="w-full pl-11 pr-4 py-4 bg-white border border-[#DFD2C4] rounded-2xl text-[#312923] font-medium placeholder:text-[#DFD2C4] focus:outline-none focus:ring-2 focus:ring-[#5B6651]/30 focus:border-[#5B6651] transition-all shadow-sm"
+                                />
+                            </div>
+                        </div>
+
                         <button 
-                            onClick={(e) => { e.preventDefault(); window.location.href = MP_SUBSCRIPTION_LINK; }} 
-                            className="px-6 py-2.5 rounded-full border border-[#DFD2C4] text-[#6B615A] hover:bg-white hover:text-[#5B6651] hover:border-[#CBAAA2] transition-all text-xs font-bold uppercase tracking-widest shadow-sm bg-[#FDFBF7]"
+                            type="submit" 
+                            disabled={loading}
+                            className="w-full py-4 mt-4 bg-[#312923] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#312923]/20 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5"
                         >
-                            Probar 30 días gratis
+                            {loading ? (
+                                <span className="animate-pulse flex items-center gap-2"><Loader size={16} className="animate-spin"/> Procesando...</span>
+                            ) : (
+                                <>
+                                    {isSignUp ? 'Crear Clínica Digital' : 'Acceder al Sistema'} <ArrowRight size={16}/>
+                                </>
+                            )}
                         </button>
-                    </div>
-                )}
+                    </form>
+
+                    {!vieneDePago && (
+                        <div className="mt-8 text-center border-t border-[#DFD2C4]/40 pt-6">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-3">
+                                ¿Aún no tienes tu clínica en la nube?
+                            </p>
+                            <button 
+                                onClick={(e) => { e.preventDefault(); window.location.href = MP_SUBSCRIPTION_LINK; }} 
+                                className="w-full px-6 py-3.5 rounded-2xl border border-[#DFD2C4] text-[#6B615A] hover:bg-white hover:text-[#5B6651] hover:border-[#5B6651]/50 transition-all text-xs font-black uppercase tracking-widest shadow-sm bg-[#FDFBF7]"
+                            >
+                                Probar 30 días gratis
+                            </button>
+                            
+                            <p className="text-xs font-bold text-[#6B615A] mt-6">
+                                O <button onClick={() => setIsSignUp(!isSignUp)} className="text-[#5B6651] hover:text-[#312923] transition-colors font-black underline decoration-[#5B6651]/30 underline-offset-4">
+                                    {isSignUp ? "inicia sesión aquí" : "crea una cuenta manual"}
+                                </button>
+                            </p>
+                        </div>
+                    )}
+
+                </div>
             </div>
         </div>
     );

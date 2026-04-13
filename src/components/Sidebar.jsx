@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
     X, Cloud, LogOut, TrendingUp, CalendarClock, User, Users, 
-    Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield, ShieldCheck 
+    Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield, ShieldCheck,
+    Crown
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -21,7 +22,6 @@ export default function Sidebar({
         if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'clinical', label: 'Recetas', icon: Stethoscope }); }
         if (userRole === 'admin' || userRole === 'dentist') { base.push({ id: 'catalog', label: 'Arancel', icon: Library }); }
         if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'lab', label: 'Laboratorio', icon: FlaskConical }); }
-        // NUEVO: Módulo de Bioseguridad y Esterilización
         if (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') { base.push({ id: 'sterilization', label: 'Esterilización', icon: ShieldCheck }); }
         if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
         base.push({ id: 'terms', label: 'Legal', icon: Shield });
@@ -94,15 +94,33 @@ export default function Sidebar({
                 })}
             </nav>
 
-            {/* --- BOTÓN SALIR --- */}
-            <div className={`p-4 space-y-2 border-t border-[#DFD2C4]/40 bg-[#FDFBF7]/30 ${isWorkspaceActive ? 'px-2' : ''}`}>
+            {/* --- ZONA INFERIOR: PANEL MAESTRO & SALIR --- */}
+            <div className={`p-4 space-y-3 border-t border-[#DFD2C4]/40 bg-[#FDFBF7]/30 ${isWorkspaceActive ? 'px-2' : ''}`}>
+                
+                {/* BOTÓN PANEL MAESTRO (Solo visible para tu correo) */}
+                {session?.user?.email === 'b.barreracabrera.dent@gmail.com' && (
+                    <button 
+                        title={isWorkspaceActive ? "Panel Maestro" : ""}
+                        onClick={() => { setActiveTab('master_panel'); setMobileMenuOpen(false); }}
+                        className={`w-full p-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-3 ${centerIcons} ${
+                            activeTab === 'master_panel' 
+                            ? 'bg-amber-500 text-white shadow-md border border-amber-600' 
+                            : 'bg-[#312923] text-amber-400 border border-[#1a1512] hover:bg-black hover:scale-[1.02] shadow-sm'
+                        }`}
+                    >
+                        <Crown size={18} className={`shrink-0 transition-transform duration-300 ${activeTab === 'master_panel' ? 'text-white' : 'text-amber-400 group-hover:scale-110'}`}/>
+                        <span className={`mt-0.5 ${hideOnCollapse}`}>Panel Maestro</span>
+                    </button>
+                )}
+
+                {/* BOTÓN CERRAR SESIÓN */}
                 <button 
                     title={isWorkspaceActive ? "Cerrar Sesión" : ""}
                     onClick={() => supabase.auth.signOut()} 
-                    className={`w-full p-4 rounded-2xl bg-white border border-[#DFD2C4]/50 text-[#6B615A] font-bold text-xs transition-all hover:bg-[#CBAAA2]/10 hover:text-[#312923] hover:border-[#CBAAA2]/40 flex items-center gap-2 ${centerIcons}`}
+                    className={`w-full p-4 rounded-2xl bg-white border border-[#DFD2C4]/50 text-[#6B615A] font-bold text-xs transition-all hover:bg-[#CBAAA2]/10 hover:text-[#312923] hover:border-[#CBAAA2]/40 flex items-center gap-3 ${centerIcons}`}
                 >
-                    <LogOut size={16} className="text-[#CBAAA2] shrink-0"/> 
-                    <span className={hideOnCollapse}>CERRAR SESIÓN</span>
+                    <LogOut size={18} className="text-[#CBAAA2] shrink-0"/> 
+                    <span className={`mt-0.5 ${hideOnCollapse}`}>CERRAR SESIÓN</span>
                 </button>
             </div>
         </aside>

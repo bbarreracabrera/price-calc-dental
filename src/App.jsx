@@ -16,6 +16,7 @@ import { Card, Button, InputField } from './components/UIComponents';
 import { PatientSelect, AuthScreen, TermsScreen } from './components/SystemModals';
 import LandingPage from "./components/LandingPage";
 import DashboardView from './components/DashboardView';
+import MasterPanel from './components/MasterPanel';
 import FinanceCenter from './components/FinanceCenter';
 import CatalogView from './components/CatalogView';
 import InventoryView from './components/InventoryView';
@@ -29,7 +30,8 @@ import Sidebar from './components/Sidebar';
 import PatientWorkspace from './components/PatientWorkspace';
 import PublicBooking from './components/PublicBooking'; 
 import SterilizationView from './components/SterilizationView'; 
-import NetworkMonitor from './components/NetworkMonitor'; // <-- Radar Offline
+import NetworkMonitor from './components/NetworkMonitor';
+import LabDashboard from './components/LabDashboard'; 
 
 // --- MODALS ---
 import ToothModal from './components/ToothModal';
@@ -72,6 +74,10 @@ export default function App() {
   const [team, setTeam] = useState([]); 
   const [userRole, setUserRole] = useState('admin');
   const [clinicOwner, setClinicOwner] = useState('');
+
+  // === LA LLAVE MAESTRA ===
+  const MASTER_EMAIL = 'b.barreracabrera.dent@gmail.com'; 
+  const IS_MASTER_ADMIN = session?.user?.email === MASTER_EMAIL;
 
   // Formularios y Vistas
   const [selectedPatientId, setSelectedPatientId] = useState(null);
@@ -150,6 +156,26 @@ export default function App() {
       setProtocols, setInventory, setCatalog, setLabWorks
   });
 
+  // --- CERRADURA DE SEGURIDAD PARA ROLES (Evita la Fuga de Rol) ---
+  useEffect(() => {
+      const verifyRole = async () => {
+          if (session?.user?.email) {
+              // Verificamos forzosamente si este correo es de un laboratorio en la base de datos
+              const { data } = await supabase
+                  .from('team')
+                  .select('data')
+                  .eq('data->>email', session.user.email)
+                  .single();
+              
+              if (data && data.data && data.data.role === 'lab') {
+                  setUserRole('lab');
+              }
+          }
+      };
+      verifyRole();
+  }, [session]);
+  // ----------------------------------------------------------------
+
   useEffect(() => {
       if (session && clinicOwner) {
           const fetchSterilization = async () => {
@@ -182,19 +208,13 @@ export default function App() {
 
   const toggleTheme = () => { const modes = ['dark', 'light', 'blue']; const next = modes[(modes.indexOf(themeMode) + 1) % modes.length]; setThemeMode(next); localStorage.setItem('sc_theme_mode', next); };
   
-  // La nueva versión inteligente de saveToSupabase
 const saveToSupabase = async (tableName, id, dataObj) => {
-    // 1. SI HAY INTERNET
     if (navigator.onLine) {
         try {
-            // Empaquetamos según tu arquitectura de base de datos
             let payload = { id: id };
-            
-            // Si son tablas nuevas con columnas planas, desempaquetamos
             if (['clinic_config', 'clinical_evolutions'].includes(tableName)) {
                 payload = { id: id, ...dataObj };
             } else {
-                // Para pacientes, agenda, finanzas, etc. Todo va a la columna JSON 'data'
                 payload.data = dataObj;
                 payload.admin_email = clinicOwner || session?.user?.email;
             }
@@ -208,26 +228,16 @@ const saveToSupabase = async (tableName, id, dataObj) => {
             return false;
         }
     } 
-    // 2. SI NO HAY INTERNET
     else {
         saveToOfflineVault(tableName, id, dataObj);
         return false; 
     }
 };
 
-// Función auxiliar para la Bóveda Local
 const saveToOfflineVault = (table, id, data) => {
     console.warn(`Modo Offline: Guardando en bóveda local [Tabla: ${table}]`);
     const queue = JSON.parse(localStorage.getItem('shining_offline_queue') || '[]');
-    
-    // Agregamos la tarea a la cola de sincronización
-    queue.push({
-        table,
-        id,
-        data,
-        timestamp: new Date().toISOString()
-    });
-    
+    queue.push({ table, id, data, timestamp: new Date().toISOString() });
     localStorage.setItem('shining_offline_queue', JSON.stringify(queue));
 };
   
@@ -474,6 +484,23 @@ const saveToOfflineVault = (table, id, data) => {
           </div>
       );
   }
+
+  // --- MAGIA: INTERCEPTAMOS AL LABORATORIO ---
+  if (userRole === 'lab') {
+      return (
+          <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans">
+              <Toaster position="bottom-center" />
+              <main className="p-6 md:p-10 h-screen overflow-y-auto">
+                  <LabDashboard 
+                      config={config} 
+                      supabase={supabase} 
+                      notify={notify} 
+                  />
+              </main>
+          </div>
+      );
+  }
+  // ------------------------------------------
   
   const t = THEMES[themeMode] || THEMES.dark;
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
@@ -500,11 +527,12 @@ const saveToOfflineVault = (table, id, data) => {
             <div className="w-8"></div>
         </div>
         
+        {activeTab === 'master_panel' && IS_MASTER_ADMIN && <MasterPanel supabase={supabase} notify={notify} />}
         {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} expirationAlerts={expirationAlerts} />}
         {activeTab === 'terms' && <TermsScreen theme={t} />}
         {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <FinanceCenter themeMode={themeMode} t={t} financeTab={financeTab} setFinanceTab={setFinanceTab} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} incomeRecords={incomeRecords} expenseRecords={expenseRecords} totalCollected={totalCollected} totalExpenses={totalExpenses} totalDebt={totalDebt} netProfit={netProfit} patientRecords={patientRecords} saveToSupabase={saveToSupabase} notify={notify} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} onOpenAbonoModal={(record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); }} session={session} team={team} userRole={userRole} />}
         {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && <CatalogView themeMode={themeMode} t={t} catalog={catalog} setCatalog={setCatalog} clinicOwner={clinicOwner} session={session} setNewCatalogItem={setNewCatalogItem} setModal={setModal} saveToSupabase={saveToSupabase} notify={notify} />}
-        {activeTab === 'inventory' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <InventoryView themeMode={themeMode} t={t} inventory={inventory} setInventory={setInventory} filteredInventory={filteredInventory} inventorySearch={inventorySearch} setInventorySearch={setInventorySearch} setNewItem={setNewItem} setModal={setModal} saveToSupabase={saveToSupabase} session={session} team={team} />}        
+        {activeTab === 'inventory' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <InventoryView themeMode={themeMode} t={t} inventory={inventory} setInventory={setInventory} filteredInventory={filteredInventory} inventorySearch={inventorySearch} setInventorySearch={setInventorySearch} setNewItem={setNewItem} setModal={setModal} saveToSupabase={saveToSupabase} session={session} team={team} notify={notify} />}
         {activeTab === 'lab' && <LabView themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks} setNewLabWork={setNewLabWork} setModal={setModal} notify={notify} team={team} sendWhatsApp={sendWhatsApp} config={config} />}        
         {activeTab === 'settings' && <SettingsView themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal} logoInputRef={logoInputRef} handleLogoUpload={handleLogoUploadWrapper} userRole={userRole} saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam} newMember={newMember} setNewMember={setNewMember} session={session} />}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <QuoteView themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems} newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog} patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData} getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase} notify={notify} generatePDF={handleGeneratePDF} setActiveTab={setActiveTab} />}
@@ -512,7 +540,6 @@ const saveToOfflineVault = (table, id, data) => {
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} />}
         {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <CRMView themeMode={themeMode} t={t} getRecalls={getRecalls} patientRecords={patientRecords} setActiveTab={setActiveTab} setSelectedPatientId={setSelectedPatientId} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} />}
         
-        {/* --- NUEVO: RENDERIZAMOS LA VISTA DE ESTERILIZACIÓN --- */}
         {activeTab === 'sterilization' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && (
             <SterilizationView 
                 themeMode={themeMode} 

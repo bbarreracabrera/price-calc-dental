@@ -31,12 +31,38 @@ export default function SettingsView({
         setConfigLocal({ ...config, schedule: updatedSchedule });
     };
 
-    const handleAddLab = () => {
+    // --- MAGIA DEL CABALLO DE TROYA AQUÍ ---
+    const handleAddLab = async () => {
         if (!newLab.name) return notify("El nombre del laboratorio es obligatorio");
-        const updatedLabs = [...laboratories, { ...newLab, id: Date.now().toString() }];
+        
+        const labId = Date.now().toString();
+        const updatedLabs = [...laboratories, { ...newLab, id: labId }];
         setConfigLocal({ ...config, laboratories: updatedLabs });
+        
+        if (newLab.email) {
+            // Si el dentista pone un correo, registramos al laboratorio como usuario del sistema
+            const u = { 
+                id: labId, 
+                name: newLab.name, 
+                email: newLab.email.toLowerCase().trim(), 
+                role: 'lab', // <- El rol clave
+                phone: newLab.phone || ''
+            }; 
+            setTeam([...team, u]); 
+            await saveToSupabase('team', labId, u); 
+            
+            // Enviamos el Magic Link de acceso gratuito
+            const { error } = await supabase.auth.signInWithOtp({ email: u.email, options: { emailRedirectTo: window.location.origin } });
+            if(error) { 
+                notify("Laboratorio guardado, pero falló el envío de invitación: " + error.message); 
+            } else { 
+                notify("Laboratorio agregado y acceso gratuito enviado 📩"); 
+            }
+        } else {
+            notify("Laboratorio agregado a la lista local. (Recuerda Guardar Cambios)");
+        }
+        
         setNewLab({ name: '', email: '', phone: '' });
-        notify("Laboratorio agregado a la lista. Recuerda Guardar Cambios arriba.");
     };
 
     const handleDeleteLab = (id) => {
@@ -60,7 +86,6 @@ export default function SettingsView({
                 {userRole === 'admin' && (
                     <button 
                         onClick={()=>{
-                            // Guardamos en Settings y también en Clinic Config (para el visor radiológico)
                             const configToSave = { ...config, schedule: config.schedule || defaultSchedule };
                             saveToSupabase('settings', 'general', configToSave); 
                             saveToSupabase('clinic_config', session?.user?.email || 'general', configToSave);
@@ -275,7 +300,7 @@ export default function SettingsView({
                                     <input className="w-full p-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="Ej: Lab Cerámico Sur" value={newLab.name} onChange={e=>setNewLab({...newLab, name:e.target.value})}/>
                                 </div>
                                 <div className="md:col-span-4 space-y-1">
-                                    <label className={labelClass}>Correo (Opcional)</label>
+                                    <label className={labelClass}>Correo (Acceso Online)</label>
                                     <div className="relative">
                                         <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
                                         <input className="w-full pl-10 pr-3 py-3.5 rounded-xl bg-white border border-[#DFD2C4] outline-none font-bold text-sm text-[#312923] focus:border-[#5B6651] transition-colors" placeholder="contacto@lab.com" value={newLab.email} onChange={e=>setNewLab({...newLab, email:e.target.value})}/>
@@ -293,7 +318,7 @@ export default function SettingsView({
                                         className="w-full h-[50px] bg-[#CBAAA2] hover:bg-[#b09088] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#CBAAA2]/30 flex items-center justify-center gap-2"
                                         onClick={handleAddLab}
                                     >
-                                        <Plus size={16}/> Añadir a la lista
+                                        <Plus size={16}/> Enviar Invitación al Laboratorio
                                     </button>
                                 </div>
                             </div>
@@ -347,7 +372,6 @@ export default function SettingsView({
                                                 const id = Date.now().toString(); 
                                                 const comisionAsignada = newMember.role === 'dentist' ? (newMember.commission || 0) : 0;
                                                 
-                                                // Aseguramos que el email se guarde en minúsculas para el RLS
                                                 const u = { 
                                                     ...newMember, 
                                                     id, 
@@ -386,8 +410,8 @@ export default function SettingsView({
                                         </div>
                                         <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
                                             <div className="flex flex-col items-end gap-1">
-                                                <span className={`text-[9px] uppercase font-black px-3 py-1.5 rounded-full border tracking-widest ${member.role === 'admin' ? 'bg-[#5B6651]/10 text-[#5B6651] border-[#5B6651]/20' : member.role === 'dentist' ? 'bg-[#A3968B]/10 text-[#A3968B] border-[#A3968B]/20' : 'bg-[#CBAAA2]/10 text-[#CBAAA2] border-[#CBAAA2]/20'}`}>
-                                                    {member.role === 'admin' ? 'Administrador' : member.role === 'dentist' ? 'Odontólogo' : 'Asistente'}
+                                                <span className={`text-[9px] uppercase font-black px-3 py-1.5 rounded-full border tracking-widest ${member.role === 'admin' ? 'bg-[#5B6651]/10 text-[#5B6651] border-[#5B6651]/20' : member.role === 'dentist' ? 'bg-[#A3968B]/10 text-[#A3968B] border-[#A3968B]/20' : member.role === 'lab' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-[#CBAAA2]/10 text-[#CBAAA2] border-[#CBAAA2]/20'}`}>
+                                                    {member.role === 'admin' ? 'Administrador' : member.role === 'dentist' ? 'Odontólogo' : member.role === 'lab' ? 'Laboratorio' : 'Asistente'}
                                                 </span>
                                                 {member.role === 'dentist' && <span className="text-[9px] font-black text-[#9A8F84] pr-2">Comisión: {member.commission || 0}%</span>}
                                             </div>
