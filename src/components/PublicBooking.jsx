@@ -103,10 +103,10 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         try {
             // 2. Consultamos TODAS las citas de ese día para esta clínica
             const { data: appts, error } = await supabase
-                .from('appointments')
-                .select('data')
+                .from('public_appointments_availability')
+                .select('time, duration')
                 .eq('admin_email', adminEmail)
-                .eq('data->>date', dateStr);
+                .eq('date', dateStr);
             
             if (error) throw error;
 
@@ -123,10 +123,9 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                     const slotEnd = slotStart + 30; // Cada botón dura 30 mins
 
                     const isOccupied = appts.some(appt => {
-                        const a = appt.data;
-                        const apptStart = toMins(a.time);
+                        const apptStart = toMins(appt.time);
                         // Si la cita no tiene duración, asumimos 30 mins
-                        const apptEnd = apptStart + (Number(a.duration) || 30);
+                        const apptEnd = apptStart + (Number(appt.duration) || 30);
 
                         // Lógica de colisión: el slot está ocupado si...
                         // (El slot empieza antes de que termine la cita) Y (El slot termina después de que empiece la cita)
@@ -173,7 +172,10 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                 id: patientId,
                 personal: { legalName: formData.name, rut: formData.rut, phone: formData.phone }
             };
-            await supabase.from('patients').upsert([{ id: patientId, admin_email: adminEmail, data: patientData }]);
+            const { error: patientError } = await supabase
+                .from('patients')
+                .upsert([{ id: patientId, admin_email: adminEmail, data: patientData }]);
+            if (patientError) console.warn('No se pudo crear registro de paciente:', patientError.message);
 
             setStep(4);
         } catch (err) {
