@@ -28,11 +28,10 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         const fetchClinicData = async () => {
             try {
                 const { data, error } = await supabase
-                    .from('settings')
+                    .from('public_clinic_info')
                     .select('admin_email, data')
-                    .eq('id', 'general')
-                    .eq('data->>publicSlug', clinicId) 
-                    .maybeSingle(); 
+                    .eq('data->>publicSlug', clinicId)
+                    .maybeSingle();
 
                 if (error) throw error;
                 if (data) {
