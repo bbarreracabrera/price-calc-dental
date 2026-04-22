@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; 
-import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2 } from 'lucide-react';
+import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2, Banknote, ArrowRightLeft, CreditCard, Smartphone, MoreHorizontal } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { getLocalDate } from '../constants'; 
@@ -13,6 +13,55 @@ export default function FinanceCenter({
     session, team = [], userRole
 }) {
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
+    const [dateRange, setDateRange] = useState('this_month');
+
+    const today = new Date();
+    const isPaymentInRange = (paymentDate) => {
+        if (!paymentDate) return true; // sin fecha → siempre incluido
+        if (dateRange === 'all') return true;
+        const d = new Date(paymentDate + 'T12:00:00');
+        if (dateRange === 'this_month') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+        if (dateRange === 'last_month') {
+            const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth();
+        }
+        if (dateRange === 'last_3_months') return d >= new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+        return true;
+    };
+    const isExpenseInRange = (expenseDate) => {
+        if (!expenseDate) return true;
+        if (dateRange === 'all') return true;
+        const d = new Date(expenseDate + 'T12:00:00');
+        if (dateRange === 'this_month') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+        if (dateRange === 'last_month') {
+            const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth();
+        }
+        if (dateRange === 'last_3_months') return d >= new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+        return true;
+    };
+
+    // Pagos filtrados por payment.date; legacy (r.paid sin payments) siempre incluidos
+    const filteredPayments = incomeRecords.flatMap(r => (r.payments || []).filter(p => isPaymentInRange(p.date)));
+    const legacyCollected = incomeRecords.filter(r => r.paid && !r.payments).reduce((s, r) => s + r.paid, 0);
+    const filteredCollected = filteredPayments.reduce((s, p) => s + p.amount, 0) + legacyCollected;
+    const filteredExpenses = expenseRecords.filter(ex => isExpenseInRange(ex.date)).reduce((s, ex) => s + Number(ex.amount), 0);
+    const filteredProfit = filteredCollected - filteredExpenses;
+
+    const PAYMENT_METHODS = [
+        { key: 'Efectivo', Icon: Banknote },
+        { key: 'Transferencia', Icon: ArrowRightLeft },
+        { key: 'Tarjeta', Icon: CreditCard },
+        { key: 'Mercado Pago', Icon: Smartphone },
+        { key: 'Otro', Icon: MoreHorizontal },
+    ];
+    const methodBreakdown = PAYMENT_METHODS.map(({ key, Icon }) => {
+        const bucket = filteredPayments.filter(p => (p.method === key) || (!p.method && key === 'Otro'));
+        const total = bucket.reduce((s, p) => s + p.amount, 0);
+        const count = bucket.length;
+        const pct = filteredCollected > 0 ? Math.round((total / filteredCollected) * 100) : 0;
+        return { key, Icon, total, count, pct };
+    });
 
     const exportToExcel = () => {
         const formattedData = financialRecords.map(record => {
@@ -131,13 +180,36 @@ export default function FinanceCenter({
                 {/* --- TAB 1: RESUMEN --- */}
                 {financeTab === 'resumen' && (
                     <div className="space-y-6 animate-in fade-in">
+
+                        {/* Filtro de rango de fechas */}
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { id: 'this_month', label: 'Este mes' },
+                                { id: 'last_month', label: 'Último mes' },
+                                { id: 'last_3_months', label: 'Últimos 3 meses' },
+                                { id: 'all', label: 'Todo el tiempo' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => setDateRange(opt.id)}
+                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                        dateRange === opt.id
+                                        ? 'bg-[#312923] text-white border-[#312923]'
+                                        : 'bg-white text-[#9A8F84] border-[#DFD2C4] hover:border-[#312923] hover:text-[#312923]'
+                                    }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <Card className="rounded-[2rem] border border-[#DFD2C4]/50 p-6 flex flex-col justify-between bg-white">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-[#5B6651]/10 text-[#5B6651] rounded-2xl"><ArrowUpRight size={20}/></div>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">Recaudado</span>
                                 </div>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${totalCollected.toLocaleString()}</h2>
+                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${filteredCollected.toLocaleString()}</h2>
                             </Card>
 
                             <Card className="rounded-[2rem] border border-[#DFD2C4]/50 p-6 flex flex-col justify-between bg-white">
@@ -145,7 +217,7 @@ export default function FinanceCenter({
                                     <div className="p-3 bg-red-50 text-red-500 rounded-2xl"><ArrowDownRight size={20}/></div>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">Egresos Totales</span>
                                 </div>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${totalExpenses.toLocaleString()}</h2>
+                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${filteredExpenses.toLocaleString()}</h2>
                             </Card>
 
                             <Card className="rounded-[2rem] border border-[#DFD2C4]/50 p-6 flex flex-col justify-between bg-white">
@@ -158,15 +230,37 @@ export default function FinanceCenter({
                         </div>
 
                         <div className={`relative overflow-hidden rounded-[2.5rem] py-12 text-center shadow-2xl transition-all duration-500 ${
-                            netProfit >= 0 ? 'bg-[#312923] text-white' : 'bg-red-600 text-white'
+                            filteredProfit >= 0 ? 'bg-[#312923] text-white' : 'bg-red-600 text-white'
                         }`}>
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
                             <div className="relative z-10">
                                 <p className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-60 mb-3">Utilidad Real de la Clínica</p>
-                                <h2 className="text-7xl font-black tracking-tighter mb-4">${netProfit.toLocaleString()}</h2>
-                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${netProfit >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/20 text-white'}`}>
-                                    {netProfit >= 0 ? 'Caja en Positivo' : 'Caja en Negativo'}
+                                <h2 className="text-7xl font-black tracking-tighter mb-4">${filteredProfit.toLocaleString()}</h2>
+                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${filteredProfit >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/20 text-white'}`}>
+                                    {filteredProfit >= 0 ? 'Caja en Positivo' : 'Caja en Negativo'}
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Ingresos por método de pago */}
+                        <div>
+                            <h3 className="font-black text-[#312923] text-lg tracking-tight mb-4">Ingresos por método de pago</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                {methodBreakdown.map(({ key, Icon, total, count, pct }) => (
+                                    <Card key={key} className={`rounded-[2rem] border p-5 flex flex-col gap-3 bg-white transition-all ${count === 0 ? 'border-[#DFD2C4]/30 opacity-40' : 'border-[#DFD2C4]/60'}`}>
+                                        <div className="p-3 bg-[#FDFBF7] rounded-2xl w-fit">
+                                            <Icon size={20} className="text-[#A3968B]"/>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-1">{key}</p>
+                                            <p className="text-2xl font-black text-[#312923] tracking-tighter">${total.toLocaleString()}</p>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                            <p className="text-[10px] font-bold text-[#5B6651]">{pct}% del total</p>
+                                            <p className="text-[10px] font-bold text-[#9A8F84]">{count} {count === 1 ? 'pago' : 'pagos'}</p>
+                                        </div>
+                                    </Card>
+                                ))}
                             </div>
                         </div>
                     </div>
