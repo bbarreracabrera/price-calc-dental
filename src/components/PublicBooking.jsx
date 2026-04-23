@@ -82,6 +82,9 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
     // --- 🛡️ LÓGICA DE FILTRADO CORREGIDA (RANGOS DE TIEMPO) ---
     const handleDateSelect = async (dateStr) => {
+        const year = parseInt(dateStr?.split('-')[0], 10);
+        if (!dateStr || year < 2000 || year > 2100) return;
+
         setFormData({ ...formData, date: dateStr, time: '' });
         if (!clinicConfig?.schedule) return;
 
@@ -174,7 +177,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
             };
             const { error: patientError } = await supabase
                 .from('patients')
-                .upsert([{ id: patientId, admin_email: adminEmail, data: patientData }]);
+                .insert([{ id: patientId, admin_email: adminEmail, data: patientData }]);
             if (patientError) console.warn('No se pudo crear registro de paciente:', patientError.message);
 
             setStep(4);
