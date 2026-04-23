@@ -443,13 +443,18 @@ export default function FinanceCenter({
                                         </div>
                                         <div className="flex items-center gap-6">
                                             <span className="font-black text-red-500 text-xl tracking-tighter">-${Number(ex.amount).toLocaleString()}</span>
-                                            <button 
-                                                onClick={async()=>{ 
-                                                    const filtered = financialRecords.filter(f=>f.id!==ex.id); 
-                                                    setFinancialRecords(filtered); 
-                                                    await supabase.from('financials').delete().eq('id', ex.id); 
-                                                    notify("Egreso Eliminado"); 
-                                                }} 
+                                            <button
+                                                onClick={async()=>{
+                                                    try {
+                                                        const { error } = await supabase.from('financials').delete().eq('id', ex.id);
+                                                        if (error) throw error;
+                                                        setFinancialRecords(financialRecords.filter(f => f.id !== ex.id));
+                                                        notify("Egreso Eliminado");
+                                                    } catch (err) {
+                                                        notify("Error al eliminar el egreso");
+                                                        console.error('Error eliminando egreso:', err.message);
+                                                    }
+                                                }}
                                                 className="p-2.5 rounded-xl text-[#9A8F84] hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
                                             >
                                                 <Trash2 size={18}/>

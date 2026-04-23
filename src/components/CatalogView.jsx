@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Library, Plus, Edit3, Trash2, Search, Tag } from 'lucide-react';
 import { Card } from './UIComponents';
 import { DEFAULT_CATALOG } from '../constants';
+import { supabase } from '../supabase';
 
 export default function CatalogView({ 
     themeMode, t, catalog, setCatalog, clinicOwner, session, 
@@ -135,11 +136,21 @@ export default function CatalogView({
                                         >
                                             <Edit3 size={18}/>
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={async () => {
+                                                const { error } = await supabase
+                                                    .from('catalog')
+                                                    .delete()
+                                                    .eq('id', item.id)
+                                                    .eq('admin_email', clinicOwner || session?.user?.email);
+                                                if (error) {
+                                                    notify("Error al eliminar el tratamiento");
+                                                    console.error('Error eliminando de catalog:', error.message);
+                                                    return;
+                                                }
                                                 setCatalog(catalog.filter(c => c.id !== item.id));
                                                 notify("Tratamiento eliminado");
-                                            }} 
+                                            }}
                                             className="p-2.5 rounded-xl text-[#9A8F84] hover:text-red-500 hover:bg-red-50 transition-all"
                                             title="Eliminar"
                                         >
