@@ -491,10 +491,11 @@ const saveToOfflineVault = (table, id, data) => {
           <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans">
               <Toaster position="bottom-center" />
               <main className="p-6 md:p-10 h-screen overflow-y-auto">
-                  <LabDashboard 
-                      config={config} 
-                      supabase={supabase} 
-                      notify={notify} 
+                  <LabDashboard
+                      config={config}
+                      supabase={supabase}
+                      notify={notify}
+                      session={session}
                   />
               </main>
           </div>

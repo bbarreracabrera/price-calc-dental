@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FlaskConical, Clock, CheckCircle2, Truck, AlertCircle, Building2, Calendar, MonitorPlay, Droplets, PaintBucket, ArrowRight, UserCircle, FileText, Users, Lock, DollarSign } from 'lucide-react';
 import { Card } from './UIComponents';
 
-export default function LabDashboard({ config, supabase, notify }) {
+export default function LabDashboard({ config, supabase, notify, session }) {
     const [labJobs, setLabJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     // NUEVO ESTADO: Navegación del Lab
@@ -18,7 +18,9 @@ export default function LabDashboard({ config, supabase, notify }) {
 
     const fetchRealJobs = async () => {
         setLoading(true);
-        const { data, error } = await supabase.from('lab_works').select('*');
+        const labEmail = session?.user?.email;
+        if (!labEmail) { setLoading(false); return; }
+        const { data, error } = await supabase.from('lab_works').select('*').eq('lab_email', labEmail);
         if (error) {
             notify("Error conectando con el servidor");
         } else if (data) {
