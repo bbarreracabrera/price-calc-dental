@@ -42,6 +42,7 @@ import LabWorkModal from './components/LabWorkModal';
 import AddItemModal from './components/AddItemModal';
 import LoadPackModal from './components/LoadPackModal';
 import RecoveryModal from './components/RecoveryModal';
+import OnboardingModal from './components/OnboardingModal';
 
 // --- UTILS & HOOKS ---
 import { generatePDF } from './utils/pdfGenerator';
@@ -62,7 +63,7 @@ export default function App() {
   const [publicClinicId, setPublicClinicId] = useState(null); 
   
   // Data
-  const [config, setConfigLocal] = useState({ logo: null, hourlyRate: 25000, profitMargin: 30, name: "Dr. Benjamín" });
+  const [config, setConfigLocal] = useState({ logo: null, hourlyRate: 25000, profitMargin: 30, name: "Profesional" });
   const [patientRecords, setPatientRecords] = useState({});
   const [appointments, setAppointments] = useState([]);
   const [financialRecords, setFinancialRecords] = useState([]); 
@@ -369,6 +370,13 @@ const saveToOfflineVault = (table, id, data) => {
   const handleGeneratePDF = useCallback((type, data = null) => generatePDF(type, data, { themeMode, config, selectedPatientId, getPatient, sessionData, patientRecords, prescription, notify, logAction }), [themeMode, config, selectedPatientId, getPatient, sessionData, patientRecords, prescription, logAction]);
   const saveToSupabaseWrapper = useCallback((t, id, d) => saveToSupabase(t, id, d), [clinicOwner, session]);
 
+  const handleOnboardingSave = async (form) => {
+      const newConfig = { ...config, name: form.name, specialty: form.specialty, rut: form.rut, phone: form.phone || config.phone, address: form.address || config.address };
+      setConfigLocal(newConfig);
+      await saveToSupabase('settings', 'general', newConfig);
+      notify(`¡Bienvenido/a, ${form.name.split(' ').slice(-1)[0]}!`);
+  };
+
   // ==========================================
   // 5. DATOS DERIVADOS (UseMemo)
   // ==========================================
@@ -635,6 +643,10 @@ const saveToOfflineVault = (table, id, data) => {
               <img src={selectedImg} className="max-w-full max-h-[85%] rounded-2xl shadow-2xl border border-white/20 animate-in zoom-in-95" alt="Radiografía" />
               <span className="mt-6 px-6 py-2 rounded-full bg-white/10 text-white font-bold text-xs uppercase tracking-widest backdrop-blur-md">CLICK PARA CERRAR</span>
           </div>
+      )}
+
+      {clinicOwner && config.name === 'Profesional' && (
+          <OnboardingModal onSave={handleOnboardingSave} />
       )}
     </div>
   );

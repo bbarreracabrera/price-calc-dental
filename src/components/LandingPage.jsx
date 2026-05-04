@@ -22,7 +22,7 @@ export default function LandingPage({ onLoginClick }) {
     const faqs = [
         { q: "¿Mis datos y los de mis pacientes están seguros?", a: "Absolutamente. Utilizamos servidores encriptados de grado bancario. Además, ShiningCloud cumple con los estándares de la Ley 20.584 de Derechos y Deberes del Paciente y la Ley de Protección de Datos (19.628)." },
         { q: "¿Necesito instalar algo en mi computador?", a: "No. ShiningCloud es 100% web. Funciona en Windows, Mac, iPad, tablets y celulares modernos. Solo necesitas conexión a internet y tu navegador favorito." },
-        { q: "¿Puedo tener múltiples doctores y asistentes?", a: "Sí, el plan profesional incluye cuentas ilimitadas para tu equipo. El dueño de la clínica tiene control total sobre los permisos y accesos de cada miembro." },
+        { q: "¿Puedo tener múltiples profesionales y asistentes?", a: "Sí, el plan profesional incluye cuentas ilimitadas para tu equipo. El/la titular de la clínica tiene control total sobre los permisos y accesos de cada miembro." },
         { q: "¿Cómo funciona el dictado por voz?", a: "Nuestra Inteligencia Artificial está entrenada con terminología odontológica. Al activar el micrófono, la IA transcribe tus hallazgos directamente a la ficha clínica y marca el odontograma." }
     ];
 
