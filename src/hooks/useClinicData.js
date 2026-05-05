@@ -30,8 +30,8 @@ export function useClinicData({
             const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin);
             if (t) setTeam(t.map(r => ({ ...r.data, id: r.id })));
 
-            // 3. Config — settings (JSONB) + clinic_config (columnas planas, incluye tokens MP)
-            //    Ambas queries en paralelo para no bloquear el render.
+            // 3. Config — settings.data ya contiene todos los campos, incluidos los de MP.
+            //    clinic_config se mantiene solo para datos generales (nombre de fallback, etc.)
             //    setClinicOwner + setUserRole + setConfigLocal en el mismo bloque síncrono
             //    → React 18 los batchea en un solo render (evita el flash del OnboardingModal).
             const [{ data: s }, { data: cc }] = await Promise.all([
@@ -51,21 +51,8 @@ export function useClinicData({
             setClinicOwner(myClinicAdmin);
             setUserRole(myRole);
 
-            // Solo extraemos los campos MP de clinic_config — no hacemos spread completo
-            // para evitar que columnas como 'schedule' (TEXT) sobreescriban objetos de settings.data.
-            const mpFields = cc ? {
-                mp_access_token: cc.mp_access_token,
-                mp_refresh_token: cc.mp_refresh_token,
-                mp_user_id: cc.mp_user_id,
-                mp_public_key: cc.mp_public_key,
-                mp_connected_at: cc.mp_connected_at,
-                require_payment_at_booking: cc.require_payment_at_booking,
-                appointment_price: cc.appointment_price,
-            } : {};
-
             const finalConfig = {
                 ...(s?.data || {}),
-                ...mpFields,
                 name: s?.data?.name || cc?.name || 'Profesional',
             };
             setConfigLocal(finalConfig);
