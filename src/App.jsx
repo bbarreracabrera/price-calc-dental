@@ -522,6 +522,13 @@ const saveToOfflineVault = (table, id, data) => {
     return <MPOAuthCallback />;
   }
 
+  // TODO: remove after debugging BUG1/BUG2
+  console.log('🔍 Config debug:', {
+    'config.name': config?.name,
+    'mp_access_token': !!config?.mp_access_token,
+    'clinicOwner': clinicOwner,
+  });
+
   return (
     <div className={`min-h-screen flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans`}>
       <Toaster position="bottom-center" reverseOrder={false} />

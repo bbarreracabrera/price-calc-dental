@@ -8,48 +8,73 @@ export function useClinicData({
 }) {
     useEffect(() => {
         if (!session) return;
-        
+
         const load = async () => {
             const userEmail = session.user.email;
-            let myClinicAdmin = userEmail; 
+            let myClinicAdmin = userEmail;
             let myRole = 'admin';
 
-            // 1. PRIMERO: Averiguar si soy empleado de alguien más
-            // Buscamos en la tabla team donde mi correo coincida dentro del JSON "data"
+            // 1. Averiguar si soy empleado de alguien más
             const { data: myTeamRecord } = await supabase
                 .from('team')
                 .select('admin_email, data')
                 .eq('data->>email', userEmail)
                 .maybeSingle();
-            
+
             if (myTeamRecord) {
-                myClinicAdmin = myTeamRecord.admin_email; // Soy empleado, uso la clínica de mi jefe
+                myClinicAdmin = myTeamRecord.admin_email;
                 myRole = myTeamRecord.data?.role || 'assistant';
             }
-            
-            setClinicOwner(myClinicAdmin);
-            setUserRole(myRole);
 
-            // 2. OBTENER EL EQUIPO COMPLETO (Para mostrar en Ajustes)
+            // 2. Equipo completo
             const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin);
             if (t) setTeam(t.map(r => ({ ...r.data, id: r.id })));
 
-            // 3. SEGUNDO: Descargar SOLO los datos que le pertenecen a esta clínica (Jefe)
-            const { data: s } = await supabase.from('settings').select('*').eq('id', 'general').eq('admin_email', myClinicAdmin).maybeSingle();
-            if (s) setConfigLocal(s.data);
-            
+            // 3. Config — settings (JSONB) + clinic_config (columnas planas, incluye tokens MP)
+            //    Ambas queries en paralelo para no bloquear el render.
+            //    setClinicOwner + setUserRole + setConfigLocal en el mismo bloque síncrono
+            //    → React 18 los batchea en un solo render (evita el flash del OnboardingModal).
+            const [{ data: s }, { data: cc }] = await Promise.all([
+                supabase
+                    .from('settings')
+                    .select('*')
+                    .eq('id', 'general')
+                    .eq('admin_email', myClinicAdmin)
+                    .maybeSingle(),
+                supabase
+                    .from('clinic_config')
+                    .select('*')
+                    .eq('id', myClinicAdmin)
+                    .maybeSingle(),
+            ]);
+
+            setClinicOwner(myClinicAdmin);
+            setUserRole(myRole);
+
+            // clinic_config tiene columnas de primer nivel (incluye mp_access_token, etc.)
+            // settings.data tiene el JSON con el resto de la config de la clínica.
+            // Merge: settings.data como base, clinic_config encima (sus columnas sobreescriben),
+            // con fallback explícito para name.
+            const finalConfig = {
+                ...(s?.data || {}),
+                ...(cc || {}),
+                name: cc?.name || s?.data?.name || 'Profesional',
+            };
+            setConfigLocal(finalConfig);
+
+            // 4. Resto de datos
             const { data: p } = await supabase.from('patients').select('*').eq('admin_email', myClinicAdmin).order('id', { ascending: false }).limit(50);
             if (p) { const m = {}; p.forEach(r => m[r.id] = r.data); setPatientRecords(m); }
-            
+
             const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin);
             if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
-            
+
             const { data: f } = await supabase.from('financials').select('*').eq('admin_email', myClinicAdmin);
             if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id })));
-            
+
             const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin);
             if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
-            
+
             const { data: i } = await supabase.from('inventory').select('*').eq('admin_email', myClinicAdmin);
             if (i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
 
@@ -57,9 +82,9 @@ export function useClinicData({
             if (catData) setCatalog(catData.map(r => ({ ...r.data, id: r.id })));
 
             const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin);
-            if (labData) setLabWorks(labData); 
+            if (labData) setLabWorks(labData);
         };
-        
+
         load();
-    }, [session]); 
+    }, [session]);
 }
