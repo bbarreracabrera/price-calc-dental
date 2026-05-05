@@ -47,6 +47,7 @@ export default function CatalogModal({
                             <option value="Rehabilitación">Rehabilitación</option>
                             <option value="Periodoncia">Periodoncia</option>
                             <option value="Ortodoncia">Ortodoncia</option>
+                            <option value="Odontopediatría">Odontopediatría</option>
                             <option value="Otros">Otros</option>
                         </select>
                     </div>

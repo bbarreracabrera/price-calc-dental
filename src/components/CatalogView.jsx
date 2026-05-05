@@ -11,7 +11,7 @@ export default function CatalogView({
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('Todos');
 
-    const CATEGORIES = ['Todos', 'Examen', 'Preventivo', 'Cirugía', 'Endodoncia', 'Implantología', 'Rehabilitación', 'Periodoncia', 'Ortodoncia', 'Otros'];
+    const CATEGORIES = ['Todos', 'Examen', 'Preventivo', 'Cirugía', 'Endodoncia', 'Implantología', 'Rehabilitación', 'Periodoncia', 'Ortodoncia', 'Odontopediatría', 'Otros'];
 
     // Filtramos el catálogo según lo que escribas y la pestaña que elijas
     const filteredCatalog = catalog.filter(item => {
