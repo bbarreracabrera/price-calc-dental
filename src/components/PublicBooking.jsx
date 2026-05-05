@@ -1,26 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Clock, User, Phone, FileText, CheckCircle2, ChevronRight, Stethoscope, ArrowLeft } from 'lucide-react';
+import { CalendarDays, Clock, User, Phone, FileText, CheckCircle2, ChevronRight, Stethoscope, ArrowLeft, Mail, CreditCard, Loader } from 'lucide-react';
 import { formatRUT } from '../constants';
 
 export default function PublicBooking({ clinicId, supabase, notify }) {
     const [clinicConfig, setClinicConfig] = useState(null);
-    const [adminEmail, setAdminEmail] = useState(null); 
+    const [adminEmail, setAdminEmail] = useState(null);
     const [loading, setLoading] = useState(true);
-    
-    // Estados del formulario
+
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         rut: '',
         name: '',
         phone: '',
+        email: '',
         reason: '',
         date: '',
-        time: '' 
+        time: ''
     });
 
     const [honeypot, setHoneypot] = useState('');
     const [availableTimes, setAvailableTimes] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [requiresPayment, setRequiresPayment] = useState(false);
 
     const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -36,7 +37,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                 if (error) throw error;
                 if (data) {
                     setClinicConfig(data.data);
-                    setAdminEmail(data.admin_email); 
+                    setAdminEmail(data.admin_email);
                 } else {
                     console.warn("No se encontró ninguna clínica con el enlace:", clinicId);
                 }
@@ -70,17 +71,13 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
             const endTimeStr = next.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
 
             if (next <= endLimit) {
-                slots.push({
-                    id: startTimeStr, 
-                    display: `${startTimeStr} - ${endTimeStr}` 
-                });
+                slots.push({ id: startTimeStr, display: `${startTimeStr} - ${endTimeStr}` });
             }
             current.setMinutes(current.getMinutes() + SLOT_DURATION_MINS);
         }
         return slots;
     };
 
-    // --- 🛡️ LÓGICA DE FILTRADO CORREGIDA (RANGOS DE TIEMPO) ---
     const handleDateSelect = async (dateStr) => {
         const year = parseInt(dateStr?.split('-')[0], 10);
         if (!dateStr || year < 2000 || year > 2100) return;
@@ -88,7 +85,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         setFormData({ ...formData, date: dateStr, time: '' });
         if (!clinicConfig?.schedule) return;
 
-        const dateObj = new Date(`${dateStr}T12:00:00`); 
+        const dateObj = new Date(`${dateStr}T12:00:00`);
         const dayName = daysMap[dateObj.getDay()];
         const dayConfig = clinicConfig.schedule[dayName];
 
@@ -97,44 +94,30 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
             return;
         }
 
-        // 1. Generamos todos los posibles slots del día
         let allSlots = [
             ...generateTimeSlots(dayConfig.start1, dayConfig.end1),
             ...generateTimeSlots(dayConfig.start2, dayConfig.end2)
         ];
 
         try {
-            // 2. Consultamos TODAS las citas de ese día para esta clínica
             const { data: appts, error } = await supabase
                 .from('public_appointments_availability')
                 .select('time, duration')
                 .eq('admin_email', adminEmail)
                 .eq('date', dateStr);
-            
+
             if (error) throw error;
 
             if (appts && appts.length > 0) {
-                // Función auxiliar: convierte "HH:mm" a minutos totales
-                const toMins = (t) => {
-                    const [h, m] = t.split(':').map(Number);
-                    return (h * 60) + m;
-                };
-
-                // 3. Filtramos los slots comparando si colisionan con el rango de alguna cita
+                const toMins = (t) => { const [h, m] = t.split(':').map(Number); return (h * 60) + m; };
                 allSlots = allSlots.filter(slot => {
                     const slotStart = toMins(slot.id);
-                    const slotEnd = slotStart + 30; // Cada botón dura 30 mins
-
+                    const slotEnd = slotStart + 30;
                     const isOccupied = appts.some(appt => {
                         const apptStart = toMins(appt.time);
-                        // Si la cita no tiene duración, asumimos 30 mins
                         const apptEnd = apptStart + (Number(appt.duration) || 30);
-
-                        // Lógica de colisión: el slot está ocupado si...
-                        // (El slot empieza antes de que termine la cita) Y (El slot termina después de que empiece la cita)
                         return slotStart < apptEnd && slotEnd > apptStart;
                     });
-
                     return !isOccupied;
                 });
             }
@@ -153,33 +136,74 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
         setIsSubmitting(true);
         try {
-            const newApptId = Date.now().toString();
-            const appointmentData = {
-                id: newApptId,
-                name: formData.name,
-                treatment: formData.reason || 'Consulta General (Agendado Online)',
-                date: formData.date,
-                time: formData.time, 
-                duration: 30, 
-                status: 'agendado'
-            };
+            const needsPayment = !!(clinicConfig?.require_payment_at_booking && clinicConfig?.appointment_price > 0);
+            const apptId = `appt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            const cancelToken = crypto.randomUUID();
 
             const { error: apptError } = await supabase
                 .from('appointments')
-                .insert([{ id: newApptId, admin_email: adminEmail, data: appointmentData }]);
+                .insert([{
+                    id: apptId,
+                    admin_email: adminEmail,
+                    data: {
+                        id: apptId,
+                        name: formData.name,
+                        phone: formData.phone,
+                        email: formData.email,
+                        treatment: formData.reason || 'Consulta General (Agendado Online)',
+                        date: formData.date,
+                        time: formData.time,
+                        duration: 30,
+                        status: needsPayment ? 'pending_payment' : 'agendado',
+                        cancel_token: cancelToken,
+                        created_at: new Date().toISOString(),
+                    }
+                }]);
 
             if (apptError) throw apptError;
-            
+
+            // Crear registro de paciente
             const patientId = `pac_${formData.rut.replace(/\./g, '').replace(/-/g, '') || Date.now().toString()}`;
-            const patientData = {
-                id: patientId,
-                personal: { legalName: formData.name, rut: formData.rut, phone: formData.phone }
-            };
             const { error: patientError } = await supabase
                 .from('patients')
-                .insert([{ id: patientId, admin_email: adminEmail, data: patientData }]);
+                .insert([{
+                    id: patientId,
+                    admin_email: adminEmail,
+                    data: { id: patientId, personal: { legalName: formData.name, rut: formData.rut, phone: formData.phone, email: formData.email } }
+                }]);
             if (patientError) console.warn('No se pudo crear registro de paciente:', patientError.message);
 
+            // Si requiere pago → llamar Edge Function y abrir MP
+            if (needsPayment) {
+                const { data: payData, error: payError } = await supabase.functions.invoke(
+                    'create-payment',
+                    {
+                        body: {
+                            clinic_email: adminEmail,
+                            patient_name: formData.name,
+                            patient_email: formData.email || '',
+                            amount: clinicConfig.appointment_price,
+                            description: `Reserva ${formData.reason || 'Consulta'} — ${formData.date} ${formData.time}`,
+                            appointment_id: apptId,
+                        },
+                    }
+                );
+
+                if (payError || payData?.error) {
+                    console.error('Error al iniciar pago:', payError || payData?.error);
+                    // La cita quedó creada con status pending_payment; avisamos pero igual avanzamos
+                    setRequiresPayment(true);
+                    setStep(4);
+                    return;
+                }
+
+                window.open(payData.init_point, '_blank', 'noopener,noreferrer');
+                setRequiresPayment(true);
+                setStep(4);
+                return;
+            }
+
+            // Flujo sin pago
             setStep(4);
         } catch (err) {
             alert("Hubo un error al agendar tu cita.");
@@ -207,6 +231,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
             </div>
 
             <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border border-[#DFD2C4]/60 p-8">
+                {/* STEP 1 — Datos personales */}
                 {step === 1 && (
                     <div className="space-y-5 animate-in slide-in-from-right">
                         <h3 className="font-black text-xl text-[#312923]">Tus Datos</h3>
@@ -228,12 +253,27 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                                 <input type="tel" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="+56 9..." value={formData.phone} onChange={e=>setFormData({...formData, phone:e.target.value})} />
                             </div>
                         </div>
-                        <button disabled={!formData.name || !formData.phone} onClick={() => setStep(2)} className="w-full py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2">
+                        {clinicConfig?.require_payment_at_booking && (
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Correo electrónico <span className="text-[#CBAAA2]">*</span></label>
+                                <div className="relative">
+                                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                    <input type="email" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="tu@correo.com" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
+                                </div>
+                                <p className="text-[10px] font-bold text-[#9A8F84] ml-2">Necesario para el recibo de pago</p>
+                            </div>
+                        )}
+                        <button
+                            disabled={!formData.name || !formData.phone || (clinicConfig?.require_payment_at_booking && !formData.email)}
+                            onClick={() => setStep(2)}
+                            className="w-full py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 disabled:opacity-40"
+                        >
                             Continuar <ChevronRight size={16}/>
                         </button>
                     </div>
                 )}
 
+                {/* STEP 2 — Motivo */}
                 {step === 2 && (
                     <div className="space-y-5 animate-in slide-in-from-right">
                         <button onClick={() => setStep(1)} className="text-[#9A8F84] mb-4 hover:text-[#312923] transition-colors"><ArrowLeft size={20}/></button>
@@ -245,12 +285,13 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                     </div>
                 )}
 
+                {/* STEP 3 — Fecha y hora */}
                 {step === 3 && (
                     <div className="space-y-5 animate-in slide-in-from-right">
                         <button onClick={() => setStep(2)} className="text-[#9A8F84] mb-4 hover:text-[#312923] transition-colors"><ArrowLeft size={20}/></button>
                         <h3 className="font-black text-xl text-[#312923]">Disponibilidad</h3>
                         <input type="date" min={new Date().toISOString().split('T')[0]} className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] font-bold text-[#312923]" value={formData.date} onChange={e=>handleDateSelect(e.target.value)} />
-                        
+
                         {formData.date && (
                             <div className="grid grid-cols-2 gap-3 max-h-56 overflow-y-auto p-1 custom-scrollbar">
                                 {availableTimes.length === 0 ? (
@@ -265,17 +306,62 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                             </div>
                         )}
 
-                        <button disabled={!formData.date || !formData.time || isSubmitting} onClick={handleSubmit} className="w-full py-4 bg-[#CBAAA2] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg">
-                            {isSubmitting ? 'CONFIRMANDO...' : 'CONFIRMAR RESERVA'}
+                        {/* PASO 4 — Banner de monto antes de confirmar */}
+                        {clinicConfig?.require_payment_at_booking && clinicConfig?.appointment_price > 0 && (
+                            <div className="flex items-center gap-4 p-4 bg-[#CBAAA2]/10 border border-[#CBAAA2]/30 rounded-2xl">
+                                <CreditCard size={24} className="text-[#CBAAA2] shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Monto a pagar</p>
+                                    <p className="text-xl font-black text-[#312923]">
+                                        ${clinicConfig.appointment_price.toLocaleString('es-CL')} CLP
+                                    </p>
+                                    <p className="text-[10px] font-bold text-[#9A8F84] mt-0.5">
+                                        Tu hora se confirma al completar el pago
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <button
+                            disabled={!formData.date || !formData.time || isSubmitting}
+                            onClick={handleSubmit}
+                            className="w-full py-4 bg-[#CBAAA2] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-40 flex items-center justify-center gap-2"
+                        >
+                            {isSubmitting
+                                ? <><Loader size={16} className="animate-spin"/> PROCESANDO...</>
+                                : clinicConfig?.require_payment_at_booking
+                                    ? <><CreditCard size={16}/> RESERVAR Y PAGAR</>
+                                    : 'CONFIRMAR RESERVA'
+                            }
                         </button>
                     </div>
                 )}
 
+                {/* STEP 4 — Confirmación */}
                 {step === 4 && (
                     <div className="text-center py-8 animate-in zoom-in-95">
-                        <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-6" />
-                        <h3 className="font-black text-2xl text-[#312923] mb-2">¡Cita Confirmada!</h3>
-                        <p className="text-sm font-bold text-[#9A8F84]">Te esperamos el {formData.date.split('-').reverse().join('/')} a las {formData.time}.</p>
+                        {requiresPayment ? (
+                            <>
+                                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CreditCard size={32} className="text-amber-500" />
+                                </div>
+                                <h3 className="font-black text-2xl text-[#312923] mb-2 tracking-tighter">Reserva Pendiente</h3>
+                                <p className="text-sm font-bold text-[#9A8F84] leading-relaxed mb-3">
+                                    Se abrió una pestaña con MercadoPago para completar tu pago.
+                                </p>
+                                <p className="text-xs font-bold text-[#CBAAA2]">
+                                    Tu hora quedará confirmada una vez que el pago sea procesado.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle2 size={48} className="text-[#5B6651] mx-auto mb-6" />
+                                <h3 className="font-black text-2xl text-[#312923] mb-2 tracking-tighter">¡Cita Confirmada!</h3>
+                                <p className="text-sm font-bold text-[#9A8F84]">
+                                    Te esperamos el {formData.date.split('-').reverse().join('/')} a las {formData.time}.
+                                </p>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
