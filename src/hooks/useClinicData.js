@@ -51,14 +51,22 @@ export function useClinicData({
             setClinicOwner(myClinicAdmin);
             setUserRole(myRole);
 
-            // clinic_config tiene columnas de primer nivel (incluye mp_access_token, etc.)
-            // settings.data tiene el JSON con el resto de la config de la clínica.
-            // Merge: settings.data como base, clinic_config encima (sus columnas sobreescriben),
-            // con fallback explícito para name.
+            // Solo extraemos los campos MP de clinic_config — no hacemos spread completo
+            // para evitar que columnas como 'schedule' (TEXT) sobreescriban objetos de settings.data.
+            const mpFields = cc ? {
+                mp_access_token: cc.mp_access_token,
+                mp_refresh_token: cc.mp_refresh_token,
+                mp_user_id: cc.mp_user_id,
+                mp_public_key: cc.mp_public_key,
+                mp_connected_at: cc.mp_connected_at,
+                require_payment_at_booking: cc.require_payment_at_booking,
+                appointment_price: cc.appointment_price,
+            } : {};
+
             const finalConfig = {
                 ...(s?.data || {}),
-                ...(cc || {}),
-                name: cc?.name || s?.data?.name || 'Profesional',
+                ...mpFields,
+                name: s?.data?.name || cc?.name || 'Profesional',
             };
             setConfigLocal(finalConfig);
 
