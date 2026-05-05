@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail, MessageCircle } from 'lucide-react';
+import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail, MessageCircle, CreditCard } from 'lucide-react';
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
 import { supabase } from '../supabase';
@@ -72,6 +72,20 @@ export default function SettingsView({
         }
         
         setNewLab({ name: '', email: '', phone: '' });
+    };
+
+    const MP_CLIENT_ID = '6450460700014655';
+    const MP_REDIRECT_URI = 'https://shiningclouddental.vercel.app/mp-oauth-callback';
+
+    const updateConfig = async (partial) => {
+        const updated = { ...config, ...partial };
+        setConfigLocal(updated);
+        await saveToSupabase('settings', 'general', updated);
+    };
+
+    const handleConnectMP = () => {
+        const authUrl = `https://auth.mercadopago.cl/authorization?client_id=${MP_CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(MP_REDIRECT_URI)}`;
+        window.location.href = authUrl;
     };
 
     // --- GUARDADO AUTOMÁTICO AL ELIMINAR LAB ---
@@ -452,6 +466,71 @@ export default function SettingsView({
                                     </div>
                                 ))}
                             </div>
+                        </Card>
+
+                        {/* --- MERCADOPAGO --- */}
+                        <Card theme={themeMode} className="p-8">
+                            <div className="flex items-center gap-2 mb-6 pb-4 border-b border-[#DFD2C4]/50">
+                                <CreditCard size={16} className="text-[#A3968B]"/>
+                                <h3 className="font-black text-xl text-[#312923] tracking-tight">Cobros con MercadoPago</h3>
+                            </div>
+
+                            {!config?.mp_access_token ? (
+                                <div className="space-y-4">
+                                    <p className="text-sm font-bold text-[#9A8F84] leading-relaxed">
+                                        Conecta tu cuenta de MercadoPago para cobrar a pacientes al momento de agendar su hora.
+                                    </p>
+                                    <button
+                                        onClick={handleConnectMP}
+                                        className="flex items-center gap-3 px-6 py-3.5 bg-[#009ee3] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#007ab8] transition-all shadow-lg shadow-[#009ee3]/20"
+                                    >
+                                        Conectar MercadoPago
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-5">
+                                    <div className="flex items-center gap-2 px-4 py-3 bg-[#5B6651]/10 border border-[#5B6651]/20 rounded-2xl w-fit">
+                                        <div className="w-2 h-2 rounded-full bg-[#5B6651]"></div>
+                                        <span className="text-sm font-black text-[#5B6651]">Cuenta conectada</span>
+                                    </div>
+
+                                    <label className="flex items-center justify-between gap-4 p-5 bg-[#FDFBF7] border border-[#DFD2C4]/50 rounded-2xl cursor-pointer hover:border-[#A3968B] transition-all">
+                                        <div>
+                                            <p className="font-black text-[#312923]">Cobro al agendar</p>
+                                            <p className="text-xs font-bold text-[#9A8F84] mt-1">Los pacientes deben pagar para confirmar su hora</p>
+                                        </div>
+                                        <div
+                                            onClick={() => updateConfig({ require_payment_at_booking: !config?.require_payment_at_booking })}
+                                            className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer shrink-0 ${config?.require_payment_at_booking ? 'bg-[#5B6651]' : 'bg-[#DFD2C4]'}`}
+                                        >
+                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${config?.require_payment_at_booking ? 'translate-x-6' : 'translate-x-0.5'}`}/>
+                                        </div>
+                                    </label>
+
+                                    {config?.require_payment_at_booking && (
+                                        <div>
+                                            <label className={labelClass}>Monto a cobrar (CLP)</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-[#A3968B]">$</span>
+                                                <input
+                                                    type="number"
+                                                    value={config?.appointment_price || ''}
+                                                    onChange={(e) => updateConfig({ appointment_price: Number(e.target.value) })}
+                                                    className={`${inputClass} pl-8`}
+                                                    placeholder="Ej: 30000"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => updateConfig({ mp_access_token: null, require_payment_at_booking: false })}
+                                        className="text-[10px] font-black uppercase tracking-widest text-[#CBAAA2] hover:text-red-500 transition-colors"
+                                    >
+                                        Desconectar cuenta
+                                    </button>
+                                </div>
+                            )}
                         </Card>
                     </>
                 ) : (

@@ -44,6 +44,7 @@ import LoadPackModal from './components/LoadPackModal';
 import RecoveryModal from './components/RecoveryModal';
 import OnboardingModal from './components/OnboardingModal';
 import { useDialog } from './components/DialogProvider';
+import MPOAuthCallback from './components/MPOAuthCallback';
 
 // --- UTILS & HOOKS ---
 import { generatePDF } from './utils/pdfGenerator';
@@ -516,6 +517,10 @@ const saveToOfflineVault = (table, id, data) => {
   
   const t = THEMES[themeMode] || THEMES.dark;
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
+
+  if (window.location.pathname === '/mp-oauth-callback') {
+    return <MPOAuthCallback />;
+  }
 
   return (
     <div className={`min-h-screen flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans`}>
