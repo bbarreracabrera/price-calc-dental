@@ -125,6 +125,13 @@ export default function QuoteView({
                 </button>
             </div>
 
+            {!sessionData.patientId && quoteItems.length > 0 && (
+                <div className="flex items-center gap-3 px-5 py-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 animate-in fade-in">
+                    <span className="text-lg shrink-0">⚠️</span>
+                    <p className="text-sm font-bold">Selecciona un paciente antes de guardar el plan de tratamiento.</p>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                 {/* PANEL IZQUIERDO */}
@@ -332,8 +339,17 @@ export default function QuoteView({
 
                             <div className="flex flex-col gap-3">
                                 <button
-                                    disabled={quoteItems.length===0}
-                                    onClick={async ()=>{
+                                    disabled={quoteItems.length === 0 || !sessionData.patientId}
+                                    onClick={async () => {
+                                        if (!sessionData.patientId) {
+                                            notify("Debes seleccionar un paciente antes de guardar el plan");
+                                            return;
+                                        }
+                                        if (quoteItems.length === 0) {
+                                            notify("Agrega al menos un tratamiento al plan");
+                                            return;
+                                        }
+
                                         const total = quoteItems.reduce((acc, item) => acc + item.price, 0);
                                         const id = Date.now().toString();
                                         const detalle = `Plan de Tratamiento: ${quoteItems.length} procedimientos planificados`;
@@ -357,10 +373,7 @@ export default function QuoteView({
 
                                         savePatientData(sessionData.patientId, {
                                             ...p,
-                                            clinical: {
-                                                ...p.clinical,
-                                                quotes: updatedQuotesList
-                                            }
+                                            clinical: { ...p.clinical, quotes: updatedQuotesList }
                                         });
 
                                         notify("Plan de Tratamiento guardado y enviado a Caja");
@@ -368,19 +381,22 @@ export default function QuoteView({
                                         setTimeout(() => setActiveTab('history'), 2000);
                                     }}
                                     className={`py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                        quoteItems.length === 0
+                                        quoteItems.length === 0 || !sessionData.patientId
                                         ? 'bg-[#DFD2C4]/30 text-[#9A8F84] cursor-not-allowed'
                                         : 'bg-[#5B6651] text-white hover:bg-[#4a5442] shadow-lg shadow-[#5B6651]/20 hover:-translate-y-0.5'
                                     }`}
                                 >
-                                    <CheckCircle size={18}/> GUARDAR PLAN Y COBRAR
+                                    <CheckCircle size={18}/>
+                                    {!sessionData.patientId && quoteItems.length > 0
+                                        ? 'SELECCIONA UN PACIENTE'
+                                        : 'GUARDAR PLAN Y COBRAR'}
                                 </button>
 
                                 <button
-                                    disabled={quoteItems.length===0}
-                                    onClick={()=>generatePDF('quote', quoteItems)}
+                                    disabled={quoteItems.length === 0 || !sessionData.patientId}
+                                    onClick={() => generatePDF('quote', quoteItems)}
                                     className={`py-4 rounded-2xl border font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                        quoteItems.length === 0
+                                        quoteItems.length === 0 || !sessionData.patientId
                                         ? 'border-[#DFD2C4]/50 text-[#9A8F84] cursor-not-allowed bg-white/50'
                                         : 'border-[#DFD2C4] bg-white text-[#312923] hover:bg-[#FDFBF7]'
                                     }`}
