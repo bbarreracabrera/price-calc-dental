@@ -94,19 +94,24 @@ export default function AgendaView({ appointments, onOpenModal, team }) {
                     </div>
                     
                     {Array.from({length: 7}, (_, i) => {
-                        const d = new Date(currentDate); 
-                        d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i); 
+                        const d = new Date(currentDate);
+                        d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i);
                         const isToday = d.toDateString() === new Date().toDateString();
-                        
+
                         return (
-                            <div key={d} className={`py-3 px-2 border-b border-r border-[#DFD2C4]/40 text-center sticky top-0 z-20 bg-white/95 backdrop-blur-md transition-colors ${isToday ? 'border-b-2 border-b-[#5B6651]' : ''}`}>
-                                <div className="flex flex-col items-center justify-center gap-1">
+                            <div key={d} className={`py-3 px-2 border-b border-r text-center sticky top-0 z-20 backdrop-blur-md transition-colors ${isToday ? 'bg-[#5B6651]/[0.07] border-[#5B6651]/30 border-b-2 border-b-[#5B6651]' : 'bg-white/95 border-[#DFD2C4]/40'}`}>
+                                <div className="flex flex-col items-center justify-center gap-0.5">
                                     <p className={`text-[9px] font-black uppercase tracking-widest ${isToday ? 'text-[#5B6651]' : 'text-[#9A8F84]'}`}>
                                         {dayNames[i]}
                                     </p>
-                                    <div className={`w-9 h-9 flex items-center justify-center rounded-full text-lg font-black ${isToday ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#312923] bg-[#FDFBF7] border border-[#DFD2C4]/40'}`}>
+                                    <div className={`w-9 h-9 flex items-center justify-center rounded-full text-lg font-black ${isToday ? 'bg-[#5B6651] text-white shadow-md shadow-[#5B6651]/30' : 'text-[#312923] bg-[#FDFBF7] border border-[#DFD2C4]/40'}`}>
                                         {d.getDate()}
                                     </div>
+                                    {isToday && (
+                                        <span className="text-[8px] font-black uppercase tracking-[0.15em] text-[#5B6651] mt-0.5">
+                                            HOY
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -119,16 +124,16 @@ export default function AgendaView({ appointments, onOpenModal, team }) {
                             </div>
                             
                             {Array.from({length: 7}, (_, i) => {
-                                const d = new Date(currentDate); 
-                                d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i); 
-                                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; 
-                                
-                                const hourAppts = filteredAppts.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h); 
+                                const d = new Date(currentDate);
+                                d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + i);
+                                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                                const isTodayCell = d.toDateString() === new Date().toDateString();
+                                const hourAppts = filteredAppts.filter(a => a.date === dateStr && parseInt(a.time.split(':')[0]) === h);
 
                                 return (
-                                    <div 
-                                        key={d+h} 
-                                        className="border-b border-r border-[#DFD2C4]/30 relative group h-[72px] transition-colors hover:bg-[#FDFBF7] cursor-pointer" 
+                                    <div
+                                        key={d+h}
+                                        className={`border-b border-r border-[#DFD2C4]/30 relative group h-[72px] transition-colors cursor-pointer ${isTodayCell ? 'bg-[#5B6651]/[0.03] hover:bg-[#5B6651]/[0.07]' : 'hover:bg-[#FDFBF7]'}`}
                                         onClick={() => onOpenModal({name: '', treatment: '', date: dateStr, time: `${h.toString().padStart(2, '0')}:00`, duration: 60, status: 'agendado', id: null})}
                                     >
                                         {hourAppts.map((appt, index) => {
