@@ -3,11 +3,13 @@ import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, File
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
 import { supabase } from '../supabase';
+import { useDialog } from './DialogProvider';
 
 export default function SettingsView({
     themeMode, t, config, setConfigLocal, logoInputRef, handleLogoUpload,
     userRole, saveToSupabase, notify, team, setTeam, newMember, setNewMember, session
 }) {
+    const { confirm } = useDialog();
     const inputClass = "w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm";
     const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
 
@@ -74,7 +76,7 @@ export default function SettingsView({
 
     // --- GUARDADO AUTOMÁTICO AL ELIMINAR LAB ---
     const handleDeleteLab = async (id) => {
-        if (window.confirm("¿Seguro que deseas eliminar este laboratorio de tu directorio?")) {
+        if (await confirm("¿Seguro que deseas eliminar este laboratorio de tu directorio?")) {
             const updatedLabs = laboratories.filter(l => l.id !== id);
             
             // 1. Actualizamos el estado local
@@ -434,7 +436,7 @@ export default function SettingsView({
                                             </div>
                                             <button 
                                                 onClick={async()=>{ 
-                                                    if(window.confirm(`¿Estás seguro de eliminar a ${member.name}? Perderá acceso a la clínica.`)){ 
+                                                    if(await confirm(`¿Estás seguro de eliminar a ${member.name}? Perderá acceso a la clínica.`)){
                                                         const f = team.filter(t => t.id !== member.id); 
                                                         setTeam(f); 
                                                         await supabase.from('team').delete().eq('id', member.id); 

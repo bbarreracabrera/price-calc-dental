@@ -43,6 +43,7 @@ import AddItemModal from './components/AddItemModal';
 import LoadPackModal from './components/LoadPackModal';
 import RecoveryModal from './components/RecoveryModal';
 import OnboardingModal from './components/OnboardingModal';
+import { useDialog } from './components/DialogProvider';
 
 // --- UTILS & HOOKS ---
 import { generatePDF } from './utils/pdfGenerator';
@@ -51,6 +52,8 @@ import { useVoiceAssistant } from './hooks/useVoiceAssistant';
 import { useClinicData } from './hooks/useClinicData';
 
 export default function App() {
+  const { confirm, prompt } = useDialog();
+
   // ==========================================
   // 1. ESTADOS GLOBALES (STATE)
   // ==========================================
@@ -300,8 +303,8 @@ const saveToOfflineVault = (table, id, data) => {
       notify(`Evolución Periodontal guardada con éxito (${dateStr})`);
   };
 
-  const restoreSnapshot = (snap) => {
-      if(window.confirm(`¿Estás seguro de cargar en pantalla la evolución del ${snap.date}?`)) {
+  const restoreSnapshot = async (snap) => {
+      if(await confirm(`¿Estás seguro de cargar en pantalla la evolución del ${snap.date}?`)) {
           const p = getPatient(selectedPatientId);
           savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: JSON.parse(JSON.stringify(snap.perio || {})), hygiene: JSON.parse(JSON.stringify(snap.hygiene || {})) }});
           notify(`Cargando evolución del ${snap.date}`);
@@ -566,10 +569,10 @@ const saveToOfflineVault = (table, id, data) => {
         {activeTab === 'ficha' && !selectedPatientId && (
             <div className="space-y-4 animate-in slide-in-from-bottom">
                 <div className="flex gap-2">
-                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={async (p) => {
                         if (p.id === 'new') {
                             let nombreReal = p.name;
-                            if (!nombreReal || nombreReal.trim() === "") { nombreReal = window.prompt("Confirma el nombre del nuevo paciente:"); if (!nombreReal) return; }
+                            if (!nombreReal || nombreReal.trim() === "") { nombreReal = await prompt("Confirma el nombre del nuevo paciente:"); if (!nombreReal) return; }
                             const newId = "pac_" + Date.now().toString();
                             const newPatient = getPatient(newId);
                             newPatient.id = newId; newPatient.name = nombreReal;

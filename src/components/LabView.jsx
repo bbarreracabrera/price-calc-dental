@@ -3,11 +3,13 @@ import { FlaskConical, Trash2, Plus, AlertCircle, CheckCircle2, Clock, User, Sen
 import { Card } from './UIComponents';
 import { supabase } from '../supabase';
 import { getLocalDate } from '../constants';
+import { useDialog } from './DialogProvider';
 
 export default function LabView({ 
     themeMode, t, labWorks, setLabWorks, setNewLabWork, setModal, notify, team,
-    sendWhatsApp, config 
+    sendWhatsApp, config
 }) {
+    const { confirm, prompt } = useDialog();
 
     // Normalizador de Status para que la clínica entienda los estados del Kanban
     const getStatusText = (status) => {
@@ -140,7 +142,7 @@ export default function LabView({
                                             
                                             {/* NUEVO BOTÓN: Enviar WhatsApp */}
                                             <button 
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     const labData = config?.laboratories?.find(l => l.name === work.labName);
                                                     const labPhone = labData ? labData.phone : null;
 
@@ -158,7 +160,7 @@ export default function LabView({
                                                     if(labPhone) {
                                                         sendWhatsApp(labPhone, message);
                                                     } else {
-                                                        const manualPhone = window.prompt("No tenemos el teléfono de este laboratorio. Ingrésalo a continuación para enviar:");
+                                                        const manualPhone = await prompt("No tenemos el teléfono de este laboratorio. Ingrésalo a continuación para enviar:");
                                                         if (manualPhone) sendWhatsApp(manualPhone, message);
                                                     }
                                                 }}
@@ -182,7 +184,7 @@ export default function LabView({
                                             )}
                                             
                                             <button onClick={async () => {
-                                                if(window.confirm("¿Seguro que deseas eliminar este registro?")){
+                                                if(await confirm("¿Seguro que deseas eliminar este registro?")){
                                                     setLabWorks(labWorks.filter(w => w.id !== work.id));
                                                     await supabase.from('lab_works').delete().eq('id', work.id);
                                                 }

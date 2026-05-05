@@ -5,12 +5,14 @@ import {
 } from 'lucide-react';
 import { PrivateImage } from './SystemModals';
 import { supabase } from '../supabase';
+import { useDialog } from './DialogProvider';
 
 export default function PatientImagesTab({
     getPatient, selectedPatientId, savePatientData,
     activeFolder, setActiveFolder, handleImageUpload, uploading, notify,
-    config, saveToSupabase 
+    config, saveToSupabase
 }) {
+    const { confirm, prompt } = useDialog();
     const patient = getPatient(selectedPatientId);
     
     // --- ESTADOS DEL VISOR RADIOLÓGICO ---
@@ -91,7 +93,7 @@ export default function PatientImagesTab({
             alert("Primero traza una línea sobre una referencia conocida (ej. una lima o corona).");
             return;
         }
-        const knownLength = window.prompt("Calibración de la Clínica: ¿Cuántos mm reales mide la línea trazada?");
+        const knownLength = await prompt("Calibración de la Clínica: ¿Cuántos mm reales mide la línea trazada?", '', { placeholder: 'Ej: 21' });
         if (knownLength && !isNaN(knownLength)) {
             const dx = measurePoints[1].x - measurePoints[0].x;
             const dy = measurePoints[1].y - measurePoints[0].y;
@@ -286,7 +288,7 @@ export default function PatientImagesTab({
                                     <button 
                                         onClick={async (e) => { 
                                             e.stopPropagation();
-                                            if(window.confirm("¿Eliminar archivo?")) {
+                                            if(await confirm("¿Eliminar archivo?")) {
                                                 const f = patient.images.filter(i => i.id !== img.id); 
                                                 await savePatientData(selectedPatientId, {...patient, images: f}); 
                                                 const filePath = img.path || img.url;

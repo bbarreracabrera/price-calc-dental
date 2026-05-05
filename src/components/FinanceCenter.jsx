@@ -5,6 +5,7 @@ import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { getLocalDate } from '../constants'; 
 import { supabase } from '../supabase';
+import { useDialog } from './DialogProvider';
 
 export default function FinanceCenter({ 
     themeMode, t, financialRecords, setFinancialRecords, 
@@ -12,6 +13,7 @@ export default function FinanceCenter({
     patientRecords, saveToSupabase, notify, onOpenAbonoModal, sendWhatsApp, getPatientPhone, financeTab, setFinanceTab,
     session, team = [], userRole
 }) {
+    const { confirm } = useDialog();
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
     const [dateRange, setDateRange] = useState('this_month');
 
@@ -521,7 +523,7 @@ export default function FinanceCenter({
                                             {userRole === 'admin' && doc.aPagar > 0 && (
                                                 <button 
                                                     onClick={async () => {
-                                                        if(window.confirm(`¿Quieres registrar el pago de $${doc.aPagar.toLocaleString()} al Dr. ${doc.name}?\n\nEsto se descontará de la caja automáticamente.`)) {
+                                                        if(await confirm(`¿Quieres registrar el pago de $${doc.aPagar.toLocaleString()} al Dr. ${doc.name}?\n\nEsto se descontará de la caja automáticamente.`)) {
                                                             const exId = Date.now().toString();
                                                             const newEx = {
                                                                 id: exId,

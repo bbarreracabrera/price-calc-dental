@@ -5,12 +5,14 @@ import {
 } from 'lucide-react';
 import { Card, InputField, Button } from './UIComponents';
 import { ANAMNESIS_TAGS } from '../constants';
+import { useDialog } from './DialogProvider';
 
 export default function PatientAnamnesisTab({
     getPatient, selectedPatientId, savePatientData,
     session, notify, activeFormType, setActiveFormType,
     viewingForm, setViewingForm
 }) {
+    const { confirm } = useDialog();
     const p = getPatient(selectedPatientId);
     
     const anamnesis = p.anamnesis || { conditions: {}, drafts: {}, history: [] };
@@ -44,8 +46,8 @@ export default function PatientAnamnesisTab({
         });
     };
 
-    const saveFinalForm = (type) => {
-        if (!window.confirm(`¿Guardar esta Ficha de ${type} como definitiva? No se podrá editar después.`)) return;
+    const saveFinalForm = async (type) => {
+        if (!await confirm(`¿Guardar esta Ficha de ${type} como definitiva? No se podrá editar después.`)) return;
         const formLabel = availableForms.find(f => f.id === type)?.label || type;
         const newForm = { id: Date.now().toString(), type: type, label: formLabel, date: new Date().toLocaleString(), author: session?.user?.email || 'Usuario Clínico', data: { ...drafts[type] } };
         savePatientData(selectedPatientId, { ...p, anamnesis: { ...anamnesis, history: [newForm, ...history], drafts: { ...drafts, [type]: {} } } });

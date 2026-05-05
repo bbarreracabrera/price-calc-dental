@@ -1,10 +1,12 @@
 import React from 'react';
 import { Trash2, X } from 'lucide-react';
 import { Card } from './UIComponents';
+import { useDialog } from './DialogProvider';
 
 export default function LoadPackModal({ 
-    themeMode, setModal, protocols, setProtocols, sessionData, setSessionData, supabase, notify 
+    themeMode, setModal, protocols, setProtocols, sessionData, setSessionData, supabase, notify
 }) {
+    const { confirm } = useDialog();
     const isLight = themeMode === 'light';
 
     return (
@@ -22,7 +24,7 @@ export default function LoadPackModal({
                             </div>
                             <button onClick={async (e)=>{
                                 e.stopPropagation(); 
-                                if(window.confirm(`¿Seguro que quieres eliminar el protocolo "${pr.name}"?`)){
+                                if(await confirm(`¿Seguro que quieres eliminar el protocolo "${pr.name}"?`)){
                                     setProtocols(protocols.filter(p=>p.id !== pr.id)); 
                                     await supabase.from('packs').delete().eq('id', pr.id); 
                                     if(typeof notify === 'function') notify("Pack Eliminado");

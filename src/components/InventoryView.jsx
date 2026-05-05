@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Search, Plus, AlertTriangle, Box, Minus, Edit3, PackageOpen, Barcode, Archive, PlayCircle, Clock, AlertCircle, ShoppingCart } from 'lucide-react';
-import { supabase } from '../supabase'; // Asegúrate de tener esta importación si no la pasas por props
+import { supabase } from '../supabase';
+import { useDialog } from './DialogProvider';
 
 export default function InventoryView({ 
     themeMode, t, inventory, setInventory, filteredInventory, 
     inventorySearch, setInventorySearch, setNewItem, setModal, saveToSupabase,
-    session, team, notify // Agregamos notify de las props
+    session, team, notify
 }) {
+    const { prompt } = useDialog();
 
     const displayInventory = inventorySearch ? inventory.filter(i => {
         const matchName = i.name.toLowerCase().includes(inventorySearch.toLowerCase());
@@ -77,8 +79,10 @@ export default function InventoryView({
 
     // 2. Si no hay teléfono, lo pedimos con un prompt elegante (o puedes usar un modal)
     if (!phone || phone.trim() === '') {
-        const userPhone = window.prompt(
-            "📞 Para coordinar el despacho por WhatsApp, ingresa tu número de contacto (ej: +56912345678):"
+        const userPhone = await prompt(
+            "Para coordinar el despacho por WhatsApp, ingresa tu número de contacto:",
+            '',
+            { placeholder: '+56912345678' }
         );
         
         if (!userPhone || userPhone.trim() === '') {

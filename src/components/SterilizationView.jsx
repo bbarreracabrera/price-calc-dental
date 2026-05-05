@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Wind, Sparkles, Plus, ArrowRight, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useDialog } from './DialogProvider';
 
 export default function SterilizationView({ 
-    themeMode, t, sterilizationItems, setSterilizationItems, saveToSupabase, notify, session, config 
+    themeMode, t, sterilizationItems, setSterilizationItems, saveToSupabase, notify, session, config
 }) {
+    const { confirm } = useDialog();
     const [newKitName, setNewKitName] = useState('');
 
     // --- FUNCIONES DE LÓGICA ---
@@ -50,7 +52,7 @@ export default function SterilizationView({
     };
 
     const handleDelete = async (kit) => {
-        if (window.confirm(`¿Eliminar permanentemente el kit "${kit.name}"?`)) {
+        if (await confirm(`¿Eliminar permanentemente el kit "${kit.name}"?`)) {
             setSterilizationItems(sterilizationItems.filter(i => i.id !== kit.id));
             // Borrado lógico para la interfaz.
             // Para base de datos idealmente llamas una función de borrado real, pero aquí lo sacamos del estado.

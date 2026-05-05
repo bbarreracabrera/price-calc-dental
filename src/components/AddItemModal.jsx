@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trash2, Barcode, CalendarDays, PackagePlus, Edit3, AlertTriangle, Save, Camera, StopCircle } from 'lucide-react';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { useDialog } from './DialogProvider';
 
 export default function AddItemModal({ 
     themeMode, newItem, setNewItem, setModal, inventory, setInventory, saveToSupabase, supabase, notify,
     session 
 }) {
+    const { confirm } = useDialog();
     const [batchInput, setBatchInput] = useState({ qty: '', barcode: '', expiry: '' });
     const [showScanner, setShowScanner] = useState(false);
 
@@ -104,7 +106,7 @@ export default function AddItemModal({
 
     // --- LÓGICA DE ELIMINACIÓN ---
     const handleDelete = async () => { 
-        if(window.confirm(`¿Estás seguro de eliminar "${newItem.name}" por completo de tu inventario?`)){
+        if(await confirm(`¿Estás seguro de eliminar "${newItem.name}" por completo de tu inventario?`)){
             const filtered = inventory.filter(i=>i.id!==newItem.id); 
             setInventory(filtered); 
             await supabase.from('inventory').delete().eq('id', newItem.id); 

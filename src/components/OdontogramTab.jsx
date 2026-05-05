@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button } from './UIComponents';
 import { Tooth } from './ToothSystem';
 import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED, getLocalDate } from '../constants';
+import { useDialog } from './DialogProvider';
 import { 
     Search, PenTool, LayoutGrid, MousePointer2, ArrowUp, ArrowDown, 
     ArrowLeft, ArrowRight, ArrowLeftRight, X, Check, Circle, 
@@ -12,8 +13,9 @@ export default function OdontogramTab({
     themeMode, odontogramMode, setOdontogramMode, odontogramType, setOdontogramType,
     getPatient, selectedPatientId, setToothModalData, setModal, userRole, catalog,
     setQuoteItems, notify, setActiveTab, sessionData, setSessionData,
-    savePatientData 
+    savePatientData
 }) {
+    const { confirm } = useDialog();
     const patient = getPatient(selectedPatientId);
     
     // --- ESTADOS DE LA MÁQUINA DEL TIEMPO ---
@@ -114,8 +116,8 @@ export default function OdontogramTab({
     };
 
     // --- MAGIA: GUARDAR FOTO DEL TIEMPO ---
-    const handleTakeSnapshot = () => {
-        if (!window.confirm("¿Deseas guardar una copia inmutable del Odontograma actual en el historial del paciente?")) return;
+    const handleTakeSnapshot = async () => {
+        if (!await confirm("¿Deseas guardar una copia inmutable del Odontograma actual en el historial del paciente?")) return;
         
         const timestamp = new Date().toISOString();
         const dateStr = getLocalDate() + ' ' + new Date().toLocaleTimeString('es-CL', {hour: '2-digit', minute:'2-digit'});
@@ -140,8 +142,8 @@ export default function OdontogramTab({
     };
 
     // --- MAGIA: RESTAURAR EL PASADO AL PRESENTE ---
-    const handleRestoreSnapshot = (snapshot) => {
-        if (!window.confirm(`⚠️ ADVERTENCIA: ¿Estás seguro de sobreescribir el odontograma actual con el estado del ${snapshot.date}? Perderás los cambios no guardados de hoy.`)) return;
+    const handleRestoreSnapshot = async (snapshot) => {
+        if (!await confirm(`¿Estás seguro de sobreescribir el odontograma actual con el estado del ${snapshot.date}? Perderás los cambios no guardados de hoy.`)) return;
         
         savePatientData(selectedPatientId, {
             ...patient,
