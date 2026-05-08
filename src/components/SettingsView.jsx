@@ -117,17 +117,31 @@ export default function SettingsView({
                     <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Ajustes de Clínica</h2>
                 </div>
                 {userRole === 'admin' && (
-                    <button 
-                        onClick={()=>{
-                            const configToSave = { ...config, schedule: config.schedule || defaultSchedule };
-                            saveToSupabase('settings', 'general', configToSave); 
-                            saveToSupabase('clinic_config', session?.user?.email || 'general', configToSave);
-                            notify("Ajustes Guardados con éxito");
-                        }}
-                        className="flex items-center gap-2 px-8 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
-                    >
-                        <Save size={16}/> Guardar Resto de Cambios
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={async () => {
+                                const { tour_completed, ...rest } = config || {};
+                                const updatedConfig = rest;
+                                setConfigLocal(updatedConfig);
+                                await saveToSupabase('settings', 'general', updatedConfig);
+                                window.location.reload();
+                            }}
+                            className="flex items-center gap-2 px-5 py-3.5 bg-[#FDFBF7] border border-[#DFD2C4] text-[#312923] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#DFD2C4]/30 transition-all"
+                        >
+                            🎯 Repetir tour
+                        </button>
+                        <button
+                            onClick={()=>{
+                                const configToSave = { ...config, schedule: config.schedule || defaultSchedule };
+                                saveToSupabase('settings', 'general', configToSave);
+                                saveToSupabase('clinic_config', session?.user?.email || 'general', configToSave);
+                                notify("Ajustes Guardados con éxito");
+                            }}
+                            className="flex items-center gap-2 px-8 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
+                        >
+                            <Save size={16}/> Guardar Resto de Cambios
+                        </button>
+                    </div>
                 )}
             </div>
 

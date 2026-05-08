@@ -46,6 +46,7 @@ import { useDialog } from './components/DialogProvider';
 import MPOAuthCallback from './components/MPOAuthCallback';
 import CancelBooking from './components/CancelBooking';
 import ResetPasswordPage from './components/ResetPasswordPage';
+import WelcomeTour from './components/WelcomeTour';
 
 // --- UTILS & HOOKS ---
 import { generatePDF } from './utils/pdfGenerator';
@@ -61,6 +62,7 @@ export default function App() {
   // ==========================================
   const [session, setSession] = useState(null);
   const [isInRecovery, setIsInRecovery] = useState(() => window.location.hash.includes('type=recovery'));
+  const [runTour, setRunTour] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('sc_theme_mode') || 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -470,6 +472,28 @@ const saveToOfflineVault = (table, id, data) => {
       return alerts;
   }, [inventory]);
 
+  // --- TOUR DE BIENVENIDA ---
+  useEffect(() => {
+      if (!session?.user?.id) return;
+      if (clinicOwner && config?.name === 'Profesional') return; // onboarding aún activo
+      if (runTour) return;
+      if (!clinicOwner) return; // datos aún no cargados
+      if (!config?.name || config.name === 'Profesional') return;
+      if (config?.tour_completed === true) return;
+
+      const timer = setTimeout(async () => {
+          const updatedConfig = { ...config, tour_completed: true };
+          setConfigLocal(updatedConfig);
+          await saveToSupabase('settings', 'general', updatedConfig);
+          setRunTour(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+  }, [session?.user?.id, clinicOwner, config?.name, config?.tour_completed, runTour]);
+
+  const handleTourComplete = useCallback(() => {
+      setRunTour(false);
+  }, []);
+
   const pendingLabWorks = useMemo(() => {
     return labWorks
         .filter(work => work.status !== 'Entregado' && work.status !== 'Finalizado')
@@ -669,6 +693,13 @@ const saveToOfflineVault = (table, id, data) => {
       {clinicOwner && config.name === 'Profesional' && (
           <OnboardingModal onSave={handleOnboardingSave} />
       )}
+
+      <WelcomeTour
+          run={runTour}
+          onComplete={handleTourComplete}
+          setActiveTab={setActiveTab}
+          setMobileMenuOpen={setMobileMenuOpen}
+      />
     </div>
   );
 }

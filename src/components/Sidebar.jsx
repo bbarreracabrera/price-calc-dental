@@ -77,10 +77,11 @@ export default function Sidebar({
                 {getMenuItems().map(item => {
                     const isActive = activeTab === item.id;
                     return (
-                        <button 
-                            key={item.id} 
-                            title={isWorkspaceActive ? item.label : ''} 
-                            onClick={() => { 
+                        <button
+                            key={item.id}
+                            data-tour={item.id === 'ficha' ? 'patients' : item.id}
+                            title={isWorkspaceActive ? item.label : ''}
+                            onClick={() => {
                                 setActiveTab(item.id); 
                                 if(item.id !== 'ficha') setSelectedPatientId(null); 
                                 setMobileMenuOpen(false); 
