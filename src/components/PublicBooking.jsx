@@ -282,16 +282,18 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                                 <input type="tel" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="+56 9..." value={formData.phone} onChange={e=>setFormData({...formData, phone:e.target.value})} />
                             </div>
                         </div>
-                        {requirePayment && (
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Correo electrónico <span className="text-[#CBAAA2]">*</span></label>
-                                <div className="relative">
-                                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
-                                    <input type="email" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="tu@correo.com" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
-                                </div>
-                                <p className="text-[10px] font-bold text-[#9A8F84] ml-2">Necesario para el recibo de pago</p>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">
+                                Correo electrónico {requirePayment ? <span className="text-[#CBAAA2]">*</span> : <span className="font-bold normal-case tracking-normal text-[9px]">(recomendado)</span>}
+                            </label>
+                            <div className="relative">
+                                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                <input type="email" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="tu@correo.com" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
                             </div>
-                        )}
+                            <p className="text-[10px] font-bold text-[#9A8F84] ml-2">
+                                {requirePayment ? 'Necesario para el recibo de pago' : 'Te enviaremos la confirmación de tu reserva'}
+                            </p>
+                        </div>
                         <button
                             disabled={!formData.name || !formData.phone || (requirePayment && !formData.email)}
                             onClick={() => setStep(2)}
