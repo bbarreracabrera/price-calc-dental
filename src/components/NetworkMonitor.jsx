@@ -55,7 +55,11 @@ export default function NetworkMonitor() {
             try {
                 let payload = { id: item.id };
                 
-                if (['clinic_config', 'clinical_evolutions'].includes(item.table)) {
+                if (item.table === 'clinic_config') {
+                    // Strip MP fields that were migrated to settings.data — they no longer exist as columns here
+                    const { mp_access_token, mp_refresh_token, mp_user_id, mp_public_key, mp_connected_at, appointment_price, require_payment_at_booking, ...safeData } = item.data || {};
+                    payload = { id: item.id, ...safeData };
+                } else if (item.table === 'clinical_evolutions') {
                     payload = { id: item.id, ...item.data };
                 } else {
                     payload.data = item.data;
