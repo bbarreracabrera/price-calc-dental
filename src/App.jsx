@@ -45,6 +45,7 @@ import RecoveryModal from './components/RecoveryModal';
 import OnboardingModal from './components/OnboardingModal';
 import { useDialog } from './components/DialogProvider';
 import MPOAuthCallback from './components/MPOAuthCallback';
+import CancelBooking from './components/CancelBooking';
 
 // --- UTILS & HOOKS ---
 import { generatePDF } from './utils/pdfGenerator';
@@ -521,6 +522,11 @@ const saveToOfflineVault = (table, id, data) => {
   
   const t = THEMES[themeMode] || THEMES.dark;
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
+
+  const cancelToken = new URLSearchParams(window.location.search).get('cancel');
+  if (cancelToken) {
+    return <CancelBooking />;
+  }
 
   if (window.location.pathname === '/mp-oauth-callback') {
     return <MPOAuthCallback />;
