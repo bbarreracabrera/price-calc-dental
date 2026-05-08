@@ -46,6 +46,7 @@ import OnboardingModal from './components/OnboardingModal';
 import { useDialog } from './components/DialogProvider';
 import MPOAuthCallback from './components/MPOAuthCallback';
 import CancelBooking from './components/CancelBooking';
+import ResetPasswordPage from './components/ResetPasswordPage';
 
 // --- UTILS & HOOKS ---
 import { generatePDF } from './utils/pdfGenerator';
@@ -60,6 +61,7 @@ export default function App() {
   // 1. ESTADOS GLOBALES (STATE)
   // ==========================================
   const [session, setSession] = useState(null);
+  const [isInRecovery, setIsInRecovery] = useState(() => window.location.hash.includes('type=recovery'));
   const [showLogin, setShowLogin] = useState(false);
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('sc_theme_mode') || 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -136,14 +138,14 @@ export default function App() {
           return; 
       }
 
-      if (window.location.hash.includes('type=recovery')) setModal('recovery');
+      if (window.location.hash.includes('type=recovery')) setIsInRecovery(true);
 
       supabase.auth.getSession().then(({ data: { session } }) => {
           setSession(session);
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'PASSWORD_RECOVERY') setModal('recovery');
+          if (event === 'PASSWORD_RECOVERY') setIsInRecovery(true);
           setSession(session);
           
           if (!session) {
@@ -522,6 +524,10 @@ const saveToOfflineVault = (table, id, data) => {
   
   const t = THEMES[themeMode] || THEMES.dark;
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
+
+  if (isInRecovery) {
+    return <ResetPasswordPage onComplete={() => { setIsInRecovery(false); window.location.href = '/'; }} />;
+  }
 
   const cancelToken = new URLSearchParams(window.location.search).get('cancel');
   if (cancelToken) {
