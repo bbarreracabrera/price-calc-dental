@@ -137,9 +137,6 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         setIsSubmitting(true);
         try {
             const needsPayment = !!(clinicConfig?.require_payment_at_booking && clinicConfig?.appointment_price > 0);
-            console.log('🔍 needsPayment:', needsPayment);
-            console.log('🔍 clinicConfig:', clinicConfig);
-            console.log('🔍 appointment_price:', clinicConfig?.appointment_price);
             const apptId = `appt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
             const cancelToken = crypto.randomUUID();
 
@@ -165,15 +162,15 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
             if (apptError) throw apptError;
 
-            // Crear registro de paciente
+            // Crear o actualizar registro de paciente (upsert evita 409 si ya existe)
             const patientId = `pac_${formData.rut.replace(/\./g, '').replace(/-/g, '') || Date.now().toString()}`;
             const { error: patientError } = await supabase
                 .from('patients')
-                .insert([{
+                .upsert({
                     id: patientId,
                     admin_email: adminEmail,
                     data: { id: patientId, personal: { legalName: formData.name, rut: formData.rut, phone: formData.phone, email: formData.email } }
-                }]);
+                }, { onConflict: 'id', ignoreDuplicates: false });
             if (patientError) console.warn('No se pudo crear registro de paciente:', patientError.message);
 
             // Notificar al dentista y al paciente — no bloquea el flujo si falla
@@ -201,12 +198,6 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
             // Si requiere pago → llamar Edge Function y abrir MP
             if (needsPayment) {
-                console.log('🔍 Llamando create-payment con:', {
-                    clinic_email: adminEmail,
-                    amount: clinicConfig?.appointment_price,
-                    appointment_id: apptId,
-                });
-
                 const { data: payData, error: payError } = await supabase.functions.invoke(
                     'create-payment',
                     {
@@ -221,8 +212,6 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                     }
                 );
 
-                console.log('🔍 Respuesta create-payment:', { payData, payError });
-
                 if (payError || payData?.error) {
                     console.error('Error al iniciar pago:', payError || payData?.error);
                     setRequiresPayment(true);
@@ -230,12 +219,8 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                     return;
                 }
 
-                console.log('🔍 init_point recibido:', payData?.init_point);
-                console.log('🔍 Abriendo window.open...');
                 const popup = window.open(payData.init_point, '_blank', 'noopener,noreferrer');
-                console.log('🔍 popup result:', popup);
                 if (!popup) {
-                    console.warn('⚠️ POPUP BLOCKED por el navegador');
                     alert('Tu navegador bloqueó la ventana de pago. Permite popups para este sitio y vuelve a intentar.');
                 }
                 setRequiresPayment(true);
