@@ -41,7 +41,6 @@ import CatalogModal from './components/CatalogModal';
 import LabWorkModal from './components/LabWorkModal';
 import AddItemModal from './components/AddItemModal';
 import LoadPackModal from './components/LoadPackModal';
-import RecoveryModal from './components/RecoveryModal';
 import OnboardingModal from './components/OnboardingModal';
 import { useDialog } from './components/DialogProvider';
 import MPOAuthCallback from './components/MPOAuthCallback';
@@ -118,7 +117,6 @@ export default function App() {
   const [newMember, setNewMember] = useState({ name: '', email: '', role: 'dentist' });
   const [financeTab, setFinanceTab] = useState('resumen');
   const [newLabWork, setNewLabWork] = useState({ patientId: '', patientName: '', workType: '', tooth: '', labName: '', sendDate: getLocalDate(), expectedDate: '', status: 'sent', id: null });
-  const [newPasswordInput, setNewPasswordInput] = useState('');
   const logoInputRef = useRef(null);
 
   // ==========================================
@@ -660,7 +658,6 @@ const saveToOfflineVault = (table, id, data) => {
       {modal === 'labWork' && (<LabWorkModal themeMode={themeMode} newLabWork={newLabWork} setNewLabWork={setNewLabWork} patientRecords={patientRecords} setModal={setModal} clinicOwner={clinicOwner} labWorks={labWorks} setLabWorks={setLabWorks} supabase={supabase} notify={notify} catalog={catalog} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} session={session} laboratories={config.laboratories || []} />)}
       {modal === 'addItem' && <AddItemModal themeMode={themeMode} newItem={newItem} setNewItem={setNewItem} setModal={setModal} inventory={inventory} setInventory={setInventory} saveToSupabase={saveToSupabaseWrapper} supabase={supabase} notify={notify} session={session} />}       
       {modal === 'loadPack' && <LoadPackModal themeMode={themeMode} setModal={setModal} protocols={protocols} setProtocols={setProtocols} sessionData={sessionData} setSessionData={setSessionData} supabase={supabase} notify={notify} />}
-      {modal === 'recovery' && <RecoveryModal newPasswordInput={newPasswordInput} setNewPasswordInput={setNewPasswordInput} supabase={supabase} notify={notify} setModal={setModal} />}
       
       {selectedImg && (
           <div className="fixed inset-0 z-[200] bg-[#2A2421]/90 backdrop-blur-md flex flex-col items-center justify-center p-4 cursor-pointer" onClick={()=>setSelectedImg(null)}>
