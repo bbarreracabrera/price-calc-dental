@@ -137,6 +137,9 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         setIsSubmitting(true);
         try {
             const needsPayment = !!(clinicConfig?.require_payment_at_booking && clinicConfig?.appointment_price > 0);
+            console.log('🔍 needsPayment:', needsPayment);
+            console.log('🔍 clinicConfig:', clinicConfig);
+            console.log('🔍 appointment_price:', clinicConfig?.appointment_price);
             const apptId = `appt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
             const cancelToken = crypto.randomUUID();
 
@@ -198,6 +201,12 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
             // Si requiere pago → llamar Edge Function y abrir MP
             if (needsPayment) {
+                console.log('🔍 Llamando create-payment con:', {
+                    clinic_email: adminEmail,
+                    amount: clinicConfig?.appointment_price,
+                    appointment_id: apptId,
+                });
+
                 const { data: payData, error: payError } = await supabase.functions.invoke(
                     'create-payment',
                     {
@@ -212,15 +221,23 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                     }
                 );
 
+                console.log('🔍 Respuesta create-payment:', { payData, payError });
+
                 if (payError || payData?.error) {
                     console.error('Error al iniciar pago:', payError || payData?.error);
-                    // La cita quedó creada con status pending_payment; avisamos pero igual avanzamos
                     setRequiresPayment(true);
                     setStep(4);
                     return;
                 }
 
-                window.open(payData.init_point, '_blank', 'noopener,noreferrer');
+                console.log('🔍 init_point recibido:', payData?.init_point);
+                console.log('🔍 Abriendo window.open...');
+                const popup = window.open(payData.init_point, '_blank', 'noopener,noreferrer');
+                console.log('🔍 popup result:', popup);
+                if (!popup) {
+                    console.warn('⚠️ POPUP BLOCKED por el navegador');
+                    alert('Tu navegador bloqueó la ventana de pago. Permite popups para este sitio y vuelve a intentar.');
+                }
                 setRequiresPayment(true);
                 setStep(4);
                 return;
