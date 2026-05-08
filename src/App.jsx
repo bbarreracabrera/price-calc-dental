@@ -217,7 +217,11 @@ const saveToSupabase = async (tableName, id, dataObj) => {
     if (navigator.onLine) {
         try {
             let payload = { id: id };
-            if (['clinic_config', 'clinical_evolutions'].includes(tableName)) {
+            if (tableName === 'clinic_config') {
+                // Strip MP fields migrated to settings.data — they no longer exist as columns in clinic_config
+                const { mp_access_token, mp_refresh_token, mp_user_id, mp_public_key, mp_connected_at, appointment_price, require_payment_at_booking, ...safeData } = dataObj || {};
+                payload = { id: id, ...safeData };
+            } else if (tableName === 'clinical_evolutions') {
                 payload = { id: id, ...dataObj };
             } else {
                 payload.data = dataObj;
