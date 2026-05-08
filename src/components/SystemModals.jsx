@@ -66,7 +66,12 @@ export const TermsScreen = ({ theme }) => {
 };
 
 // --- EL BUSCADOR INTELIGENTE ---
-export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar Paciente..." }) => {
+const normalize = (str) =>
+    (str || '').toString().toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[\.\-\s]/g, '');
+
+export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email..." }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
     const [dbResults, setDbResults] = useState([]);
@@ -77,59 +82,83 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
             setDbResults([]);
             return;
         }
-        
+
         const delayDebounceFn = setTimeout(async () => {
             setIsSearching(true);
             const { data } = await supabase
                 .from('patients')
                 .select('id, data')
-                .ilike('data->personal->>legalName', `%${query}%`)
-                .limit(10); 
-            
+                .or([
+                    `data->personal->>legalName.ilike.%${query}%`,
+                    `data->personal->>rut.ilike.%${query}%`,
+                    `data->personal->>phone.ilike.%${query}%`,
+                    `data->personal->>email.ilike.%${query}%`,
+                ].join(','))
+                .limit(10);
+
             if (data) {
                 const formatted = data.map(r => ({ ...r.data, id: r.id }));
                 setDbResults(formatted);
             }
             setIsSearching(false);
-        }, 500); 
+        }, 500);
 
         return () => clearTimeout(delayDebounceFn);
     }, [query]);
 
-    const combinedResults = useMemo(() => { 
-        if (!query) return []; 
-        const local = Object.values(patients).filter(p => p.personal?.legalName?.toLowerCase().includes(query.toLowerCase())); 
+    const combinedResults = useMemo(() => {
+        if (!query || query.length < 2) return [];
+        const q = normalize(query);
+        const local = Object.values(patients).filter(p => {
+            const personal = p.personal || {};
+            return (
+                normalize(personal.legalName).includes(q) ||
+                normalize(personal.rut).includes(q) ||
+                normalize(personal.phone).includes(q) ||
+                normalize(personal.email).includes(q) ||
+                normalize(personal.nickname).includes(q)
+            );
+        });
         const all = [...local, ...dbResults];
         const unique = Array.from(new Map(all.map(item => [item.id, item])).values());
         return unique;
     }, [query, patients, dbResults]);
-    
+
     return (
         <div className="w-full">
-            <InputField 
-                icon={Search} 
-                placeholder={placeholder} 
-                value={query} 
-                onChange={e => { setQuery(e.target.value); setShowResults(true); }} 
-                onFocus={() => setShowResults(true)} 
+            <InputField
+                icon={Search}
+                placeholder={placeholder}
+                value={query}
+                onChange={e => { setQuery(e.target.value); setShowResults(true); }}
+                onFocus={() => setShowResults(true)}
             />
             {showResults && query && (
                 <div className="mt-2 rounded-2xl border border-[#DFD2C4]/70 max-h-60 overflow-y-auto shadow-inner bg-white custom-scrollbar transition-all animate-in fade-in slide-in-from-top-2">
-                    
+
                     {isSearching && (
                         <div className="p-4 text-xs text-[#9A8F84] font-medium text-center flex items-center justify-center gap-2">
                             <Loader size={14} className="animate-spin"/> Buscando en base de datos...
                         </div>
                     )}
-                    
+
                     {!isSearching && combinedResults.length > 0 ? combinedResults.map(p => (
-                        <div 
-                            key={p.id} 
-                            onClick={() => { onSelect(p); setQuery(p.personal?.legalName); setShowResults(false); }} 
+                        <div
+                            key={p.id}
+                            onClick={() => { onSelect(p); setQuery(p.personal?.legalName); setShowResults(false); }}
                             className="p-4 hover:bg-[#FDFBF7] cursor-pointer border-b border-[#DFD2C4]/30 last:border-0 flex justify-between items-center group transition-colors"
                         >
-                            <p className="font-bold text-sm text-[#312923] group-hover:text-[#5B6651]">{p.personal?.legalName}</p>
-                            {!patients[p.id] && <span className="text-[9px] bg-[#DFD2C4]/30 text-[#9A8F84] border border-[#DFD2C4] px-2 py-0.5 rounded-full font-black tracking-widest">NUBE</span>}
+                            <div>
+                                <p className="font-bold text-sm text-[#312923] group-hover:text-[#5B6651]">{p.personal?.legalName}</p>
+                                {(p.personal?.rut || p.personal?.phone) && (
+                                    <p className="text-[11px] font-medium text-[#9A8F84] mt-0.5">
+                                        {p.personal?.rut && `${p.personal.rut}`}
+                                        {p.personal?.rut && p.personal?.phone && ' · '}
+                                        {p.personal?.phone}
+                                    </p>
+                                )}
+                            </div>
+                            {!patients[p.id] && <span className="text-[9px] bg-[#DFD2C4]/30 text-[#9A8F84] border border-[#DFD2C4] px-2 py-0.5 rounded-full font-black tracking-widest shrink-0">NUBE</span>}
                         </div>
                     )) : !isSearching && (
                         <div className="p-4 text-sm text-[#6B615A] text-center">
