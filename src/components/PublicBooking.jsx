@@ -23,6 +23,10 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [requiresPayment, setRequiresPayment] = useState(false);
 
+    // Normaliza require_payment_at_booking: JSONB puede devolver boolean o string según el origen
+    const requirePayment = clinicConfig?.require_payment_at_booking === true || clinicConfig?.require_payment_at_booking === 'true';
+    const appointmentPrice = Number(clinicConfig?.appointment_price) || 0;
+
     const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
     useEffect(() => {
@@ -136,7 +140,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
         setIsSubmitting(true);
         try {
-            const needsPayment = !!(clinicConfig?.require_payment_at_booking && clinicConfig?.appointment_price > 0);
+            const needsPayment = requirePayment && appointmentPrice > 0;
             const apptId = `appt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
             const cancelToken = crypto.randomUUID();
 
@@ -205,7 +209,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                             clinic_email: adminEmail,
                             patient_name: formData.name,
                             patient_email: formData.email || '',
-                            amount: clinicConfig.appointment_price,
+                            amount: appointmentPrice,
                             description: `Reserva ${formData.reason || 'Consulta'} — ${formData.date} ${formData.time}`,
                             appointment_id: apptId,
                         },
@@ -278,7 +282,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                                 <input type="tel" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="+56 9..." value={formData.phone} onChange={e=>setFormData({...formData, phone:e.target.value})} />
                             </div>
                         </div>
-                        {clinicConfig?.require_payment_at_booking && (
+                        {requirePayment && (
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Correo electrónico <span className="text-[#CBAAA2]">*</span></label>
                                 <div className="relative">
@@ -289,7 +293,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                             </div>
                         )}
                         <button
-                            disabled={!formData.name || !formData.phone || (clinicConfig?.require_payment_at_booking && !formData.email)}
+                            disabled={!formData.name || !formData.phone || (requirePayment && !formData.email)}
                             onClick={() => setStep(2)}
                             className="w-full py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 disabled:opacity-40"
                         >
@@ -332,13 +336,13 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         )}
 
                         {/* PASO 4 — Banner de monto antes de confirmar */}
-                        {clinicConfig?.require_payment_at_booking && clinicConfig?.appointment_price > 0 && (
+                        {requirePayment && appointmentPrice > 0 && (
                             <div className="flex items-center gap-4 p-4 bg-[#CBAAA2]/10 border border-[#CBAAA2]/30 rounded-2xl">
                                 <CreditCard size={24} className="text-[#CBAAA2] shrink-0" />
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Monto a pagar</p>
                                     <p className="text-xl font-black text-[#312923]">
-                                        ${clinicConfig.appointment_price.toLocaleString('es-CL')} CLP
+                                        ${appointmentPrice.toLocaleString('es-CL')} CLP
                                     </p>
                                     <p className="text-[10px] font-bold text-[#9A8F84] mt-0.5">
                                         Tu hora se confirma al completar el pago
@@ -354,7 +358,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         >
                             {isSubmitting
                                 ? <><Loader size={16} className="animate-spin"/> PROCESANDO...</>
-                                : clinicConfig?.require_payment_at_booking
+                                : requirePayment
                                     ? <><CreditCard size={16}/> RESERVAR Y PAGAR</>
                                     : 'CONFIRMAR RESERVA'
                             }

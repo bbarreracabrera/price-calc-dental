@@ -500,14 +500,14 @@ export default function SettingsView({
                                             <p className="text-xs font-bold text-[#9A8F84] mt-1">Los pacientes deben pagar para confirmar su hora</p>
                                         </div>
                                         <div
-                                            onClick={() => updateConfig({ require_payment_at_booking: !config?.require_payment_at_booking })}
-                                            className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer shrink-0 ${config?.require_payment_at_booking ? 'bg-[#5B6651]' : 'bg-[#DFD2C4]'}`}
+                                            onClick={() => updateConfig({ require_payment_at_booking: !(config?.require_payment_at_booking === true || config?.require_payment_at_booking === 'true') })}
+                                            className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer shrink-0 ${(config?.require_payment_at_booking === true || config?.require_payment_at_booking === 'true') ? 'bg-[#5B6651]' : 'bg-[#DFD2C4]'}`}
                                         >
-                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${config?.require_payment_at_booking ? 'translate-x-6' : 'translate-x-0.5'}`}/>
+                                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${(config?.require_payment_at_booking === true || config?.require_payment_at_booking === 'true') ? 'translate-x-6' : 'translate-x-0.5'}`}/>
                                         </div>
                                     </label>
 
-                                    {config?.require_payment_at_booking && (
+                                    {(config?.require_payment_at_booking === true || config?.require_payment_at_booking === 'true') && (
                                         <div>
                                             <label className={labelClass}>Monto a cobrar (CLP)</label>
                                             <div className="relative">
