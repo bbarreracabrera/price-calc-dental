@@ -173,6 +173,29 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                 }]);
             if (patientError) console.warn('No se pudo crear registro de paciente:', patientError.message);
 
+            // Notificar al dentista y al paciente — no bloquea el flujo si falla
+            try {
+                await supabase.functions.invoke('notify-booking', {
+                    body: {
+                        clinic_email: adminEmail,
+                        clinic_name: clinicConfig?.name,
+                        clinic_phone: clinicConfig?.phone,
+                        clinic_address: clinicConfig?.address,
+                        patient_name: formData.name,
+                        patient_email: formData.email || null,
+                        patient_phone: formData.phone,
+                        date: formData.date,
+                        time: formData.time,
+                        treatment: formData.reason || 'Consulta General',
+                        payment_status: needsPayment ? 'pending_payment' : 'scheduled',
+                        cancel_token: cancelToken,
+                        appointment_id: apptId,
+                    }
+                });
+            } catch (err) {
+                console.error('Error enviando notificación de reserva:', err);
+            }
+
             // Si requiere pago → llamar Edge Function y abrir MP
             if (needsPayment) {
                 const { data: payData, error: payError } = await supabase.functions.invoke(

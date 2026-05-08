@@ -92,8 +92,7 @@ export default function CatalogView({
                                 const newItems = [];
                                 for (const item of DEFAULT_CATALOG) {
                                     const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                                    // A los de por defecto les ponemos 'Otros' o los dejamos sin categoría para que se editen luego
-                                    const fullItem = { ...item, category: 'Otros', id, admin_email: clinicOwner || session?.user?.email };
+                                    const fullItem = { ...item, category: item.category || 'Otros', id, admin_email: clinicOwner || session?.user?.email };
                                     newItems.push(fullItem);
                                     await saveToSupabase('catalog', id, fullItem);
                                 }
