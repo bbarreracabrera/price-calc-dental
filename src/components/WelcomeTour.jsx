@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import Joyride, { STATUS, EVENTS, ACTIONS } from 'react-joyride';
+import { Joyride, STATUS, EVENTS, ACTIONS } from 'react-joyride';
 
 export default function WelcomeTour({ run, onComplete, setActiveTab, setMobileMenuOpen }) {
 
