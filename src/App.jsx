@@ -47,6 +47,7 @@ import MPOAuthCallback from './components/MPOAuthCallback';
 import CancelBooking from './components/CancelBooking';
 import ResetPasswordPage from './components/ResetPasswordPage';
 import WelcomeTour from './components/WelcomeTour';
+import ImportPatientsModal from './components/ImportPatientsModal';
 
 // --- UTILS & HOOKS ---
 import { generatePDF } from './utils/pdfGenerator';
@@ -63,6 +64,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [isInRecovery, setIsInRecovery] = useState(() => window.location.hash.includes('type=recovery'));
   const [runTour, setRunTour] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('sc_theme_mode') || 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -612,6 +614,13 @@ const saveToOfflineVault = (table, id, data) => {
         {activeTab === 'ficha' && !selectedPatientId && (
             <div className="space-y-4 animate-in slide-in-from-bottom">
                 <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowImportModal(true)}
+                        className="shrink-0 px-4 py-3 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl text-sm font-black text-[#312923] hover:bg-[#DFD2C4]/30 transition-colors whitespace-nowrap"
+                        title="Importar pacientes desde CSV"
+                    >
+                        📥 CSV
+                    </button>
                     <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={async (p) => {
                         if (p.id === 'new') {
                             let nombreReal = p.name;
@@ -693,6 +702,13 @@ const saveToOfflineVault = (table, id, data) => {
       {clinicOwner && config.name === 'Profesional' && (
           <OnboardingModal onSave={handleOnboardingSave} />
       )}
+
+      <ImportPatientsModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          session={session}
+          onSuccess={() => window.location.reload()}
+      />
 
       <WelcomeTour
           run={runTour}
