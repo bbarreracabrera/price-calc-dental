@@ -45,7 +45,7 @@ export default function BoletaAssistantModal({ isOpen, onClose, payment, patient
                     <ol className="text-sm font-bold text-[#312923] space-y-1 list-decimal list-inside">
                         <li>Abre el portal SII (botón abajo)</li>
                         <li>Inicia sesión con tu clave tributaria</li>
-                        <li>Click en "Emitir boleta exenta"</li>
+                        <li>Una vez dentro, busca "Boleta Electrónica" → "Emitir Boleta Exenta"</li>
                         <li>Copia y pega cada dato desde aquí</li>
                         <li>Confirma y emite</li>
                         <li>Marca como emitida en esta app</li>
@@ -61,7 +61,7 @@ export default function BoletaAssistantModal({ isOpen, onClose, payment, patient
 
                 <div className="space-y-3">
                     <button
-                        onClick={() => window.open('https://www4.sii.cl/bolelectronicaui/', '_blank')}
+                        onClick={() => window.open('https://misiir.sii.cl/cgi_misii/siihome.cgi', '_blank')}
                         className="w-full py-3 bg-[#312923] hover:bg-[#1a1512] text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 transition-colors"
                     >
                         <ExternalLink size={16} /> Abrir portal SII
