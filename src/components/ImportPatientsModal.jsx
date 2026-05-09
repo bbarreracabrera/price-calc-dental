@@ -8,6 +8,7 @@ export default function ImportPatientsModal({ isOpen, onClose, session, onSucces
     const [importing, setImporting] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
 
     if (!isOpen) return null;
 
@@ -125,6 +126,21 @@ export default function ImportPatientsModal({ isOpen, onClose, session, onSucces
         }
     };
 
+    const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+    const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        const droppedFile = e.dataTransfer.files?.[0];
+        if (!droppedFile) return;
+        if (!droppedFile.name.toLowerCase().endsWith('.csv')) {
+            setError('Solo se aceptan archivos .csv');
+            return;
+        }
+        await handleFileChange({ target: { files: [droppedFile] } });
+    };
+
     const downloadTemplate = () => {
         const csv = 'nombre,rut,telefono,email,edad\nJuan Pérez,12.345.678-9,+56912345678,juan@example.com,35\nMaría González,11.111.111-1,+56987654321,maria@example.com,42';
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -158,12 +174,20 @@ export default function ImportPatientsModal({ isOpen, onClose, session, onSucces
                             <Download size={16} /> Descargar plantilla CSV
                         </button>
 
-                        <label
-                            htmlFor="csv-upload"
-                            className="block border-2 border-dashed border-[#DFD2C4] rounded-2xl p-8 text-center mb-4 cursor-pointer hover:border-[#A3968B] hover:bg-[#FDFBF7] transition-all"
+                        <div
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            className={`border-2 border-dashed rounded-2xl p-8 text-center mb-4 transition-all ${
+                                isDragging
+                                    ? 'border-[#5B6651] bg-[#5B6651]/5'
+                                    : 'border-[#DFD2C4] hover:border-[#A3968B] hover:bg-[#FDFBF7]'
+                            }`}
                         >
-                            <Upload size={32} className="text-[#9A8F84] mx-auto mb-2" />
-                            <p className="text-sm font-bold text-[#312923] mb-2">Arrastra tu archivo CSV o haz clic para seleccionar</p>
+                            <Upload size={32} className={`mx-auto mb-2 transition-colors ${isDragging ? 'text-[#5B6651]' : 'text-[#9A8F84]'}`} />
+                            <p className="text-sm font-bold text-[#312923] mb-2">
+                                {isDragging ? 'Suelta el archivo aquí' : 'Arrastra tu archivo CSV o haz clic para seleccionar'}
+                            </p>
                             <input
                                 type="file"
                                 accept=".csv"
@@ -171,13 +195,16 @@ export default function ImportPatientsModal({ isOpen, onClose, session, onSucces
                                 className="hidden"
                                 id="csv-upload"
                             />
-                            <span className="inline-block px-4 py-2 bg-[#312923] text-white rounded-xl font-black text-xs uppercase tracking-widest">
+                            <label
+                                htmlFor="csv-upload"
+                                className="inline-block px-4 py-2 bg-[#312923] text-white rounded-xl font-black text-xs uppercase tracking-widest cursor-pointer hover:bg-[#1a1512] transition-colors"
+                            >
                                 Seleccionar archivo
-                            </span>
+                            </label>
                             {file && (
                                 <p className="mt-3 text-xs font-bold text-[#5B6651]">{file.name}</p>
                             )}
-                        </label>
+                        </div>
 
                         {error && (
                             <div className="bg-red-50 border border-red-200 rounded-2xl p-3 mb-4 flex items-center gap-2">
