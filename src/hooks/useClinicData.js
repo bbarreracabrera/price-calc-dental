@@ -65,7 +65,7 @@ export function useClinicData({
             if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
 
             const { data: f } = await supabase.from('financials').select('*').eq('admin_email', myClinicAdmin);
-            if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id })));
+            if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id, boleta_emitida: r.boleta_emitida, boleta_fecha: r.boleta_fecha })));
 
             const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin);
             if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));

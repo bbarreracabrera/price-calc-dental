@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx'; 
-import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2, Banknote, ArrowRightLeft, CreditCard, Smartphone, MoreHorizontal } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2, Banknote, ArrowRightLeft, CreditCard, Smartphone, MoreHorizontal, FileText, Check } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
-import { getLocalDate } from '../constants'; 
+import { getLocalDate } from '../constants';
 import { supabase } from '../supabase';
 import { useDialog } from './DialogProvider';
+import BoletaAssistantModal from './BoletaAssistantModal';
 
 export default function FinanceCenter({ 
     themeMode, t, financialRecords, setFinancialRecords, 
@@ -16,6 +17,7 @@ export default function FinanceCenter({
     const { confirm } = useDialog();
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
     const [dateRange, setDateRange] = useState('this_month');
+    const [boletaModal, setBoletaModal] = useState({ open: false, payment: null, patient: null });
 
     const today = new Date();
     const isPaymentInRange = (paymentDate) => {
@@ -271,12 +273,25 @@ export default function FinanceCenter({
                 {/* --- TAB 2: INGRESOS --- */}
                 {financeTab === 'ingresos' && (
                     <div className="space-y-4 animate-in slide-in-from-bottom">
+                        {(() => {
+                            const sinBoleta = incomeRecords.filter(h => !h.boleta_emitida);
+                            if (sinBoleta.length === 0) return null;
+                            return (
+                                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                                    <FileText size={18} className="text-amber-500 shrink-0" />
+                                    <div>
+                                        <p className="font-black text-amber-800 text-sm">{sinBoleta.length} {sinBoleta.length === 1 ? 'pago sin boleta' : 'pagos sin boleta'}</p>
+                                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Emite las boletas pendientes en el portal SII</p>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                         {incomeRecords.length === 0 ? (
                             <div className="text-center py-20 opacity-40 font-bold">No hay registros de ingresos.</div>
                         ) : (
                             incomeRecords.map(h => {
                                 const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
-                                const pending = (h.total || 0) - paid; 
+                                const pending = (h.total || 0) - paid;
                                 return (
                                     <div key={h.id} onClick={()=>onOpenAbonoModal(h, pending)} className="group flex justify-between items-center p-6 bg-white rounded-3xl border border-[#DFD2C4]/40 hover:border-[#5B6651]/50 hover:shadow-lg transition-all cursor-pointer">
                                         <div className="flex items-center gap-5">
@@ -295,11 +310,29 @@ export default function FinanceCenter({
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="flex flex-col items-end gap-2">
                                             <p className={`font-black text-lg ${pending <= 0 ? 'text-emerald-500' : 'text-amber-500'}`}>
                                                 {pending <= 0 ? 'PAGADO' : `PENDIENTE: $${pending.toLocaleString()}`}
                                             </p>
-                                            <span className="text-[9px] font-black text-[#A3968B] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Click para abonar</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[9px] font-black text-[#A3968B] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Click para abonar</span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const patient = Object.values(patientRecords).find(p => p?.personal?.legalName === h.patientName);
+                                                        setBoletaModal({ open: true, payment: h, patient: patient || null });
+                                                    }}
+                                                    className={`shrink-0 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-all border ${
+                                                        h.boleta_emitida
+                                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                            : 'bg-[#FDFBF7] text-[#312923] border-[#DFD2C4] hover:border-[#5B6651] hover:bg-[#5B6651]/5'
+                                                    }`}
+                                                >
+                                                    {h.boleta_emitida
+                                                        ? <><Check size={10} /> Boleta</>
+                                                        : <><FileText size={10} /> Boleta SII</>}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -560,6 +593,18 @@ export default function FinanceCenter({
                 )}
 
             </div>
+
+            <BoletaAssistantModal
+                isOpen={boletaModal.open}
+                onClose={() => setBoletaModal({ open: false, payment: null, patient: null })}
+                payment={boletaModal.payment}
+                patient={boletaModal.patient}
+                onMarkEmitted={(id) => {
+                    setFinancialRecords(prev => prev.map(f =>
+                        f.id === id ? { ...f, boleta_emitida: true, boleta_fecha: new Date().toISOString() } : f
+                    ));
+                }}
+            />
         </div>
     );
 }
