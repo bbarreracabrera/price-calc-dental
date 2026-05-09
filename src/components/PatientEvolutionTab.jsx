@@ -12,6 +12,40 @@ export default function PatientEvolutionTab({
     const [evolutions, setEvolutions] = useState([]);
     const [loadingEvo, setLoadingEvo] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [draftStatus, setDraftStatus] = useState('');
+    const [showDraftRecovered, setShowDraftRecovered] = useState(false);
+
+    const draftKey = `evolution_draft_${selectedPatientId}`;
+
+    // Cargar borrador al montar o cambiar de paciente
+    useEffect(() => {
+        const draft = localStorage.getItem(draftKey);
+        if (!draft) return;
+        try {
+            const parsed = JSON.parse(draft);
+            const ageInDays = (Date.now() - parsed.timestamp) / (1000 * 60 * 60 * 24);
+            if (ageInDays < 7 && parsed.text) {
+                setNewEvolution(parsed.text);
+                setShowDraftRecovered(true);
+                setTimeout(() => setShowDraftRecovered(false), 3000);
+            } else {
+                localStorage.removeItem(draftKey);
+            }
+        } catch {
+            localStorage.removeItem(draftKey);
+        }
+    }, [selectedPatientId]);
+
+    // Guardar borrador 2s después de cada cambio
+    useEffect(() => {
+        if (!newEvolution) return;
+        const timer = setTimeout(() => {
+            localStorage.setItem(draftKey, JSON.stringify({ text: newEvolution, timestamp: Date.now() }));
+            setDraftStatus('Borrador guardado');
+            setTimeout(() => setDraftStatus(''), 1500);
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, [newEvolution, draftKey]);
 
     // NUEVO: Estado para los tratamientos que el doctor selecciona hoy
     const [linkedItems, setLinkedItems] = useState([]);
@@ -179,8 +213,9 @@ export default function PatientEvolutionTab({
 
             // 3. Actualizamos la vista localmente
             setEvolutions([data[0], ...evolutions]);
-            setNewEvolution(''); 
-            setLinkedItems([]); // Limpiamos la selección
+            setNewEvolution('');
+            localStorage.removeItem(draftKey);
+            setLinkedItems([]);
             logAction('ADD_EVOLUTION', { text_preview: newEvolution.substring(0,20) }, selectedPatientId);
             
         } catch (err) {
@@ -253,6 +288,13 @@ export default function PatientEvolutionTab({
                     </div>
                 )}
 
+                {showDraftRecovered && (
+                    <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-3 mb-4 flex items-center gap-2">
+                        <span className="text-sm">✨</span>
+                        <p className="text-sm font-bold text-[#312923]">Recuperamos un borrador que dejaste sin guardar</p>
+                    </div>
+                )}
+
                 <div className="flex justify-between items-center mb-4">
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Nueva Entrada</span>
                 </div>
@@ -281,7 +323,13 @@ export default function PatientEvolutionTab({
                     </button>
                 </div>
 
-                <div className="mt-6 flex justify-end">
+                <div className="mt-3 h-4">
+                    {draftStatus && (
+                        <p className="text-xs text-[#9A8F84] italic">✓ {draftStatus}</p>
+                    )}
+                </div>
+
+                <div className="mt-3 flex justify-end">
                     <Button 
                         variant="primary" 
                         className={`flex items-center gap-2 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all shadow-lg ${
