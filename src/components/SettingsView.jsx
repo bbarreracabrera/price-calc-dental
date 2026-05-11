@@ -15,6 +15,15 @@ export default function SettingsView({
 
     const [newLab, setNewLab] = useState({ name: '', email: '', phone: '' });
 
+    const TEAM_COLORS = ['#5B6651', '#A3968B', '#CBAAA2', '#D9A86C', '#7A8B7F', '#B89B85', '#9B7E7A', '#6B7B6E'];
+
+    const updateMemberColor = async (memberId, newColor) => {
+        const updated = team.map(m => m.id === memberId ? { ...m, color: newColor } : m);
+        setTeam(updated);
+        const member = updated.find(m => m.id === memberId);
+        if (member) await saveToSupabase('team', memberId, member);
+    };
+
     const defaultSchedule = {
         Lunes: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
         Martes: { active: true, start1: '09:00', end1: '13:00', start2: '15:00', end2: '19:00' },
@@ -415,16 +424,18 @@ export default function SettingsView({
                                     <button 
                                         className="w-full h-[50px] bg-[#5B6651] hover:bg-[#4a5442] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#5B6651]/20 flex items-center justify-center gap-2"
                                         onClick={async()=>{ 
-                                            if(newMember.email && newMember.name){ 
-                                                const id = Date.now().toString(); 
+                                            if(newMember.email && newMember.name){
+                                                const id = Date.now().toString();
                                                 const comisionAsignada = newMember.role === 'dentist' ? (newMember.commission || 0) : 0;
-                                                
-                                                const u = { 
-                                                    ...newMember, 
-                                                    id, 
+                                                const dentistIndex = team.filter(m => m.role === 'admin' || m.role === 'dentist').length;
+
+                                                const u = {
+                                                    ...newMember,
+                                                    id,
                                                     commission: comisionAsignada,
-                                                    email: newMember.email.toLowerCase().trim()
-                                                }; 
+                                                    email: newMember.email.toLowerCase().trim(),
+                                                    color: TEAM_COLORS[dentistIndex % TEAM_COLORS.length],
+                                                };
                                                 
                                                 setTeam([...team, u]); 
                                                 await saveToSupabase('team', id, u); 
@@ -449,7 +460,17 @@ export default function SettingsView({
                                 {team.map(member => (
                                     <div key={member.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-5 bg-white rounded-2xl border border-[#DFD2C4]/40 hover:border-[#A3968B] transition-all shadow-sm group">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-[#FDFBF7] border border-[#DFD2C4] flex items-center justify-center font-black text-[#A3968B]">{member.name ? member.name.charAt(0).toUpperCase() : '?'}</div>
+                                            <div
+                                                className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white cursor-pointer border-2 border-white shadow-sm hover:scale-110 transition-transform shrink-0"
+                                                style={{ backgroundColor: member.color || '#A3968B' }}
+                                                title="Click para cambiar color"
+                                                onClick={async () => {
+                                                    const newColor = prompt('Color hex (ej: #5B6651):', member.color || '#A3968B');
+                                                    if (newColor && /^#[0-9A-Fa-f]{6}$/.test(newColor.trim())) await updateMemberColor(member.id, newColor.trim());
+                                                }}
+                                            >
+                                                {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+                                            </div>
                                             <div>
                                                 <p className="font-black text-[#312923]">{member.name}</p>
                                                 <p className="text-[10px] font-bold text-[#9A8F84] mt-0.5">{member.email}</p>
