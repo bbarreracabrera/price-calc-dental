@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail, MessageCircle, CreditCard } from 'lucide-react';
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
@@ -14,8 +14,19 @@ export default function SettingsView({
     const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
 
     const [newLab, setNewLab] = useState({ name: '', email: '', phone: '' });
+    const [colorPickerOpenFor, setColorPickerOpenFor] = useState(null);
 
     const TEAM_COLORS = ['#5B6651', '#A3968B', '#CBAAA2', '#D9A86C', '#7A8B7F', '#B89B85', '#9B7E7A', '#6B7B6E'];
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (colorPickerOpenFor && !e.target.closest('.color-picker-container')) {
+                setColorPickerOpenFor(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [colorPickerOpenFor]);
 
     const updateMemberColor = async (memberId, newColor) => {
         const updated = team.map(m => m.id === memberId ? { ...m, color: newColor } : m);
@@ -460,16 +471,34 @@ export default function SettingsView({
                                 {team.map(member => (
                                     <div key={member.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-5 bg-white rounded-2xl border border-[#DFD2C4]/40 hover:border-[#A3968B] transition-all shadow-sm group">
                                         <div className="flex items-center gap-4">
-                                            <div
-                                                className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white cursor-pointer border-2 border-white shadow-sm hover:scale-110 transition-transform shrink-0"
-                                                style={{ backgroundColor: member.color || '#A3968B' }}
-                                                title="Click para cambiar color"
-                                                onClick={async () => {
-                                                    const newColor = prompt('Color hex (ej: #5B6651):', member.color || '#A3968B');
-                                                    if (newColor && /^#[0-9A-Fa-f]{6}$/.test(newColor.trim())) await updateMemberColor(member.id, newColor.trim());
-                                                }}
-                                            >
-                                                {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+                                            <div className="color-picker-container relative shrink-0">
+                                                <button
+                                                    onClick={() => setColorPickerOpenFor(colorPickerOpenFor === member.id ? null : member.id)}
+                                                    className="w-10 h-10 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform flex items-center justify-center font-black text-white text-sm"
+                                                    style={{ backgroundColor: member.color || '#A3968B' }}
+                                                    aria-label="Cambiar color"
+                                                >
+                                                    {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+                                                </button>
+
+                                                {colorPickerOpenFor === member.id && (
+                                                    <div className="absolute z-50 top-12 left-0 bg-white rounded-2xl shadow-xl border border-[#DFD2C4] p-3 min-w-[180px]">
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] mb-2 px-1">
+                                                            Color del profesional
+                                                        </p>
+                                                        <div className="grid grid-cols-4 gap-2">
+                                                            {TEAM_COLORS.map(color => (
+                                                                <button
+                                                                    key={color}
+                                                                    onClick={() => { updateMemberColor(member.id, color); setColorPickerOpenFor(null); }}
+                                                                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${member.color === color ? 'border-[#312923] scale-110' : 'border-white shadow-sm'}`}
+                                                                    style={{ backgroundColor: color }}
+                                                                    title={color}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <p className="font-black text-[#312923]">{member.name}</p>
