@@ -516,6 +516,19 @@ const saveToOfflineVault = (table, id, data) => {
       );
   }
 
+  if (isInRecovery) {
+    return <ResetPasswordPage onComplete={() => { setIsInRecovery(false); window.location.href = '/'; }} />;
+  }
+
+  const cancelToken = new URLSearchParams(window.location.search).get('cancel');
+  if (cancelToken) {
+    return <CancelBooking />;
+  }
+
+  if (window.location.pathname === '/mp-oauth-callback') {
+    return <MPOAuthCallback />;
+  }
+
   if (!session) {
       if (!showLogin) return <LandingPage onLoginClick={() => setShowLogin(true)} />;
       return (
@@ -548,19 +561,6 @@ const saveToOfflineVault = (table, id, data) => {
   
   const t = THEMES[themeMode] || THEMES.dark;
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
-
-  if (isInRecovery) {
-    return <ResetPasswordPage onComplete={() => { setIsInRecovery(false); window.location.href = '/'; }} />;
-  }
-
-  const cancelToken = new URLSearchParams(window.location.search).get('cancel');
-  if (cancelToken) {
-    return <CancelBooking />;
-  }
-
-  if (window.location.pathname === '/mp-oauth-callback') {
-    return <MPOAuthCallback />;
-  }
 
   return (
     <div className={`min-h-screen flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans`}>
