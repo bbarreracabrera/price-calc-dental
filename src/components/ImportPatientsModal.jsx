@@ -16,6 +16,12 @@ export default function ImportPatientsModal({ isOpen, onClose, session, onSucces
         const f = e.target.files?.[0];
         if (!f) return;
 
+        const MAX_CSV_SIZE = 10 * 1024 * 1024; // 10MB
+        if (f.size > MAX_CSV_SIZE) {
+            setError('El archivo es demasiado grande (máximo 10MB)');
+            return;
+        }
+
         setFile(f);
         setError('');
         setResult(null);

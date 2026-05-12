@@ -11,54 +11,58 @@ export default function PatientConsentTab({
     const patient = getPatient(selectedPatientId);
     const signedConsents = patient?.consents || [];
     const [hasSignature, setHasSignature] = useState(false);
+    const [isSigning, setIsSigning] = useState(false);
 
     const handleSignConsent = async () => {
-        const signatureData = SignaturePad.getSignature?.();
-
-        if (!hasSignature || !signatureData) {
-            if (notify) notify('Por favor firma antes de continuar');
-            return;
-        }
-
-        // Hash SHA-256 del texto + firma para integridad
-        const textToHash = consentText + signatureData;
-        const encoder = new TextEncoder();
-        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(textToHash));
-        const hashHex = Array.from(new Uint8Array(hashBuffer))
-            .map(b => b.toString(16).padStart(2, '0')).join('');
-
-        // IP del cliente (best effort)
-        let clientIP = 'no_disponible';
+        setIsSigning(true);
         try {
-            const res = await fetch('https://api.ipify.org?format=json');
-            const ipData = await res.json();
-            clientIP = ipData.ip;
-        } catch (e) { /* falla silenciosa */ }
+            const signatureData = SignaturePad.getSignature?.();
 
-        const newConsent = {
-            id: `consent_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-            type: CONSENT_TEMPLATES[consentTemplate]?.title || consentTemplate,
-            text: consentText,
-            signature: signatureData,
-            date: new Date().toLocaleDateString('es-CL'),
-            signed_at: new Date().toISOString(),
-            signed_by: patient?.personal?.legalName || 'Paciente',
-            patient_rut: patient?.personal?.rut || '',
-            ip_address: clientIP,
-            user_agent: navigator.userAgent.substring(0, 200),
-            hash: hashHex.substring(0, 32),
-            full_hash: hashHex,
-            clinic_email: session?.user?.email || '',
-        };
+            if (!hasSignature || !signatureData) {
+                if (notify) notify('Por favor firma antes de continuar');
+                return;
+            }
 
-        savePatientData(selectedPatientId, {
-            ...patient,
-            consents: [newConsent, ...signedConsents],
-        });
+            const textToHash = consentText + signatureData;
+            const encoder = new TextEncoder();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(textToHash));
+            const hashHex = Array.from(new Uint8Array(hashBuffer))
+                .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        setHasSignature(false);
-        if (notify) notify('Consentimiento firmado y guardado');
-        setModal(null);
+            let clientIP = 'no_disponible';
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const ipData = await res.json();
+                clientIP = ipData.ip;
+            } catch (e) { /* falla silenciosa */ }
+
+            const newConsent = {
+                id: `consent_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                type: CONSENT_TEMPLATES[consentTemplate]?.title || consentTemplate,
+                text: consentText,
+                signature: signatureData,
+                date: new Date().toLocaleDateString('es-CL'),
+                signed_at: new Date().toISOString(),
+                signed_by: patient?.personal?.legalName || 'Paciente',
+                patient_rut: patient?.personal?.rut || '',
+                ip_address: clientIP,
+                user_agent: navigator.userAgent.substring(0, 200),
+                hash: hashHex.substring(0, 32),
+                full_hash: hashHex,
+                clinic_email: session?.user?.email || '',
+            };
+
+            savePatientData(selectedPatientId, {
+                ...patient,
+                consents: [newConsent, ...signedConsents],
+            });
+
+            setHasSignature(false);
+            if (notify) notify('Consentimiento firmado y guardado');
+            setModal(null);
+        } finally {
+            setIsSigning(false);
+        }
     };
 
     return (
@@ -111,10 +115,12 @@ export default function PatientConsentTab({
                         <div className="flex gap-3 mt-5">
                             <button
                                 onClick={handleSignConsent}
-                                disabled={!hasSignature}
-                                className="flex-1 py-3.5 bg-[#5B6651] hover:bg-[#4a5442] text-white font-black text-sm rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                                disabled={isSigning || !hasSignature}
+                                className="flex-1 py-3.5 bg-[#5B6651] hover:bg-[#4a5442] text-white font-black text-sm rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
                             >
-                                Confirmar y guardar firma
+                                {isSigning ? (
+                                    <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando firma...</>
+                                ) : 'Confirmar y guardar firma'}
                             </button>
                             <button
                                 onClick={() => setModal(null)}

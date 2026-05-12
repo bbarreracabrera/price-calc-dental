@@ -1,11 +1,25 @@
 import { supabase } from '../supabase';
 
+const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_PATIENT_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_PATIENT_TYPES = [...ALLOWED_IMAGE_TYPES, 'application/pdf'];
+
 // 1. FUNCIÓN PARA SUBIR EL LOGO DE LA CLÍNICA
 export const uploadLogo = async (e, context) => {
     const { setUploading, notify, clinicOwner, session, config, setConfigLocal, saveToSupabase } = context;
-    const file = e.target.files[0]; 
-    if (!file) return; 
-    
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > MAX_LOGO_SIZE) {
+        alert('El archivo es demasiado grande (máximo 5MB)');
+        return;
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        alert('Solo se permiten imágenes JPG, PNG, WEBP o GIF');
+        return;
+    }
+
     setUploading(true);
     notify("Subiendo logo...");
     
@@ -31,14 +45,22 @@ export const uploadLogo = async (e, context) => {
 export const uploadPatientImage = async (file, context) => {
     const { selectedPatientId, setUploading, getPatient, activeFolder, savePatientData, notify, logAction } = context;
     
-    // Si no hay archivo o paciente, avisamos en consola para no fallar en silencio
     if (!file || !selectedPatientId) {
         console.error("No se detectó el archivo o el paciente", { file, selectedPatientId });
-        return; 
+        return;
     }
-    
+
+    if (file.size > MAX_PATIENT_SIZE) {
+        alert('El archivo es demasiado grande (máximo 10MB)');
+        return;
+    }
+    if (!ALLOWED_PATIENT_TYPES.includes(file.type)) {
+        alert('Solo se permiten imágenes (JPG, PNG, WEBP, GIF) o PDF');
+        return;
+    }
+
     setUploading(true);
-    notify("Subiendo archivo..."); // Aviso visual de que empezó
+    notify("Subiendo archivo...");
     
     try {
         const fileName = `${selectedPatientId}_${Date.now()}.${file.name.split('.').pop()}`;

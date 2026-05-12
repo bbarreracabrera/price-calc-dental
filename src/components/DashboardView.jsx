@@ -2,15 +2,23 @@ import React from 'react';
 import { DollarSign, TrendingDown, BarChart2, PieChart, ArrowRight, Clock, CalendarClock, User, Calculator, Wallet, Plus, Calendar, AlertTriangle, FlaskConical, AlertCircle, Box } from 'lucide-react';
 import { Card, Button, SimpleLineChart } from './UIComponents';
 
-export default function DashboardView({ 
-    config, userRole, themeMode, t, 
+export default function DashboardView({
+    config, userRole, themeMode, t,
     totalCollected, totalExpenses, netProfit, chartData, todaysAppointments,
     setActiveTab, setFinanceTab, setModal, setSelectedPatientId, setQuoteMode,
-    lowStockItems = [], 
+    lowStockItems = [],
     pendingLabWorks = [],
-    // MAGIA: Recibimos el semáforo de vencimientos
-    expirationAlerts = { expired: [], near: [] } 
+    expirationAlerts = { expired: [], near: [] },
+    incomeRecords = []
 }) {
+    const treatmentTotals = {};
+    incomeRecords.forEach(r => {
+        const cat = r.treatment || r.description?.split(':')[0]?.trim() || 'Otros';
+        treatmentTotals[cat] = (treatmentTotals[cat] || 0) + Number(r.total || 0);
+    });
+    const sortedTreatments = Object.entries(treatmentTotals).sort((a, b) => b[1] - a[1]);
+    const top2 = sortedTreatments.slice(0, 2);
+    const grandTotal = sortedTreatments.reduce((sum, [, v]) => sum + v, 0);
     // Obtenemos la fecha actual formateada elegantemente
     const today = new Date();
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -235,7 +243,26 @@ export default function DashboardView({
                             <PieChart size={32} className="text-[#312923]"/>
                         </div>
                         <h3 className="font-black text-xl text-[#312923] tracking-tight">Top Tratamientos</h3>
-                        <p className="text-xs text-[#6B615A] mt-4 font-bold leading-relaxed">El 60% de tus ingresos proviene de <span className="text-[#5B6651]">Ortodoncia</span> y <span className="text-[#CBAAA2]">Limpiezas</span>.</p>
+                        {top2.length >= 1 ? (
+                            <div className="mt-4 w-full space-y-2 text-left">
+                                {top2.map(([name, amount], i) => {
+                                    const pct = grandTotal > 0 ? Math.round((amount / grandTotal) * 100) : 0;
+                                    return (
+                                        <div key={name}>
+                                            <div className="flex justify-between text-xs font-bold text-[#312923] mb-1">
+                                                <span className="truncate max-w-[70%]">{name}</span>
+                                                <span className={i === 0 ? 'text-[#5B6651]' : 'text-[#CBAAA2]'}>{pct}%</span>
+                                            </div>
+                                            <div className="h-1.5 bg-[#DFD2C4]/40 rounded-full">
+                                                <div className={`h-full rounded-full ${i === 0 ? 'bg-[#5B6651]' : 'bg-[#CBAAA2]'}`} style={{ width: `${pct}%` }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-[#9A8F84] mt-4 font-bold">Aún no hay datos suficientes</p>
+                        )}
                         
                         <button onClick={() => { setActiveTab('history'); setFinanceTab('ingresos'); }} className="mt-8 w-full py-3.5 bg-white border border-[#DFD2C4] rounded-xl text-[10px] font-black uppercase tracking-widest text-[#5B6651] hover:bg-[#5B6651] hover:text-white hover:border-[#5B6651] transition-all flex items-center justify-center gap-2 shadow-sm">
                             Centro Financiero <ArrowRight size={14}/>

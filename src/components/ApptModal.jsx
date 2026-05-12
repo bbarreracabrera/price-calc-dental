@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Trash2, MessageCircle, CalendarDays, Clock, FileText, Activity, Stethoscope } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
@@ -9,6 +9,9 @@ export default function ApptModal({
     getPatient, savePatientData, notify, appointments, setAppointments,
     saveToSupabase, sendWhatsApp, getPatientPhone, team, session, adminEmail
 }) {
+    const [newPatId, setNewPatId] = useState(null);
+    const [newPatPhone, setNewPatPhone] = useState('');
+
     return (
         <div className="fixed inset-0 z-[100] bg-[#312923]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
             {/* Contenedor principal con alto máximo controlado */}
@@ -54,16 +57,39 @@ export default function ApptModal({
 
                                         savePatientData(newId, newPatient);
                                         setNewAppt({...newAppt, name: nombreReal});
+                                        setNewPatId(newId);
+                                        setNewPatPhone('');
                                         notify("Paciente Creado Exitosamente");
                                     } else {
                                         setPatientRecords(prev => ({...prev, [p.id]: p}));
                                         setNewAppt({...newAppt, name: p.personal?.legalName || p.name});
+                                        setNewPatId(null);
                                     }
                                 }}
                             />
                         </div>
                     )}
-                    
+
+                    {newPatId && (
+                        <div className="bg-[#5B6651]/5 border border-[#5B6651]/20 rounded-2xl p-3 animate-in fade-in">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#5B6651] block mb-2">Teléfono del nuevo paciente</label>
+                            <InputField
+                                icon={MessageCircle}
+                                type="tel"
+                                placeholder="+56 9 xxxx xxxx"
+                                value={newPatPhone}
+                                onChange={e => setNewPatPhone(e.target.value)}
+                                onBlur={() => {
+                                    if (newPatPhone) {
+                                        const p = getPatient(newPatId);
+                                        if (!p.personal) p.personal = {};
+                                        savePatientData(newPatId, { ...p, personal: { ...p.personal, phone: newPatPhone } });
+                                    }
+                                }}
+                            />
+                        </div>
+                    )}
+
                     {/* FORMULARIO RESTANTE */}
                     <div className="space-y-5">
                         <InputField 

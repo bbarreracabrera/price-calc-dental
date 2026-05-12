@@ -51,6 +51,15 @@ export default function AbonoModal({
                 {/* New payment form */}
                 <div className="bg-[#FDFBF7] border border-[#DFD2C4]/50 rounded-2xl p-4 mb-5 space-y-3">
                     <h4 className="font-black text-sm text-[#312923]">Registrar Nuevo Abono</h4>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block">Fecha del pago</label>
+                        <input
+                            type="date"
+                            value={paymentInput.date}
+                            onChange={e => setPaymentInput({ ...paymentInput, date: e.target.value })}
+                            className="w-full p-3 border border-[#DFD2C4] rounded-2xl bg-white text-[#312923] font-bold text-sm outline-none focus:border-[#5B6651] transition-colors"
+                        />
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <InputField
                             type="number"
