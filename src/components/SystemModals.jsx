@@ -71,7 +71,7 @@ const normalize = (str) =>
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[\.\-\s]/g, '');
 
-export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email..." }) => {
+export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email...", adminEmail }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
     const [dbResults, setDbResults] = useState([]);
@@ -85,9 +85,11 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
 
         const delayDebounceFn = setTimeout(async () => {
             setIsSearching(true);
-            const { data } = await supabase
+            let q = supabase
                 .from('patients')
-                .select('id, data')
+                .select('id, data');
+            if (adminEmail) q = q.eq('admin_email', adminEmail);
+            const { data } = await q
                 .or([
                     `data->personal->>legalName.ilike.%${query}%`,
                     `data->personal->>rut.ilike.%${query}%`,

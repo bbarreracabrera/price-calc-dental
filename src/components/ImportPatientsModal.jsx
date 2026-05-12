@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { Upload, Download, X, CheckCircle, Loader, AlertTriangle } from 'lucide-react';
 
-export default function ImportPatientsModal({ isOpen, onClose, session, onSuccess }) {
+export default function ImportPatientsModal({ isOpen, onClose, session, onSuccess, clinicOwner }) {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState([]);
     const [importing, setImporting] = useState(false);
@@ -78,7 +78,7 @@ export default function ImportPatientsModal({ isOpen, onClose, session, onSucces
                 const id = `pat_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`;
                 return {
                     id,
-                    admin_email: session.user.email,
+                    admin_email: clinicOwner || session.user.email,
                     data: {
                         id,
                         personal: {

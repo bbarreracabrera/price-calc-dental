@@ -94,8 +94,8 @@ export default function SettingsView({
         setNewLab({ name: '', email: '', phone: '' });
     };
 
-    const MP_CLIENT_ID = '6450460700014655';
-    const MP_REDIRECT_URI = 'https://shiningclouddental.vercel.app/mp-oauth-callback';
+    const MP_CLIENT_ID = import.meta.env.VITE_MP_CLIENT_ID;
+    const MP_REDIRECT_URI = import.meta.env.VITE_MP_REDIRECT_URI;
 
     const updateConfig = async (partial) => {
         const updated = { ...config, ...partial };

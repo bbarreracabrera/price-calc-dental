@@ -7,7 +7,7 @@ import { getLocalDate } from '../constants';
 export default function PrescriptionView({
     themeMode, t, patientRecords, getPatient, savePatientData, setPatientRecords,
     rxPatient, setRxPatient, medInput, setMedInput, prescription, setPrescription,
-    notify, generatePDF
+    notify, generatePDF, adminEmail
 }) {
    // Radar a prueba de balas para buscar cualquier alerta en la Anamnesis
     const medicalAlerts = (() => {
@@ -65,7 +65,7 @@ export default function PrescriptionView({
                     
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block">1. Paciente a recetar</label>
-                        <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+                        <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." adminEmail={adminEmail} onSelect={(p) => {
                             if (p.id === 'new') {
                                 const newId = "pac_" + Date.now().toString();
                                 const nombreReal = p.name;

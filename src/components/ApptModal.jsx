@@ -7,7 +7,7 @@ import { supabase } from '../supabase';
 export default function ApptModal({
     themeMode, newAppt, setNewAppt, setModal, patientRecords, setPatientRecords,
     getPatient, savePatientData, notify, appointments, setAppointments,
-    saveToSupabase, sendWhatsApp, getPatientPhone, team, session
+    saveToSupabase, sendWhatsApp, getPatientPhone, team, session, adminEmail
 }) {
     return (
         <div className="fixed inset-0 z-[100] bg-[#312923]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -37,10 +37,11 @@ export default function ApptModal({
                     {!newAppt.id && (
                         <div className="bg-[#FDFBF7] p-4 rounded-2xl border border-[#DFD2C4]/40">
                             <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] mb-2 block ml-1">Seleccionar Paciente</label>
-                            <PatientSelect 
-                                theme={themeMode} 
-                                patients={patientRecords} 
-                                placeholder="Buscar o Crear Paciente..." 
+                            <PatientSelect
+                                theme={themeMode}
+                                patients={patientRecords}
+                                placeholder="Buscar o Crear Paciente..."
+                                adminEmail={adminEmail}
                                 onSelect={(p) => {
                                     if (p.id === 'new') {
                                         const newId = "pac_" + Date.now().toString();
@@ -50,7 +51,7 @@ export default function ApptModal({
                                         newPatient.name = nombreReal;
                                         if (!newPatient.personal) newPatient.personal = {};
                                         newPatient.personal.legalName = nombreReal;
-                                        
+
                                         savePatientData(newId, newPatient);
                                         setNewAppt({...newAppt, name: nombreReal});
                                         notify("Paciente Creado Exitosamente");
@@ -58,7 +59,7 @@ export default function ApptModal({
                                         setPatientRecords(prev => ({...prev, [p.id]: p}));
                                         setNewAppt({...newAppt, name: p.personal?.legalName || p.name});
                                     }
-                                }} 
+                                }}
                             />
                         </div>
                     )}

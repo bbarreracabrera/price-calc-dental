@@ -8,11 +8,11 @@ import { supabase } from '../supabase';
 import { useDialog } from './DialogProvider';
 import BoletaAssistantModal from './BoletaAssistantModal';
 
-export default function FinanceCenter({ 
-    themeMode, t, financialRecords, setFinancialRecords, 
+export default function FinanceCenter({
+    themeMode, t, financialRecords, setFinancialRecords,
     incomeRecords, expenseRecords, totalCollected, totalExpenses, totalDebt, netProfit,
     patientRecords, saveToSupabase, notify, onOpenAbonoModal, sendWhatsApp, getPatientPhone, financeTab, setFinanceTab,
-    session, team = [], userRole
+    session, team = [], userRole, adminEmail
 }) {
     const { confirm } = useDialog();
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
@@ -421,7 +421,7 @@ export default function FinanceCenter({
                                 {newExpense.category === 'Laboratorio' && (
                                     <div className="col-span-1 md:col-span-2 p-5 bg-white border border-[#DFD2C4]/60 rounded-3xl animate-in zoom-in-95">
                                         <label className="text-[10px] font-black text-[#5B6651] uppercase tracking-widest block mb-3">Vincular a Paciente (Para cálculo de rentabilidad)</label>
-                                        <PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => setNewExpense({...newExpense, patientRef: p.personal.legalName})} placeholder="Busca el paciente del trabajo de lab..." />
+                                        <PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => setNewExpense({...newExpense, patientRef: p.personal.legalName})} placeholder="Busca el paciente del trabajo de lab..." adminEmail={adminEmail} />
                                         {newExpense.patientRef && <p className="text-[10px] mt-3 font-black text-white bg-[#5B6651] inline-flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm">✓ Asociado a: {newExpense.patientRef}</p>}
                                     </div>
                                 )}

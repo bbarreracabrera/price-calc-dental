@@ -15,7 +15,7 @@ const CLINICAL_PHASES = [
 export default function QuoteView({
     themeMode, t, quoteItems, setQuoteItems, newQuoteItem, setNewQuoteItem,
     catalog, patientRecords, sessionData, setSessionData, getPatient, savePatientData,
-    saveToSupabase, notify, generatePDF, setActiveTab
+    saveToSupabase, notify, generatePDF, setActiveTab, adminEmail
 }) {
     const currentPhase = newQuoteItem.phase || 'Fase Correctiva (Operatoria/Endo/Cirugía)';
 
@@ -139,7 +139,7 @@ export default function QuoteView({
 
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block">1. Seleccionar Paciente</label>
-                        <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." onSelect={(p) => {
+                        <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." adminEmail={adminEmail} onSelect={(p) => {
                             if (p.id === 'new') {
                                 setNewPatModal({ open: true, name: p.name || '', rut: '', phone: '' });
                             } else {
