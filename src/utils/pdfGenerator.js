@@ -181,30 +181,63 @@ export const generatePDF = (type, data = null, context) => {
         // ==========================================
         // 6C. CONSENTIMIENTO INFORMADO
         // ==========================================
-        else if (type === 'consent' && data) { 
-            doc.setFontSize(16); 
+        else if (type === 'consent' && data) {
+            doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(...ESPRESSO);
-            doc.text(data.type.toUpperCase(), 105, 85, { align: 'center' }); 
-            
-            doc.setFontSize(10); 
+            doc.text((data.type || 'CONSENTIMIENTO INFORMADO').toUpperCase(), 105, 85, { align: 'center' });
+
+            doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(50, 50, 50);
-            
-            // Texto Justificado (Mucho más profesional)
+
             const splitText = doc.splitTextToSize(data.text || '', 170);
-            doc.text(splitText, 20, 100, { align: 'justify', maxWidth: 170 }); 
-            
-            if(data.signature) { 
-                try { doc.addImage(data.signature, 'PNG', 80, 220, 50, 30); } 
-                catch(e) { console.warn("Error en firma digital"); } 
-                
+            doc.text(splitText, 20, 100, { align: 'justify', maxWidth: 170 });
+
+            // Posición dinámica para la firma (después del texto, no fija)
+            const lineHeight = 5;
+            let sigY = 100 + splitText.length * lineHeight + 10;
+
+            // Si no hay espacio, agregar página nueva
+            if (sigY > 230) {
+                doc.addPage();
+                sigY = 30;
+                doc.setFillColor(...ESPRESSO);
+                doc.rect(0, 0, 210, 4, 'F');
+            }
+
+            if (data.signature) {
+                try { doc.addImage(data.signature, 'PNG', 70, sigY, 70, 30); }
+                catch(e) { console.warn("Error en firma digital"); }
+
                 doc.setDrawColor(...TAUPE);
-                doc.line(75, 255, 135, 255);
+                doc.setLineWidth(0.5);
+                doc.line(70, sigY + 32, 140, sigY + 32);
                 doc.setFontSize(8);
                 doc.setFont("helvetica", "bold");
-                doc.text("Firma del Paciente", 105, 260, { align: 'center' });
-            } 
+                doc.setTextColor(...ESPRESSO);
+                doc.text("Firma del Paciente", 105, sigY + 37, { align: 'center' });
+                if (data.signed_by) {
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(...TAUPE);
+                    doc.text(data.signed_by, 105, sigY + 41, { align: 'center' });
+                }
+            }
+
+            // Metadata legal al pie (Ley 19.799)
+            const metaY = 268;
+            doc.setFillColor(...VANILLA);
+            doc.setDrawColor(...LIGHT_TAUPE);
+            doc.roundedRect(15, metaY - 2, 180, 20, 1.5, 1.5, 'FD');
+
+            doc.setFontSize(7);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(...TAUPE);
+            if (data.hash) doc.text(`Hash: ${data.hash}`, 20, metaY + 3);
+            if (data.signed_at) doc.text(`Firmado: ${new Date(data.signed_at).toLocaleString('es-CL')}`, 20, metaY + 8);
+            if (data.ip_address && data.ip_address !== 'no_disponible') doc.text(`IP: ${data.ip_address}`, 130, metaY + 3);
+            doc.setFont("helvetica", "italic");
+            doc.text('Documento conforme a Ley 19.799 — Firma electrónica simple', 105, metaY + 15, { align: 'center' });
         }
 
         // ==========================================

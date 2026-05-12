@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line } from 'recharts';
-import { BarChart2 } from 'lucide-react';
+import { BarChart2, Trash2 } from 'lucide-react';
 
 // --- TARJETA BASE ---
 export const Card = ({ children, className = "", theme, onClick, ...props }) => { 
@@ -72,37 +72,109 @@ export const InputField = ({ label, icon: Icon, theme, textarea, className="", v
 };
 
 // --- PANEL DE FIRMA DIGITAL ---
-export const SignaturePad = ({ onSave, onCancel, theme }) => {
+export const SignaturePad = ({ onSignatureChange }) => {
     const canvasRef = useRef(null);
+    const containerRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
-    
-    useEffect(() => { 
-        const canvas = canvasRef.current; 
-        if (canvas) { 
-            canvas.width = canvas.offsetWidth; 
-            canvas.height = canvas.offsetHeight; 
-            const ctx = canvas.getContext('2d'); 
-            ctx.strokeStyle = '#374151'; 
-            ctx.lineWidth = 3; 
-            ctx.lineCap = 'round'; 
+    const [hasSignature, setHasSignature] = useState(false);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const container = containerRef.current;
+        if (!canvas || !container) return;
+
+        const resize = () => {
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#312923';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-        } 
+        };
+
+        resize();
+        window.addEventListener('resize', resize);
+        return () => window.removeEventListener('resize', resize);
     }, []);
-    
-    const startDrawing = (e) => { const ctx = canvasRef.current.getContext('2d'); ctx.beginPath(); const { x, y } = getCoords(e); ctx.moveTo(x, y); setIsDrawing(true); };
-    const draw = (e) => { if (!isDrawing) return; const ctx = canvasRef.current.getContext('2d'); const { x, y } = getCoords(e); ctx.lineTo(x, y); ctx.stroke(); };
-    const getCoords = (e) => { const rect = canvasRef.current.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
-    
+
+    const getCoords = (e) => {
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clientX = e.touches?.[0]?.clientX ?? e.clientX;
+        const clientY = e.touches?.[0]?.clientY ?? e.clientY;
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    };
+
+    const startDrawing = (e) => {
+        e.preventDefault();
+        setIsDrawing(true);
+        const { x, y } = getCoords(e);
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    };
+
+    const draw = (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const { x, y } = getCoords(e);
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        if (!hasSignature) {
+            setHasSignature(true);
+            if (onSignatureChange) onSignatureChange(true);
+        }
+    };
+
+    const stopDrawing = () => setIsDrawing(false);
+
+    const clearSignature = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        setHasSignature(false);
+        if (onSignatureChange) onSignatureChange(false);
+    };
+
+    SignaturePad.getSignature = () => canvasRef.current?.toDataURL('image/png');
+
     return (
-        <div className="space-y-4">
-            <div className="border-2 border-dashed border-[#E5E7EB] rounded-2xl overflow-hidden bg-[#E5E7EB]/50 touch-none h-48 relative hover:bg-[#E5E7EB] transition-colors">
-                <canvas ref={canvasRef} className="w-full h-full cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onMouseLeave={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)}/>
-                <div className="absolute bottom-3 right-3 text-[10px] font-bold uppercase tracking-widest opacity-40 pointer-events-none text-[#4B5563]">Firme Aquí</div>
+        <div ref={containerRef} className="relative">
+            <div className="border-2 border-dashed border-[#DFD2C4] rounded-2xl bg-white relative overflow-hidden">
+                {!hasSignature && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <p className="text-[#9A8F84] text-sm italic">✍️ Firma aquí</p>
+                    </div>
+                )}
+                <canvas
+                    ref={canvasRef}
+                    className="w-full touch-none cursor-crosshair"
+                    style={{ height: 200 }}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                />
             </div>
-            <div className="flex gap-3">
-                <Button onClick={()=>onSave(canvasRef.current.toDataURL())} variant="primary" className="flex-1">Confirmar Firma</Button>
-                <Button onClick={onCancel} variant="ghost" className="px-6">Cancelar</Button>
-            </div>
+            {hasSignature && (
+                <button
+                    onClick={clearSignature}
+                    className="mt-2 px-3 py-1.5 bg-[#FDFBF7] border border-[#DFD2C4] rounded-xl text-xs font-bold text-[#312923] hover:bg-[#DFD2C4]/30 flex items-center gap-1 transition-colors"
+                >
+                    <Trash2 size={12} /> Limpiar firma
+                </button>
+            )}
         </div>
     );
 };
