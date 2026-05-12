@@ -160,7 +160,7 @@ export default function App() {
       return () => subscription.unsubscribe();
   }, []);
   
-  useClinicData({
+  const { loadMorePatients, hasMorePatients, patientsLoading, totalPatients } = useClinicData({
       session, setTeam, setUserRole, setClinicOwner, setConfigLocal,
       setPatientRecords, setAppointments, setFinancialRecords,
       setProtocols, setInventory, setCatalog, setLabWorks
@@ -639,6 +639,11 @@ const saveToOfflineVault = (table, id, data) => {
                         }
                     }} />
                 </div>
+                {totalPatients > 0 && (
+                    <p className="text-[11px] font-bold text-[#A3968B] uppercase tracking-widest px-1">
+                        Mostrando {Object.keys(patientRecords).length} de {totalPatients} pacientes
+                    </p>
+                )}
                 <div className="grid gap-3">
                     {Object.keys(patientRecords).map(k => (
                         <Card key={k} onClick={() => setSelectedPatientId(k)} className="cursor-pointer py-5 px-6 flex justify-between items-center group hover:bg-white hover:border-[#A3968B] transition-all">
@@ -649,6 +654,15 @@ const saveToOfflineVault = (table, id, data) => {
                         </Card>
                     ))}
                 </div>
+                {hasMorePatients && (
+                    <button
+                        onClick={loadMorePatients}
+                        disabled={patientsLoading}
+                        className="w-full py-3 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl text-sm font-black text-[#312923] hover:bg-[#DFD2C4]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {patientsLoading ? 'Cargando...' : `Cargar más (${totalPatients - Object.keys(patientRecords).length} restantes)`}
+                    </button>
+                )}
             </div>
         )}
         

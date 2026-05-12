@@ -1,11 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
+
+const PAGE_SIZE = 100;
 
 export function useClinicData({
     session, setTeam, setUserRole, setClinicOwner, setConfigLocal,
     setPatientRecords, setAppointments, setFinancialRecords,
     setProtocols, setInventory, setCatalog, setLabWorks
 }) {
+    const [totalPatients, setTotalPatients] = useState(0);
+    const [hasMorePatients, setHasMorePatients] = useState(false);
+    const [patientsLoading, setPatientsLoading] = useState(false);
+    const pageRef = useRef(0);
+    const adminEmailRef = useRef(null);
+
     useEffect(() => {
         if (!session) return;
 
@@ -26,14 +34,14 @@ export function useClinicData({
                 myRole = myTeamRecord.data?.role || 'assistant';
             }
 
+            adminEmailRef.current = myClinicAdmin;
+            pageRef.current = 0;
+
             // 2. Equipo completo
             const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin);
             if (t) setTeam(t.map(r => ({ ...r.data, id: r.id })));
 
-            // 3. Config — settings.data ya contiene todos los campos, incluidos los de MP.
-            //    clinic_config se mantiene solo para datos generales (nombre de fallback, etc.)
-            //    setClinicOwner + setUserRole + setConfigLocal en el mismo bloque síncrono
-            //    → React 18 los batchea en un solo render (evita el flash del OnboardingModal).
+            // 3. Config — React 18 batchea estos tres setters en un solo render
             const [{ data: s }, { data: cc }] = await Promise.all([
                 supabase
                     .from('settings')
@@ -50,17 +58,29 @@ export function useClinicData({
 
             setClinicOwner(myClinicAdmin);
             setUserRole(myRole);
-
-            const finalConfig = {
+            setConfigLocal({
                 ...(s?.data || {}),
                 name: s?.data?.name || cc?.name || 'Profesional',
-            };
-            setConfigLocal(finalConfig);
+            });
 
-            // 4. Resto de datos
-            const { data: p } = await supabase.from('patients').select('*').eq('admin_email', myClinicAdmin).order('id', { ascending: false }).limit(50);
-            if (p) { const m = {}; p.forEach(r => m[r.id] = r.data); setPatientRecords(m); }
+            // 4. Primera página de pacientes con conteo total
+            const { data: p, count } = await supabase
+                .from('patients')
+                .select('*', { count: 'exact' })
+                .eq('admin_email', myClinicAdmin)
+                .order('id', { ascending: false })
+                .range(0, PAGE_SIZE - 1);
 
+            if (p) {
+                const m = {};
+                p.forEach(r => { m[r.id] = r.data; });
+                setPatientRecords(m);
+            }
+            const total = count || 0;
+            setTotalPatients(total);
+            setHasMorePatients(total > PAGE_SIZE);
+
+            // 5. Resto de datos
             const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin);
             if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
 
@@ -82,4 +102,33 @@ export function useClinicData({
 
         load();
     }, [session]);
+
+    const loadMorePatients = async () => {
+        if (patientsLoading || !adminEmailRef.current) return;
+        setPatientsLoading(true);
+
+        const nextPage = pageRef.current + 1;
+        const from = nextPage * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const { data: p } = await supabase
+            .from('patients')
+            .select('*')
+            .eq('admin_email', adminEmailRef.current)
+            .order('id', { ascending: false })
+            .range(from, to);
+
+        if (p && p.length > 0) {
+            const m = {};
+            p.forEach(r => { m[r.id] = r.data; });
+            setPatientRecords(prev => ({ ...prev, ...m }));
+            pageRef.current = nextPage;
+            setHasMorePatients(p.length === PAGE_SIZE);
+        } else {
+            setHasMorePatients(false);
+        }
+        setPatientsLoading(false);
+    };
+
+    return { loadMorePatients, hasMorePatients, patientsLoading, totalPatients };
 }
