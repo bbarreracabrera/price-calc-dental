@@ -199,5 +199,16 @@ export function useVoiceAssistant(props) {
 
     const startPerioDictation = () => {};
 
+    useEffect(() => {
+        return () => {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.stop();
+                    recognitionRef.current.abort();
+                } catch (e) {}
+            }
+        };
+    }, []);
+
     return { isListening, voiceStatus, isPerioVoiceActive, voiceFeedback, toggleVoice, startPerioDictation };
 }

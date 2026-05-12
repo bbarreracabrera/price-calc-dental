@@ -175,7 +175,7 @@ export default function App() {
                   .from('team')
                   .select('data')
                   .eq('data->>email', session.user.email)
-                  .single();
+                  .maybeSingle();
               
               if (data && data.data && data.data.role === 'lab') {
                   setUserRole('lab');

@@ -480,6 +480,7 @@ export default function FinanceCenter({
                                             <span className="font-black text-red-500 text-xl tracking-tighter">-${Number(ex.amount).toLocaleString()}</span>
                                             <button
                                                 onClick={async()=>{
+                                                    if (!await confirm(`¿Eliminar el egreso "${ex.description}"? Esta acción no se puede deshacer.`)) return;
                                                     try {
                                                         const { error } = await supabase.from('financials').delete().eq('id', ex.id);
                                                         if (error) throw error;

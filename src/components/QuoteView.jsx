@@ -3,6 +3,7 @@ import { Calculator, Plus, Trash2, Printer, CheckCircle, Layers, X, User, Phone 
 import { Card } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { getLocalDate, formatRUT } from '../constants';
+import { useDialog } from './DialogProvider';
 
 const CLINICAL_PHASES = [
     'Fase de Urgencia',
@@ -17,7 +18,16 @@ export default function QuoteView({
     catalog, patientRecords, sessionData, setSessionData, getPatient, savePatientData,
     saveToSupabase, notify, generatePDF, setActiveTab, adminEmail
 }) {
+    const { confirm } = useDialog();
     const currentPhase = newQuoteItem.phase || 'Fase Correctiva (Operatoria/Endo/Cirugía)';
+
+    const handleClearPlan = async () => {
+        const ok = await confirm('¿Eliminar todo el plan de tratamiento? Esta acción no se puede deshacer.');
+        if (ok) {
+            setQuoteItems([]);
+            notify('Plan limpiado');
+        }
+    };
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [dropdownHighlight, setDropdownHighlight] = useState(0);
@@ -118,7 +128,7 @@ export default function QuoteView({
                     <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Plan de Tratamiento</h2>
                 </div>
                 <button
-                    onClick={() => setQuoteItems([])}
+                    onClick={handleClearPlan}
                     className="px-5 py-3 rounded-xl border border-[#DFD2C4] bg-white text-[#9A8F84] text-[10px] font-black uppercase tracking-widest hover:bg-[#FDFBF7] hover:text-[#312923] transition-all shadow-sm"
                 >
                     Limpiar Plan

@@ -55,11 +55,14 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         fetchClinicData();
     }, [clinicId, supabase]);
 
-    const generateTimeSlots = (start, end) => {
+    const generateTimeSlots = (start, end, selectedDate) => {
         if (!start || !end) return [];
         const slots = [];
         let [startHour, startMin] = start.split(':').map(Number);
         const [endHour, endMin] = end.split(':').map(Number);
+
+        const isToday = selectedDate === new Date().toISOString().split('T')[0];
+        const now = new Date();
 
         let current = new Date();
         current.setHours(startHour, startMin, 0, 0);
@@ -69,6 +72,10 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         const SLOT_DURATION_MINS = 30;
 
         while (current < endLimit) {
+            if (isToday && current <= now) {
+                current.setMinutes(current.getMinutes() + SLOT_DURATION_MINS);
+                continue;
+            }
             const startTimeStr = current.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
             const next = new Date(current);
             next.setMinutes(next.getMinutes() + SLOT_DURATION_MINS);
@@ -99,8 +106,8 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         }
 
         let allSlots = [
-            ...generateTimeSlots(dayConfig.start1, dayConfig.end1),
-            ...generateTimeSlots(dayConfig.start2, dayConfig.end2)
+            ...generateTimeSlots(dayConfig.start1, dayConfig.end1, dateStr),
+            ...generateTimeSlots(dayConfig.start2, dayConfig.end2, dateStr)
         ];
 
         try {

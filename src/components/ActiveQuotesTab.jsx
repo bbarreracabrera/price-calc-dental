@@ -41,7 +41,7 @@ export default function ActiveQuotesTab({ getPatient, selectedPatientId }) {
                     let completedCount = 0;
                     
                     // MAGIA: Cruzamos los ítems del presupuesto con el estado real del odontograma
-                    const processedItems = quote.items.map(item => {
+                    const processedItems = (quote.items || []).map(item => {
                         let isDone = false;
                         
                         if (item.tooth && teeth[item.tooth]) {
@@ -59,7 +59,7 @@ export default function ActiveQuotesTab({ getPatient, selectedPatientId }) {
                     });
 
                     // Calculamos el porcentaje de avance
-                    const progress = Math.round((completedCount / quote.items.length) * 100);
+                    const progress = processedItems.length > 0 ? Math.round((completedCount / processedItems.length) * 100) : 0;
 
                     return (
                         <Card key={quote.id} className="p-6 rounded-[2rem] border border-[#DFD2C4]/60 bg-white shadow-sm overflow-hidden relative">
