@@ -29,7 +29,7 @@ export default function BoletaAssistantModal({ isOpen, onClose, payment, patient
 
     return (
         <div className="fixed inset-0 z-50 bg-[#312923]/60 flex items-end md:items-center justify-center p-0 md:p-4">
-            <div className="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg p-6 max-h-[95vh] overflow-y-auto shadow-2xl">
+            <div className="bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg p-6 max-h-[95vh] overflow-y-auto shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <h3 className="text-xl font-black text-[#312923]">📄 Asistente de boleta SII</h3>

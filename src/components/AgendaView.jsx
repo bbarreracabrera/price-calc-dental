@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, CalendarClock, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarClock, Filter, Calendar } from 'lucide-react';
 
 export default function AgendaView({ appointments, onOpenModal, team }) {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -328,6 +328,22 @@ export default function AgendaView({ appointments, onOpenModal, team }) {
                                     })}
                                 </React.Fragment>
                             ))}
+                        </div>
+                    )}
+                    {dentists.length > 0 && appointmentsForDay.length === 0 && (
+                        <div className="text-center py-12 text-[#9A8F84]">
+                            <Calendar size={32} className="mx-auto mb-2 opacity-50" />
+                            <p className="text-sm font-bold">No hay citas agendadas para este día</p>
+                            <button
+                                onClick={() => onOpenModal({
+                                    name: '', treatment: '',
+                                    date: selectedDayStr,
+                                    time: '09:00', duration: 60, status: 'agendado', id: null
+                                })}
+                                className="mt-3 px-4 py-2 bg-[#312923] text-white text-xs font-bold rounded-xl hover:bg-[#1a1512] transition-colors"
+                            >
+                                + Agendar primera cita
+                            </button>
                         </div>
                     )}
                 </div>

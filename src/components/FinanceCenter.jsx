@@ -140,6 +140,10 @@ export default function FinanceCenter({
         });
     };
 
+    const pendingHonorarios = useMemo(() => {
+        try { return getDentistsCommissions().some(d => d.aPagar > 0); } catch { return false; }
+    }, [incomeRecords, expenseRecords, team]); // eslint-disable-line react-hooks/exhaustive-deps
+
     return (
         <div className="space-y-8 animate-in fade-in h-full flex flex-col custom-scrollbar pb-10">
             
@@ -164,7 +168,7 @@ export default function FinanceCenter({
                     { id: 'ingresos', label: 'Ingresos y Caja', color: 'bg-[#5B6651]' },
                     { id: 'deudores', label: 'Cuentas x Cobrar', color: 'bg-red-500' },
                     { id: 'gastos', label: 'Gastos / Lab', color: 'bg-[#A3968B]' },
-                    { id: 'honorarios', label: 'Honorarios y Comisiones', color: 'bg-indigo-600' }
+                    { id: 'honorarios', label: 'Honorarios y Comisiones', color: 'bg-indigo-600', dot: pendingHonorarios }
                 ].map(tab => (
                     <button 
                         key={tab.id}
@@ -175,7 +179,10 @@ export default function FinanceCenter({
                             : 'text-[#9A8F84] hover:text-[#312923]'
                         }`}
                     >
-                        {tab.label}
+                        <span className="flex items-center justify-center gap-1.5">
+                            {tab.label}
+                            {tab.dot && <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />}
+                        </span>
                     </button>
                 ))}
             </div>

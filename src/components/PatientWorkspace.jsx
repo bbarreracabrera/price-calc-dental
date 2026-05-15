@@ -41,15 +41,18 @@ export default function PatientWorkspace({
 }) {
     const p = getPatient(selectedPatientId);
 
+    const activeQuotesCount = p.clinical?.quotes?.filter(q => q.status === 'en_proceso' || q.status === 'active')?.length || 0;
+    const consentsCount = p.consents?.length || 0;
+
     // Configuración de botones de pestañas (Incluimos 'Presupuestos')
     const tabButtons = [
-        {id:'personal', label:'Datos', icon: User}, 
-        {id:'anamnesis', label:'Fichas / Anam.', icon: FileQuestion, restricted: true}, 
-        {id:'clinical', label:'Odontograma', icon: Activity}, 
-        {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true}, 
-        {id:'quotes', label:'Presupuestos', icon: Calculator}, // <-- NUEVA PESTAÑA
-        {id:'evolution', label:'Evolución', icon: FileText, restricted: true}, 
-        {id:'consent', label:'Consentimientos', icon: FileSignature}, 
+        {id:'personal', label:'Datos', icon: User},
+        {id:'anamnesis', label:'Fichas / Anam.', icon: FileQuestion, restricted: true},
+        {id:'clinical', label:'Odontograma', icon: Activity},
+        {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true},
+        {id:'quotes', label:'Presupuestos', icon: Calculator, badge: activeQuotesCount},
+        {id:'evolution', label:'Evolución', icon: FileText, restricted: true},
+        {id:'consent', label:'Consentimientos', icon: FileSignature, badge: consentsCount},
         {id:'images', label:'Galería', icon: ImageIcon}
     ];
 
@@ -108,7 +111,13 @@ export default function PatientWorkspace({
                                 : 'bg-[#FDFBF7] text-[#9A8F84] border-transparent hover:bg-white hover:text-[#6B615A]'
                             }`}
                         >
-                            <b.icon size={14} className={isActive ? 'text-[#5B6651]' : 'text-[#DFD2C4]'}/> {b.label}
+                                <b.icon size={14} className={isActive ? 'text-[#5B6651]' : 'text-[#DFD2C4]'}/>
+                            {b.label}
+                            {b.badge > 0 && (
+                                <span className="ml-1 px-1.5 py-0.5 bg-[#5B6651]/20 text-[#5B6651] text-[10px] font-bold rounded-full leading-none">
+                                    {b.badge}
+                                </span>
+                            )}
                         </button>
                     )
                 })}

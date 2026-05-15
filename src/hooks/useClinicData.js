@@ -16,6 +16,7 @@ export function useClinicData({
 
     useEffect(() => {
         if (!session) return;
+        let mounted = true;
 
         const load = async () => {
             const userEmail = session.user.email;
@@ -29,6 +30,7 @@ export function useClinicData({
                 .eq('data->>email', userEmail)
                 .maybeSingle();
 
+            if (!mounted) return;
             if (myTeamRecord) {
                 myClinicAdmin = myTeamRecord.admin_email;
                 myRole = myTeamRecord.data?.role || 'assistant';
@@ -39,9 +41,10 @@ export function useClinicData({
 
             // 2. Equipo completo
             const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin);
+            if (!mounted) return;
             if (t) setTeam(t.map(r => ({ ...r.data, id: r.id })));
 
-            // 3. Config — React 18 batchea estos tres setters en un solo render
+            // 3. Config
             const [{ data: s }, { data: cc }] = await Promise.all([
                 supabase
                     .from('settings')
@@ -56,6 +59,7 @@ export function useClinicData({
                     .maybeSingle(),
             ]);
 
+            if (!mounted) return;
             setClinicOwner(myClinicAdmin);
             setUserRole(myRole);
             setConfigLocal({
@@ -71,6 +75,7 @@ export function useClinicData({
                 .order('id', { ascending: false })
                 .range(0, PAGE_SIZE - 1);
 
+            if (!mounted) return;
             if (p) {
                 const m = {};
                 p.forEach(r => { m[r.id] = r.data; });
@@ -82,25 +87,32 @@ export function useClinicData({
 
             // 5. Resto de datos
             const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin);
+            if (!mounted) return;
             if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
 
             const { data: f } = await supabase.from('financials').select('*').eq('admin_email', myClinicAdmin);
+            if (!mounted) return;
             if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id, boleta_emitida: r.boleta_emitida, boleta_fecha: r.boleta_fecha })));
 
             const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin);
+            if (!mounted) return;
             if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
 
             const { data: i } = await supabase.from('inventory').select('*').eq('admin_email', myClinicAdmin);
+            if (!mounted) return;
             if (i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
 
             const { data: catData } = await supabase.from('catalog').select('*').eq('admin_email', myClinicAdmin);
+            if (!mounted) return;
             if (catData) setCatalog(catData.map(r => ({ ...r.data, id: r.id })));
 
             const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin);
+            if (!mounted) return;
             if (labData) setLabWorks(labData);
         };
 
         load();
+        return () => { mounted = false; };
     }, [session]);
 
     const loadMorePatients = async () => {
