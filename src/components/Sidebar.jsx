@@ -1,15 +1,16 @@
-import React from 'react';
-import { 
-    X, Cloud, LogOut, TrendingUp, CalendarClock, User, Users, 
+import React, { useState } from 'react';
+import {
+    X, Cloud, LogOut, TrendingUp, CalendarClock, User, Users,
     Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield, ShieldCheck,
-    Crown
+    Crown, HelpCircle
 } from 'lucide-react';
 
 export default function Sidebar({
     mobileMenuOpen, setMobileMenuOpen, config, session, userRole,
     activeTab, setActiveTab, setSelectedPatientId, supabase,
-    isWorkspaceActive 
+    isWorkspaceActive, todayApptCount = 0
 }) {
+    const [showShortcuts, setShowShortcuts] = useState(false);
     const getMenuItems = () => {
         const base = [
             { id: 'dashboard', label: 'Inicio', icon: TrendingUp },
@@ -88,8 +89,13 @@ export default function Sidebar({
                             }} 
                             className={`w-full flex items-center gap-3 py-3.5 rounded-2xl font-bold text-xs transition-all duration-200 group ${centerIcons} ${isActive ? 'bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20' : 'text-[#6B615A] hover:bg-[#FDFBF7] hover:text-[#312923] border border-transparent'} ${isWorkspaceActive ? 'px-0' : 'px-4'}`}
                         >
-                            <item.icon size={18} className={`shrink-0 transition-transform duration-300 ${isActive ? 'text-[#5B6651] scale-110' : 'text-[#9A8F84] group-hover:text-[#CBAAA2] group-hover:scale-110'}`}/> 
-                            <span className={`mt-0.5 ${hideOnCollapse}`}>{item.label}</span>
+                            <item.icon size={18} className={`shrink-0 transition-transform duration-300 ${isActive ? 'text-[#5B6651] scale-110' : 'text-[#9A8F84] group-hover:text-[#CBAAA2] group-hover:scale-110'}`}/>
+                            <span className={`mt-0.5 flex-1 ${hideOnCollapse}`}>{item.label}</span>
+                            {item.id === 'agenda' && todayApptCount > 0 && (
+                                <span className={`text-[9px] font-black bg-[#5B6651] text-white px-1.5 py-0.5 rounded-full leading-none shrink-0 ${hideOnCollapse}`}>
+                                    {todayApptCount}
+                                </span>
+                            )}
                         </button>
                     );
                 })}
@@ -115,14 +121,44 @@ export default function Sidebar({
                 )}
 
                 {/* BOTÓN CERRAR SESIÓN */}
-                <button 
+                <button
                     title={isWorkspaceActive ? "Cerrar Sesión" : ""}
-                    onClick={() => supabase.auth.signOut()} 
+                    onClick={() => supabase.auth.signOut()}
                     className={`w-full p-4 rounded-2xl bg-white border border-[#DFD2C4]/50 text-[#6B615A] font-bold text-xs transition-all hover:bg-[#CBAAA2]/10 hover:text-[#312923] hover:border-[#CBAAA2]/40 flex items-center gap-3 ${centerIcons}`}
                 >
-                    <LogOut size={18} className="text-[#CBAAA2] shrink-0"/> 
+                    <LogOut size={18} className="text-[#CBAAA2] shrink-0"/>
                     <span className={`mt-0.5 ${hideOnCollapse}`}>CERRAR SESIÓN</span>
                 </button>
+
+                {/* PANEL DE ATAJOS */}
+                <div className="relative">
+                    <button
+                        title="Atajos de teclado"
+                        onClick={() => setShowShortcuts(s => !s)}
+                        className={`w-full p-3 rounded-xl text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] transition-colors flex items-center gap-3 text-[10px] font-bold ${centerIcons}`}
+                    >
+                        <HelpCircle size={15} className="shrink-0"/>
+                        <span className={hideOnCollapse}>Atajos de teclado</span>
+                    </button>
+                    {showShortcuts && (
+                        <div className="absolute bottom-full left-0 mb-2 w-52 bg-[#312923] text-white rounded-2xl p-4 shadow-2xl z-50 text-[10px] space-y-1.5">
+                            <p className="font-black uppercase tracking-widest text-[#A3968B] mb-2">Atajos</p>
+                            {[
+                                ['Ctrl/⌘ + K', 'Buscar paciente'],
+                                ['N', 'Nuevo paciente'],
+                                ['A', 'Nueva cita'],
+                                ['P', 'Ir a Pacientes'],
+                                ['G', 'Ir a Agenda'],
+                                ['F', 'Ir a Finanzas'],
+                            ].map(([key, label]) => (
+                                <div key={key} className="flex justify-between items-center gap-3">
+                                    <span className="text-[#DFD2C4]">{label}</span>
+                                    <kbd className="bg-white/10 px-1.5 py-0.5 rounded font-mono font-bold text-[9px] shrink-0">{key}</kbd>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </aside>
     );

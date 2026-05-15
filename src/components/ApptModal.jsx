@@ -3,6 +3,7 @@ import { X, Trash2, MessageCircle, CalendarDays, Clock, FileText, Activity, Stet
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { supabase } from '../supabase';
+import { friendlyError } from '../utils/errorMessages';
 
 export default function ApptModal({
     themeMode, newAppt, setNewAppt, setModal, patientRecords, setPatientRecords,
@@ -207,7 +208,7 @@ export default function ApptModal({
                                         setModal(null); 
                                         notify("Cita Eliminada");
                                     } catch (err) {
-                                        alert("Error al eliminar la cita. Revisa tu conexión.");
+                                        notify(friendlyError(err));
                                     }
                                 }}
                             >

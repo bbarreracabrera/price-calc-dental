@@ -49,7 +49,7 @@ export default function LabWorkModal({
             setFileName(file.name);
             notify("✅ Archivo adjuntado correctamente.");
         } catch (error) {
-            alert("Error al subir archivo: " + error.message);
+            notify("Error al subir archivo. Verifica tu conexión e intenta de nuevo.");
         } finally {
             setUploading(false);
         }
@@ -81,7 +81,7 @@ export default function LabWorkModal({
             
             // Guardamos en la tabla lab_works
             const { error: labError } = await supabase.from('lab_works').insert([fullLabData]);
-            if (labError) return alert("Error al guardar en la nube: " + labError.message);
+            if (labError) { notify("Error al guardar en la nube. Intenta de nuevo."); return; }
 
             // 2. Transacción Financiera: EGRESO (Costo para la clínica)
             if (autoExpense && Number(labCost) > 0 && typeof setFinancialRecords === 'function') {
@@ -122,7 +122,7 @@ export default function LabWorkModal({
             notify("✅ Orden y finanzas procesadas.");
             
         } else {
-            alert("Por favor selecciona un paciente, trabajo y fecha de entrega.");
+            notify("Completa paciente, tipo de trabajo y fecha de entrega.");
         }
     };
 

@@ -41,9 +41,6 @@ export default function AddItemModal({
 
             scanner.render((decodedText) => {
                 // Alerta de éxito (bip visual)
-                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); 
-                // (Omití el base64 de un bip real para no llenar de código, pero puedes agregar uno local)
-                // audio.play().catch(e=>console.log(e));
                 
                 setBatchInput(prev => ({ ...prev, barcode: decodedText }));
                 setShowScanner(false); 

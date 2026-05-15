@@ -5,7 +5,7 @@ import { Card, Button, SimpleLineChart } from './UIComponents';
 export default function DashboardView({
     config, userRole, themeMode, t,
     totalCollected, totalExpenses, netProfit, chartData, todaysAppointments,
-    setActiveTab, setFinanceTab, setModal, setSelectedPatientId, setQuoteMode,
+    setActiveTab, setFinanceTab, setModal, openApptModal, setSelectedPatientId, setQuoteMode,
     lowStockItems = [],
     pendingLabWorks = [],
     expirationAlerts = { expired: [], near: [] },
@@ -42,10 +42,10 @@ export default function DashboardView({
                     <h1 className="text-4xl md:text-5xl font-black text-[#312923] tracking-tighter">Hola, {config.name.split(' ')[0]} 👋</h1>
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={()=>setModal('appt')} className="px-5 py-3 rounded-xl border border-[#DFD2C4] bg-white text-[#5B6651] text-[11px] font-black uppercase tracking-widest hover:bg-[#FDFBF7] hover:border-[#5B6651]/50 transition-all flex items-center gap-2 shadow-sm">
+                    <button onClick={() => openApptModal ? openApptModal() : setModal('appt')} className="px-5 py-3 rounded-xl border border-[#DFD2C4] bg-white text-[#5B6651] text-[11px] font-black uppercase tracking-widest hover:bg-[#FDFBF7] hover:border-[#5B6651]/50 transition-all flex items-center gap-2 shadow-sm" title="Agendar cita (A)">
                         <CalendarClock size={16}/> Agendar
                     </button>
-                    <button onClick={()=>{setActiveTab('ficha'); setSelectedPatientId(null);}} className="px-5 py-3 rounded-xl bg-[#312923] text-white text-[11px] font-black uppercase tracking-widest hover:bg-[#1a1512] transition-all flex items-center gap-2 shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5">
+                    <button onClick={()=>{setActiveTab('ficha'); setSelectedPatientId(null);}} className="px-5 py-3 rounded-xl bg-[#312923] text-white text-[11px] font-black uppercase tracking-widest hover:bg-[#1a1512] transition-all flex items-center gap-2 shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5" title="Nuevo paciente (N)">
                         <Plus size={16}/> Nuevo Paciente
                     </button>
                 </div>

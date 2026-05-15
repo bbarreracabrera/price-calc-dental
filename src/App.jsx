@@ -443,6 +443,45 @@ const saveToOfflineVault = (table, id, data) => {
   }, 0);
   
   const todaysAppointments = appointments.filter(a => a.date === getLocalDate()).sort((a,b) => a.time.localeCompare(b.time));
+
+  const openApptModal = useCallback((apptData = {}) => {
+    const now = new Date();
+    const hour = now.getHours();
+    const smartHour = (hour >= 8 && hour <= 17) ? `${String(hour + 1).padStart(2, '0')}:00` : '09:00';
+    const patientName = selectedPatientId ? (getPatient(selectedPatientId)?.personal?.legalName || '') : '';
+    setNewAppt({
+        name: patientName,
+        treatment: 'Consulta general',
+        date: getLocalDate(),
+        time: smartHour,
+        duration: 30,
+        status: 'agendado',
+        id: null,
+        ...apptData
+    });
+    setModal('appt');
+  }, [selectedPatientId, getPatient]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            document.querySelector('input[placeholder*="Buscar"]')?.focus();
+            return;
+        }
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        switch (e.key.toLowerCase()) {
+            case 'n': setActiveTab('ficha'); setSelectedPatientId(null); break;
+            case 'a': openApptModal(); break;
+            case 'p': setActiveTab('ficha'); setSelectedPatientId(null); break;
+            case 'g': setActiveTab('agenda'); break;
+            case 'f': setActiveTab('history'); break;
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openApptModal]);
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
   
   const chartData = useMemo(() => {
@@ -607,13 +646,14 @@ const saveToOfflineVault = (table, id, data) => {
       
       {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-[#2A2421]/30 backdrop-blur-sm md:hidden" onClick={()=>setMobileMenuOpen(false)}></div>}
       
-      <Sidebar 
-          mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} 
-          config={config} session={session} userRole={userRole} 
-          activeTab={activeTab} setActiveTab={setActiveTab} 
-          setSelectedPatientId={setSelectedPatientId} themeMode={themeMode} 
+      <Sidebar
+          mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
+          config={config} session={session} userRole={userRole}
+          activeTab={activeTab} setActiveTab={setActiveTab}
+          setSelectedPatientId={setSelectedPatientId} themeMode={themeMode}
           toggleTheme={toggleTheme} supabase={supabase}
-          isWorkspaceActive={isWorkspaceActive} 
+          isWorkspaceActive={isWorkspaceActive}
+          todayApptCount={todaysAppointments.length}
       />
 
       <main className={`flex-1 p-6 md:p-10 h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
@@ -624,7 +664,7 @@ const saveToOfflineVault = (table, id, data) => {
         </div>
         
         {activeTab === 'master_panel' && IS_MASTER_ADMIN && <MasterPanel supabase={supabase} notify={notify} />}
-        {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} expirationAlerts={expirationAlerts} incomeRecords={incomeRecords} />}
+        {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} openApptModal={openApptModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} expirationAlerts={expirationAlerts} incomeRecords={incomeRecords} />}
         {activeTab === 'terms' && <TermsScreen theme={t} />}
         {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <FinanceCenter themeMode={themeMode} t={t} financeTab={financeTab} setFinanceTab={setFinanceTab} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} incomeRecords={incomeRecords} expenseRecords={expenseRecords} totalCollected={totalCollected} totalExpenses={totalExpenses} totalDebt={totalDebt} netProfit={netProfit} patientRecords={patientRecords} saveToSupabase={saveToSupabase} notify={notify} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} onOpenAbonoModal={(record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); }} session={session} team={team} userRole={userRole} adminEmail={clinicOwner} />}
         {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && <CatalogView themeMode={themeMode} t={t} catalog={catalog} setCatalog={setCatalog} clinicOwner={clinicOwner} session={session} setNewCatalogItem={setNewCatalogItem} setModal={setModal} saveToSupabase={saveToSupabase} notify={notify} />}
