@@ -27,8 +27,20 @@ export default function PatientPersonalTab({
     const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, saved
     const saveTimeoutRef = useRef(null);
     const localDataRef = useRef(localData);
+    const hasUnsavedChanges = useRef(false);
 
     useEffect(() => { localDataRef.current = localData; }, [localData]);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (hasUnsavedChanges.current) {
+                e.preventDefault();
+                e.returnValue = 'Tienes cambios sin guardar. ¿Salir igual?';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, []);
 
     // SINCRONIZACIÓN: Si cambiamos de paciente en el menú, actualizamos los datos locales
     useEffect(() => {
@@ -55,6 +67,7 @@ export default function PatientPersonalTab({
             const next = { ...prev, [field]: value };
             localDataRef.current = next;
 
+            hasUnsavedChanges.current = true;
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             setSaveStatus('saving');
             saveTimeoutRef.current = setTimeout(() => {
@@ -62,6 +75,7 @@ export default function PatientPersonalTab({
                     ...patient,
                     personal: { ...patient.personal, ...localDataRef.current }
                 });
+                hasUnsavedChanges.current = false;
                 setSaveStatus('saved');
                 setTimeout(() => setSaveStatus('idle'), 3000);
             }, 500);

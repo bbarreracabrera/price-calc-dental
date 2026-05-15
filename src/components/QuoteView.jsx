@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calculator, Plus, Trash2, Printer, CheckCircle, Layers, X, User, Phone } from 'lucide-react';
+import { Calculator, Plus, Trash2, Printer, CheckCircle, Check, Layers, X, User, Phone } from 'lucide-react';
 import { Card } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { getLocalDate, formatRUT } from '../constants';
@@ -35,6 +35,7 @@ export default function QuoteView({
     const dropdownRef = useRef(null);
 
     const [newPatModal, setNewPatModal] = useState({ open: false, name: '', rut: '', phone: '' });
+    const [savedSuccess, setSavedSuccess] = useState(false);
 
     useEffect(() => {
         const handleClick = (e) => {
@@ -142,6 +143,21 @@ export default function QuoteView({
                 </div>
             )}
 
+            {savedSuccess && (
+                <div className="bg-[#5B6651]/10 border border-[#5B6651]/30 rounded-2xl p-4 flex items-center justify-between animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                        <Check size={20} className="text-[#5B6651]" />
+                        <p className="text-sm font-bold text-[#312923]">Plan guardado correctamente</p>
+                    </div>
+                    <button
+                        onClick={() => { setSavedSuccess(false); setActiveTab('history'); }}
+                        className="px-4 py-2 bg-[#5B6651] text-white text-xs font-bold rounded-xl hover:bg-[#4a5442] transition-colors"
+                    >
+                        Ver en Caja →
+                    </button>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                 {/* PANEL IZQUIERDO */}
@@ -158,8 +174,7 @@ export default function QuoteView({
                         }} />
                     </div>
 
-                    {sessionData.patientId && (
-                        <div className="animate-in fade-in space-y-5 pt-6 border-t border-[#DFD2C4]/40">
+                    <div className="animate-in fade-in space-y-5 pt-6 border-t border-[#DFD2C4]/40">
                             <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 block">2. Planificar Procedimiento</label>
 
                             <div className="relative group">
@@ -300,7 +315,6 @@ export default function QuoteView({
                                 </button>
                             </div>
                         </div>
-                    )}
                 </Card>
 
                 {/* PANEL DERECHO */}
@@ -388,7 +402,7 @@ export default function QuoteView({
 
                                         notify("Plan de Tratamiento guardado y enviado a Caja");
                                         setQuoteItems([]);
-                                        setTimeout(() => setActiveTab('history'), 2000);
+                                        setSavedSuccess(true);
                                     }}
                                     className={`py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
                                         quoteItems.length === 0 || !sessionData.patientId

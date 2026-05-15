@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2, Banknote, ArrowRightLeft, CreditCard, Smartphone, MoreHorizontal, FileText, Check } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';

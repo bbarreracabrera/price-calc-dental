@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 export function useVoiceAssistant(props) {
+    const { patientTab, activeTab } = props;
     const latestProps = useRef(props);
     useEffect(() => { latestProps.current = props; }, [props]);
 
@@ -198,6 +199,14 @@ export function useVoiceAssistant(props) {
     };
 
     const startPerioDictation = () => {};
+
+    // Detener escucha al cambiar de pestaña
+    useEffect(() => {
+        if (recognitionRef.current && isListening) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        }
+    }, [patientTab, activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         return () => {
