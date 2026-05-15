@@ -54,6 +54,8 @@ export default function SettingsView({
     };
 
     // --- GUARDADO AUTOMÁTICO AL AÑADIR LAB ---
+    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim().toLowerCase());
+
     const handleAddLab = async () => {
         if (!newLab.name) return notify("El nombre del laboratorio es obligatorio");
         
@@ -69,18 +71,20 @@ export default function SettingsView({
         await saveToSupabase('clinic_config', session?.user?.email || 'general', updatedConfig);
         
         if (newLab.email) {
-            // Si el dentista pone un correo, registramos al laboratorio en el equipo
-            const u = { 
-                id: labId, 
-                name: newLab.name, 
-                email: newLab.email.toLowerCase().trim(), 
+            if (!validateEmail(newLab.email)) {
+                notify("El email del laboratorio no es válido");
+                return;
+            }
+            const u = {
+                id: labId,
+                name: newLab.name,
+                email: newLab.email.toLowerCase().trim(),
                 role: 'lab',
                 phone: newLab.phone || ''
-            }; 
-            setTeam([...team, u]); 
-            await saveToSupabase('team', labId, u); 
-            
-            // Enviamos el Magic Link de acceso gratuito
+            };
+            setTeam([...team, u]);
+            await saveToSupabase('team', labId, u);
+
             const { error } = await supabase.auth.signInWithOtp({ email: u.email, options: { emailRedirectTo: window.location.origin } });
             if(error) { 
                 notify("Laboratorio guardado, pero falló el envío de invitación: " + error.message); 
@@ -434,32 +438,36 @@ export default function SettingsView({
                                 <div className="md:col-span-2">
                                     <button 
                                         className="w-full h-[50px] bg-[#5B6651] hover:bg-[#4a5442] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#5B6651]/20 flex items-center justify-center gap-2"
-                                        onClick={async()=>{ 
-                                            if(newMember.email && newMember.name){
-                                                const id = Date.now().toString();
-                                                const comisionAsignada = newMember.role === 'dentist' ? (newMember.commission || 0) : 0;
-                                                const dentistIndex = team.filter(m => m.role === 'admin' || m.role === 'dentist').length;
+                                        onClick={async()=>{
+                                            if (!newMember.name || !newMember.email) {
+                                                notify("Por favor ingresa un nombre y correo electrónico válidos.");
+                                                return;
+                                            }
+                                            if (!validateEmail(newMember.email)) {
+                                                notify("El email ingresado no es válido");
+                                                return;
+                                            }
+                                            const id = Date.now().toString();
+                                            const comisionAsignada = newMember.role === 'dentist' ? (newMember.commission || 0) : 0;
+                                            const dentistIndex = team.filter(m => m.role === 'admin' || m.role === 'dentist').length;
 
-                                                const u = {
-                                                    ...newMember,
-                                                    id,
-                                                    commission: comisionAsignada,
-                                                    email: newMember.email.toLowerCase().trim(),
-                                                    color: TEAM_COLORS[dentistIndex % TEAM_COLORS.length],
-                                                };
-                                                
-                                                setTeam([...team, u]); 
-                                                await saveToSupabase('team', id, u); 
-                                                
-                                                const { error } = await supabase.auth.signInWithOtp({ email: u.email, options: { emailRedirectTo: window.location.origin } });
-                                                if(error) { 
-                                                    notify("Error enviando invitación: " + error.message); 
-                                                } else { 
-                                                    setNewMember({name:'', email:'', role:'dentist', commission: 0}); 
-                                                    notify("Usuario agregado e Invitación enviada 📩"); 
-                                                }
-                                            } else { 
-                                                alert("Por favor ingresa un nombre y correo electrónico válidos."); 
+                                            const u = {
+                                                ...newMember,
+                                                id,
+                                                commission: comisionAsignada,
+                                                email: newMember.email.toLowerCase().trim(),
+                                                color: TEAM_COLORS[dentistIndex % TEAM_COLORS.length],
+                                            };
+
+                                            setTeam([...team, u]);
+                                            await saveToSupabase('team', id, u);
+
+                                            const { error } = await supabase.auth.signInWithOtp({ email: u.email, options: { emailRedirectTo: window.location.origin } });
+                                            if (error) {
+                                                notify("Error enviando invitación: " + error.message);
+                                            } else {
+                                                setNewMember({ name: '', email: '', role: 'dentist', commission: 0 });
+                                                notify("Usuario agregado e Invitación enviada 📩");
                                             }
                                         }}
                                     ><UserPlus size={16}/> Añadir</button>

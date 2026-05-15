@@ -71,7 +71,7 @@ const normalize = (str) =>
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[\.\-\s]/g, '');
 
-export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email...", adminEmail }) => {
+export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email...", adminEmail, onQueryChange }) => {
     const [query, setQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
     const [dbResults, setDbResults] = useState([]);
@@ -132,7 +132,7 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
                 icon={Search}
                 placeholder={placeholder}
                 value={query}
-                onChange={e => { setQuery(e.target.value); setShowResults(true); }}
+                onChange={e => { setQuery(e.target.value); setShowResults(true); if (onQueryChange) onQueryChange(e.target.value); }}
                 onFocus={() => setShowResults(true)}
             />
             {showResults && query && (
@@ -147,7 +147,7 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
                     {!isSearching && combinedResults.length > 0 ? combinedResults.map(p => (
                         <div
                             key={p.id}
-                            onClick={() => { onSelect(p); setQuery(p.personal?.legalName); setShowResults(false); }}
+                            onClick={() => { onSelect(p); setQuery(p.personal?.legalName || ''); setShowResults(false); if (onQueryChange) onQueryChange(''); }}
                             className="p-4 hover:bg-[#FDFBF7] cursor-pointer border-b border-[#DFD2C4]/30 last:border-0 flex justify-between items-center group transition-colors"
                         >
                             <div>

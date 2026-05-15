@@ -90,6 +90,29 @@ export default function App() {
   const MASTER_EMAIL = import.meta.env.VITE_MASTER_EMAIL;
   const IS_MASTER_ADMIN = session?.user?.email === MASTER_EMAIL;
 
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+
+  const normalizeSearch = (str) =>
+    (str || '').toString().toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[\.\-\s]/g, '');
+
+  const filteredPatientKeys = useMemo(() => {
+    const keys = Object.keys(patientRecords);
+    if (!patientSearchQuery || patientSearchQuery.length < 2) return keys;
+    const q = normalizeSearch(patientSearchQuery);
+    return keys.filter(k => {
+      const p = patientRecords[k]?.personal || {};
+      return (
+        normalizeSearch(p.legalName).includes(q) ||
+        normalizeSearch(p.rut).includes(q) ||
+        normalizeSearch(p.phone).includes(q) ||
+        normalizeSearch(p.email).includes(q) ||
+        normalizeSearch(p.nickname).includes(q)
+      );
+    });
+  }, [patientRecords, patientSearchQuery]);
+
   // Formularios y Vistas
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [patientTab, setPatientTab] = useState('personal');
@@ -289,20 +312,35 @@ const saveToOfflineVault = (table, id, data) => {
   };
 
   const getPerioStats = () => {
-    if (!selectedPatientId) return { bop: 0, plaque: 0 };
+    if (!selectedPatientId) return { bop: 0, plaque: 0, nic: 0, sitesEvaluated: 0 };
     const p = getPatient(selectedPatientId);
-    let sites=0, bop=0, faces=0, plaque=0;
+    let sites=0, bop=0, faces=0, plaque=0, nicSum=0, nicCount=0;
     [...TEETH_UPPER, ...TEETH_LOWER].forEach(t => {
         const st = p.clinical.teeth[t]?.status;
         const isMissing = Array.isArray(st) ? st.includes('missing') : st === 'missing';
         if (!isMissing) {
             sites+=6; faces+=4;
             const perio = p.clinical.perio?.[t] || {}; const hygiene = p.clinical.hygiene?.[t] || {};
-            if(perio.bop) Object.values(perio.bop).forEach(v=> {if(v) bop++});
+            [...(perio.bop_v || []), ...(perio.bop_l || [])].forEach(v => { if (v) bop++; });
             Object.values(hygiene).forEach(v=> {if(v) plaque++});
+            // NIC = PD + MG por sitio
+            const pdArr = [...(perio.pd_v || []), ...(perio.pd_l || [])];
+            const mgArr = [...(perio.mg_v || []), ...(perio.mg_l || [])];
+            pdArr.forEach((pd, i) => {
+                const mg = mgArr[i];
+                if (pd !== '' && pd !== undefined && pd !== '-' && mg !== '' && mg !== undefined && mg !== '-') {
+                    nicSum += parseInt(pd) + parseInt(mg);
+                    nicCount++;
+                }
+            });
         }
     });
-    return { bop: sites>0?Math.round((bop/sites)*100):0, plaque: faces>0?Math.round((plaque/faces)*100):0 };
+    return {
+        bop: sites>0 ? Math.round((bop/sites)*100) : 0,
+        plaque: faces>0 ? Math.round((plaque/faces)*100) : 0,
+        nic: nicCount>0 ? Math.round(nicSum/nicCount) : 0,
+        sitesEvaluated: sites
+    };
   };
 
   const savePerioSnapshot = () => {
@@ -622,7 +660,7 @@ const saveToOfflineVault = (table, id, data) => {
                     >
                         📥 CSV
                     </button>
-                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." adminEmail={clinicOwner} onSelect={async (p) => {
+                    <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." adminEmail={clinicOwner} onQueryChange={setPatientSearchQuery} onSelect={async (p) => {
                         if (p.id === 'new') {
                             let nombreReal = p.name;
                             if (!nombreReal || nombreReal.trim() === "") { nombreReal = await prompt("Confirma el nombre del nuevo paciente:"); if (!nombreReal) return; }
@@ -642,11 +680,13 @@ const saveToOfflineVault = (table, id, data) => {
                 </div>
                 {totalPatients > 0 && (
                     <p className="text-[11px] font-bold text-[#A3968B] uppercase tracking-widest px-1">
-                        Mostrando {Object.keys(patientRecords).length} de {totalPatients} pacientes
+                        {patientSearchQuery.length >= 2
+                            ? `${filteredPatientKeys.length} resultado${filteredPatientKeys.length !== 1 ? 's' : ''} para "${patientSearchQuery}"`
+                            : `Mostrando ${Object.keys(patientRecords).length} de ${totalPatients} pacientes`}
                     </p>
                 )}
                 <div className="grid gap-3">
-                    {Object.keys(patientRecords).map(k => (
+                    {filteredPatientKeys.map(k => (
                         <Card key={k} onClick={() => setSelectedPatientId(k)} className="cursor-pointer py-5 px-6 flex justify-between items-center group hover:bg-white hover:border-[#A3968B] transition-all">
                             <span className="font-bold capitalize text-[#2A2421] group-hover:text-[#A3968B]">{patientRecords[k]?.personal?.legalName || 'Paciente sin nombre'}</span>
                             <div className="w-8 h-8 rounded-full bg-[#FDFBF7] flex items-center justify-center text-[#5C544D] group-hover:bg-[#E5E7EB] transition-colors">
@@ -654,6 +694,11 @@ const saveToOfflineVault = (table, id, data) => {
                             </div>
                         </Card>
                     ))}
+                    {filteredPatientKeys.length === 0 && patientSearchQuery.length >= 2 && (
+                        <div className="text-center py-10 bg-[#FDFBF7] border border-dashed border-[#DFD2C4] rounded-3xl">
+                            <p className="text-sm font-bold text-[#9A8F84]">No se encontraron pacientes con "{patientSearchQuery}"</p>
+                        </div>
+                    )}
                 </div>
                 {hasMorePatients && (
                     <button

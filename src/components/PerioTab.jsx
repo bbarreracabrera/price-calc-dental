@@ -79,18 +79,34 @@ export default function PerioTab({
             </div>
 
             {/* --- TARJETAS DE ESTADÍSTICAS --- */}
-            <div className="grid grid-cols-2 gap-4">
-                <Card className="bg-red-50 border-red-200 text-center py-6 shadow-sm">
-                    <p className="text-red-500 font-black text-[10px] uppercase tracking-[0.2em] mb-2">Índice Sangrado (BOP)</p>
-                    <h2 className="text-5xl font-black text-red-600">{getPerioStats().bop}%</h2>
-                    <p className="text-[10px] text-red-400 font-bold mt-2 uppercase tracking-widest">Global</p>
-                </Card>
-                <Card className="bg-amber-50 border-amber-200 text-center py-6 shadow-sm">
-                    <p className="text-amber-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">Índice de Higiene</p>
-                    <h2 className="text-5xl font-black text-amber-500">{getPerioStats().plaque}%</h2>
-                    <p className="text-[10px] text-amber-400 font-bold mt-2 uppercase tracking-widest">O'Leary</p>
-                </Card>
-            </div>
+            {(() => {
+                const stats = getPerioStats();
+                const bop = stats.bop;
+                const bopColor = bop < 10
+                    ? { card: 'bg-green-50 border-green-200', title: 'text-green-600', value: 'text-green-700', sub: 'text-green-500', label: 'Riesgo Bajo' }
+                    : bop <= 25
+                    ? { card: 'bg-amber-50 border-amber-200', title: 'text-amber-600', value: 'text-amber-500', sub: 'text-amber-400', label: 'Riesgo Moderado' }
+                    : { card: 'bg-red-50 border-red-200', title: 'text-red-500', value: 'text-red-600', sub: 'text-red-400', label: 'Riesgo Alto' };
+                return (
+                    <div className="grid grid-cols-3 gap-4">
+                        <Card className={`${bopColor.card} text-center py-6 shadow-sm`}>
+                            <p className={`${bopColor.title} font-black text-[10px] uppercase tracking-[0.2em] mb-2`}>Sangrado (BOP)</p>
+                            <h2 className={`text-5xl font-black ${bopColor.value}`}>{bop}%</h2>
+                            <p className={`text-[10px] ${bopColor.sub} font-bold mt-2 uppercase tracking-widest`}>{bopColor.label}</p>
+                        </Card>
+                        <Card className="bg-amber-50 border-amber-200 text-center py-6 shadow-sm">
+                            <p className="text-amber-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">Índice de Higiene</p>
+                            <h2 className="text-5xl font-black text-amber-500">{stats.plaque}%</h2>
+                            <p className="text-[10px] text-amber-400 font-bold mt-2 uppercase tracking-widest">O'Leary</p>
+                        </Card>
+                        <Card className="bg-[#FDFBF7] border-[#DFD2C4]/60 text-center py-6 shadow-sm">
+                            <p className="text-[#9A8F84] font-black text-[10px] uppercase tracking-[0.2em] mb-2">NIC Promedio</p>
+                            <h2 className="text-5xl font-black text-[#5B6651]">{stats.nic}<span className="text-2xl font-bold text-[#A3968B] ml-1">mm</span></h2>
+                            <p className="text-[10px] text-[#A3968B] font-bold mt-2 uppercase tracking-widest">Inserción Clínica</p>
+                        </Card>
+                    </div>
+                );
+            })()}
 
             {/* --- PERIODONTOGRAMA (SONDAJE) --- */}
             <Card className="w-full flex flex-col gap-10 overflow-x-auto p-4 md:p-8 bg-white border-[#DFD2C4]/40 shadow-sm relative no-scrollbar" style={hideScrollStyles}>
