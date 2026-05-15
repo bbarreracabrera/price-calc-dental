@@ -552,6 +552,7 @@ const saveToOfflineVault = (table, id, data) => {
                       supabase={supabase}
                       notify={notify}
                       session={session}
+                      clinicOwner={clinicOwner}
                   />
               </main>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Mail, Phone, MapPin, MessageCircle, User, Briefcase, FileText, HeartPulse, Save, CheckCircle2 } from 'lucide-react';
 import { InputField } from './UIComponents';
 import { formatRUT } from '../constants';
@@ -25,9 +25,14 @@ export default function PatientPersonalTab({
     });
 
     const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, saved
+    const saveTimeoutRef = useRef(null);
+    const localDataRef = useRef(localData);
+
+    useEffect(() => { localDataRef.current = localData; }, [localData]);
 
     // SINCRONIZACIÓN: Si cambiamos de paciente en el menú, actualizamos los datos locales
     useEffect(() => {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         setLocalData({
             legalName: patient.personal?.legalName || '',
             rut: patient.personal?.rut || '',
@@ -44,24 +49,28 @@ export default function PatientPersonalTab({
         setSaveStatus('idle');
     }, [selectedPatientId, patient.personal]);
 
-    // CAMBIO LOCAL: Actualiza solo la pantalla (instantáneo)
-    const handleChange = (field, value) => {
-        setLocalData(prev => ({ ...prev, [field]: value }));
-    };
+    // CAMBIO LOCAL: Actualiza pantalla y programa guardado con debounce
+    const handleChange = useCallback((field, value) => {
+        setLocalData(prev => {
+            const next = { ...prev, [field]: value };
+            localDataRef.current = next;
 
-    // GUARDADO A BASE DE DATOS: Se dispara solo al salir del campo de texto (onBlur)
-    const handleSaveToDB = () => {
-        setSaveStatus('saving');
-        
-        savePatientData(selectedPatientId, {
-            ...patient,
-            personal: { ...patient.personal, ...localData }
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            setSaveStatus('saving');
+            saveTimeoutRef.current = setTimeout(() => {
+                savePatientData(selectedPatientId, {
+                    ...patient,
+                    personal: { ...patient.personal, ...localDataRef.current }
+                });
+                setSaveStatus('saved');
+                setTimeout(() => setSaveStatus('idle'), 3000);
+            }, 500);
+
+            return next;
         });
-        
-        // Efecto visual para dar tranquilidad al usuario
-        setTimeout(() => setSaveStatus('saved'), 500);
-        setTimeout(() => setSaveStatus('idle'), 3000);
-    };
+    }, [selectedPatientId, patient, savePatientData]);
+
+    const handleSaveToDB = () => {};
 
     return (
         <div className="space-y-10 animate-in fade-in max-w-5xl mx-auto py-4">

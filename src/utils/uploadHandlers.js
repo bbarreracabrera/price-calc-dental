@@ -24,7 +24,8 @@ export const uploadLogo = async (e, context) => {
     notify("Subiendo logo...");
     
     try {
-        const fileName = `logo_${clinicOwner || session.user.email}_file`;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `logo_${crypto.randomUUID()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('clinic-logos').upload(fileName, file, { upsert: true });
         if (uploadError) throw uploadError;
         

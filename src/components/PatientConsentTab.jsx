@@ -31,7 +31,10 @@ export default function PatientConsentTab({
 
             let clientIP = 'no_disponible';
             try {
-                const res = await fetch('https://api.ipify.org?format=json');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+                clearTimeout(timeoutId);
                 const ipData = await res.json();
                 clientIP = ipData.ip;
             } catch (e) { /* falla silenciosa */ }

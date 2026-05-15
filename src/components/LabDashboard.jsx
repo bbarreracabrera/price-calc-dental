@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FlaskConical, Clock, CheckCircle2, Truck, AlertCircle, Building2, Calendar, MonitorPlay, Droplets, PaintBucket, ArrowRight, UserCircle, FileText, Users, Lock, DollarSign } from 'lucide-react';
 import { Card } from './UIComponents';
 
-export default function LabDashboard({ config, supabase, notify, session }) {
+export default function LabDashboard({ config, supabase, notify, session, clinicOwner }) {
     const [labJobs, setLabJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     // NUEVO ESTADO: Navegación del Lab

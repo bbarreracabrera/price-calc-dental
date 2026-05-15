@@ -45,9 +45,10 @@ export default function FinanceCenter({
         return true;
     };
 
-    // Pagos filtrados por payment.date; legacy (r.paid sin payments) siempre incluidos
     const filteredPayments = incomeRecords.flatMap(r => (r.payments || []).filter(p => isPaymentInRange(p.date)));
-    const legacyCollected = incomeRecords.filter(r => r.paid && !r.payments).reduce((s, r) => s + r.paid, 0);
+    const legacyCollected = incomeRecords
+        .filter(r => r.paid && !r.payments && isPaymentInRange(r.date))
+        .reduce((s, r) => s + Number(r.paid), 0);
     const filteredCollected = filteredPayments.reduce((s, p) => s + p.amount, 0) + legacyCollected;
     const filteredExpenses = expenseRecords.filter(ex => isExpenseInRange(ex.date)).reduce((s, ex) => s + Number(ex.amount), 0);
     const filteredProfit = filteredCollected - filteredExpenses;
