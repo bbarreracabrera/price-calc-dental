@@ -28,6 +28,7 @@ export function useClinicData({
                 .from('team')
                 .select('admin_email, data')
                 .eq('data->>email', userEmail)
+                .is('deleted_at', null)
                 .maybeSingle();
 
             if (!mounted) return;
@@ -40,7 +41,7 @@ export function useClinicData({
             pageRef.current = 0;
 
             // 2. Equipo completo
-            const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin);
+            const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (t) setTeam(t.map(r => ({ ...r.data, id: r.id })));
 
@@ -72,6 +73,7 @@ export function useClinicData({
                 .from('patients')
                 .select('*', { count: 'exact' })
                 .eq('admin_email', myClinicAdmin)
+                .is('deleted_at', null)
                 .order('id', { ascending: false })
                 .range(0, PAGE_SIZE - 1);
 
@@ -86,27 +88,27 @@ export function useClinicData({
             setHasMorePatients(total > PAGE_SIZE);
 
             // 5. Resto de datos
-            const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin);
+            const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: f } = await supabase.from('financials').select('*').eq('admin_email', myClinicAdmin);
+            const { data: f } = await supabase.from('financials').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id, boleta_emitida: r.boleta_emitida, boleta_fecha: r.boleta_fecha })));
 
-            const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin);
+            const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: i } = await supabase.from('inventory').select('*').eq('admin_email', myClinicAdmin);
+            const { data: i } = await supabase.from('inventory').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: catData } = await supabase.from('catalog').select('*').eq('admin_email', myClinicAdmin);
+            const { data: catData } = await supabase.from('catalog').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (catData) setCatalog(catData.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin);
+            const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (labData) setLabWorks(labData);
         };
@@ -127,6 +129,7 @@ export function useClinicData({
             .from('patients')
             .select('*')
             .eq('admin_email', adminEmailRef.current)
+            .is('deleted_at', null)
             .order('id', { ascending: false })
             .range(from, to);
 

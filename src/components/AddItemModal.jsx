@@ -106,7 +106,7 @@ export default function AddItemModal({
         if(await confirm(`¿Estás seguro de eliminar "${newItem.name}" por completo de tu inventario?`)){
             const filtered = inventory.filter(i=>i.id!==newItem.id); 
             setInventory(filtered); 
-            await supabase.from('inventory').delete().eq('id', newItem.id); 
+            await supabase.from('inventory').update({ deleted_at: new Date().toISOString() }).eq('id', newItem.id);
             setModal(null); 
             if(typeof notify === 'function') notify("Insumo eliminado 🗑️"); 
         }

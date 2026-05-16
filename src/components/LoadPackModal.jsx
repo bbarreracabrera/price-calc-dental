@@ -26,7 +26,7 @@ export default function LoadPackModal({
                                 e.stopPropagation(); 
                                 if(await confirm(`¿Seguro que quieres eliminar el protocolo "${pr.name}"?`)){
                                     setProtocols(protocols.filter(p=>p.id !== pr.id)); 
-                                    await supabase.from('packs').delete().eq('id', pr.id); 
+                                    await supabase.from('packs').update({ deleted_at: new Date().toISOString() }).eq('id', pr.id);
                                     if(typeof notify === 'function') notify("Pack Eliminado");
                                 }
                             }} className="p-2 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded-lg transition-all">

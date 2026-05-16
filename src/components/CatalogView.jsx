@@ -139,7 +139,7 @@ export default function CatalogView({
                                             onClick={async () => {
                                                 const { error } = await supabase
                                                     .from('catalog')
-                                                    .delete()
+                                                    .update({ deleted_at: new Date().toISOString() })
                                                     .eq('id', item.id)
                                                     .eq('admin_email', clinicOwner || session?.user?.email);
                                                 if (error) {

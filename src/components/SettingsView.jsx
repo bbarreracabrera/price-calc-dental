@@ -525,7 +525,7 @@ export default function SettingsView({
                                                     if(await confirm(`¿Estás seguro de eliminar a ${member.name}? Perderá acceso a la clínica.`)){
                                                         const f = team.filter(t => t.id !== member.id); 
                                                         setTeam(f); 
-                                                        await supabase.from('team').delete().eq('id', member.id); 
+                                                        await supabase.from('team').update({ deleted_at: new Date().toISOString() }).eq('id', member.id);
                                                         notify("Usuario Eliminado"); 
                                                     } 
                                                 }} 

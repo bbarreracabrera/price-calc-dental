@@ -186,7 +186,7 @@ export default function LabView({
                                             <button onClick={async () => {
                                                 if(await confirm("¿Seguro que deseas eliminar este registro?")){
                                                     setLabWorks(labWorks.filter(w => w.id !== work.id));
-                                                    await supabase.from('lab_works').delete().eq('id', work.id);
+                                                    await supabase.from('lab_works').update({ deleted_at: new Date().toISOString() }).eq('id', work.id);
                                                 }
                                             }} 
                                             className="p-2 text-[#DFD2C4] hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"

@@ -202,7 +202,7 @@ export default function ApptModal({
                                 onClick={async (e) => {
                                     e.stopPropagation(); 
                                     try {
-                                        const { error } = await supabase.from('appointments').delete().eq('id', newAppt.id);
+                                        const { error } = await supabase.from('appointments').update({ deleted_at: new Date().toISOString() }).eq('id', newAppt.id);
                                         if (error) throw error;
                                         setAppointments(appointments.filter(a => a.id !== newAppt.id)); 
                                         setModal(null); 

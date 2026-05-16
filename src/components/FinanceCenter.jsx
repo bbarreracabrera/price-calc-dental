@@ -490,7 +490,7 @@ export default function FinanceCenter({
                                                 onClick={async()=>{
                                                     if (!await confirm(`¿Eliminar el egreso "${ex.description}"? Esta acción no se puede deshacer.`)) return;
                                                     try {
-                                                        const { error } = await supabase.from('financials').delete().eq('id', ex.id);
+                                                        const { error } = await supabase.from('financials').update({ deleted_at: new Date().toISOString() }).eq('id', ex.id);
                                                         if (error) throw error;
                                                         setFinancialRecords(financialRecords.filter(f => f.id !== ex.id));
                                                         notify("Egreso Eliminado");
