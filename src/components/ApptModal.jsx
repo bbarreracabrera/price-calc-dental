@@ -219,18 +219,18 @@ export default function ApptModal({
                         <Button 
                             variant="primary" 
                             className="flex-1 py-4 text-xs tracking-widest uppercase shadow-lg shadow-[#5B6651]/20 hover:-translate-y-0.5" 
-                            onClick={async () => { 
-                                if(newAppt.name) { 
-                                    const id = newAppt.id || Date.now().toString(); 
-                                    const nd = {...newAppt, id}; 
+                            onClick={async () => {
+                                if(newAppt.name) {
+                                    const id = newAppt.id || Date.now().toString();
+                                    const nd = {...newAppt, id, patient_id: newAppt.patient_id || null};
                                     if (newAppt.id) {
                                         setAppointments(appointments.map(a => a.id === id ? nd : a));
                                     } else {
-                                        setAppointments([...appointments, nd]); 
+                                        setAppointments([...appointments, nd]);
                                     }
-                                    await saveToSupabase('appointments', id, nd); 
-                                    setModal(null); 
-                                    notify(newAppt.id ? "Cita Actualizada" : "Cita Agendada"); 
+                                    await saveToSupabase('appointments', id, nd);
+                                    setModal(null);
+                                    notify(newAppt.id ? "Cita Actualizada" : "Cita Agendada");
                                 }
                             }}
                         >
@@ -238,12 +238,12 @@ export default function ApptModal({
                         </Button>
                     </div>
                     
-                    {newAppt.id && (
-                        <button 
-                            onClick={(e) => { 
-                                e.stopPropagation(); 
-                                sendWhatsApp(getPatientPhone(newAppt.patient_id), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita con el/la Dr/a. ${newAppt.dentist_name || ''} para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`); 
-                            }} 
+                    {(newAppt.id || newAppt.patient_id) && getPatientPhone(newAppt.patient_id, newAppt.name) && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                sendWhatsApp(getPatientPhone(newAppt.patient_id, newAppt.name), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita con el/la Dr/a. ${newAppt.dentist_name || ''} para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`);
+                            }}
                             className="w-full flex items-center justify-center gap-2 text-[11px] bg-[#5B6651]/5 border border-[#5B6651]/10 py-3 rounded-2xl hover:bg-[#5B6651]/10 text-[#5B6651] transition-colors font-bold uppercase tracking-widest"
                         >
                             <MessageCircle size={16} /> Enviar WhatsApp

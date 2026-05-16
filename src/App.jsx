@@ -212,6 +212,31 @@ export default function App() {
       if (session?.user?.id) migrateOldVault();
   }, [session?.user?.id]);
 
+  // Backfill: resolver patient_id en citas antiguas que solo tienen name
+  useEffect(() => {
+      if (!appointments?.length || !Object.keys(patientRecords).length) return;
+      if (window.__apptBackfillDone) return;
+      window.__apptBackfillDone = true;
+
+      const needsBackfill = appointments.filter(a => !a.patient_id && a.name);
+      if (!needsBackfill.length) return;
+
+      const run = async () => {
+          for (const appt of needsBackfill) {
+              const matches = Object.values(patientRecords).filter(
+                  p => p?.personal?.legalName === appt.name
+              );
+              if (matches.length === 1) {
+                  await supabase
+                      .from('appointments')
+                      .update({ data: { ...appt, patient_id: matches[0].id } })
+                      .eq('id', appt.id);
+              }
+          }
+      };
+      run();
+  }, [appointments, patientRecords]);
+
   // --- CERRADURA DE SEGURIDAD PARA ROLES (Evita la Fuga de Rol) ---
   useEffect(() => {
       const verifyRole = async () => {
@@ -391,8 +416,20 @@ const saveToOfflineVault = async (table, id, data) => {
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const getPatientPhone = (patientId) => {
-      return patientRecords[patientId]?.personal?.phone || '';
+  const getPatientPhone = (patientId, patientName) => {
+      if (patientId && patientRecords[patientId]) {
+          return patientRecords[patientId]?.personal?.phone || '';
+      }
+      if (patientName) {
+          const matches = Object.values(patientRecords).filter(
+              p => p?.personal?.legalName === patientName
+          );
+          if (matches.length === 1) return matches[0]?.personal?.phone || '';
+          if (matches.length > 1) {
+              console.warn(`Múltiples pacientes con nombre "${patientName}". Se requiere patient_id.`);
+          }
+      }
+      return '';
   };
 
   const goToAdjacentTooth = (direction, explicitData = null) => {

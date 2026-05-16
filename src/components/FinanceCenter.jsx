@@ -387,7 +387,7 @@ export default function FinanceCenter({
                                             <button 
                                                 onClick={()=>{
                                                     const patientId = h.patientId || Object.keys(patientRecords).find(k => patientRecords[k]?.personal?.legalName === h.patientName);
-                                                    sendWhatsApp(getPatientPhone(patientId), `Hola ${h.patientName}, nos comunicamos de la Clínica. Le recordamos amablemente que su ficha registra un saldo pendiente de $${pending.toLocaleString()}. ¿Desea que le enviemos los datos de pago?`);
+                                                    sendWhatsApp(getPatientPhone(patientId, h.patientName), `Hola ${h.patientName}, nos comunicamos de la Clínica. Le recordamos amablemente que su ficha registra un saldo pendiente de $${pending.toLocaleString()}. ¿Desea que le enviemos los datos de pago?`);
                                                 }} 
                                                 className="flex items-center gap-2 px-6 py-3 bg-[#5B6651] hover:bg-[#4a5442] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#5B6651]/20 transition-all"
                                             >
