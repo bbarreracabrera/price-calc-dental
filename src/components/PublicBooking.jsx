@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarDays, Clock, User, Phone, FileText, CheckCircle2, ChevronRight, Stethoscope, ArrowLeft, Mail, CreditCard, Loader } from 'lucide-react';
 import { formatRUT } from '../constants';
+import { validateRUT } from '../utils/rutValidator';
 
 export default function PublicBooking({ clinicId, supabase, notify }) {
     const [clinicConfig, setClinicConfig] = useState(null);
@@ -24,6 +25,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     const [requiresPayment, setRequiresPayment] = useState(false);
     const [acceptedDataPolicy, setAcceptedDataPolicy] = useState(false);
     const [formError, setFormError] = useState('');
+    const [rutError, setRutError] = useState('');
 
     // Normaliza require_payment_at_booking: JSONB puede devolver boolean o string según el origen
     const requirePayment = clinicConfig?.require_payment_at_booking === true || clinicConfig?.require_payment_at_booking === 'true';
@@ -284,7 +286,26 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">RUT (Opcional)</label>
-                            <input type="text" className="w-full px-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="12.345.678-9" value={formData.rut} onChange={e=>setFormData({...formData, rut: formatRUT(e.target.value)})} />
+                            <input
+                                type="text"
+                                className={`w-full px-4 py-4 rounded-2xl bg-[#FDFBF7] border outline-none font-bold text-[#312923] focus:border-[#5B6651] ${rutError ? 'border-red-400 focus:border-red-400' : 'border-[#DFD2C4]'}`}
+                                placeholder="12.345.678-9"
+                                value={formData.rut}
+                                onChange={e => {
+                                    setFormData({...formData, rut: formatRUT(e.target.value)});
+                                    setRutError('');
+                                }}
+                                onBlur={e => {
+                                    const val = e.target.value.trim();
+                                    if (!val) { setRutError(''); return; }
+                                    if (!validateRUT(val)) {
+                                        setRutError('RUT inválido. Verifica el dígito verificador.');
+                                    } else {
+                                        setRutError('');
+                                    }
+                                }}
+                            />
+                            {rutError && <p className="text-xs font-bold text-red-500 ml-1">{rutError}</p>}
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Teléfono *</label>
@@ -306,7 +327,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                             </p>
                         </div>
                         <button
-                            disabled={!formData.name || !formData.phone || (requirePayment && !formData.email)}
+                            disabled={!formData.name || !formData.phone || (requirePayment && !formData.email) || !!rutError}
                             onClick={() => setStep(2)}
                             className="w-full py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 disabled:opacity-40"
                         >

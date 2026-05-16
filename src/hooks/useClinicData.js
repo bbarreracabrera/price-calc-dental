@@ -11,8 +11,51 @@ export function useClinicData({
     const [totalPatients, setTotalPatients] = useState(0);
     const [hasMorePatients, setHasMorePatients] = useState(false);
     const [patientsLoading, setPatientsLoading] = useState(false);
+    const [isLoadingFinancials, setIsLoadingFinancials] = useState(false);
+    const [hasOlderData, setHasOlderData] = useState(false);
+    const [dateRange, setDateRange] = useState(() => {
+        const end = new Date().toISOString().split('T')[0];
+        const d = new Date();
+        d.setDate(d.getDate() - 90);
+        return { start: d.toISOString().split('T')[0], end };
+    });
     const pageRef = useRef(0);
     const adminEmailRef = useRef(null);
+    const initialLoadDone = useRef(false);
+
+    const loadFinancials = async (start, end) => {
+        const adminEmail = adminEmailRef.current;
+        if (!adminEmail) return;
+        setIsLoadingFinancials(true);
+        try {
+            const { data, error } = await supabase
+                .from('financials')
+                .select('*')
+                .eq('admin_email', adminEmail)
+                .is('deleted_at', null)
+                .gte('data->>date', start)
+                .lte('data->>date', end)
+                .order('id', { ascending: false });
+            if (error) throw error;
+            setFinancialRecords(data?.map(r => ({
+                ...r.data,
+                id: r.id,
+                boleta_emitida: r.boleta_emitida,
+                boleta_fecha: r.boleta_fecha
+            })) || []);
+            const { count } = await supabase
+                .from('financials')
+                .select('id', { count: 'exact', head: true })
+                .eq('admin_email', adminEmail)
+                .is('deleted_at', null)
+                .lt('data->>date', start);
+            setHasOlderData((count || 0) > 0);
+        } catch (err) {
+            console.error('Error loading financials:', err);
+        } finally {
+            setIsLoadingFinancials(false);
+        }
+    };
 
     useEffect(() => {
         if (!session) return;
@@ -92,10 +135,6 @@ export function useClinicData({
             if (!mounted) return;
             if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: f } = await supabase.from('financials').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
-            if (!mounted) return;
-            if (f) setFinancialRecords(f.map(r => ({ ...r.data, id: r.id, boleta_emitida: r.boleta_emitida, boleta_fecha: r.boleta_fecha })));
-
             const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
@@ -111,11 +150,21 @@ export function useClinicData({
             const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
             if (labData) setLabWorks(labData);
+
+            // Financials: carga inicial con rango por defecto (90 días)
+            await loadFinancials(dateRange.start, dateRange.end);
+            initialLoadDone.current = true;
         };
 
         load();
         return () => { mounted = false; };
     }, [session]);
+
+    // Re-carga financials cuando el usuario cambia el rango
+    useEffect(() => {
+        if (!initialLoadDone.current) return;
+        loadFinancials(dateRange.start, dateRange.end);
+    }, [dateRange]);
 
     const loadMorePatients = async () => {
         if (patientsLoading || !adminEmailRef.current) return;
@@ -145,5 +194,8 @@ export function useClinicData({
         setPatientsLoading(false);
     };
 
-    return { loadMorePatients, hasMorePatients, patientsLoading, totalPatients };
+    return {
+        loadMorePatients, hasMorePatients, patientsLoading, totalPatients,
+        isLoadingFinancials, hasOlderData, dateRange, setDateRange, loadFinancials,
+    };
 }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
-import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2, Banknote, ArrowRightLeft, CreditCard, Smartphone, MoreHorizontal, FileText, Check } from 'lucide-react';
+import { Wallet, FileSpreadsheet, TrendingDown, MessageCircle, Box, Plus, Trash2, ArrowUpRight, ArrowDownRight, User, Calculator, CheckCircle2, Banknote, ArrowRightLeft, CreditCard, Smartphone, MoreHorizontal, FileText, Check, Loader } from 'lucide-react';
 import { Card, Button, InputField } from './UIComponents';
 import { PatientSelect } from './SystemModals';
 import { getLocalDate } from '../constants';
@@ -8,50 +8,51 @@ import { supabase } from '../supabase';
 import { useDialog } from './DialogProvider';
 import BoletaAssistantModal from './BoletaAssistantModal';
 
+const FINANCE_PRESETS = [
+    { key: 'week',    label: 'Última semana',  days: 7 },
+    { key: 'month',   label: 'Este mes',        custom: 'currentMonth' },
+    { key: 'quarter', label: 'Últimos 90 días', days: 90 },
+    { key: 'year',    label: 'Último año',      days: 365 },
+    { key: 'all',     label: 'Todo el historial', custom: 'all' },
+];
+
 export default function FinanceCenter({
     themeMode, t, financialRecords, setFinancialRecords,
     incomeRecords, expenseRecords, totalCollected, totalExpenses, totalDebt, netProfit,
     patientRecords, saveToSupabase, notify, onOpenAbonoModal, sendWhatsApp, getPatientPhone, financeTab, setFinanceTab,
-    session, team = [], userRole, adminEmail
+    session, team = [], userRole, adminEmail,
+    isLoadingFinancials = false, hasOlderData = false, dateRange, setDateRange,
 }) {
     const { confirm } = useDialog();
     const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
-    const [dateRange, setDateRange] = useState('this_month');
     const [boletaModal, setBoletaModal] = useState({ open: false, payment: null, patient: null });
 
-    const today = new Date();
-    const isPaymentInRange = (paymentDate) => {
-        if (!paymentDate) return true; // sin fecha → siempre incluido
-        if (dateRange === 'all') return true;
-        const d = new Date(paymentDate + 'T12:00:00');
-        if (dateRange === 'this_month') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
-        if (dateRange === 'last_month') {
-            const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth();
-        }
-        if (dateRange === 'last_3_months') return d >= new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
-        return true;
-    };
-    const isExpenseInRange = (expenseDate) => {
-        if (!expenseDate) return true;
-        if (dateRange === 'all') return true;
-        const d = new Date(expenseDate + 'T12:00:00');
-        if (dateRange === 'this_month') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
-        if (dateRange === 'last_month') {
-            const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth();
-        }
-        if (dateRange === 'last_3_months') return d >= new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
-        return true;
-    };
-
-    const filteredPayments = incomeRecords.flatMap(r => (r.payments || []).filter(p => isPaymentInRange(p.date)));
+    // La DB ya filtró por rango — usamos todos los registros recibidos
+    const filteredPayments = incomeRecords.flatMap(r => r.payments || []);
     const legacyCollected = incomeRecords
-        .filter(r => r.paid && !r.payments && isPaymentInRange(r.date))
+        .filter(r => r.paid && !r.payments)
         .reduce((s, r) => s + Number(r.paid), 0);
     const filteredCollected = filteredPayments.reduce((s, p) => s + p.amount, 0) + legacyCollected;
-    const filteredExpenses = expenseRecords.filter(ex => isExpenseInRange(ex.date)).reduce((s, ex) => s + Number(ex.amount), 0);
+    const filteredExpenses = expenseRecords.reduce((s, ex) => s + Number(ex.amount), 0);
     const filteredProfit = filteredCollected - filteredExpenses;
+
+    const handlePresetChange = (e) => {
+        const preset = FINANCE_PRESETS.find(p => p.key === e.target.value);
+        if (!preset || !setDateRange) return;
+        const today = new Date();
+        const end = today.toISOString().split('T')[0];
+        let start;
+        if (preset.custom === 'currentMonth') {
+            start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        } else if (preset.custom === 'all') {
+            start = '2020-01-01';
+        } else {
+            const d = new Date();
+            d.setDate(d.getDate() - preset.days);
+            start = d.toISOString().split('T')[0];
+        }
+        setDateRange({ start, end });
+    };
 
     const PAYMENT_METHODS = [
         { key: 'Efectivo', Icon: Banknote },
@@ -193,26 +194,35 @@ export default function FinanceCenter({
                 {financeTab === 'resumen' && (
                     <div className="space-y-6 animate-in fade-in">
 
-                        {/* Filtro de rango de fechas */}
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { id: 'this_month', label: 'Este mes' },
-                                { id: 'last_month', label: 'Último mes' },
-                                { id: 'last_3_months', label: 'Últimos 3 meses' },
-                                { id: 'all', label: 'Todo el tiempo' },
-                            ].map(opt => (
-                                <button
-                                    key={opt.id}
-                                    onClick={() => setDateRange(opt.id)}
-                                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${
-                                        dateRange === opt.id
-                                        ? 'bg-[#312923] text-white border-[#312923]'
-                                        : 'bg-white text-[#9A8F84] border-[#DFD2C4] hover:border-[#312923] hover:text-[#312923]'
-                                    }`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
+                        {/* Filtro de rango de fechas (carga desde DB) */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <select
+                                defaultValue="quarter"
+                                onChange={handlePresetChange}
+                                className="px-4 py-2.5 border border-[#DFD2C4] rounded-2xl bg-[#FDFBF7] text-[#312923] text-xs font-bold focus:outline-none focus:border-[#A3968B]"
+                            >
+                                {FINANCE_PRESETS.map(p => (
+                                    <option key={p.key} value={p.key}>{p.label}</option>
+                                ))}
+                            </select>
+
+                            {isLoadingFinancials && (
+                                <span className="text-xs text-[#9A8F84] flex items-center gap-1.5 font-bold">
+                                    <Loader size={12} className="animate-spin"/> Cargando...
+                                </span>
+                            )}
+
+                            {!isLoadingFinancials && dateRange && (
+                                <span className="text-[10px] text-[#9A8F84] font-bold">
+                                    {dateRange.start} → {dateRange.end}
+                                </span>
+                            )}
+
+                            {hasOlderData && !isLoadingFinancials && (
+                                <span className="text-[10px] text-[#CBAAA2] font-bold italic">
+                                    Hay registros anteriores al rango actual
+                                </span>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -88,9 +88,9 @@ export default function App() {
   const [userRole, setUserRole] = useState('admin');
   const [clinicOwner, setClinicOwner] = useState('');
 
-  // === LA LLAVE MAESTRA ===
+  // === LA LLAVE MAESTRA (doble check: email + rol admin) ===
   const MASTER_EMAIL = import.meta.env.VITE_MASTER_EMAIL;
-  const IS_MASTER_ADMIN = session?.user?.email === MASTER_EMAIL;
+  const IS_MASTER_ADMIN = userRole === 'admin' && session?.user?.email === MASTER_EMAIL;
 
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
 
@@ -151,10 +151,24 @@ export default function App() {
   // ==========================================
   // 2. INICIALIZACIÓN Y HOOKS GLOBALES
   // ==========================================
-  const notify = (m) => toast.success(m, { 
-      style: { borderRadius: '12px', background: '#374151', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', fontWeight: 'bold', fontSize: '13px' },
-      iconTheme: { primary: '#9CA3AF', secondary: '#fff' }
-  });
+  const notify = (m, variant = 'success') => {
+      const base = { duration: 3000, style: { padding: '12px 16px', borderRadius: '16px', fontWeight: 'bold', fontSize: '13px' } };
+      if (variant === 'error') {
+          toast.error(m, { ...base, duration: 4000,
+              style: { ...base.style, background: '#312923', color: '#fff', border: '1px solid #B92323' },
+              iconTheme: { primary: '#B92323', secondary: '#fff' },
+          });
+      } else if (variant === 'info') {
+          toast(m, { ...base, icon: 'ℹ️',
+              style: { ...base.style, background: '#FDFBF7', color: '#312923', border: '1px solid #DFD2C4' },
+          });
+      } else {
+          toast.success(m, { ...base,
+              style: { ...base.style, background: '#5B6651', color: '#fff' },
+              iconTheme: { primary: '#fff', secondary: '#5B6651' },
+          });
+      }
+  };
 
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
   
@@ -186,7 +200,10 @@ export default function App() {
       return () => subscription.unsubscribe();
   }, []);
   
-  const { loadMorePatients, hasMorePatients, patientsLoading, totalPatients } = useClinicData({
+  const {
+      loadMorePatients, hasMorePatients, patientsLoading, totalPatients,
+      isLoadingFinancials, hasOlderData, dateRange, setDateRange, loadFinancials,
+  } = useClinicData({
       session, setTeam, setUserRole, setClinicOwner, setConfigLocal,
       setPatientRecords, setAppointments, setFinancialRecords,
       setProtocols, setInventory, setCatalog, setLabWorks
@@ -258,15 +275,24 @@ export default function App() {
   // ----------------------------------------------------------------
 
   useEffect(() => {
-      if (session && clinicOwner) {
-          const fetchSterilization = async () => {
-              const { data, error } = await supabase.from('sterilization').select('id, data').eq('admin_email', clinicOwner);
-              if (data && !error) {
-                  setSterilizationItems(data.map(d => d.data));
-              }
-          };
-          fetchSterilization();
-      }
+      if (!session || !clinicOwner) return;
+      let mounted = true;
+      const fetchSterilization = async () => {
+          try {
+              const { data, error } = await supabase
+                  .from('sterilization')
+                  .select('id, data')
+                  .eq('admin_email', clinicOwner)
+                  .is('deleted_at', null);
+              if (!mounted) return;
+              if (error) throw error;
+              setSterilizationItems(data?.map(d => d.data) || []);
+          } catch (err) {
+              console.error('Error sterilization:', err);
+          }
+      };
+      fetchSterilization();
+      return () => { mounted = false; };
   }, [session, clinicOwner]);
 
   // ==========================================
@@ -491,16 +517,31 @@ const saveToOfflineVault = async (table, id, data) => {
   // ==========================================
   // 5. DATOS DERIVADOS (UseMemo)
   // ==========================================
-  const incomeRecords = financialRecords.filter(f => !f.type || f.type === 'income');
-  const expenseRecords = financialRecords.filter(f => f.type === 'expense');
-  const totalCollected = incomeRecords.reduce((acc, rec) => { const paymentsSum = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0); return acc + (paymentsSum > 0 ? paymentsSum : (Number(rec.paid) || 0)); }, 0);
-  const totalExpenses = expenseRecords.reduce((a, b) => a + (Number(b.amount) || 0), 0);
-  const netProfit = totalCollected - totalExpenses;
-  const totalDebt = incomeRecords.reduce((acc, rec) => {
-      const paid = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0) + (rec.paid && !rec.payments ? rec.paid : 0);
-      const pending = (rec.total || 0) - paid;
-      return acc + (pending > 0 ? pending : 0);
-  }, 0);
+  const incomeRecords = useMemo(
+      () => financialRecords.filter(f => !f.type || f.type === 'income'),
+      [financialRecords]
+  );
+  const expenseRecords = useMemo(
+      () => financialRecords.filter(f => f.type === 'expense'),
+      [financialRecords]
+  );
+  const totalCollected = useMemo(
+      () => incomeRecords.reduce((acc, rec) => { const s = (rec.payments || []).reduce((a, p) => a + Number(p.amount), 0); return acc + (s > 0 ? s : (Number(rec.paid) || 0)); }, 0),
+      [incomeRecords]
+  );
+  const totalExpenses = useMemo(
+      () => expenseRecords.reduce((a, b) => a + (Number(b.amount) || 0), 0),
+      [expenseRecords]
+  );
+  const netProfit = useMemo(() => totalCollected - totalExpenses, [totalCollected, totalExpenses]);
+  const totalDebt = useMemo(
+      () => incomeRecords.reduce((acc, rec) => {
+          const paid = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0) + (rec.paid && !rec.payments ? rec.paid : 0);
+          const pending = (rec.total || 0) - paid;
+          return acc + (pending > 0 ? pending : 0);
+      }, 0),
+      [incomeRecords]
+  );
   
   const todaysAppointments = appointments.filter(a => a.date === getLocalDate()).sort((a,b) => a.time.localeCompare(b.time));
 
@@ -744,7 +785,7 @@ const saveToOfflineVault = async (table, id, data) => {
         )}
         {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} openApptModal={openApptModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} expirationAlerts={expirationAlerts} incomeRecords={incomeRecords} />}
         {activeTab === 'terms' && <TermsScreen theme={t} />}
-        {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <FinanceCenter themeMode={themeMode} t={t} financeTab={financeTab} setFinanceTab={setFinanceTab} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} incomeRecords={incomeRecords} expenseRecords={expenseRecords} totalCollected={totalCollected} totalExpenses={totalExpenses} totalDebt={totalDebt} netProfit={netProfit} patientRecords={patientRecords} saveToSupabase={saveToSupabase} notify={notify} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} onOpenAbonoModal={(record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); }} session={session} team={team} userRole={userRole} adminEmail={clinicOwner} />}
+        {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <FinanceCenter themeMode={themeMode} t={t} financeTab={financeTab} setFinanceTab={setFinanceTab} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} incomeRecords={incomeRecords} expenseRecords={expenseRecords} totalCollected={totalCollected} totalExpenses={totalExpenses} totalDebt={totalDebt} netProfit={netProfit} patientRecords={patientRecords} saveToSupabase={saveToSupabase} notify={notify} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} onOpenAbonoModal={(record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); }} session={session} team={team} userRole={userRole} adminEmail={clinicOwner} isLoadingFinancials={isLoadingFinancials} hasOlderData={hasOlderData} dateRange={dateRange} setDateRange={setDateRange} />}
         {activeTab === 'catalog' && (userRole === 'admin' || userRole === 'dentist') && <CatalogView themeMode={themeMode} t={t} catalog={catalog} setCatalog={setCatalog} clinicOwner={clinicOwner} session={session} setNewCatalogItem={setNewCatalogItem} setModal={setModal} saveToSupabase={saveToSupabase} notify={notify} />}
         {activeTab === 'inventory' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <InventoryView themeMode={themeMode} t={t} inventory={inventory} setInventory={setInventory} filteredInventory={filteredInventory} inventorySearch={inventorySearch} setInventorySearch={setInventorySearch} setNewItem={setNewItem} setModal={setModal} saveToSupabase={saveToSupabase} session={session} team={team} notify={notify} />}
         {activeTab === 'lab' && <LabView themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks} setNewLabWork={setNewLabWork} setModal={setModal} notify={notify} team={team} sendWhatsApp={sendWhatsApp} config={config} />}        

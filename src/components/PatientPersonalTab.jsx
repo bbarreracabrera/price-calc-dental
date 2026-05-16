@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Mail, Phone, MapPin, MessageCircle, User, Briefcase, FileText, HeartPulse, Save, CheckCircle2 } from 'lucide-react';
 import { InputField } from './UIComponents';
 import { formatRUT } from '../constants';
+import { validateRUT } from '../utils/rutValidator';
 
 export default function PatientPersonalTab({ 
     getPatient, selectedPatientId, savePatientData, sendWhatsApp, config 
@@ -25,6 +26,7 @@ export default function PatientPersonalTab({
     });
 
     const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, saved
+    const [rutError, setRutError] = useState('');
     const saveTimeoutRef = useRef(null);
     const localDataRef = useRef(localData);
     const hasUnsavedChanges = useRef(false);
@@ -108,13 +110,31 @@ export default function PatientPersonalTab({
                         onChange={e => handleChange('legalName', e.target.value)} 
                         onBlur={handleSaveToDB}
                     />
-                    <InputField 
-                        icon={FileText}
-                        label="RUT / DNI" 
-                        value={localData.rut} 
-                        onChange={e => handleChange('rut', formatRUT(e.target.value))} 
-                        onBlur={handleSaveToDB}
-                    />
+                    <div>
+                        <InputField
+                            icon={FileText}
+                            label="RUT / DNI"
+                            value={localData.rut}
+                            onChange={e => {
+                                handleChange('rut', formatRUT(e.target.value));
+                                setRutError('');
+                            }}
+                            onBlur={e => {
+                                handleSaveToDB();
+                                const val = e.target.value.trim();
+                                if (!val) { setRutError(''); return; }
+                                if (!validateRUT(val)) {
+                                    setRutError('RUT posiblemente inválido (dígito verificador no coincide).');
+                                } else {
+                                    setRutError('');
+                                }
+                            }}
+                            className={rutError ? 'border-amber-400' : ''}
+                        />
+                        {rutError && (
+                            <p className="text-[10px] font-bold text-amber-600 mt-1 ml-1">{rutError}</p>
+                        )}
+                    </div>
                     <InputField 
                         label="Fecha de Nacimiento" 
                         type="date" 
