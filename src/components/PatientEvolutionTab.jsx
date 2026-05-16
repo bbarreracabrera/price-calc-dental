@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck, ListTodo, CheckCircle2 } from 'lucide-react';
 import { Button } from './UIComponents';
 import { supabase } from '../supabase';
+import { getVaultItem, setVaultItem, removeVaultItem } from '../utils/cryptoVault';
 
 export default function PatientEvolutionTab({ 
     newEvolution, setNewEvolution, 
@@ -17,30 +18,31 @@ export default function PatientEvolutionTab({
 
     const draftKey = `evolution_draft_${selectedPatientId}`;
 
-    // Cargar borrador al montar o cambiar de paciente
+    const userId = session?.user?.id;
+
+    // Cargar borrador cifrado al montar o cambiar de paciente
     useEffect(() => {
-        const draft = localStorage.getItem(draftKey);
-        if (!draft) return;
-        try {
-            const parsed = JSON.parse(draft);
+        if (!userId) return;
+        const loadDraft = async () => {
+            const parsed = await getVaultItem(draftKey, userId);
+            if (!parsed) return;
             const ageInDays = (Date.now() - parsed.timestamp) / (1000 * 60 * 60 * 24);
             if (ageInDays < 7 && parsed.text) {
                 setNewEvolution(parsed.text);
                 setShowDraftRecovered(true);
                 setTimeout(() => setShowDraftRecovered(false), 3000);
             } else {
-                localStorage.removeItem(draftKey);
+                removeVaultItem(draftKey);
             }
-        } catch {
-            localStorage.removeItem(draftKey);
-        }
+        };
+        loadDraft();
     }, [selectedPatientId]);
 
-    // Guardar borrador 2s después de cada cambio
+    // Guardar borrador cifrado 2s después de cada cambio
     useEffect(() => {
-        if (!newEvolution) return;
-        const timer = setTimeout(() => {
-            localStorage.setItem(draftKey, JSON.stringify({ text: newEvolution, timestamp: Date.now() }));
+        if (!newEvolution || !userId) return;
+        const timer = setTimeout(async () => {
+            await setVaultItem(draftKey, { text: newEvolution, timestamp: Date.now() }, userId);
             setDraftStatus('Borrador guardado');
             setTimeout(() => setDraftStatus(''), 1500);
         }, 2000);
@@ -214,7 +216,7 @@ export default function PatientEvolutionTab({
             // 3. Actualizamos la vista localmente
             setEvolutions([data[0], ...evolutions]);
             setNewEvolution('');
-            localStorage.removeItem(draftKey);
+            removeVaultItem(draftKey);
             setLinkedItems([]);
             logAction('ADD_EVOLUTION', { text_preview: newEvolution.substring(0,20) }, selectedPatientId);
             

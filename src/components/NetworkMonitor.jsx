@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { WifiOff, RefreshCcw, CheckCircle } from 'lucide-react';
-import { supabase } from '../supabase'; // Ajusta la ruta a tu supabase.ts
+import { supabase } from '../supabase';
+import { getVaultItem, setVaultItem } from '../utils/cryptoVault';
 
 export default function NetworkMonitor() {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [syncing, setSyncing] = useState(false);
     const [pendingItems, setPendingItems] = useState(0);
 
-    // Revisar cuántos elementos hay en la bóveda
-    const checkQueue = () => {
-        const queue = JSON.parse(localStorage.getItem('shining_offline_queue') || '[]');
+    // Revisar cuántos elementos hay en la bóveda cifrada
+    const checkQueue = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        if (!userId) { setPendingItems(0); return; }
+        const queue = await getVaultItem('offline_queue', userId) || [];
         setPendingItems(queue.length);
     };
 
@@ -37,26 +41,26 @@ export default function NetworkMonitor() {
         };
     }, []);
 
-    // El motor que vacía la bóveda
+    // El motor que vacía la bóveda cifrada
     const syncOfflineData = async () => {
-        const queue = JSON.parse(localStorage.getItem('shining_offline_queue') || '[]');
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        const currentEmail = session?.user?.email;
+        if (!userId) return;
+
+        const queue = await getVaultItem('offline_queue', userId) || [];
         if (queue.length === 0) return;
 
         setSyncing(true);
         console.log(`Iniciando sincronización de ${queue.length} elementos...`);
 
         const failedItems = [];
-        
-        // Obtenemos el correo del admin para no perder los permisos RLS
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentEmail = session?.user?.email;
 
         for (const item of queue) {
             try {
                 let payload = { id: item.id };
-                
+
                 if (item.table === 'clinic_config') {
-                    // Strip MP fields that were migrated to settings.data — they no longer exist as columns here
                     const { mp_access_token, mp_refresh_token, mp_user_id, mp_public_key, mp_connected_at, appointment_price, require_payment_at_booking, ...safeData } = item.data || {};
                     payload = { id: item.id, ...safeData };
                 } else if (item.table === 'clinical_evolutions') {
@@ -66,17 +70,16 @@ export default function NetworkMonitor() {
                     if (currentEmail) payload.admin_email = currentEmail;
                 }
 
-                // Intentamos subirlo a Supabase
                 const { error } = await supabase.from(item.table).upsert([payload]);
                 if (error) throw error;
             } catch (err) {
                 console.error("Error sincronizando ítem:", err);
-                failedItems.push(item); // Si falla, se queda en la mochila
+                failedItems.push(item);
             }
         }
 
-        // Actualizamos la bóveda solo con los que fallaron
-        localStorage.setItem('shining_offline_queue', JSON.stringify(failedItems));
+        // Re-cifrar solo los ítems que fallaron
+        await setVaultItem('offline_queue', failedItems, userId);
         setPendingItems(failedItems.length);
         setSyncing(false);
     };

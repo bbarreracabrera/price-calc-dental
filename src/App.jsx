@@ -54,6 +54,7 @@ import { generatePDF } from './utils/pdfGenerator';
 import { uploadLogo, uploadPatientImage } from './utils/uploadHandlers';
 import { useVoiceAssistant } from './hooks/useVoiceAssistant';
 import { useClinicData } from './hooks/useClinicData';
+import { getVaultItem, setVaultItem, clearVault } from './utils/cryptoVault';
 
 export default function App() {
   const { confirm, prompt } = useDialog();
@@ -172,8 +173,9 @@ export default function App() {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'PASSWORD_RECOVERY') setIsInRecovery(true);
           setSession(session);
-          
+
           if (!session) {
+              clearVault();
               setClinicOwner('');
               setUserRole('admin');
               setTeam([]);
@@ -188,6 +190,26 @@ export default function App() {
       setPatientRecords, setAppointments, setFinancialRecords,
       setProtocols, setInventory, setCatalog, setLabWorks
   });
+
+  // Migrar cola offline de texto plano al vault cifrado (ejecución única por sesión)
+  useEffect(() => {
+      const migrateOldVault = async () => {
+          const userId = session?.user?.id;
+          if (!userId) return;
+          const oldQueue = localStorage.getItem('shining_offline_queue');
+          if (oldQueue) {
+              try {
+                  const parsed = JSON.parse(oldQueue);
+                  await setVaultItem('offline_queue', parsed, userId);
+              } catch {
+                  // dato corrupto — descartar
+              } finally {
+                  localStorage.removeItem('shining_offline_queue');
+              }
+          }
+      };
+      if (session?.user?.id) migrateOldVault();
+  }, [session?.user?.id]);
 
   // --- CERRADURA DE SEGURIDAD PARA ROLES (Evita la Fuga de Rol) ---
   useEffect(() => {
@@ -261,21 +283,23 @@ const saveToSupabase = async (tableName, id, dataObj) => {
             return true;
         } catch (err) {
             console.error(`Error guardando en ${tableName}:`, err);
-            saveToOfflineVault(tableName, id, dataObj);
+            await saveToOfflineVault(tableName, id, dataObj);
             return false;
         }
-    } 
+    }
     else {
-        saveToOfflineVault(tableName, id, dataObj);
-        return false; 
+        await saveToOfflineVault(tableName, id, dataObj);
+        return false;
     }
 };
 
-const saveToOfflineVault = (table, id, data) => {
-    console.warn(`Modo Offline: Guardando en bóveda local [Tabla: ${table}]`);
-    const queue = JSON.parse(localStorage.getItem('shining_offline_queue') || '[]');
+const saveToOfflineVault = async (table, id, data) => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    console.warn(`Modo Offline: Guardando en bóveda cifrada [Tabla: ${table}]`);
+    const queue = await getVaultItem('offline_queue', userId) || [];
     queue.push({ table, id, data, timestamp: new Date().toISOString() });
-    localStorage.setItem('shining_offline_queue', JSON.stringify(queue));
+    await setVaultItem('offline_queue', queue, userId);
 };
   
   const getPatient = useCallback((id) => {
