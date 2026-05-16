@@ -90,7 +90,7 @@ export default function PatientImagesTab({
 
     const handleCalibration = async () => {
         if (measurePoints.length < 2) {
-            alert("Primero traza una línea sobre una referencia conocida (ej. una lima o corona).");
+            notify("Primero traza una línea sobre una referencia conocida (ej. una lima o corona).");
             return;
         }
         const knownLength = await prompt("Calibración de la Clínica: ¿Cuántos mm reales mide la línea trazada?", '', { placeholder: 'Ej: 21' });

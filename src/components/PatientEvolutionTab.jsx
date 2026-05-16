@@ -120,7 +120,7 @@ export default function PatientEvolutionTab({
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            alert("Tu navegador no soporta el dictado por voz. Te recomendamos usar Google Chrome.");
+            if (notify) notify("Tu navegador no soporta el dictado por voz. Te recomendamos usar Google Chrome.");
             return;
         }
 
@@ -221,7 +221,7 @@ export default function PatientEvolutionTab({
             logAction('ADD_EVOLUTION', { text_preview: newEvolution.substring(0,20) }, selectedPatientId);
             
         } catch (err) {
-            alert("Error al firmar la evolución. Revisa tu conexión.");
+            if (notify) notify("Error al firmar la evolución. Revisa tu conexión.");
             console.error(err);
         } finally {
             setIsSaving(false);

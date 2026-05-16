@@ -12,11 +12,11 @@ export const uploadLogo = async (e, context) => {
     if (!file) return;
 
     if (file.size > MAX_LOGO_SIZE) {
-        alert('El archivo es demasiado grande (máximo 5MB)');
+        notify('El archivo es demasiado grande (máximo 5MB)');
         return;
     }
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        alert('Solo se permiten imágenes JPG, PNG, WEBP o GIF');
+        notify('Solo se permiten imágenes JPG, PNG, WEBP o GIF');
         return;
     }
 
@@ -36,7 +36,7 @@ export const uploadLogo = async (e, context) => {
         notify("Logo Actualizado con éxito"); 
     } catch (err) {
         console.error(err);
-        alert("Error subiendo el logo");
+        notify("Error subiendo el logo");
     } finally {
         setUploading(false);
     }
@@ -52,11 +52,11 @@ export const uploadPatientImage = async (file, context) => {
     }
 
     if (file.size > MAX_PATIENT_SIZE) {
-        alert('El archivo es demasiado grande (máximo 10MB)');
+        notify('El archivo es demasiado grande (máximo 10MB)');
         return;
     }
     if (!ALLOWED_PATIENT_TYPES.includes(file.type)) {
-        alert('Solo se permiten imágenes (JPG, PNG, WEBP, GIF) o PDF');
+        notify('Solo se permiten imágenes (JPG, PNG, WEBP, GIF) o PDF');
         return;
     }
 
@@ -80,8 +80,8 @@ export const uploadPatientImage = async (file, context) => {
         await savePatientData(selectedPatientId, { ...p, images: updatedImages });
         notify(`Archivo guardado exitosamente en ${activeFolder}`);
         logAction('UPLOAD_IMAGE', { fileName, folder: activeFolder }, selectedPatientId); 
-    } catch (err) { 
-        alert(`Error al subir: ${err.message}`); 
+    } catch (err) {
+        notify(`Error al subir: ${err.message}`);
     } finally { 
         setUploading(false); 
     }

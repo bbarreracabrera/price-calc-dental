@@ -97,7 +97,7 @@ export default function AddItemModal({
             setNewItem({name:'', stock:0, min:5, unit:'u', id:null, batches: []}); 
             if(typeof notify === 'function') notify("Registro guardado con éxito 📦"); 
         } else {
-            alert("El nombre del insumo es obligatorio.");
+            if (typeof notify === 'function') notify("El nombre del insumo es obligatorio.");
         }
     };
 

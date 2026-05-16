@@ -22,6 +22,8 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     const [availableTimes, setAvailableTimes] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [requiresPayment, setRequiresPayment] = useState(false);
+    const [acceptedDataPolicy, setAcceptedDataPolicy] = useState(false);
+    const [formError, setFormError] = useState('');
 
     // Normaliza require_payment_at_booking: JSONB puede devolver boolean o string según el origen
     const requirePayment = clinicConfig?.require_payment_at_booking === true || clinicConfig?.require_payment_at_booking === 'true';
@@ -142,8 +144,10 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     const handleSubmit = async () => {
         if (honeypot !== '') return setStep(4);
         if (!formData.name || !formData.phone || !formData.date || !formData.time) {
-            return alert("Por favor completa todos los campos requeridos.");
+            setFormError("Por favor completa todos los campos requeridos.");
+            return;
         }
+        setFormError('');
 
         setIsSubmitting(true);
         try {
@@ -232,7 +236,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
                 const popup = window.open(payData.init_point, '_blank', 'noopener,noreferrer');
                 if (!popup) {
-                    alert('Tu navegador bloqueó la ventana de pago. Permite popups para este sitio y vuelve a intentar.');
+                    notify('Tu navegador bloqueó la ventana de pago. Permite popups para este sitio y vuelve a intentar.');
                 }
                 setRequiresPayment(true);
                 setStep(4);
@@ -242,7 +246,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
             // Flujo sin pago
             setStep(4);
         } catch (err) {
-            alert("Hubo un error al agendar tu cita.");
+            setFormError("Hubo un error al agendar tu cita. Por favor intenta nuevamente.");
             console.error(err);
         } finally {
             setIsSubmitting(false);
@@ -360,8 +364,29 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                             </div>
                         )}
 
+                        {/* CONSENTIMIENTO LEY 19.628 */}
+                        <label className="flex items-start gap-3 cursor-pointer group">
+                            <input
+                                type="checkbox"
+                                checked={acceptedDataPolicy}
+                                onChange={e => setAcceptedDataPolicy(e.target.checked)}
+                                className="mt-0.5 w-4 h-4 accent-[#CBAAA2] shrink-0"
+                            />
+                            <span className="text-[11px] font-bold text-[#9A8F84] leading-relaxed">
+                                Acepto que mis datos personales sean tratados para la coordinación de mi atención dental, conforme a la{' '}
+                                <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-[#CBAAA2] underline hover:text-[#b08d86]">
+                                    Política de Privacidad
+                                </a>
+                                {' '}(Ley 19.628).
+                            </span>
+                        </label>
+
+                        {formError && (
+                            <p className="text-xs font-bold text-red-500 text-center">{formError}</p>
+                        )}
+
                         <button
-                            disabled={!formData.date || !formData.time || isSubmitting}
+                            disabled={!formData.date || !formData.time || isSubmitting || !acceptedDataPolicy}
                             onClick={handleSubmit}
                             className="w-full py-4 bg-[#CBAAA2] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-40 flex items-center justify-center gap-2"
                         >

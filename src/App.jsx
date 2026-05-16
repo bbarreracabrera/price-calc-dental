@@ -47,6 +47,7 @@ import MPOAuthCallback from './components/MPOAuthCallback';
 import CancelBooking from './components/CancelBooking';
 import ResetPasswordPage from './components/ResetPasswordPage';
 import WelcomeTour from './components/WelcomeTour';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import ImportPatientsModal from './components/ImportPatientsModal';
 
 // --- UTILS & HOOKS ---
@@ -222,8 +223,8 @@ export default function App() {
                   .eq('data->>email', session.user.email)
                   .maybeSingle();
               
-              if (data && data.data && data.data.role === 'lab') {
-                  setUserRole('lab');
+              if (data?.data?.role) {
+                  setUserRole(data.data.role);
               }
           }
       };
@@ -384,16 +385,14 @@ const saveToOfflineVault = async (table, id, data) => {
   };
 
   const sendWhatsApp = (phone, text) => {
-      if (!phone) return alert("El paciente no tiene teléfono registrado.");
-      let cleanPhone = phone.replace(/\D/g, ''); 
+      if (!phone) { notify("El paciente no tiene teléfono registrado."); return; }
+      let cleanPhone = phone.replace(/\D/g, '');
       if (cleanPhone.length === 8 || cleanPhone.length === 9) cleanPhone = `56${cleanPhone}`;
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const getPatientPhone = (name) => {
-      if (!name) return '';
-      const foundEntry = Object.values(patientRecords).find(p => p.personal?.legalName === name);
-      return foundEntry?.personal?.phone || '';
+  const getPatientPhone = (patientId) => {
+      return patientRecords[patientId]?.personal?.phone || '';
   };
 
   const goToAdjacentTooth = (direction, explicitData = null) => {
@@ -628,6 +627,10 @@ const saveToOfflineVault = async (table, id, data) => {
 
   if (window.location.pathname === '/mp-oauth-callback') {
     return <MPOAuthCallback />;
+  }
+
+  if (window.location.pathname === '/privacidad') {
+    return <PrivacyPolicy />;
   }
 
   if (!session) {

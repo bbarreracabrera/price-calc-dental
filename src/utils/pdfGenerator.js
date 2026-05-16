@@ -254,8 +254,8 @@ export const generatePDF = (type, data = null, context) => {
         notify("Documento PDF generado con éxito"); 
         logAction('GENERATE_PDF', { type }, selectedPatientId);
 
-    } catch (e) { 
-        console.error(e); 
-        alert("Error al generar el documento PDF. Revisa los datos ingresados."); 
+    } catch (e) {
+        console.error(e);
+        notify("Error al generar el documento PDF. Revisa los datos ingresados.");
     }
 };

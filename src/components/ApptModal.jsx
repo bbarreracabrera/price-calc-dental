@@ -63,7 +63,7 @@ export default function ApptModal({
                                         notify("Paciente Creado Exitosamente");
                                     } else {
                                         setPatientRecords(prev => ({...prev, [p.id]: p}));
-                                        setNewAppt({...newAppt, name: p.personal?.legalName || p.name});
+                                        setNewAppt({...newAppt, name: p.personal?.legalName || p.name, patient_id: p.id});
                                         setNewPatId(null);
                                     }
                                 }}
@@ -242,7 +242,7 @@ export default function ApptModal({
                         <button 
                             onClick={(e) => { 
                                 e.stopPropagation(); 
-                                sendWhatsApp(getPatientPhone(newAppt.name), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita con el/la Dr/a. ${newAppt.dentist_name || ''} para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`); 
+                                sendWhatsApp(getPatientPhone(newAppt.patient_id), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita con el/la Dr/a. ${newAppt.dentist_name || ''} para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`); 
                             }} 
                             className="w-full flex items-center justify-center gap-2 text-[11px] bg-[#5B6651]/5 border border-[#5B6651]/10 py-3 rounded-2xl hover:bg-[#5B6651]/10 text-[#5B6651] transition-colors font-bold uppercase tracking-widest"
                         >

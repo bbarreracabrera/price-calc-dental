@@ -87,7 +87,8 @@ export default function CRMView({
                                 <button onClick={()=>{
                                     // Mensaje persuasivo, amigable y muy clínico
                                     const msg = `Hola ${appt.name.split(' ')[0]}, nos comunicamos de la Clínica. Vemos que han pasado más de 6 meses desde tu última atención (${appt.treatment}). Nos encantaría agendar un control preventivo gratuito para asegurar que todo esté perfecto. ¿Te gustaría que te envíe los horarios disponibles?`;
-                                    sendWhatsApp(getPatientPhone(appt.name), msg);
+                                    const patientId = Object.keys(patientRecords).find(k => patientRecords[k]?.personal?.legalName === appt.name);
+                                    sendWhatsApp(getPatientPhone(patientId), msg);
                                 }} 
                                 className="flex-[1.5] py-3.5 bg-[#5B6651] hover:bg-[#4a5442] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-[#5B6651]/20 flex items-center justify-center gap-2 hover:-translate-y-0.5">
                                     <MessageCircle size={16}/> Contactar por WhatsApp
