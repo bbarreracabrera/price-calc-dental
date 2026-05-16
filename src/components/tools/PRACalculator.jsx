@@ -305,7 +305,7 @@ function HexagonChart({ scores, dataColor }) {
 
     const ZONE_FILLS   = ['rgba(91,102,81,0.10)', 'rgba(217,168,108,0.12)', 'rgba(184,124,80,0.14)', 'rgba(185,35,35,0.12)'];
     const ZONE_STROKES = ['#5B6651', '#D9A86C', '#B87C50', '#B92323'];
-    const LABELS       = ['BOP%', 'PPD≥5mm', 'D. perdidos', 'BL/Edad', 'Sist./Gen.', 'Tabaq.'];
+    const LABELS       = ['BOP%', 'PD≥5mm', 'D. perdidos', 'BL/Edad', 'Sist./Gen.', 'Amb.'];
     const LR           = 4 * RU + 22;
 
     const hexPt = (r, i) => {
@@ -317,7 +317,7 @@ function HexagonChart({ scores, dataColor }) {
         Array.from({ length: 6 }, (_, i) => hexPt(r, i).join(',')).join(' ');
 
     return (
-        <svg viewBox="-80 -30 440 405" style={{ width: '100%', maxWidth: 360 }} aria-label="Hexágono de riesgo periodontal">
+        <svg viewBox="-100 -30 480 405" style={{ width: '100%', maxWidth: 380 }} aria-label="Hexágono de riesgo periodontal">
             {/* zonas de fondo */}
             {[3, 2, 1, 0].map(z => (
                 <polygon key={`fill-${z}`} points={hexPts((z + 1) * RU)} fill={ZONE_FILLS[z]} />
@@ -367,7 +367,8 @@ function HexagonChart({ scores, dataColor }) {
                         x={x + xOff} y={y + yOff}
                         textAnchor={anchor}
                         dominantBaseline="middle"
-                        fontSize="11"
+                        fontSize="12"
+                        fontWeight="600"
                         fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
                         fill="#312923"
                     >
