@@ -16,6 +16,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
     const [bonelossPercent,setBonelossPercent]= useState(patientData?.boneloss     || 34);
     const [sistemico,      setSistemico]      = useState(patientData?.sistemico    || 1);
     const [tabaquismo,     setTabaquismo]     = useState(patientData?.tabaquismo   || 1);
+    const [dataColor,      setDataColor]      = useState('#5B6651');
 
     const computed = useMemo(() => {
         const totalSites = numTeeth * sitesPerTooth;
@@ -54,7 +55,24 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
 
                 {/* Hexágono + resultado */}
                 <div className="flex flex-col items-center gap-4">
-                    <HexagonChart scores={computed.scores} />
+                    <HexagonChart scores={computed.scores} dataColor={dataColor} />
+
+                    {/* Selector de color */}
+                    <div className="flex items-center gap-2 flex-wrap justify-center">
+                        <span className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Color:</span>
+                        {COLOR_OPTIONS.map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => setDataColor(opt.value)}
+                                className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${
+                                    dataColor === opt.value ? 'ring-2 ring-offset-2 ring-[#312923] scale-110' : ''
+                                }`}
+                                style={{ backgroundColor: opt.value }}
+                                title={opt.label}
+                                aria-label={`Color ${opt.label}`}
+                            />
+                        ))}
+                    </div>
 
                     <div className="w-full bg-[#FDFBF7] rounded-2xl p-4 border border-[#DFD2C4] text-center">
                         <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] mb-2 font-bold">
@@ -221,6 +239,19 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
     );
 }
 
+// ---- constantes ----
+
+const COLOR_OPTIONS = [
+    { value: '#5B6651', label: 'Verde sage' },
+    { value: '#CBAAA2', label: 'Rosa polvo' },
+    { value: '#A3968B', label: 'Taupe' },
+    { value: '#D9A86C', label: 'Ámbar' },
+    { value: '#312923', label: 'Espresso' },
+    { value: '#7A8B7F', label: 'Verde sage osc.' },
+    { value: '#9B7E7A', label: 'Marrón rosa' },
+    { value: '#B92323', label: 'Rojo' },
+];
+
 // ---- sub-componentes ----
 
 const inputCls = "w-24 px-3 py-2 border border-[#DFD2C4] rounded-xl bg-[#FDFBF7] text-[#312923] font-bold text-sm outline-none focus:border-[#5B6651] transition-colors";
@@ -269,7 +300,7 @@ function scoreBadgeColor(score) {
     return '#B92323';
 }
 
-function HexagonChart({ scores }) {
+function HexagonChart({ scores, dataColor }) {
     const CX = 175, CY = 170, RU = 36;
 
     const ZONE_FILLS   = ['rgba(91,102,81,0.10)', 'rgba(217,168,108,0.12)', 'rgba(184,124,80,0.14)', 'rgba(185,35,35,0.12)'];
@@ -292,28 +323,36 @@ function HexagonChart({ scores }) {
                 <polygon key={`fill-${z}`} points={hexPts((z + 1) * RU)} fill={ZONE_FILLS[z]} />
             ))}
             {[0, 1, 2, 3].map(z => (
-                <polygon key={`stroke-${z}`} points={hexPts((z + 1) * RU)} fill="none" stroke={ZONE_STROKES[z]} strokeWidth="0.9" strokeOpacity="0.6" />
+                <polygon key={`stroke-${z}`} points={hexPts((z + 1) * RU)} fill="none" stroke={ZONE_STROKES[z]} strokeWidth="0.9" strokeOpacity="0.4" />
             ))}
 
             {/* ejes */}
             {Array.from({ length: 6 }, (_, i) => {
                 const [x, y] = hexPt(4 * RU, i);
-                return <line key={`axis-${i}`} x1={CX} y1={CY} x2={x} y2={y} stroke="#DFD2C4" strokeWidth="0.7" />;
+                return <line key={`axis-${i}`} x1={CX} y1={CY} x2={x} y2={y} stroke="#A3968B" strokeWidth="0.8" />;
             })}
 
             {/* polígono de datos */}
             <polygon
                 points={scores.map((s, i) => hexPt(s * RU, i).join(',')).join(' ')}
-                fill="rgba(203,170,162,0.30)"
-                stroke="#CBAAA2"
-                strokeWidth="2"
+                fill={`${dataColor}40`}
+                stroke={dataColor}
+                strokeWidth="2.5"
                 strokeLinejoin="round"
             />
 
             {/* puntos */}
             {scores.map((s, i) => {
                 const [x, y] = hexPt(s * RU, i);
-                return <circle key={`dot-${i}`} cx={x} cy={y} r="4" fill="#CBAAA2" />;
+                return (
+                    <circle
+                        key={`dot-${i}`}
+                        cx={x} cy={y} r="5"
+                        fill={dataColor}
+                        stroke="#FDFBF7"
+                        strokeWidth="2"
+                    />
+                );
             })}
 
             {/* etiquetas */}
