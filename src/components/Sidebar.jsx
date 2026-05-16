@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import {
     X, Cloud, LogOut, TrendingUp, CalendarClock, User, Users,
     Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield, ShieldCheck,
-    Crown, HelpCircle
+    Globe, HelpCircle
 } from 'lucide-react';
 
 export default function Sidebar({
     mobileMenuOpen, setMobileMenuOpen, config, session, userRole,
     activeTab, setActiveTab, setSelectedPatientId, supabase,
-    isWorkspaceActive, todayApptCount = 0
+    isWorkspaceActive, todayApptCount = 0, isMasterAdmin = false
 }) {
     const [showShortcuts, setShowShortcuts] = useState(false);
     const getMenuItems = () => {
@@ -104,18 +104,18 @@ export default function Sidebar({
             {/* --- ZONA INFERIOR: PANEL MAESTRO & SALIR --- */}
             <div className={`p-4 space-y-3 border-t border-[#DFD2C4]/40 bg-[#FDFBF7]/30 ${isWorkspaceActive ? 'px-2' : ''}`}>
                 
-                {/* BOTÓN PANEL MAESTRO (Solo visible para tu correo) */}
-                {session?.user?.email === 'b.barreracabrera.dent@gmail.com' && (
-                    <button 
+                {/* BOTÓN PANEL MAESTRO */}
+                {isMasterAdmin && (
+                    <button
                         title={isWorkspaceActive ? "Panel Maestro" : ""}
                         onClick={() => { setActiveTab('master_panel'); setMobileMenuOpen(false); }}
                         className={`w-full p-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-3 ${centerIcons} ${
-                            activeTab === 'master_panel' 
-                            ? 'bg-amber-500 text-white shadow-md border border-amber-600' 
-                            : 'bg-[#312923] text-amber-400 border border-[#1a1512] hover:bg-black hover:scale-[1.02] shadow-sm'
+                            activeTab === 'master_panel'
+                            ? 'bg-[#5B6651] text-white shadow-md border border-[#4a5442]'
+                            : 'bg-[#312923] text-[#A3968B] border border-[#1a1512] hover:bg-black hover:scale-[1.02] shadow-sm'
                         }`}
                     >
-                        <Crown size={18} className={`shrink-0 transition-transform duration-300 ${activeTab === 'master_panel' ? 'text-white' : 'text-amber-400 group-hover:scale-110'}`}/>
+                        <Globe size={18} className={`shrink-0 transition-transform duration-300 ${activeTab === 'master_panel' ? 'text-white' : 'text-[#A3968B]'}`}/>
                         <span className={`mt-0.5 ${hideOnCollapse}`}>Panel Maestro</span>
                     </button>
                 )}

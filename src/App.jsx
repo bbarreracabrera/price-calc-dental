@@ -678,6 +678,7 @@ const saveToOfflineVault = async (table, id, data) => {
           toggleTheme={toggleTheme} supabase={supabase}
           isWorkspaceActive={isWorkspaceActive}
           todayApptCount={todaysAppointments.length}
+          isMasterAdmin={IS_MASTER_ADMIN}
       />
 
       <main className={`flex-1 p-6 md:p-10 h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
@@ -687,7 +688,20 @@ const saveToOfflineVault = async (table, id, data) => {
             <div className="w-8"></div>
         </div>
         
-        {activeTab === 'master_panel' && IS_MASTER_ADMIN && <MasterPanel supabase={supabase} notify={notify} />}
+        {activeTab === 'master_panel' && (
+            IS_MASTER_ADMIN ? (
+                <MasterPanel supabase={supabase} notify={notify} />
+            ) : (
+                <div className="flex flex-col items-center justify-center h-full py-24 px-6 text-center">
+                    <Shield size={48} className="text-[#A3968B] mb-4 opacity-60" />
+                    <h2 className="text-xl font-black text-[#312923] mb-2">Acceso restringido</h2>
+                    <p className="text-sm text-[#9A8F84] mb-6 max-w-xs">Este panel está reservado para administradores del sistema.</p>
+                    <button onClick={() => setActiveTab('dashboard')} className="px-5 py-2.5 bg-[#312923] text-white rounded-2xl font-bold text-sm hover:bg-black transition-colors">
+                        Volver al inicio
+                    </button>
+                </div>
+            )
+        )}
         {activeTab === 'dashboard' && <DashboardView config={config} userRole={userRole} themeMode={themeMode} t={t} totalCollected={totalCollected} totalExpenses={totalExpenses} netProfit={netProfit} chartData={chartData} todaysAppointments={todaysAppointments} setActiveTab={setActiveTab} setFinanceTab={setFinanceTab} setModal={setModal} openApptModal={openApptModal} setSelectedPatientId={setSelectedPatientId} setQuoteMode={setQuoteMode} lowStockItems={lowStockItems} pendingLabWorks={pendingLabWorks} expirationAlerts={expirationAlerts} incomeRecords={incomeRecords} />}
         {activeTab === 'terms' && <TermsScreen theme={t} />}
         {activeTab === 'history' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <FinanceCenter themeMode={themeMode} t={t} financeTab={financeTab} setFinanceTab={setFinanceTab} financialRecords={financialRecords} setFinancialRecords={setFinancialRecords} incomeRecords={incomeRecords} expenseRecords={expenseRecords} totalCollected={totalCollected} totalExpenses={totalExpenses} totalDebt={totalDebt} netProfit={netProfit} patientRecords={patientRecords} saveToSupabase={saveToSupabase} notify={notify} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} onOpenAbonoModal={(record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); }} session={session} team={team} userRole={userRole} adminEmail={clinicOwner} />}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, DollarSign, Package, FlaskConical, TrendingUp, Building2, ChevronRight, CheckCircle, Clock, Truck, MessageCircle } from 'lucide-react';
+import { Shield, DollarSign, Package, FlaskConical, TrendingUp, Building2, ChevronRight, CheckCircle, Clock, Truck, MessageCircle } from 'lucide-react';
 import { Card } from './UIComponents'; 
 
 export default function MasterPanel({ supabase, notify }) {
@@ -19,51 +19,63 @@ export default function MasterPanel({ supabase, notify }) {
         fetchDashboardData();
     }, []);
 
-    // Función unificada que consulta la realidad de tu base de datos
+    // Cada query es independiente — si una tabla no existe, las demás siguen
     const fetchDashboardData = async () => {
         setLoading(true);
+
+        // 1. Órdenes de Supply
+        let supplyData = [];
         try {
-            // 1. Obtener Órdenes de Supply
-            const { data: supplyData, error: supplyError } = await supabase
+            const { data, error } = await supabase
                 .from('supply_orders')
                 .select('*')
-                .order('created_at', { ascending: false });
-
-            if (supplyError) throw supplyError;
-            setSupplyOrders(supplyData || []);
-
-            // 2. Obtener Suscripciones SaaS
-            const { data: saasData, error: saasError } = await supabase
-                .from('saas_subscriptions')
-                .select('*');
-            
-            if (saasError) console.error("Aviso SaaS:", saasError);
-            setSaasSubscriptions(saasData || []);
-
-            // 3. Obtener Red de Laboratorios
-            const { data: labData, error: labError } = await supabase
-                .from('lab_network')
-                .select('lab_id'); // Solo necesitamos contar cuántos hay por ahora
-            
-            if (labError) console.error("Aviso Labs:", labError);
-
-            // 4. Calcular Métricas Reales
-            const activeClinicsCount = saasData ? saasData.filter(s => s.status === 'active').length : 0;
-            const totalSaasRev = saasData ? saasData.reduce((acc, sub) => acc + Number(sub.monthly_fee || 0), 0) : 0;
-            const activeLabsCount = labData ? labData.length : 0;
-
-            setMetrics({
-                saasRevenue: totalSaasRev,
-                activeClinics: activeClinicsCount,
-                activeLabs: activeLabsCount
-            });
-
-        } catch (error) {
-            console.error("Error obteniendo datos maestros:", error);
-            notify("Error al cargar los datos del ecosistema.");
-        } finally {
-            setLoading(false);
+                .is('deleted_at', null)
+                .order('id', { ascending: false });
+            if (error) {
+                if (error.code !== '42P01') console.error('supply_orders:', error.message);
+            } else {
+                supplyData = data || [];
+            }
+        } catch (err) {
+            console.error('supply_orders:', err);
         }
+        setSupplyOrders(supplyData);
+
+        // 2. Suscripciones SaaS
+        let saasData = [];
+        try {
+            const { data, error } = await supabase.from('saas_subscriptions').select('*');
+            if (error) {
+                if (error.code !== '42P01') console.error('saas_subscriptions:', error.message);
+            } else {
+                saasData = data || [];
+            }
+        } catch (err) {
+            console.error('saas_subscriptions:', err);
+        }
+        setSaasSubscriptions(saasData);
+
+        // 3. Red de Laboratorios
+        let labCount = 0;
+        try {
+            const { data, error } = await supabase.from('lab_network').select('lab_id');
+            if (error) {
+                if (error.code !== '42P01') console.error('lab_network:', error.message);
+            } else {
+                labCount = data?.length || 0;
+            }
+        } catch (err) {
+            console.error('lab_network:', err);
+        }
+
+        // 4. Métricas calculadas desde los datos obtenidos
+        setMetrics({
+            saasRevenue: saasData.reduce((acc, sub) => acc + Number(sub.monthly_fee || 0), 0),
+            activeClinics: saasData.filter(s => s.status === 'active').length,
+            activeLabs: labCount,
+        });
+
+        setLoading(false);
     };
 
     const updateOrderStatus = async (orderId, newStatus) => {
@@ -91,8 +103,8 @@ export default function MasterPanel({ supabase, notify }) {
             <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#DFD2C4]/50 shrink-0">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        <Crown size={16} className="text-amber-500"/>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Nivel Acceso: Súper Administrador</p>
+                        <Shield size={16} className="text-[#5B6651]"/>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Nivel Acceso: Súper Administrador</p>
                     </div>
                     <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Central de Mando B2B</h2>
                 </div>
@@ -164,9 +176,9 @@ export default function MasterPanel({ supabase, notify }) {
                         {loading ? (
                             <div className="text-center py-10 font-bold text-[#9A8F84]">Cargando órdenes...</div>
                         ) : supplyOrders.length === 0 ? (
-                            <div className="text-center py-16 border-2 border-dashed border-[#DFD2C4] rounded-3xl bg-[#FDFBF7]">
-                                <p className="text-lg font-black text-[#A3968B]">Aún no hay pedidos.</p>
-                                <p className="text-sm font-bold text-[#9A8F84] mt-2">Las órdenes aparecerán aquí cuando las clínicas presionen "Reabastecer".</p>
+                            <div className="text-center py-8 text-[#9A8F84]">
+                                <Package size={32} className="mx-auto mb-2 opacity-40" />
+                                <p className="text-sm font-bold">No hay pedidos de insumos pendientes</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -234,12 +246,9 @@ export default function MasterPanel({ supabase, notify }) {
                 {activeTab === 'saas' && (
                     <Card className="p-8 bg-white border border-[#DFD2C4]/60 shadow-sm animate-in slide-in-from-bottom">
                         {saasSubscriptions.length === 0 ? (
-                            <div className="text-center py-16 border-2 border-dashed border-[#DFD2C4] rounded-3xl bg-[#FDFBF7]">
-                                <Building2 size={48} className="mx-auto text-[#DFD2C4] mb-4"/>
-                                <h3 className="font-black text-2xl text-[#312923]">Sin suscripciones activas</h3>
-                                <p className="text-sm font-bold text-[#9A8F84] mt-2 max-w-md mx-auto">
-                                    Aquí aparecerán las clínicas a medida que se integren y comiencen a pagar su mensualidad por el uso de ShiningCloud.
-                                </p>
+                            <div className="text-center py-8 text-[#9A8F84]">
+                                <Building2 size={32} className="mx-auto mb-2 opacity-40" />
+                                <p className="text-sm font-bold">No hay clínicas suscritas aún</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
