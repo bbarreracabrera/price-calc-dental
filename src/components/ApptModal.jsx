@@ -26,8 +26,9 @@ export default function ApptModal({
                         </h3>
                         {newAppt.id && <p className="text-xs font-bold text-[#5B6651] mt-1 uppercase tracking-widest">{newAppt.name}</p>}
                     </div>
-                    <button 
-                        onClick={() => setModal(null)} 
+                    <button
+                        aria-label="Cerrar modal"
+                        onClick={() => setModal(null)}
                         className="w-10 h-10 flex items-center justify-center rounded-full bg-[#FDFBF7] text-[#9A8F84] hover:bg-[#DFD2C4]/30 hover:text-[#312923] transition-colors border border-[#DFD2C4]/50 shrink-0"
                     >
                         <X size={20}/>
@@ -196,7 +197,8 @@ export default function ApptModal({
                 <div className="flex flex-col gap-3 pt-4 border-t border-[#DFD2C4]/40 shrink-0">
                     <div className="flex gap-3">
                         {newAppt.id && (
-                            <Button 
+                            <Button
+                                aria-label="Eliminar cita"
                                 variant="danger"
                                 className="px-5 !bg-[#CBAAA2]/10 !text-[#CBAAA2] hover:!bg-[#CBAAA2]/20 !border-transparent"
                                 onClick={async (e) => {

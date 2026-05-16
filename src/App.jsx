@@ -361,10 +361,13 @@ const saveToOfflineVault = async (table, id, data) => {
       return { ...base, ...existing, anamnesis: { ...base.anamnesis, ...(existing.anamnesis || {}) }, clinical: existing.clinical || base.clinical, personal: existing.personal || base.personal };
   }, [patientRecords]);
 
-  const savePatientData = useCallback(async (id, d) => { 
-      setPatientRecords(prev => ({...prev, [id]: d})); 
+  const savePatientData = useCallback(async (id, d, options = {}) => {
+      const { skipLog = false } = options;
+      setPatientRecords(prev => ({...prev, [id]: d}));
       await saveToSupabase('patients', id, d);
-      logAction('UPDATE_PATIENT', { patientName: d.personal.legalName }, id);
+      if (!skipLog) {
+          logAction('UPDATE_PATIENT', { patientName: d.personal?.legalName }, id);
+      }
   }, [logAction, clinicOwner, session]);
 
   // ==========================================
@@ -573,9 +576,15 @@ const saveToOfflineVault = async (table, id, data) => {
         }
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         switch (e.key.toLowerCase()) {
-            case 'n': setActiveTab('ficha'); setSelectedPatientId(null); break;
+            case 'n':
+                setActiveTab('ficha');
+                setSelectedPatientId(null);
+                setTimeout(() => {
+                    document.querySelector('input[placeholder="Buscar o Crear Paciente..."]')?.focus();
+                }, 150);
+                break;
             case 'a': openApptModal(); break;
-            case 'p': setActiveTab('ficha'); setSelectedPatientId(null); break;
+            case 'p': setActiveTab('ficha'); break;
             case 'g': setActiveTab('agenda'); break;
             case 'f': setActiveTab('history'); break;
         }

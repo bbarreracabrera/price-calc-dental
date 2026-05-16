@@ -76,7 +76,7 @@ export default function PatientPersonalTab({
                 savePatientData(selectedPatientId, {
                     ...patient,
                     personal: { ...patient.personal, ...localDataRef.current }
-                });
+                }, { skipLog: true });
                 hasUnsavedChanges.current = false;
                 setSaveStatus('saved');
                 setTimeout(() => setSaveStatus('idle'), 3000);

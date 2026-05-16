@@ -100,7 +100,7 @@ export default function FinanceCenter({
         XLSX.utils.book_append_sheet(wb, ws, "Flujo de Caja");
         XLSX.writeFile(wb, `Reporte_Financiero_ShiningCloud_${getLocalDate()}.xlsx`);
         
-        notify("📊 Reporte Excel generado con éxito");
+        notify("Reporte Excel generado con éxito");
     };
 
     // --- LÓGICA AVANZADA DE HONORARIOS ---

@@ -86,7 +86,7 @@ export default function MasterPanel({ supabase, notify }) {
                 .eq('id', orderId);
 
             if (error) throw error;
-            notify("✅ Estado del pedido actualizado.");
+            notify("Estado del pedido actualizado.");
             fetchDashboardData(); // Recargar todo para actualizar finanzas
         } catch (error) {
             console.error("Error actualizando pedido:", error);
@@ -213,7 +213,7 @@ export default function MasterPanel({ supabase, notify }) {
                                                 onClick={() => {
                                                     const phone = order.order_details?.phone_contact || '';
                                                     if (!phone) {
-                                                        notify("⚠️ Esta orden no tiene teléfono registrado.");
+                                                        notify("Esta orden no tiene teléfono registrado.", 'info');
                                                         return;
                                                     }
                                                     const msg = `Hola! Soy Benjamín de ShiningCloud Supply. Recibí tu pedido de ${order.order_details?.quantity}x ${order.order_details?.item_name}. ¿Coordinamos el pago y envío?`;

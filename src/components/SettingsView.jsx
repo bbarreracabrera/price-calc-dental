@@ -89,10 +89,10 @@ export default function SettingsView({
             if(error) { 
                 notify("Laboratorio guardado, pero falló el envío de invitación: " + error.message); 
             } else { 
-                notify("✅ Laboratorio guardado e invitación enviada."); 
+                notify("Laboratorio guardado e invitación enviada.");
             }
         } else {
-            notify("✅ Laboratorio agregado exitosamente.");
+            notify("Laboratorio agregado exitosamente.");
         }
         
         setNewLab({ name: '', email: '', phone: '' });
@@ -125,7 +125,7 @@ export default function SettingsView({
             await saveToSupabase('settings', 'general', updatedConfig); 
             await saveToSupabase('clinic_config', session?.user?.email || 'general', updatedConfig);
 
-            notify("🗑️ Laboratorio eliminado correctamente.");
+            notify("Laboratorio eliminado correctamente.");
         }
     };
 

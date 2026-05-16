@@ -95,7 +95,7 @@ export default function AddItemModal({
             
             setModal(null); 
             setNewItem({name:'', stock:0, min:5, unit:'u', id:null, batches: []}); 
-            if(typeof notify === 'function') notify("Registro guardado con éxito 📦"); 
+            if(typeof notify === 'function') notify("Registro guardado con éxito");
         } else {
             if (typeof notify === 'function') notify("El nombre del insumo es obligatorio.");
         }
@@ -108,7 +108,7 @@ export default function AddItemModal({
             setInventory(filtered); 
             await supabase.from('inventory').update({ deleted_at: new Date().toISOString() }).eq('id', newItem.id);
             setModal(null); 
-            if(typeof notify === 'function') notify("Insumo eliminado 🗑️"); 
+            if(typeof notify === 'function') notify("Insumo eliminado");
         }
     };
 
@@ -125,7 +125,7 @@ export default function AddItemModal({
                         </h3>
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Gestión de Stock por Lotes</p>
                     </div>
-                    <button onClick={()=>{setModal(null); setShowScanner(false); setNewItem({name:'', stock:0, min:5, unit:'u', id:null, batches:[]});}} className="p-2 text-[#9A8F84] hover:bg-[#FDFBF7] hover:text-[#312923] rounded-xl transition-all">
+                    <button aria-label="Cerrar modal" onClick={()=>{setModal(null); setShowScanner(false); setNewItem({name:'', stock:0, min:5, unit:'u', id:null, batches:[]});}} className="p-2 text-[#9A8F84] hover:bg-[#FDFBF7] hover:text-[#312923] rounded-xl transition-all">
                         <X size={20}/>
                     </button>
                 </div>
@@ -197,8 +197,9 @@ export default function AddItemModal({
                                             onChange={e=>setBatchInput({...batchInput, barcode:e.target.value})} 
                                         />
                                     </div>
-                                    <button 
+                                    <button
                                         type="button"
+                                        aria-label={showScanner ? "Detener escáner" : "Escanear código de barras"}
                                         onClick={() => setShowScanner(!showScanner)}
                                         className={`p-3 rounded-xl transition-all shadow-sm ${showScanner ? 'bg-red-500 text-white' : 'bg-white text-[#5B6651] border border-[#5B6651]/20 hover:bg-[#5B6651] hover:text-white'}`}
                                         title="Activar Cámara del Teléfono/PC"
@@ -231,8 +232,9 @@ export default function AddItemModal({
                         </button>
                         
                         {newItem.id && (
-                            <button 
-                                onClick={handleDelete} 
+                            <button
+                                aria-label="Eliminar insumo"
+                                onClick={handleDelete}
                                 className="px-6 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors rounded-2xl"
                                 title="Eliminar producto por completo"
                             >

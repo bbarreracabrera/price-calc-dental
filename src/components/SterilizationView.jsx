@@ -56,7 +56,7 @@ export default function SterilizationView({
             setSterilizationItems(sterilizationItems.filter(i => i.id !== kit.id));
             // Borrado lógico para la interfaz.
             // Para base de datos idealmente llamas una función de borrado real, pero aquí lo sacamos del estado.
-            notify(`Kit eliminado 🗑️`);
+            notify("Kit eliminado");
         }
     };
 

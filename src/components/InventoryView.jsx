@@ -86,7 +86,7 @@ export default function InventoryView({
         );
         
         if (!userPhone || userPhone.trim() === '') {
-            notify("⚠️ Necesitamos un teléfono para procesar la orden.");
+            notify("Necesitamos un teléfono para procesar la orden.", 'info');
             return;
         }
         phone = userPhone;
@@ -111,7 +111,7 @@ export default function InventoryView({
         }]);
 
         if (error) throw error;
-        notify(`📦 Orden enviada. Te contactaremos al ${phone}`);
+        notify(`Orden enviada. Te contactaremos al ${phone}`);
     } catch (error) {
         console.error("Error:", error);
         notify("Error al enviar la orden.");

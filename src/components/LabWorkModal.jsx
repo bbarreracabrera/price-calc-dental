@@ -47,7 +47,7 @@ export default function LabWorkModal({
             const { data } = supabase.storage.from('patient-images').getPublicUrl(filePath);
             setFileUrl(data.publicUrl);
             setFileName(file.name);
-            notify("✅ Archivo adjuntado correctamente.");
+            notify("Archivo adjuntado correctamente.");
         } catch (error) {
             notify("Error al subir archivo. Verifica tu conexión e intenta de nuevo.");
         } finally {
@@ -119,7 +119,7 @@ export default function LabWorkModal({
             setFinancialRecords(nuevosRegistrosFinancieros);
             setLabWorks([...labWorks, fullLabData]);
             setModal(null);
-            notify("✅ Orden y finanzas procesadas.");
+            notify("Orden y finanzas procesadas.");
             
         } else {
             notify("Completa paciente, tipo de trabajo y fecha de entrega.");
