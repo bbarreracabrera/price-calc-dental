@@ -49,6 +49,7 @@ import ResetPasswordPage from './components/ResetPasswordPage';
 import WelcomeTour from './components/WelcomeTour';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import LandingPRA from './components/public/LandingPRA';
+import LandingCariogram from './components/public/LandingCariogram';
 import ImportPatientsModal from './components/ImportPatientsModal';
 
 // --- UTILS & HOOKS ---
@@ -719,6 +720,10 @@ const saveToOfflineVault = async (table, id, data) => {
 
   if (window.location.pathname === '/calculadora-periodontal') {
     return <LandingPRA />;
+  }
+
+  if (window.location.pathname === '/calculadora-caries') {
+    return <LandingCariogram />;
   }
 
   if (window.location.pathname === '/privacidad') {

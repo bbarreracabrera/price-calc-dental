@@ -15,6 +15,7 @@ import PatientConsentTab from './PatientConsentTab';
 import PatientImagesTab from './PatientImagesTab';
 import ActiveQuotesTab from './ActiveQuotesTab';
 import PRATab from './PRATab';
+import CariogramTab from './CariogramTab';
 
 export default function PatientWorkspace({
     // Datos y Estado
@@ -53,7 +54,8 @@ export default function PatientWorkspace({
         {id:'perio', label:'Periodontograma', icon: FileBarChart, restricted: true},
         {id:'quotes', label:'Presupuestos', icon: Calculator, badge: activeQuotesCount},
         {id:'evolution', label:'Evolución', icon: FileText, restricted: true},
-        {id:'pra', label:'Riesgo Perio', icon: Heart, restricted: true},
+        {id:'pra',       label:'Riesgo Perio',  icon: Heart,       restricted: true},
+        {id:'cariogram', label:'Riesgo Caries', icon: Calculator,  restricted: true},
         {id:'consent', label:'Consentimientos', icon: FileSignature, badge: consentsCount},
         {id:'images', label:'Galería', icon: ImageIcon}
     ];
@@ -174,7 +176,8 @@ export default function PatientWorkspace({
                 {/* --- NUEVO: PESTAÑA DE PRESUPUESTOS EN PROCESO --- */}
                 {patientTab === 'quotes' && <ActiveQuotesTab getPatient={getPatient} selectedPatientId={selectedPatientId} />} 
                 
-                {patientTab === 'pra' && <PRATab patient={p} savePatientData={(id, data, opts) => savePatientData(selectedPatientId, data, opts)} notify={notify} />}
+                {patientTab === 'pra'       && <PRATab       patient={p} savePatientData={(id, data, opts) => savePatientData(selectedPatientId, data, opts)} notify={notify} />}
+                {patientTab === 'cariogram' && <CariogramTab patient={p} savePatientData={(id, data, opts) => savePatientData(selectedPatientId, data, opts)} notify={notify} />}
 
                 {patientTab === 'evolution' && <PatientEvolutionTab themeMode={themeMode} newEvolution={newEvolution} setNewEvolution={setNewEvolution} isListening={isListening} toggleVoice={toggleVoice} voiceStatus={voiceStatus} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} session={session} logAction={logAction} />}
                 

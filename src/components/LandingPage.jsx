@@ -248,11 +248,11 @@ export default function LandingPage({ onLoginClick }) {
                         <span className="text-sm font-black text-[#312923]">Probar gratis →</span>
                     </a>
 
-                    {/* Card Cariogram (próximamente) */}
-                    <div className="bg-white border border-[#DFD2C4] rounded-3xl p-6 opacity-60 relative">
-                        <div className="absolute top-4 right-4 px-2 py-1 bg-[#312923] text-white text-[10px] font-bold uppercase tracking-widest rounded-full">
-                            Próximamente
-                        </div>
+                    {/* Card Cariogram */}
+                    <a
+                        href="/calculadora-caries"
+                        className="block bg-white border border-[#DFD2C4] rounded-3xl p-6 hover:border-[#5B6651] transition-all hover:shadow-lg"
+                    >
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 rounded-2xl bg-[#5B6651]/20 flex items-center justify-center text-2xl">
                                 🔬
@@ -267,11 +267,12 @@ export default function LandingPage({ onLoginClick }) {
                         <p className="text-sm text-[#9A8F84] leading-relaxed mb-4">
                             Calcula la probabilidad de desarrollar caries con 10 factores de riesgo individuales.
                         </p>
-                        <div className="flex items-center gap-2 px-3 py-2 bg-[#FDFBF7] rounded-xl">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[#FDFBF7] rounded-xl mb-4">
                             <div className="w-2 h-2 bg-[#5B6651] rounded-full"></div>
                             <span className="text-xs text-[#312923]">Dieta · Bacterias · Flúor · Saliva</span>
                         </div>
-                    </div>
+                        <span className="text-sm font-black text-[#312923]">Probar gratis →</span>
+                    </a>
 
                 </div>
 
