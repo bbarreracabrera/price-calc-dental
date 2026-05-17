@@ -130,7 +130,7 @@ export const CARIOGRAM_FACTORS = [
 ];
 
 export function calculateCariogram(values) {
-    const norm = (val, max) => (val / max) * 100;
+    const norm = (val, max) => (Math.max(0, Math.min(max, val || 0)) / max) * 100;
 
     const bacteria = (
         norm(values.plaqueAmount || 0, 3) * 0.4 +
@@ -161,12 +161,16 @@ export function calculateCariogram(values) {
     const remaining = 100 - chance;
     const total = bacteria + diet + susceptibility + circumstances || 1;
 
+    const chanceRounded = Math.round(chance);
+    const bacteriaPct   = Math.round((bacteria       / total) * remaining);
+    const dietPct       = Math.round((diet           / total) * remaining);
+    const suscPct       = Math.round((susceptibility / total) * remaining);
     return {
-        chance:          Math.round(chance),
-        bacteria:        Math.round((bacteria        / total) * remaining),
-        diet:            Math.round((diet            / total) * remaining),
-        susceptibility:  Math.round((susceptibility  / total) * remaining),
-        circumstances:   Math.round((circumstances   / total) * remaining),
+        chance:         chanceRounded,
+        bacteria:       bacteriaPct,
+        diet:           dietPct,
+        susceptibility: suscPct,
+        circumstances:  Math.max(0, 100 - chanceRounded - bacteriaPct - dietPct - suscPct),
         riskLevel: chance >= 60 ? 'low' : chance >= 30 ? 'moderate' : 'high',
     };
 }
@@ -177,7 +181,7 @@ export const RISK_LABELS = {
     high:     { label: 'Riesgo Alto',      recommendation: 'Programa intensivo de prevención',    color: '#B92323' },
 };
 
-export function getCariogramRecommendations(values, result) {
+export function getCariogramRecommendations(values, result, mode = 'private') {
     const recs = [];
 
     if ((values.dietContents || 0) >= 2)
@@ -189,17 +193,32 @@ export function getCariogramRecommendations(values, result) {
     if ((values.plaqueAmount || 0) >= 2)
         recs.push({ category: 'Higiene', priority: 'high', text: 'Reforzar técnica de cepillado (Bass modificada). Cepillado 3 veces al día, 2 min cada vez. Considerar revelador de placa para evaluación.' });
 
-    if ((values.mutansStreptococci || 0) >= 2)
-        recs.push({ category: 'Antibacteriano', priority: 'high', text: 'Considerar enjuagues con clorhexidina al 0.12% durante 1-2 semanas. Reevaluar niveles bacterianos en 3 meses.' });
+    if ((values.mutansStreptococci || 0) >= 2) {
+        if (mode === 'private') {
+            recs.push({ category: 'Antibacteriano', priority: 'high', text: 'Considerar enjuagues con clorhexidina al 0.12% durante 1-2 semanas. Reevaluar niveles bacterianos en 3 meses.' });
+        } else {
+            recs.push({ category: 'Antibacteriano', priority: 'high', text: 'Niveles bacterianos elevados detectados. Consulte a su odontólogo para evaluar opciones de tratamiento antibacteriano complementario.' });
+        }
+    }
 
     if ((values.fluorideProgram || 0) >= 2)
         recs.push({ category: 'Flúor', priority: 'medium', text: 'Intensificar uso de flúor: pasta dental ≥1450 ppm, enjuagues con NaF 0.05% diarios, considerar aplicación tópica de flúor barniz cada 3-6 meses.' });
 
-    if ((values.salivaSecretion || 0) >= 2)
-        recs.push({ category: 'Saliva', priority: 'high', text: 'Estimular flujo salival: chicles con xilitol post-comidas, hidratación frecuente. Evaluar medicamentos xerostomizantes. Considerar sialogogos.' });
+    if ((values.salivaSecretion || 0) >= 2) {
+        if (mode === 'private') {
+            recs.push({ category: 'Saliva', priority: 'high', text: 'Estimular flujo salival: chicles con xilitol post-comidas, hidratación frecuente. Evaluar medicamentos xerostomizantes. Considerar sialogogos.' });
+        } else {
+            recs.push({ category: 'Saliva', priority: 'high', text: 'Flujo salival reducido detectado. Mantenerse bien hidratado y masticar chicles sin azúcar. Consulte a su odontólogo para evaluación completa.' });
+        }
+    }
 
-    if ((values.bufferCapacity || 0) >= 1)
-        recs.push({ category: 'Saliva', priority: 'medium', text: 'Capacidad buffer reducida: usar enjuagues alcalinos post-comidas, considerar bicarbonato como apoyo, evitar bebidas ácidas.' });
+    if ((values.bufferCapacity || 0) >= 1) {
+        if (mode === 'private') {
+            recs.push({ category: 'Saliva', priority: 'medium', text: 'Capacidad buffer reducida: usar enjuagues alcalinos post-comidas, considerar bicarbonato como apoyo, evitar bebidas ácidas.' });
+        } else {
+            recs.push({ category: 'Saliva', priority: 'medium', text: 'Capacidad de neutralización salival reducida. Evite bebidas ácidas. Consulte a su odontólogo para recomendaciones personalizadas.' });
+        }
+    }
 
     if ((values.relatedDiseases || 0) >= 1)
         recs.push({ category: 'Sistémico', priority: 'medium', text: 'Coordinar con médico tratante. Revisar medicación xerostomizante. Plan de control sistémico (diabetes, reflujo, etc.).' });

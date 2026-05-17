@@ -11,7 +11,7 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
 
     const result          = useMemo(() => calculateCariogram(values), [values]);
     const riskInfo        = RISK_LABELS[result.riskLevel];
-    const recommendations = useMemo(() => getCariogramRecommendations(values, result), [values, result]);
+    const recommendations = useMemo(() => getCariogramRecommendations(values, result, mode), [values, result, mode]);
 
     const updateFactor = (key, val) => setValues(prev => ({ ...prev, [key]: val }));
 
@@ -73,6 +73,18 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
                         </div>
                         <p className="text-xs text-[#312923] font-bold">{riskInfo.recommendation}</p>
                     </div>
+
+                    {/* Aviso en modo público (antes de recomendaciones) */}
+                    {mode === 'public' && recommendations.length > 0 && (
+                        <div className="w-full bg-[#FFF8F8] border-l-4 border-[#B92323] rounded-r-2xl p-3">
+                            <p className="text-xs font-bold text-[#B92323] mb-1">Aviso importante</p>
+                            <p className="text-xs text-[#312923] leading-relaxed">
+                                Las recomendaciones son orientativas. Algunas intervenciones terapéuticas
+                                deben ser evaluadas y prescritas por un profesional de la salud dental.
+                                No reemplaza la consulta clínica.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Recomendaciones clínicas */}
                     {recommendations.length > 0 && (

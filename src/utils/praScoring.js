@@ -1,26 +1,31 @@
 export function scoreBOP(bopPct) {
-    if (bopPct <= 9) return 1;
-    if (bopPct <= 24) return 2;
-    if (bopPct < 100) return 3;
+    const v = Math.max(0, Math.min(100, bopPct || 0));
+    if (v <= 9) return 1;
+    if (v <= 24) return 2;
+    if (v < 100) return 3;
     return 4;
 }
 
 export function scorePPD(sitesWithPocket) {
-    if (sitesWithPocket === 0) return 1;
-    if (sitesWithPocket <= 4) return 2;
-    if (sitesWithPocket <= 8) return 3;
+    const v = Math.max(0, sitesWithPocket || 0);
+    if (v === 0) return 1;
+    if (v <= 4) return 2;
+    if (v <= 8) return 3;
     return 4;
 }
 
 export function scoreDP(teethLost) {
-    if (teethLost <= 4) return 1;
-    if (teethLost <= 8) return 2;
-    if (teethLost <= 12) return 3;
+    const v = Math.max(0, Math.min(32, teethLost || 0));
+    if (v <= 4) return 1;
+    if (v <= 8) return 2;
+    if (v <= 12) return 3;
     return 4;
 }
 
 export function scoreBL(bonelossPercent, age) {
-    const ratio = age > 0 ? bonelossPercent / age : 0;
+    const bl = Math.max(0, Math.min(100, bonelossPercent || 0));
+    const ag = Math.max(1, age || 1);
+    const ratio = bl / ag;
     if (ratio < 0.5) return 1;
     if (ratio < 1.0) return 2;
     if (ratio < 2.0) return 3;
@@ -28,11 +33,16 @@ export function scoreBL(bonelossPercent, age) {
 }
 
 export function calculateBopPct(bopPositiveSites, totalSites) {
-    return totalSites > 0 ? (bopPositiveSites / totalSites) * 100 : 0;
+    const pos = Math.max(0, bopPositiveSites || 0);
+    const tot = Math.max(0, totalSites || 0);
+    if (tot === 0) return 0;
+    return Math.min(100, (pos / tot) * 100);
 }
 
 export function calculateBlRatio(bonelossPercent, age) {
-    return age > 0 ? bonelossPercent / age : 0;
+    const bl = Math.max(0, Math.min(100, bonelossPercent || 0));
+    const ag = Math.max(1, age || 1);
+    return bl / ag;
 }
 
 export function classifyRisk(scores) {
