@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     ArrowLeft, AlertTriangle, User, FileQuestion, Activity,
     FileBarChart, FileText, FileSignature, ImageIcon,
-    Mic, MicOff, Sparkles, Calculator, Heart
+    Mic, MicOff, Sparkles, Calculator, Heart, Stethoscope, ChevronDown
 } from 'lucide-react';
 
 // --- IMPORTACIÓN DE PESTAÑAS ---
@@ -46,6 +46,13 @@ export default function PatientWorkspace({
     const activeQuotesCount = p.clinical?.quotes?.filter(q => q.status === 'en_proceso' || q.status === 'active')?.length || 0;
     const consentsCount = p.consents?.length || 0;
 
+    const TAB_GROUPS = [
+        { id: 'data',      label: 'Datos',      icon: User,          tabs: ['personal', 'anamnesis'] },
+        { id: 'clinical',  label: 'Clínico',    icon: Stethoscope,   tabs: ['clinical', 'perio', 'evolution'] },
+        { id: 'risk',      label: 'Riesgo',     icon: AlertTriangle, tabs: ['pra', 'cariogram'] },
+        { id: 'documents', label: 'Documentos', icon: FileText,      tabs: ['quotes', 'consent', 'images'] },
+    ];
+
     // Configuración de botones de pestañas (Incluimos 'Presupuestos')
     const tabButtons = [
         {id:'personal', label:'Datos', icon: User},
@@ -59,6 +66,35 @@ export default function PatientWorkspace({
         {id:'consent', label:'Consentimientos', icon: FileSignature, badge: consentsCount},
         {id:'images', label:'Galería', icon: ImageIcon}
     ];
+
+    const getGroupForTab = (tabId) =>
+        TAB_GROUPS.find(g => g.tabs.includes(tabId))?.id || 'data';
+
+    const [activeGroup, setActiveGroup] = useState(() => getGroupForTab(patientTab));
+    const [lastTabInGroup, setLastTabInGroup] = useState(() => ({
+        data: 'personal', clinical: 'clinical', risk: 'pra', documents: 'quotes',
+        [getGroupForTab(patientTab)]: patientTab,
+    }));
+
+    const isTabVisible = (tabId) => {
+        const t = tabButtons.find(b => b.id === tabId);
+        return t && !(userRole === 'assistant' && t.restricted);
+    };
+
+    const switchGroup = (groupId) => {
+        setActiveGroup(groupId);
+        const group = TAB_GROUPS.find(g => g.id === groupId);
+        const saved = lastTabInGroup[groupId];
+        const target = isTabVisible(saved)
+            ? saved
+            : group.tabs.find(isTabVisible);
+        if (target) setPatientTab(target);
+    };
+
+    const switchTab = (tabId) => {
+        setPatientTab(tabId);
+        setLastTabInGroup(prev => ({ ...prev, [activeGroup]: tabId }));
+    };
 
     return (
         <div className="space-y-6 animate-in slide-in-from-right pb-10">
@@ -100,31 +136,102 @@ export default function PatientWorkspace({
                 return null;
             })()}
 
-            {/* --- NAVEGACIÓN DE PESTAÑAS --- */}
-            <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar border-b border-[#DFD2C4]/30">
-                {tabButtons.map(b => {
-                    if (userRole === 'assistant' && b.restricted) return null; 
-                    const isActive = patientTab === b.id;
-                    return (
-                        <button 
-                            key={b.id} 
-                            onClick={() => setPatientTab(b.id)} 
-                            className={`px-5 py-3 rounded-t-2xl text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 border-b-2 ${
-                                isActive 
-                                ? 'bg-white text-[#5B6651] border-[#5B6651] shadow-[0_-4px_10px_rgba(91,102,81,0.05)]' 
-                                : 'bg-[#FDFBF7] text-[#9A8F84] border-transparent hover:bg-white hover:text-[#6B615A]'
-                            }`}
-                        >
-                                <b.icon size={14} className={isActive ? 'text-[#5B6651]' : 'text-[#DFD2C4]'}/>
-                            {b.label}
-                            {b.badge > 0 && (
-                                <span className="ml-1 px-1.5 py-0.5 bg-[#5B6651]/20 text-[#5B6651] text-[10px] font-bold rounded-full leading-none">
-                                    {b.badge}
-                                </span>
-                            )}
-                        </button>
-                    )
-                })}
+            {/* --- NAVEGACIÓN DE PESTAÑAS AGRUPADAS --- */}
+
+            {/* Desktop (md+): grupos + sub-tabs */}
+            <div className="hidden md:block">
+                {/* Fila de grupos */}
+                <div className="flex gap-1">
+                    {TAB_GROUPS.map(group => {
+                        const visibleTabs = group.tabs.filter(isTabVisible);
+                        if (visibleTabs.length === 0) return null;
+                        const groupBadge = visibleTabs.reduce((sum, id) => sum + (tabButtons.find(b => b.id === id)?.badge || 0), 0);
+                        const isActive = activeGroup === group.id;
+                        return (
+                            <button
+                                key={group.id}
+                                onClick={() => switchGroup(group.id)}
+                                className={`flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap rounded-t-2xl transition-all ${
+                                    isActive
+                                    ? 'bg-[#312923] text-white'
+                                    : 'bg-[#FDFBF7] text-[#9A8F84] hover:text-[#312923]'
+                                }`}
+                            >
+                                <group.icon size={13} />
+                                {group.label}
+                                {groupBadge > 0 && (
+                                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full leading-none ${
+                                        isActive ? 'bg-white/25 text-white' : 'bg-[#5B6651]/20 text-[#5B6651]'
+                                    }`}>
+                                        {groupBadge}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+                {/* Fila de sub-tabs */}
+                <div key={activeGroup} className="flex gap-1.5 bg-[#FDFBF7] px-4 py-2.5 border border-[#DFD2C4]/50 border-b-0 rounded-tr-2xl animate-in fade-in duration-200">
+                    {TAB_GROUPS.find(g => g.id === activeGroup)?.tabs.map(tabId => {
+                        if (!isTabVisible(tabId)) return null;
+                        const t = tabButtons.find(b => b.id === tabId);
+                        const isActive = patientTab === tabId;
+                        return (
+                            <button
+                                key={tabId}
+                                onClick={() => switchTab(tabId)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] whitespace-nowrap transition-all ${
+                                    isActive
+                                    ? 'bg-[#5B6651]/10 text-[#5B6651] font-bold'
+                                    : 'text-[#9A8F84] hover:text-[#312923] font-medium'
+                                }`}
+                            >
+                                <t.icon size={12} className={isActive ? 'text-[#5B6651]' : 'text-[#DFD2C4]'} />
+                                {t.label}
+                                {t.badge > 0 && (
+                                    <span className="px-1.5 py-0.5 bg-[#5B6651]/20 text-[#5B6651] text-[10px] font-bold rounded-full leading-none">
+                                        {t.badge}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Mobile (< md): selector de grupo + selector de tab */}
+            <div className="flex md:hidden gap-2 pb-2 border-b border-[#DFD2C4]/30">
+                <div className="relative flex-1">
+                    <select
+                        value={activeGroup}
+                        onChange={e => switchGroup(e.target.value)}
+                        className="w-full appearance-none bg-white border border-[#DFD2C4] rounded-xl px-3 py-2.5 text-sm font-bold text-[#312923] pr-8 focus:outline-none focus:border-[#5B6651] cursor-pointer"
+                    >
+                        {TAB_GROUPS.map(group => {
+                            if (group.tabs.filter(isTabVisible).length === 0) return null;
+                            return <option key={group.id} value={group.id}>{group.label}</option>;
+                        })}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9A8F84] pointer-events-none" />
+                </div>
+                <div className="relative flex-1">
+                    <select
+                        value={patientTab}
+                        onChange={e => switchTab(e.target.value)}
+                        className="w-full appearance-none bg-white border border-[#5B6651]/40 rounded-xl px-3 py-2.5 text-sm font-bold text-[#5B6651] pr-8 focus:outline-none focus:border-[#5B6651] cursor-pointer"
+                    >
+                        {TAB_GROUPS.find(g => g.id === activeGroup)?.tabs.map(tabId => {
+                            if (!isTabVisible(tabId)) return null;
+                            const t = tabButtons.find(b => b.id === tabId);
+                            return (
+                                <option key={tabId} value={tabId}>
+                                    {t.label}{t.badge > 0 ? ` (${t.badge})` : ''}
+                                </option>
+                            );
+                        })}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9A8F84] pointer-events-none" />
+                </div>
             </div>
 
             {/* --- ÁREA DE RENDERIZADO DE PESTAÑAS --- */}
