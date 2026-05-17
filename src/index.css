@@ -16,15 +16,36 @@ body {
         left: 0;
         top: 0;
         width: 100%;
+        page-break-after: auto;
+        page-break-inside: avoid;
     }
 
+    .no-print,
+    .no-print *,
     button,
-    .no-print { display: none !important; }
+    button * {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
+    }
+
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        height: auto !important;
+    }
+
+    main, section, .min-h-screen {
+        min-height: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     @page {

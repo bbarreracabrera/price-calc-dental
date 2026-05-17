@@ -7,7 +7,7 @@ export default function LandingCariogram() {
         <div className="min-h-screen bg-[#FDFBF7]">
 
             {/* Header */}
-            <header className="bg-white border-b border-[#DFD2C4] sticky top-0 z-10">
+            <header className="no-print bg-white border-b border-[#DFD2C4] sticky top-0 z-10">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
                     <a href="/" className="flex items-center gap-1.5 font-black text-lg">
                         <span className="text-[#312923]">ShiningCloud</span>
@@ -23,7 +23,7 @@ export default function LandingCariogram() {
             </header>
 
             {/* Hero */}
-            <section className="max-w-5xl mx-auto px-4 pt-12 pb-6 text-center">
+            <section className="no-print max-w-5xl mx-auto px-4 pt-12 pb-6 text-center">
                 <div className="inline-block px-3 py-1 bg-white border border-[#DFD2C4] rounded-full text-[10px] font-black uppercase tracking-widest text-[#5B6651] mb-4">
                     Herramienta gratuita
                 </div>
@@ -42,7 +42,7 @@ export default function LandingCariogram() {
             </section>
 
             {/* CTA */}
-            <section className="max-w-5xl mx-auto px-4 py-12">
+            <section className="no-print max-w-5xl mx-auto px-4 py-12">
                 <div className="bg-[#312923] rounded-3xl p-8 md:p-12 text-center">
                     <h2 className="text-2xl md:text-3xl font-black text-white mb-3 tracking-tight">
                         ¿Te gustó esta herramienta?
@@ -62,7 +62,7 @@ export default function LandingCariogram() {
             </section>
 
             {/* Footer */}
-            <footer className="max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-[#A3968B]">
+            <footer className="no-print max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-[#A3968B]">
                 Basado en Bratthall D, Hänsel Petersson G. Cariogram — a multifactorial risk
                 assessment model. <em>Community Dent Oral Epidemiol.</em> 2005;33(4):256-264.
             </footer>
