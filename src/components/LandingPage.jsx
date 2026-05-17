@@ -205,6 +205,83 @@ export default function LandingPage({ onLoginClick }) {
                 </div>
             </div>
 
+            {/* --- HERRAMIENTAS GRATUITAS --- */}
+            <section className="max-w-5xl mx-auto px-4 py-16">
+                <div className="text-center mb-10">
+                    <div className="inline-block px-3 py-1 bg-[#5B6651]/10 border border-[#5B6651]/30 rounded-full text-xs font-bold uppercase tracking-widest text-[#5B6651] mb-4">
+                        Herramientas gratuitas
+                    </div>
+                    <h2 className="text-3xl md:text-4xl font-black text-[#312923] mb-3">
+                        Calcula riesgo clínico en 2 minutos
+                    </h2>
+                    <p className="text-[#9A8F84] max-w-2xl mx-auto">
+                        Herramientas validadas para evaluar a tus pacientes. Sin registro, sin costo.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+
+                    {/* Card PRA */}
+                    <a
+                        href="/calculadora-periodontal"
+                        className="block bg-white border border-[#DFD2C4] rounded-3xl p-6 hover:border-[#5B6651] transition-all hover:shadow-lg"
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-[#CBAAA2]/20 flex items-center justify-center text-2xl">
+                                🦷
+                            </div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84]">
+                                Periodontal
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-black text-[#312923] mb-2">
+                            PRA Lang &amp; Tonetti
+                        </h3>
+                        <p className="text-sm text-[#9A8F84] leading-relaxed mb-4">
+                            Evalúa el riesgo periodontal de tus pacientes en 6 vectores clínicos.
+                            Recomendación automática de intervalo de mantenimiento.
+                        </p>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[#FDFBF7] rounded-xl mb-4">
+                            <div className="w-2 h-2 bg-[#5B6651] rounded-full"></div>
+                            <span className="text-xs text-[#312923]">Sangrado · Bolsas · Edad · Fumador</span>
+                        </div>
+                        <span className="text-sm font-black text-[#312923]">Probar gratis →</span>
+                    </a>
+
+                    {/* Card Cariogram (próximamente) */}
+                    <div className="bg-white border border-[#DFD2C4] rounded-3xl p-6 opacity-60 relative">
+                        <div className="absolute top-4 right-4 px-2 py-1 bg-[#312923] text-white text-[10px] font-bold uppercase tracking-widest rounded-full">
+                            Próximamente
+                        </div>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-[#5B6651]/20 flex items-center justify-center text-2xl">
+                                🔬
+                            </div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84]">
+                                Cariogénico
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-black text-[#312923] mb-2">
+                            Cariogram (Bratthall)
+                        </h3>
+                        <p className="text-sm text-[#9A8F84] leading-relaxed mb-4">
+                            Calcula la probabilidad de desarrollar caries con 10 factores de riesgo individuales.
+                        </p>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[#FDFBF7] rounded-xl">
+                            <div className="w-2 h-2 bg-[#5B6651] rounded-full"></div>
+                            <span className="text-xs text-[#312923]">Dieta · Bacterias · Flúor · Saliva</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div className="mt-8 text-center">
+                    <p className="text-sm text-[#9A8F84]">
+                        En la app, estas herramientas se conectan con la ficha del paciente y guardan el historial automáticamente.
+                    </p>
+                </div>
+            </section>
+
             {/* --- FAQ (PREGUNTAS FRECUENTES) --- */}
             <div className="max-w-3xl mx-auto px-6 py-24 border-t border-[#DFD2C4]/30">
                 <h2 className="text-3xl font-black text-center text-[#312923] tracking-tighter mb-12">Preguntas Frecuentes</h2>
