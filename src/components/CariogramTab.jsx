@@ -29,6 +29,10 @@ export default function CariogramTab({ patient, savePatientData, notify }) {
         return (
             <CariogramCalculator
                 mode="private"
+                patientData={{
+                    legalName: patient?.personal?.legalName,
+                    rut: patient?.personal?.rut,
+                }}
                 onSave={handleSave}
                 onClose={() => setShowCalculator(false)}
             />

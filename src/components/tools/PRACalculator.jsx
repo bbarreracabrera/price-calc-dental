@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Save } from 'lucide-react';
+import { Save, Printer } from 'lucide-react';
 import {
     scoreBOP, scorePPD, scoreDP, scoreBL,
     calculateBopPct, calculateBlRatio,
@@ -44,8 +44,27 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
         });
     };
 
+    const handlePrint = () => window.print();
+
     return (
-        <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-8">
+        <div className="print-area bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-8">
+            {/* Header de impresión (solo visible al imprimir) */}
+            {patientData?.legalName && (
+                <div className="hidden print:block mb-6 pb-4 border-b border-[#DFD2C4]">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Paciente</p>
+                            <p className="text-lg font-black text-[#312923]">{patientData.legalName}</p>
+                            {patientData.rut && <p className="text-sm text-[#9A8F84]">RUT: {patientData.rut}</p>}
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Fecha</p>
+                            <p className="text-sm text-[#312923]">{new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <h2 className="text-2xl font-black text-[#312923] mb-1">
                 Evaluación de Riesgo Periodontal (PRA)
             </h2>
@@ -215,26 +234,30 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
             </div>
 
             {/* Acciones */}
-            {(mode === 'private' || onClose) && (
-                <div className="flex flex-col md:flex-row gap-3 mt-6 pt-6 border-t border-[#DFD2C4]">
-                    {mode === 'private' && onSave && (
-                        <button
-                            onClick={handleSave}
-                            className="flex-1 py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
-                        >
-                            <Save size={16} /> Guardar en ficha
-                        </button>
-                    )}
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="flex-1 py-3 border border-[#DFD2C4] text-[#312923] font-bold rounded-2xl hover:bg-[#FDFBF7] text-sm"
-                        >
-                            Cerrar
-                        </button>
-                    )}
-                </div>
-            )}
+            <div className="flex flex-col md:flex-row gap-3 mt-6 pt-6 border-t border-[#DFD2C4] no-print">
+                {mode === 'private' && onSave && (
+                    <button
+                        onClick={handleSave}
+                        className="flex-1 py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
+                    >
+                        <Save size={16} /> Guardar en ficha
+                    </button>
+                )}
+                <button
+                    onClick={handlePrint}
+                    className="flex-1 py-3 border-2 border-[#312923] text-[#312923] font-bold rounded-2xl hover:bg-[#312923] hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                    <Printer size={16} /> Imprimir / PDF
+                </button>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 border border-[#DFD2C4] text-[#312923] font-bold rounded-2xl hover:bg-[#FDFBF7] text-sm"
+                    >
+                        Cerrar
+                    </button>
+                )}
+            </div>
         </div>
     );
 }

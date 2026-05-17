@@ -176,3 +176,41 @@ export const RISK_LABELS = {
     moderate: { label: 'Riesgo Moderado',  recommendation: 'Intensificar prevención',             color: '#D9A86C' },
     high:     { label: 'Riesgo Alto',      recommendation: 'Programa intensivo de prevención',    color: '#B92323' },
 };
+
+export function getCariogramRecommendations(values, result) {
+    const recs = [];
+
+    if ((values.dietContents || 0) >= 2)
+        recs.push({ category: 'Dieta', priority: 'high', text: 'Reducir consumo de azúcares refinados y carbohidratos fermentables. Sustituir por opciones con xilitol o stevia.' });
+
+    if ((values.dietFrequency || 0) >= 2)
+        recs.push({ category: 'Dieta', priority: 'high', text: 'Limitar frecuencia de comidas/snacks a máximo 5-6 al día. Espaciar al menos 2-3 horas entre ingestas para permitir remineralización.' });
+
+    if ((values.plaqueAmount || 0) >= 2)
+        recs.push({ category: 'Higiene', priority: 'high', text: 'Reforzar técnica de cepillado (Bass modificada). Cepillado 3 veces al día, 2 min cada vez. Considerar revelador de placa para evaluación.' });
+
+    if ((values.mutansStreptococci || 0) >= 2)
+        recs.push({ category: 'Antibacteriano', priority: 'high', text: 'Considerar enjuagues con clorhexidina al 0.12% durante 1-2 semanas. Reevaluar niveles bacterianos en 3 meses.' });
+
+    if ((values.fluorideProgram || 0) >= 2)
+        recs.push({ category: 'Flúor', priority: 'medium', text: 'Intensificar uso de flúor: pasta dental ≥1450 ppm, enjuagues con NaF 0.05% diarios, considerar aplicación tópica de flúor barniz cada 3-6 meses.' });
+
+    if ((values.salivaSecretion || 0) >= 2)
+        recs.push({ category: 'Saliva', priority: 'high', text: 'Estimular flujo salival: chicles con xilitol post-comidas, hidratación frecuente. Evaluar medicamentos xerostomizantes. Considerar sialogogos.' });
+
+    if ((values.bufferCapacity || 0) >= 1)
+        recs.push({ category: 'Saliva', priority: 'medium', text: 'Capacidad buffer reducida: usar enjuagues alcalinos post-comidas, considerar bicarbonato como apoyo, evitar bebidas ácidas.' });
+
+    if ((values.relatedDiseases || 0) >= 1)
+        recs.push({ category: 'Sistémico', priority: 'medium', text: 'Coordinar con médico tratante. Revisar medicación xerostomizante. Plan de control sistémico (diabetes, reflujo, etc.).' });
+
+    if (result.riskLevel === 'high') {
+        recs.unshift({ category: 'Plan general', priority: 'critical', text: 'Programa intensivo de prevención. Controles cada 3 meses. Reforzar TODAS las áreas. Documentar línea base con fotos clínicas.' });
+    } else if (result.riskLevel === 'moderate') {
+        recs.unshift({ category: 'Plan general', priority: 'medium', text: 'Programa preventivo intensificado. Controles cada 4-6 meses. Reforzar áreas más débiles.' });
+    } else {
+        recs.unshift({ category: 'Plan general', priority: 'low', text: 'Mantenimiento estándar. Controles cada 6-12 meses. Reforzar hábitos preventivos.' });
+    }
+
+    return recs;
+}

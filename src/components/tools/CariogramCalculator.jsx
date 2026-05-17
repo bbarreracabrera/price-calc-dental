@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Save } from 'lucide-react';
-import { CARIOGRAM_FACTORS, calculateCariogram, RISK_LABELS } from '../../utils/cariogramScoring';
+import { Save, Printer } from 'lucide-react';
+import { CARIOGRAM_FACTORS, calculateCariogram, RISK_LABELS, getCariogramRecommendations } from '../../utils/cariogramScoring';
 
 export default function CariogramCalculator({ mode = 'public', patientData, onSave, onClose }) {
     const [values, setValues] = useState(() => {
@@ -9,8 +9,9 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
         return init;
     });
 
-    const result   = useMemo(() => calculateCariogram(values), [values]);
-    const riskInfo = RISK_LABELS[result.riskLevel];
+    const result          = useMemo(() => calculateCariogram(values), [values]);
+    const riskInfo        = RISK_LABELS[result.riskLevel];
+    const recommendations = useMemo(() => getCariogramRecommendations(values, result), [values, result]);
 
     const updateFactor = (key, val) => setValues(prev => ({ ...prev, [key]: val }));
 
@@ -18,8 +19,27 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
         if (onSave) onSave({ date: new Date().toISOString(), inputs: { ...values }, computed: { ...result } });
     };
 
+    const handlePrint = () => window.print();
+
     return (
-        <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-8">
+        <div className="print-area bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-8">
+            {/* Header de impresión (solo visible al imprimir) */}
+            {patientData?.legalName && (
+                <div className="hidden print:block mb-6 pb-4 border-b border-[#DFD2C4]">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Paciente</p>
+                            <p className="text-lg font-black text-[#312923]">{patientData.legalName}</p>
+                            {patientData.rut && <p className="text-sm text-[#9A8F84]">RUT: {patientData.rut}</p>}
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Fecha</p>
+                            <p className="text-sm text-[#312923]">{new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <h2 className="text-2xl font-black text-[#312923] mb-1">
                 Cariogram — Evaluación de riesgo de caries
             </h2>
@@ -53,6 +73,26 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
                         </div>
                         <p className="text-xs text-[#312923] font-bold">{riskInfo.recommendation}</p>
                     </div>
+
+                    {/* Recomendaciones clínicas */}
+                    {recommendations.length > 0 && (
+                        <div className="w-full bg-white border border-[#DFD2C4] rounded-2xl p-4">
+                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] mb-3 font-bold">
+                                Recomendaciones clínicas
+                            </p>
+                            <div className="space-y-2.5">
+                                {recommendations.map((rec, i) => {
+                                    const color = { critical: '#B92323', high: '#D9A86C', medium: '#5B6651', low: '#9A8F84' }[rec.priority];
+                                    return (
+                                        <div key={i} className="border-l-4 pl-3 py-0.5" style={{ borderLeftColor: color }}>
+                                            <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color }}>{rec.category}</p>
+                                            <p className="text-xs text-[#312923] leading-relaxed">{rec.text}</p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* 10 factores */}
@@ -69,26 +109,30 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
             </div>
 
             {/* Acciones */}
-            {(mode === 'private' || onClose) && (
-                <div className="flex flex-col md:flex-row gap-3 mt-6 pt-6 border-t border-[#DFD2C4]">
-                    {mode === 'private' && onSave && (
-                        <button
-                            onClick={handleSave}
-                            className="flex-1 py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
-                        >
-                            <Save size={16} /> Guardar en ficha
-                        </button>
-                    )}
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="flex-1 py-3 border border-[#DFD2C4] text-[#312923] font-bold rounded-2xl hover:bg-[#FDFBF7] text-sm"
-                        >
-                            Cerrar
-                        </button>
-                    )}
-                </div>
-            )}
+            <div className="flex flex-col md:flex-row gap-3 mt-6 pt-6 border-t border-[#DFD2C4] no-print">
+                {mode === 'private' && onSave && (
+                    <button
+                        onClick={handleSave}
+                        className="flex-1 py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
+                    >
+                        <Save size={16} /> Guardar en ficha
+                    </button>
+                )}
+                <button
+                    onClick={handlePrint}
+                    className="flex-1 py-3 border-2 border-[#312923] text-[#312923] font-bold rounded-2xl hover:bg-[#312923] hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                    <Printer size={16} /> Imprimir / PDF
+                </button>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 border border-[#DFD2C4] text-[#312923] font-bold rounded-2xl hover:bg-[#FDFBF7] text-sm"
+                    >
+                        Cerrar
+                    </button>
+                )}
+            </div>
 
             <div className="mt-5 bg-[#FDFBF7] border-l-4 border-[#A3968B] rounded-r-2xl p-3">
                 <p className="text-xs text-[#9A8F84]">

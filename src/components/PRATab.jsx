@@ -83,7 +83,11 @@ export default function PRATab({ patient, savePatientData, notify }) {
         return (
             <PRACalculator
                 mode="private"
-                patientData={precomputedData}
+                patientData={{
+                    ...precomputedData,
+                    legalName: patient?.personal?.legalName,
+                    rut: patient?.personal?.rut,
+                }}
                 onSave={handleSave}
                 onClose={() => setShowCalculator(false)}
             />
