@@ -213,14 +213,14 @@ export default function PerioTab({
                     </div>
                 </div>
                 
-                {(!p.clinical.perioHistory || p.clinical.perioHistory.length === 0) ? (
+                {(!p.clinical?.perioHistory || p.clinical.perioHistory.length === 0) ? (
                     <div className="text-center py-12 bg-[#FDFBF7] border-2 border-dashed border-[#DFD2C4] rounded-3xl">
                         <p className="text-sm font-bold text-[#9A8F84]">No hay evoluciones guardadas aún</p>
                         <p className="text-[10px] font-black text-[#DFD2C4] uppercase tracking-widest mt-1">Llena el periodontograma y guarda arriba.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {[...p.clinical.perioHistory].reverse().map((snap, idx, arr) => (
+                        {[...(p.clinical.perioHistory || [])].reverse().map((snap, idx, arr) => (
                             <div key={snap.id} className="bg-white p-5 rounded-3xl border border-[#DFD2C4]/60 flex flex-col gap-4 hover:border-[#5B6651] hover:shadow-md transition-all cursor-pointer group">
                                 <div className="flex justify-between items-start border-b border-[#DFD2C4]/40 pb-3">
                                     <div className="flex flex-col">

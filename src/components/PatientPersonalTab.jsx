@@ -30,8 +30,10 @@ export default function PatientPersonalTab({
     const saveTimeoutRef = useRef(null);
     const localDataRef = useRef(localData);
     const hasUnsavedChanges = useRef(false);
+    const patientRef = useRef(patient);
 
     useEffect(() => { localDataRef.current = localData; }, [localData]);
+    useEffect(() => { patientRef.current = patient; }, [patient]);
 
     useEffect(() => {
         const handleBeforeUnload = (e) => {
@@ -73,9 +75,12 @@ export default function PatientPersonalTab({
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             setSaveStatus('saving');
             saveTimeoutRef.current = setTimeout(() => {
+                // Lee el patient MÁS reciente al momento del save para no pisar
+                // cambios que otro tab haya hecho en el ínterin
+                const current = patientRef.current;
                 savePatientData(selectedPatientId, {
-                    ...patient,
-                    personal: { ...patient.personal, ...localDataRef.current }
+                    ...current,
+                    personal: { ...current.personal, ...localDataRef.current }
                 }, { skipLog: true });
                 hasUnsavedChanges.current = false;
                 setSaveStatus('saved');
@@ -84,7 +89,7 @@ export default function PatientPersonalTab({
 
             return next;
         });
-    }, [selectedPatientId, patient, savePatientData]);
+    }, [selectedPatientId, savePatientData]);
 
     const handleSaveToDB = () => {};
 

@@ -90,9 +90,8 @@ export default function App() {
   const [userRole, setUserRole] = useState('admin');
   const [clinicOwner, setClinicOwner] = useState('');
 
-  // === LA LLAVE MAESTRA (doble check: email + rol admin) ===
-  const MASTER_EMAIL = import.meta.env.VITE_MASTER_EMAIL;
-  const IS_MASTER_ADMIN = userRole === 'admin' && session?.user?.email === MASTER_EMAIL;
+  // === LA LLAVE MAESTRA — verificada server-side vía Edge Function ===
+  const [isMasterAdmin, setIsMasterAdmin] = useState(false);
 
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
 
@@ -201,7 +200,15 @@ export default function App() {
 
       return () => subscription.unsubscribe();
   }, []);
-  
+
+  // Verifica estado master admin server-side al iniciar sesión
+  useEffect(() => {
+      if (!session) { setIsMasterAdmin(false); return; }
+      supabase.functions.invoke('verify-master')
+          .then(({ data }) => setIsMasterAdmin(data?.is_master === true))
+          .catch(() => setIsMasterAdmin(false));
+  }, [session]);
+
   const {
       loadMorePatients, hasMorePatients, patientsLoading, totalPatients,
       isLoadingFinancials, hasOlderData, dateRange, setDateRange, loadFinancials,
@@ -241,6 +248,7 @@ export default function App() {
       if (!needsBackfill.length) return;
 
       const run = async () => {
+          const duplicateNames = [];
           for (const appt of needsBackfill) {
               const matches = Object.values(patientRecords).filter(
                   p => p?.personal?.legalName === appt.name
@@ -250,7 +258,18 @@ export default function App() {
                       .from('appointments')
                       .update({ data: { ...appt, patient_id: matches[0].id } })
                       .eq('id', appt.id);
+              } else if (matches.length > 1) {
+                  duplicateNames.push(appt.name);
               }
+          }
+          const uniqueDuplicates = [...new Set(duplicateNames)];
+          if (uniqueDuplicates.length >= 3 && userRole === 'admin' && !window.__duplicatesNotified) {
+              window.__duplicatesNotified = true;
+              notify(
+                  `Hay ${uniqueDuplicates.length} pacientes con nombres duplicados ` +
+                  `(${duplicateNames.length} citas sin vincular). Considera revisar la lista de pacientes.`,
+                  'info'
+              );
           }
       };
       run();
@@ -360,7 +379,7 @@ const saveToOfflineVault = async (table, id, data) => {
       const base = { id, personal: { legalName: id }, anamnesis: { recent: '', remote: '', conditions: {} }, clinical: { teeth: {}, perio: {}, hygiene: {}, evolution: [] }, consents: [], images: [] };
       const existing = patientRecords[id];
       if (!existing) return base;
-      return { ...base, ...existing, anamnesis: { ...base.anamnesis, ...(existing.anamnesis || {}) }, clinical: existing.clinical || base.clinical, personal: existing.personal || base.personal };
+      return { ...base, ...existing, anamnesis: { ...base.anamnesis, ...(existing.anamnesis || {}) }, clinical: { ...base.clinical, ...(existing.clinical || {}) }, personal: existing.personal || base.personal };
   }, [patientRecords]);
 
   const savePatientData = useCallback(async (id, d, options = {}) => {
@@ -397,7 +416,7 @@ const saveToOfflineVault = async (table, id, data) => {
     const p = getPatient(selectedPatientId);
     let sites=0, bop=0, faces=0, plaque=0, nicSum=0, nicCount=0;
     [...TEETH_UPPER, ...TEETH_LOWER].forEach(t => {
-        const st = p.clinical.teeth[t]?.status;
+        const st = p.clinical?.teeth?.[t]?.status;
         const isMissing = Array.isArray(st) ? st.includes('missing') : st === 'missing';
         if (!isMissing) {
             sites+=6; faces+=4;
@@ -778,7 +797,7 @@ const saveToOfflineVault = async (table, id, data) => {
           toggleTheme={toggleTheme} supabase={supabase}
           isWorkspaceActive={isWorkspaceActive}
           todayApptCount={todaysAppointments.length}
-          isMasterAdmin={IS_MASTER_ADMIN}
+          isMasterAdmin={isMasterAdmin}
       />
 
       <main className={`flex-1 p-6 md:p-10 h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
@@ -789,7 +808,7 @@ const saveToOfflineVault = async (table, id, data) => {
         </div>
         
         {activeTab === 'master_panel' && (
-            IS_MASTER_ADMIN ? (
+            isMasterAdmin ? (
                 <MasterPanel supabase={supabase} notify={notify} />
             ) : (
                 <div className="flex flex-col items-center justify-center h-full py-24 px-6 text-center">

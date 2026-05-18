@@ -11,6 +11,7 @@ export default function CariogramTab({ patient, savePatientData, notify }) {
     const history = useMemo(() => patient?.assessments?.cariogram || [], [patient]);
 
     const handleSave = async (assessment) => {
+        console.log('[CariogramTab] Guardando evaluación:', { patientId: patient.id, patient, assessment });
         const newHistory = [...(patient?.assessments?.cariogram || []), assessment];
         const newData = {
             ...patient,

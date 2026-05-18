@@ -65,6 +65,7 @@ export default function PRATab({ patient, savePatientData, notify }) {
     const history = useMemo(() => patient?.assessments?.pra || [], [patient]);
 
     const handleSave = async (assessment) => {
+        console.log('[PRATab] Guardando evaluación:', { patientId: patient.id, patient, assessment });
         const newHistory = [...(patient?.assessments?.pra || []), assessment];
         const newData = {
             ...patient,

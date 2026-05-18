@@ -80,6 +80,14 @@ export function useClinicData({
                 myRole = myTeamRecord.data?.role || 'assistant';
             }
 
+            // S1-A: verificar rol en servidor para prevenir escalada vía DevTools
+            try {
+                const { data: serverRole } = await supabase.rpc('get_my_role');
+                if (serverRole && typeof serverRole === 'string') myRole = serverRole;
+            } catch {
+                // Si el RPC no existe aún, usar el rol del lookup local
+            }
+
             adminEmailRef.current = myClinicAdmin;
             pageRef.current = 0;
 

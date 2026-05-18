@@ -157,6 +157,15 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
             const apptId = `appt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
             const cancelToken = crypto.randomUUID();
 
+            let consentIp = 'unknown';
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json', {
+                    signal: AbortSignal.timeout(3000)
+                });
+                const { ip } = await ipResponse.json();
+                consentIp = ip;
+            } catch { /* keep 'unknown' */ }
+
             const { error: apptError } = await supabase
                 .from('appointments')
                 .insert([{
@@ -174,6 +183,13 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         status: needsPayment ? 'pending_payment' : 'agendado',
                         cancel_token: cancelToken,
                         created_at: new Date().toISOString(),
+                        consent_accepted: acceptedDataPolicy,
+                        consent_version: '1.0',
+                        consent_timestamp: new Date().toISOString(),
+                        consent_user_agent: navigator.userAgent,
+                        consent_screen: `${window.screen.width}x${window.screen.height}`,
+                        consent_language: navigator.language,
+                        consent_ip: consentIp,
                     }
                 }]);
 
