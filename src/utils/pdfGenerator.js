@@ -1,10 +1,17 @@
 import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 
-export const generatePDF = (type, data = null, context) => {
-    const { 
-        themeMode, config, selectedPatientId, getPatient, sessionData, 
-        patientRecords, prescription, notify, logAction 
+async function hashPDFContent(bytes) {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes.buffer ?? bytes);
+    return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+export const generatePDF = async (type, data = null, context) => {
+    const {
+        themeMode, config, selectedPatientId, getPatient, sessionData,
+        patientRecords, prescription, notify, logAction, session
     } = context;
 
     try {
@@ -241,18 +248,28 @@ export const generatePDF = (type, data = null, context) => {
         }
 
         // ==========================================
-        // 7. MARCA DE AGUA INFERIOR
+        // 7. MARCA DE AGUA INFERIOR (trazabilidad)
         // ==========================================
+        const userEmail = session?.user?.email || 'sin-identificar';
         doc.setFontSize(7);
         doc.setFont("helvetica", "italic");
-        doc.setTextColor(180, 180, 180);
-        doc.text(`Documento clínico oficial generado por ShiningCloud Dental el ${new Date().toLocaleString('es-CL')}`, 105, 285, { align: 'center' });
+        doc.setTextColor(160, 160, 160);
+        doc.text(
+            `Generado: ${new Date().toLocaleString('es-CL')} | Usuario: ${userEmail} | ShiningCloud Dental`,
+            105, 285, { align: 'center' }
+        );
 
-        // GUARDADO DEL DOCUMENTO
+        // GUARDADO DEL DOCUMENTO + HASH SHA-256 para auditoría
         const cleanName = pName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        doc.save(`${type}_${cleanName}.pdf`); 
-        notify("Documento PDF generado con éxito"); 
-        logAction('GENERATE_PDF', { type }, selectedPatientId);
+        const pdfBytes = new Uint8Array(doc.output('arraybuffer'));
+        doc.save(`${type}_${cleanName}.pdf`);
+        notify("Documento PDF generado con éxito");
+        try {
+            const sha256 = await hashPDFContent(pdfBytes);
+            logAction('GENERATE_PDF', { type, sha256, timestamp: new Date().toISOString() }, selectedPatientId);
+        } catch {
+            logAction('GENERATE_PDF', { type }, selectedPatientId);
+        }
 
     } catch (e) {
         console.error(e);

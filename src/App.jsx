@@ -529,7 +529,7 @@ const saveToOfflineVault = async (table, id, data) => {
   const handleImageUploadWrapper = useCallback((file) => {
       uploadPatientImage(file, { selectedPatientId, setUploading, getPatient, activeFolder, savePatientData, notify, logAction });
   }, [selectedPatientId, getPatient, activeFolder, savePatientData, logAction]);
-  const handleGeneratePDF = useCallback((type, data = null) => generatePDF(type, data, { themeMode, config, selectedPatientId, getPatient, sessionData, patientRecords, prescription, notify, logAction }), [themeMode, config, selectedPatientId, getPatient, sessionData, patientRecords, prescription, logAction]);
+  const handleGeneratePDF = useCallback((type, data = null) => generatePDF(type, data, { themeMode, config, selectedPatientId, getPatient, sessionData, patientRecords, prescription, notify, logAction, session }), [themeMode, config, selectedPatientId, getPatient, sessionData, patientRecords, prescription, logAction, session]);
   const saveToSupabaseWrapper = useCallback((t, id, d) => saveToSupabase(t, id, d), [clinicOwner, session]);
 
   const handleOnboardingSave = async (form) => {

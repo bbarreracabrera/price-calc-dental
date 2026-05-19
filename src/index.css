@@ -52,4 +52,17 @@ body {
         margin: 1.5cm;
         size: A4;
     }
+
+    body::after {
+        content: "Generado por ShiningCloud Dental — Documento orientativo. No constituye diagnóstico médico.";
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 7pt;
+        color: #999;
+        padding: 4mm;
+        visibility: visible;
+    }
 }

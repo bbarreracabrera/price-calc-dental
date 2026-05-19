@@ -209,7 +209,6 @@ Cuando empieces a tener usuarios, trackear:
 ## 🚀 Próximos pasos sugeridos
 
 1. **Validación con dentistas reales** (PRIORIDAD MÁXIMA)
-   - Tu prima + Dani ya están testeando
    - Conseguir 5-10 dentistas beta gratis
    - Feedback semanal
    - Iterar con datos reales antes de invertir más tiempo en código
@@ -228,6 +227,6 @@ Cuando empieces a tener usuarios, trackear:
 
 ---
 
-*Última actualización: 17 de mayo de 2026*
+*Última actualización: 19 de mayo de 2026*
 *Producto: ShiningCloud Dental v1.0*
 *Estado: Producción · Vendible legalmente · 24 mejoras pendientes (0 críticas)*

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Save, Printer } from 'lucide-react';
+import { Save, Printer, AlertCircle } from 'lucide-react';
 import {
     scoreBOP, scorePPD, scoreDP, scoreBL,
     calculateBopPct, calculateBlRatio,
@@ -18,6 +18,10 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
     const [tabaquismo,     setTabaquismo]     = useState(patientData?.tabaquismo   || 1);
     const [dataColor,      setDataColor]      = useState(() => {
         try { return localStorage.getItem('pra_chart_color') || '#5B6651'; } catch { return '#5B6651'; }
+    });
+    const [disclaimerAccepted, setDisclaimerAccepted] = useState(() => {
+        if (mode !== 'public') return true;
+        try { return sessionStorage.getItem('pra_disclaimer_accepted') === 'true'; } catch { return false; }
     });
 
     const computed = useMemo(() => {
@@ -50,6 +54,40 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
 
     return (
         <div className="print-area bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-8">
+            {/* Modal de disclaimer — solo en modo público, hasta que el usuario lo cierre */}
+            {mode === 'public' && !disclaimerAccepted && (
+                <div className="fixed inset-0 bg-[#312923]/80 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-[#B92323]/10 flex items-center justify-center shrink-0">
+                                <AlertCircle size={24} className="text-[#B92323]" />
+                            </div>
+                            <h2 className="text-xl font-black text-[#312923]">Información importante</h2>
+                        </div>
+                        <p className="text-sm text-[#312923] mb-3 leading-relaxed">
+                            Esta es una <strong>herramienta orientativa</strong> de evaluación de riesgo periodontal
+                            basada en el modelo validado de Lang &amp; Tonetti.
+                        </p>
+                        <p className="text-sm text-[#312923] mb-3 leading-relaxed">
+                            Los resultados <strong>no constituyen un diagnóstico médico</strong> ni reemplazan
+                            la evaluación de un odontólogo. Las recomendaciones farmacológicas requieren
+                            consulta profesional.
+                        </p>
+                        <p className="text-sm text-[#9A8F84] mb-6 leading-relaxed">
+                            Al continuar, aceptas usar esta herramienta solo con fines educativos e informativos.
+                        </p>
+                        <button
+                            onClick={() => {
+                                setDisclaimerAccepted(true);
+                                try { sessionStorage.setItem('pra_disclaimer_accepted', 'true'); } catch {}
+                            }}
+                            className="w-full py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
+                        >
+                            Entiendo y continúo
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Header de impresión (solo visible al imprimir) */}
             {patientData?.legalName && (
                 <div className="hidden print:block mb-6 pb-4 border-b border-[#DFD2C4]">

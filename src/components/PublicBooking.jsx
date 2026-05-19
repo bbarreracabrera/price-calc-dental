@@ -20,6 +20,8 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     });
 
     const [honeypot, setHoneypot] = useState('');
+    const [lastSubmitTime, setLastSubmitTime] = useState(0);
+    const [submitCount, setSubmitCount] = useState(0);
     const [availableTimes, setAvailableTimes] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [requiresPayment, setRequiresPayment] = useState(false);
@@ -144,7 +146,23 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     };
 
     const handleSubmit = async () => {
-        if (honeypot !== '') return setStep(4);
+        if (honeypot !== '') {
+            setStep(4);
+            return;
+        }
+
+        const now = Date.now();
+        if (lastSubmitTime > 0 && now - lastSubmitTime < 5000) {
+            setFormError('Por favor espera unos segundos antes de intentar de nuevo.');
+            return;
+        }
+        if (submitCount >= 3) {
+            setFormError('Demasiados intentos. Recarga la página o intenta más tarde.');
+            return;
+        }
+        setLastSubmitTime(now);
+        setSubmitCount(c => c + 1);
+
         if (!formData.name || !formData.phone || !formData.date || !formData.time) {
             setFormError("Por favor completa todos los campos requeridos.");
             return;
@@ -289,6 +307,17 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
             </div>
 
             <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border border-[#DFD2C4]/60 p-8">
+                {/* Honeypot — invisible para humanos, visible para bots */}
+                <input
+                    type="text"
+                    name="website"
+                    style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    aria-hidden="true"
+                />
                 {/* STEP 1 — Datos personales */}
                 {step === 1 && (
                     <div className="space-y-5 animate-in slide-in-from-right">
