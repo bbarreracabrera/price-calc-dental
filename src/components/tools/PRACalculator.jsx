@@ -110,14 +110,14 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                     </div>
 
                     {/* Score breakdown */}
-                    <div className="w-full grid grid-cols-3 gap-2">
+                    <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {[
-                            { key: 'BOP%',       val: `${computed.bopPct.toFixed(0)}%`, score: computed.scores[0] },
-                            { key: 'PPD≥5mm',    val: ppdSites,                          score: computed.scores[1] },
-                            { key: 'D. perdidos',val: teethLost,                          score: computed.scores[2] },
-                            { key: 'BL/Edad',    val: computed.blRatio.toFixed(2),       score: computed.scores[3] },
-                            { key: 'Sistémico',  val: ['–','Ninguno','1 menor','DM ctrl','DM noctr'][sistemico], score: computed.scores[4] },
-                            { key: 'Tabaquismo', val: ['–','No/Ex>5a','Ex<5a','10-19','≥20'][tabaquismo],       score: computed.scores[5] },
+                            { key: 'BOP%',      val: `${computed.bopPct.toFixed(0)}%`, score: computed.scores[0] },
+                            { key: 'PPD≥5mm',   val: ppdSites,                          score: computed.scores[1] },
+                            { key: 'D. perd.',  val: teethLost,                          score: computed.scores[2] },
+                            { key: 'BL/Edad',   val: computed.blRatio.toFixed(2),       score: computed.scores[3] },
+                            { key: 'Sistémico', val: ['–','Ninguno','1 menor','DM ctrl','DM noctr'][sistemico], score: computed.scores[4] },
+                            { key: 'Tabaq.',    val: ['–','No/Ex>5a','Ex<5a','10-19','≥20'][tabaquismo],       score: computed.scores[5] },
                         ].map(({ key, val, score }) => (
                             <div
                                 key={key}
@@ -328,7 +328,7 @@ function HexagonChart({ scores, dataColor }) {
 
     const ZONE_FILLS   = ['rgba(91,102,81,0.10)', 'rgba(217,168,108,0.12)', 'rgba(184,124,80,0.14)', 'rgba(185,35,35,0.12)'];
     const ZONE_STROKES = ['#5B6651', '#D9A86C', '#B87C50', '#B92323'];
-    const LABELS       = ['BOP%', 'PD≥5mm', 'D. perd.', 'BL/Edad', 'Sist./Gen.', 'Amb.'];
+    const LABELS       = ['BOP%', 'PD≥5mm', 'D. perd.', 'BL/Edad', 'Sistémico', 'Amb.'];
     const LR           = 4 * RU + 22;
 
     const hexPt = (r, i) => {

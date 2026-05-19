@@ -65,7 +65,7 @@ export default function LandingPRA() {
             </section>
 
             {/* ¿Cómo usar? */}
-            <section className="no-print max-w-4xl mx-auto px-4 py-12">
+            <section className="no-print max-w-5xl mx-auto px-4 py-12">
                 <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-10">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 rounded-2xl bg-[#5B6651]/10 flex items-center justify-center shrink-0">
@@ -123,7 +123,7 @@ export default function LandingPRA() {
             </section>
 
             {/* Parámetros y umbrales */}
-            <section className="no-print max-w-4xl mx-auto px-4 pb-12">
+            <section className="no-print max-w-5xl mx-auto px-4 pb-12">
                 <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-10">
                     <h2 className="text-2xl font-black text-[#312923] mb-2">
                         Parámetros evaluados y umbrales de riesgo
@@ -175,7 +175,7 @@ export default function LandingPRA() {
             </section>
 
             {/* Clasificación de riesgo */}
-            <section className="no-print max-w-4xl mx-auto px-4 pb-12">
+            <section className="no-print max-w-5xl mx-auto px-4 pb-12">
                 <h2 className="text-2xl font-black text-[#312923] mb-2">
                     Clasificación de riesgo
                 </h2>
@@ -229,7 +229,7 @@ export default function LandingPRA() {
             </section>
 
             {/* Protocolo SPT */}
-            <section className="no-print max-w-4xl mx-auto px-4 pb-12">
+            <section className="no-print max-w-5xl mx-auto px-4 pb-12">
                 <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-10">
                     <h2 className="text-2xl font-black text-[#312923] mb-2">
                         Protocolo de la visita de mantenimiento (SPT)
@@ -266,7 +266,7 @@ export default function LandingPRA() {
             </section>
 
             {/* Footer */}
-            <footer className="no-print max-w-4xl mx-auto px-4 pb-10 text-center text-xs text-[#A3968B]">
+            <footer className="no-print max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-[#A3968B]">
                 Basado en Lang NP, Tonetti MS (2003). Periodontal risk assessment for patients in
                 supportive periodontal therapy. <em>Oral Health Prev Dent.</em>
             </footer>

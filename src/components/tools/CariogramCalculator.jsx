@@ -55,10 +55,10 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
 
                     <div className="w-full grid grid-cols-1 gap-1.5">
                         <LegendItem color="#5B6651" label="Oportunidad de evitar caries" value={result.chance} />
-                        <LegendItem color="#CBAAA2" label="Bacterias"                    value={result.bacteria} />
-                        <LegendItem color="#A3968B" label="Dieta"                        value={result.diet} />
-                        <LegendItem color="#D9A86C" label="Susceptibilidad"              value={result.susceptibility} />
-                        <LegendItem color="#9A8F84" label="Circunstancias"               value={result.circumstances} />
+                        <LegendItem color="#9B7E7A" label="Bacterias"                    value={result.bacteria} />
+                        <LegendItem color="#D9A86C" label="Dieta"                        value={result.diet} />
+                        <LegendItem color="#A3968B" label="Susceptibilidad"              value={result.susceptibility} />
+                        <LegendItem color="#7A8B7F" label="Circunstancias"               value={result.circumstances} />
                     </div>
 
                     <div className="w-full bg-[#FDFBF7] rounded-2xl p-4 border border-[#DFD2C4] text-center">
@@ -74,37 +74,6 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
                         <p className="text-xs text-[#312923] font-bold">{riskInfo.recommendation}</p>
                     </div>
 
-                    {/* Aviso en modo público (antes de recomendaciones) */}
-                    {mode === 'public' && recommendations.length > 0 && (
-                        <div className="w-full bg-[#FFF8F8] border-l-4 border-[#B92323] rounded-r-2xl p-3">
-                            <p className="text-xs font-bold text-[#B92323] mb-1">Aviso importante</p>
-                            <p className="text-xs text-[#312923] leading-relaxed">
-                                Las recomendaciones son orientativas. Algunas intervenciones terapéuticas
-                                deben ser evaluadas y prescritas por un profesional de la salud dental.
-                                No reemplaza la consulta clínica.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Recomendaciones clínicas */}
-                    {recommendations.length > 0 && (
-                        <div className="w-full bg-white border border-[#DFD2C4] rounded-2xl p-4">
-                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] mb-3 font-bold">
-                                Recomendaciones clínicas
-                            </p>
-                            <div className="space-y-2.5">
-                                {recommendations.map((rec, i) => {
-                                    const color = { critical: '#B92323', high: '#D9A86C', medium: '#5B6651', low: '#9A8F84' }[rec.priority];
-                                    return (
-                                        <div key={i} className="border-l-4 pl-3 py-0.5" style={{ borderLeftColor: color }}>
-                                            <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color }}>{rec.category}</p>
-                                            <p className="text-xs text-[#312923] leading-relaxed">{rec.text}</p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* 10 factores */}
@@ -119,6 +88,38 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
                     ))}
                 </div>
             </div>
+
+            {/* Recomendaciones — ancho completo */}
+            {recommendations.length > 0 && (
+                <div className="mt-6 space-y-4">
+                    {mode === 'public' && (
+                        <div className="w-full bg-[#FFF8F8] border-l-4 border-[#B92323] rounded-r-2xl p-3">
+                            <p className="text-xs font-bold text-[#B92323] mb-1">Aviso importante</p>
+                            <p className="text-xs text-[#312923] leading-relaxed">
+                                Las recomendaciones son orientativas. Algunas intervenciones terapéuticas
+                                deben ser evaluadas y prescritas por un profesional de la salud dental.
+                                No reemplaza la consulta clínica.
+                            </p>
+                        </div>
+                    )}
+                    <div className="w-full bg-white border border-[#DFD2C4] rounded-2xl p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] mb-3 font-bold">
+                            Recomendaciones clínicas
+                        </p>
+                        <div className="space-y-2.5">
+                            {recommendations.map((rec, i) => {
+                                const color = { critical: '#B92323', high: '#D9A86C', medium: '#5B6651', low: '#9A8F84' }[rec.priority];
+                                return (
+                                    <div key={i} className="border-l-4 pl-3 py-0.5" style={{ borderLeftColor: color }}>
+                                        <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color }}>{rec.category}</p>
+                                        <p className="text-xs text-[#312923] leading-relaxed">{rec.text}</p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Acciones */}
             <div className="flex flex-col md:flex-row gap-3 mt-6 pt-6 border-t border-[#DFD2C4] no-print">
@@ -162,11 +163,11 @@ export default function CariogramCalculator({ mode = 'public', patientData, onSa
 function PieChart({ result }) {
     const CX = 150, CY = 150, R = 110;
     const sectors = [
-        { value: result.chance,         color: '#5B6651', label: 'Oportunidad' },
-        { value: result.bacteria,       color: '#CBAAA2', label: 'Bacterias' },
-        { value: result.diet,           color: '#A3968B', label: 'Dieta' },
-        { value: result.susceptibility, color: '#D9A86C', label: 'Susceptibilidad' },
-        { value: result.circumstances,  color: '#9A8F84', label: 'Circunstancias' },
+        { value: result.chance,         color: '#5B6651', label: 'Oportunidad', emphasized: true },
+        { value: result.bacteria,       color: '#9B7E7A', label: 'Bacterias' },
+        { value: result.diet,           color: '#D9A86C', label: 'Dieta' },
+        { value: result.susceptibility, color: '#A3968B', label: 'Susceptibilidad' },
+        { value: result.circumstances,  color: '#7A8B7F', label: 'Circunstancias' },
     ];
 
     let cumulative = 0;
@@ -192,7 +193,7 @@ function PieChart({ result }) {
                         d={`M ${CX} ${CY} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`}
                         fill={s.color}
                         stroke="#FDFBF7"
-                        strokeWidth="2.5"
+                        strokeWidth={s.emphasized ? "4" : "2"}
                     />
                 );
             })}

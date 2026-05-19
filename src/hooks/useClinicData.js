@@ -43,13 +43,19 @@ export function useClinicData({
                 boleta_emitida: r.boleta_emitida,
                 boleta_fecha: r.boleta_fecha
             })) || []);
-            const { count } = await supabase
+            const { count, error: countError } = await supabase
                 .from('financials')
-                .select('id', { count: 'exact', head: true })
+                .select('id', { count: 'exact' })
                 .eq('admin_email', adminEmail)
                 .is('deleted_at', null)
-                .lt('data->>date', start);
-            setHasOlderData((count || 0) > 0);
+                .lt('data->>date', start)
+                .limit(1);
+            if (countError) {
+                console.warn('No se pudo verificar registros anteriores:', countError);
+                setHasOlderData(false);
+            } else {
+                setHasOlderData((count || 0) > 0);
+            }
         } catch (err) {
             console.error('Error loading financials:', err);
         } finally {

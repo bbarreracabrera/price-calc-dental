@@ -91,8 +91,6 @@ export default function PatientPersonalTab({
         });
     }, [selectedPatientId, savePatientData]);
 
-    const handleSaveToDB = () => {};
-
     return (
         <div className="space-y-10 animate-in fade-in max-w-5xl mx-auto py-4">
             
@@ -112,9 +110,7 @@ export default function PatientPersonalTab({
                         icon={User}
                         label="Nombre Completo" 
                         value={localData.legalName} 
-                        onChange={e => handleChange('legalName', e.target.value)} 
-                        onBlur={handleSaveToDB}
-                    />
+                        onChange={e => handleChange('legalName', e.target.value)}                     />
                     <div>
                         <InputField
                             icon={FileText}
@@ -125,7 +121,6 @@ export default function PatientPersonalTab({
                                 setRutError('');
                             }}
                             onBlur={e => {
-                                handleSaveToDB();
                                 const val = e.target.value.trim();
                                 if (!val) { setRutError(''); return; }
                                 if (!validateRUT(val)) {
@@ -144,16 +139,12 @@ export default function PatientPersonalTab({
                         label="Fecha de Nacimiento" 
                         type="date" 
                         value={localData.birthDate} 
-                        onChange={e => handleChange('birthDate', e.target.value)} 
-                        onBlur={handleSaveToDB}
-                    />
+                        onChange={e => handleChange('birthDate', e.target.value)}                     />
                     <InputField 
                         icon={Briefcase}
                         label="Ocupación" 
                         value={localData.occupation} 
-                        onChange={e => handleChange('occupation', e.target.value)} 
-                        onBlur={handleSaveToDB}
-                    />
+                        onChange={e => handleChange('occupation', e.target.value)}                     />
                 </div>
             </section>
 
@@ -167,9 +158,7 @@ export default function PatientPersonalTab({
                         icon={Mail} 
                         label="Correo Electrónico" 
                         value={localData.email} 
-                        onChange={e => handleChange('email', e.target.value)} 
-                        onBlur={handleSaveToDB}
-                    />
+                        onChange={e => handleChange('email', e.target.value)}                     />
                     <div className="flex items-end gap-3">
                         <div className="flex-1">
                             <InputField 
@@ -217,9 +206,7 @@ export default function PatientPersonalTab({
                         icon={MapPin} 
                         label="Dirección Completa" 
                         value={localData.address} 
-                        onChange={e => handleChange('address', e.target.value)} 
-                        onBlur={handleSaveToDB}
-                    />
+                        onChange={e => handleChange('address', e.target.value)}                     />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <InputField 
                             label="Ciudad" 
@@ -247,16 +234,12 @@ export default function PatientPersonalTab({
                         icon={HeartPulse}
                         label="Previsión Médica / Seguro" 
                         value={localData.convention} 
-                        onChange={e => handleChange('convention', e.target.value)} 
-                        onBlur={handleSaveToDB}
-                    />
+                        onChange={e => handleChange('convention', e.target.value)}                     />
                     <InputField 
                         icon={User}
                         label="Apoderado (En caso de menores)" 
                         value={localData.guardian} 
-                        onChange={e => handleChange('guardian', e.target.value)} 
-                        onBlur={handleSaveToDB}
-                    />
+                        onChange={e => handleChange('guardian', e.target.value)}                     />
                 </div>
             </section>
             
