@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { supabase } from './supabase';
 import { getLocalDate, formatRUT, THEMES, TEETH_UPPER, TEETH_LOWER, ANAMNESIS_TAGS } from './constants';
@@ -16,22 +16,23 @@ import { Card, Button, InputField } from './components/UIComponents';
 import { PatientSelect, AuthScreen, TermsScreen } from './components/SystemModals';
 import LandingPage from "./components/LandingPage";
 import DashboardView from './components/DashboardView';
-import MasterPanel from './components/MasterPanel';
-import FinanceCenter from './components/FinanceCenter';
-import CatalogView from './components/CatalogView';
-import InventoryView from './components/InventoryView';
-import LabView from './components/LabView';
-import SettingsView from './components/SettingsView';
-import QuoteView from './components/QuoteView';
-import AgendaView from './components/AgendaView';
-import PrescriptionView from './components/PrescriptionView';
-import CRMView from './components/CRMView';
 import Sidebar from './components/Sidebar';
-import PatientWorkspace from './components/PatientWorkspace';
-import PublicBooking from './components/PublicBooking'; 
-import SterilizationView from './components/SterilizationView'; 
+import PublicBooking from './components/PublicBooking';
 import NetworkMonitor from './components/NetworkMonitor';
-import LabDashboard from './components/LabDashboard'; 
+import LoadingScreen from './components/LoadingScreen';
+const MasterPanel      = lazy(() => import('./components/MasterPanel'));
+const FinanceCenter    = lazy(() => import('./components/FinanceCenter'));
+const CatalogView      = lazy(() => import('./components/CatalogView'));
+const InventoryView    = lazy(() => import('./components/InventoryView'));
+const LabView          = lazy(() => import('./components/LabView'));
+const SettingsView     = lazy(() => import('./components/SettingsView'));
+const QuoteView        = lazy(() => import('./components/QuoteView'));
+const AgendaView       = lazy(() => import('./components/AgendaView'));
+const PrescriptionView = lazy(() => import('./components/PrescriptionView'));
+const CRMView          = lazy(() => import('./components/CRMView'));
+const PatientWorkspace = lazy(() => import('./components/PatientWorkspace'));
+const SterilizationView = lazy(() => import('./components/SterilizationView'));
+const LabDashboard     = lazy(() => import('./components/LabDashboard'));
 
 // --- MODALS ---
 import ToothModal from './components/ToothModal';
@@ -767,13 +768,15 @@ const saveToOfflineVault = async (table, id, data) => {
           <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans">
               <Toaster position="bottom-center" />
               <main className="p-6 md:p-10 h-screen overflow-y-auto">
-                  <LabDashboard
-                      config={config}
-                      supabase={supabase}
-                      notify={notify}
-                      session={session}
-                      clinicOwner={clinicOwner}
-                  />
+                  <Suspense fallback={<LoadingScreen />}>
+                      <LabDashboard
+                          config={config}
+                          supabase={supabase}
+                          notify={notify}
+                          session={session}
+                          clinicOwner={clinicOwner}
+                      />
+                  </Suspense>
               </main>
           </div>
       );
@@ -806,7 +809,8 @@ const saveToOfflineVault = async (table, id, data) => {
             <span className="font-black text-lg tracking-tight">ShiningCloud <span className="text-[#A3968B]">Dental</span></span>
             <div className="w-8"></div>
         </div>
-        
+
+        <Suspense fallback={<LoadingScreen />}>
         {activeTab === 'master_panel' && (
             isMasterAdmin ? (
                 <MasterPanel supabase={supabase} notify={notify} />
@@ -935,6 +939,7 @@ const saveToOfflineVault = async (table, id, data) => {
                 config={config} 
             />
         )}
+        </Suspense>
       </main>
 
       {/* --- RENDERIZADO DEL RADAR OFFLINE --- */}

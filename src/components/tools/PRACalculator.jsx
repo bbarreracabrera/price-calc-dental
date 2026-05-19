@@ -16,7 +16,9 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
     const [bonelossPercent,setBonelossPercent]= useState(patientData?.boneloss     || 34);
     const [sistemico,      setSistemico]      = useState(patientData?.sistemico    || 1);
     const [tabaquismo,     setTabaquismo]     = useState(patientData?.tabaquismo   || 1);
-    const [dataColor,      setDataColor]      = useState('#5B6651');
+    const [dataColor,      setDataColor]      = useState(() => {
+        try { return localStorage.getItem('pra_chart_color') || '#5B6651'; } catch { return '#5B6651'; }
+    });
 
     const computed = useMemo(() => {
         const totalSites = numTeeth * sitesPerTooth;
@@ -82,7 +84,10 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                         {COLOR_OPTIONS.map(opt => (
                             <button
                                 key={opt.value}
-                                onClick={() => setDataColor(opt.value)}
+                                onClick={() => {
+                                    setDataColor(opt.value);
+                                    try { localStorage.setItem('pra_chart_color', opt.value); } catch (e) { console.warn('localStorage unavailable', e); }
+                                }}
                                 className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${
                                     dataColor === opt.value ? 'ring-2 ring-offset-2 ring-[#312923] scale-110' : ''
                                 }`}
@@ -323,7 +328,7 @@ function scoreBadgeColor(score) {
     return '#B92323';
 }
 
-function HexagonChart({ scores, dataColor }) {
+const HexagonChart = React.memo(function HexagonChart({ scores, dataColor }) {
     const CX = 175, CY = 170, RU = 36;
 
     const ZONE_FILLS   = ['rgba(91,102,81,0.10)', 'rgba(217,168,108,0.12)', 'rgba(184,124,80,0.14)', 'rgba(185,35,35,0.12)'];
@@ -401,4 +406,4 @@ function HexagonChart({ scores, dataColor }) {
             })}
         </svg>
     );
-}
+});
