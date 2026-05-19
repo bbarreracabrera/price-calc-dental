@@ -165,8 +165,7 @@ export default function PatientPersonalTab({
                                 icon={Phone} 
                                 label="Teléfono Móvil" 
                                 value={localData.phone} 
-                                onChange={e => handleChange('phone', e.target.value)} 
-                                onBlur={handleSaveToDB}
+                                onChange={e => handleChange('phone', e.target.value)}
                             />
                         </div>
                         {/* Botón WhatsApp Estilo Boutique con Variables */}
@@ -211,14 +210,12 @@ export default function PatientPersonalTab({
                         <InputField 
                             label="Ciudad" 
                             value={localData.city} 
-                            onChange={e => handleChange('city', e.target.value)} 
-                            onBlur={handleSaveToDB}
+                            onChange={e => handleChange('city', e.target.value)}
                         />
                         <InputField 
                             label="Comuna / Distrito" 
                             value={localData.commune} 
-                            onChange={e => handleChange('commune', e.target.value)} 
-                            onBlur={handleSaveToDB}
+                            onChange={e => handleChange('commune', e.target.value)}
                         />
                     </div>
                 </div>
