@@ -8,7 +8,8 @@ import {
   Calculator, User, Users, Settings, Library, History, Moon, Sun, TrendingUp, Cloud, 
   Stethoscope, CalendarClock, Menu, ArrowLeft, Mail, Upload, Image as ImageIcon, 
   Wallet, Activity, FileQuestion, FileSignature, Printer, LogOut, ArrowRight, Droplets, 
-  FileBarChart, MapPin, Phone, AlertTriangle, Shield, MessageCircle, FlaskConical, Box, X, Trash2
+  FileBarChart, MapPin, Phone, AlertTriangle, Shield, MessageCircle, FlaskConical, Box, X, Trash2,
+  Clock
 } from 'lucide-react';
 
 // --- COMPONENTS & VIEWS ---
@@ -68,6 +69,7 @@ export default function App() {
   // ==========================================
   const [session, setSession] = useState(null);
   const [isInRecovery, setIsInRecovery] = useState(() => window.location.hash.includes('type=recovery'));
+  const [linkError, setLinkError] = useState(null);
   const [runTour, setRunTour] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -173,6 +175,20 @@ export default function App() {
   };
 
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
+
+  useEffect(() => {
+      const hash = window.location.hash;
+      if (!hash.includes('error=access_denied')) return;
+      const params = new URLSearchParams(hash.slice(1));
+      const errorCode = params.get('error_code');
+      const errorDesc = params.get('error_description') || '';
+      setLinkError({
+          code: errorCode,
+          description: errorDesc.replaceAll('+', ' ') || 'Enlace inválido',
+          isExpired: errorDesc.includes('expired') || errorCode === 'otp_expired',
+      });
+      window.history.replaceState(null, '', window.location.pathname);
+  }, []);
   
   useEffect(() => {
       const params = new URLSearchParams(window.location.search);
@@ -748,6 +764,38 @@ const saveToOfflineVault = async (table, id, data) => {
 
   if (window.location.pathname === '/privacidad') {
     return <PrivacyPolicy />;
+  }
+
+  if (!session && linkError) {
+      return (
+          <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl border border-[#DFD2C4] max-w-md w-full p-8 text-center shadow-lg">
+                  <div className="w-16 h-16 rounded-2xl bg-[#D9A86C]/10 flex items-center justify-center mx-auto mb-4">
+                      <Clock size={28} className="text-[#D9A86C]" />
+                  </div>
+                  <h1 className="text-2xl font-black text-[#312923] mb-2">
+                      {linkError.isExpired ? 'Enlace expirado' : 'Enlace inválido'}
+                  </h1>
+                  <p className="text-sm text-[#9A8F84] mb-6 leading-relaxed">
+                      {linkError.isExpired
+                          ? 'Este enlace ya no es válido. Los enlaces de acceso expiran después de 1 hora por seguridad.'
+                          : 'No pudimos validar este enlace. Puede haber sido usado anteriormente o ser inválido.'}
+                  </p>
+                  <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-4 mb-6 text-left">
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#9A8F84] mb-2">¿Qué hacer?</p>
+                      <p className="text-sm text-[#312923] leading-relaxed">
+                          Si la clínica te invitó, pídele que te <strong>reenvíe la invitación</strong>. Recibirás un email nuevo en unos minutos.
+                      </p>
+                  </div>
+                  <button
+                      onClick={() => { setLinkError(null); window.location.reload(); }}
+                      className="w-full py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
+                  >
+                      Ir al inicio de sesión
+                  </button>
+              </div>
+          </div>
+      );
   }
 
   if (!session) {

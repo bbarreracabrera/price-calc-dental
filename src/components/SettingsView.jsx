@@ -58,9 +58,17 @@ export default function SettingsView({
 
     const handleAddLab = async () => {
         if (!newLab.name) return notify("El nombre del laboratorio es obligatorio");
-        
+
         const labId = Date.now().toString();
-        const updatedLabs = [...laboratories, { ...newLab, id: labId }];
+        const now = new Date().toISOString();
+        const labEntry = {
+            ...newLab,
+            id: labId,
+            invited_at: newLab.email ? now : null,
+            accepted_at: null,
+            last_invite_sent_at: newLab.email ? now : null,
+        };
+        const updatedLabs = [...laboratories, labEntry];
         
         // 1. Actualizamos el estado local
         const updatedConfig = { ...config, laboratories: updatedLabs };
@@ -110,6 +118,28 @@ export default function SettingsView({
     const handleConnectMP = () => {
         const authUrl = `https://auth.mercadopago.cl/authorization?client_id=${MP_CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(MP_REDIRECT_URI)}`;
         window.location.href = authUrl;
+    };
+
+    const handleResendInvite = async (lab) => {
+        try {
+            const { error } = await supabase.auth.signInWithOtp({
+                email: lab.email,
+                options: { emailRedirectTo: window.location.origin }
+            });
+            if (error) throw error;
+
+            const now = new Date().toISOString();
+            const updatedLabs = laboratories.map(l =>
+                l.id === lab.id ? { ...l, last_invite_sent_at: now } : l
+            );
+            const updatedConfig = { ...config, laboratories: updatedLabs };
+            setConfigLocal(updatedConfig);
+            await saveToSupabase('settings', 'general', updatedConfig);
+            await saveToSupabase('clinic_config', session?.user?.email || 'general', updatedConfig);
+            notify(`Invitación reenviada a ${lab.email}`);
+        } catch (e) {
+            notify('Error al reenviar invitación: ' + e.message);
+        }
     };
 
     // --- GUARDADO AUTOMÁTICO AL ELIMINAR LAB ---
@@ -399,21 +429,54 @@ export default function SettingsView({
                                 {laboratories.length === 0 ? (
                                     <p className="text-xs text-[#9A8F84] font-bold py-4 text-center border-2 border-dashed border-[#DFD2C4] rounded-2xl bg-[#FDFBF7]">Aún no has registrado laboratorios.</p>
                                 ) : (
-                                    laboratories.map(lab => (
-                                        <div key={lab.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-5 bg-white rounded-2xl border border-[#DFD2C4]/40 hover:border-[#5B6651] transition-all shadow-sm group">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-[#5B6651]/10 flex items-center justify-center text-[#5B6651]"><FlaskConical size={20}/></div>
-                                                <div>
-                                                    <p className="font-black text-[#312923]">{lab.name}</p>
-                                                    <div className="flex gap-3 mt-1">
-                                                        {lab.email && <span className="text-[10px] font-bold text-[#9A8F84]">{lab.email}</span>}
-                                                        {lab.phone && <span className="text-[10px] font-bold text-[#9A8F84]">{lab.phone}</span>}
+                                    laboratories.map(lab => {
+                                        const isPending = !lab.accepted_at;
+                                        const lastSent = lab.last_invite_sent_at ? new Date(lab.last_invite_sent_at) : null;
+                                        const minutesSinceLastSent = lastSent
+                                            ? Math.floor((Date.now() - lastSent.getTime()) / 60000)
+                                            : null;
+                                        const canResend = minutesSinceLastSent === null || minutesSinceLastSent >= 2;
+
+                                        return (
+                                            <div key={lab.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 bg-white rounded-2xl border border-[#DFD2C4]/40 hover:border-[#5B6651] transition-all shadow-sm">
+                                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                    <div className="w-10 h-10 rounded-xl bg-[#5B6651]/10 flex items-center justify-center text-[#5B6651] shrink-0"><FlaskConical size={20}/></div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                            <p className="font-black text-[#312923] truncate">{lab.name}</p>
+                                                            {lab.email && (isPending ? (
+                                                                <span className="text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full bg-[#D9A86C]/20 text-[#9A6E2C] shrink-0">Pendiente</span>
+                                                            ) : (
+                                                                <span className="text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full bg-[#5B6651]/20 text-[#5B6651] shrink-0">Activo</span>
+                                                            ))}
+                                                        </div>
+                                                        <div className="flex gap-3 flex-wrap">
+                                                            {lab.email && <span className="text-[10px] font-bold text-[#9A8F84] truncate">{lab.email}</span>}
+                                                            {lab.phone && <span className="text-[10px] font-bold text-[#9A8F84]">{lab.phone}</span>}
+                                                        </div>
+                                                        {lab.email && isPending && lab.invited_at && (
+                                                            <p className="text-[10px] text-[#9A8F84] mt-1">
+                                                                Invitado el {new Date(lab.invited_at).toLocaleDateString('es-CL')}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    {lab.email && isPending && (
+                                                        <button
+                                                            onClick={() => handleResendInvite(lab)}
+                                                            disabled={!canResend}
+                                                            title={canResend ? 'Reenviar invitación' : `Espera ${2 - (minutesSinceLastSent || 0)} min más`}
+                                                            className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-[#312923] text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                                                        >
+                                                            <Mail size={12}/> Reenviar
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleDeleteLab(lab.id)} className="p-2 text-[#DFD2C4] hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" title="Eliminar Laboratorio"><Trash2 size={18}/></button>
+                                                </div>
                                             </div>
-                                            <button onClick={() => handleDeleteLab(lab.id)} className="p-2 text-[#DFD2C4] hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" title="Eliminar Laboratorio"><Trash2 size={18}/></button>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </Card>
