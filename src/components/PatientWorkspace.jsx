@@ -141,7 +141,7 @@ export default function PatientWorkspace({
             {/* Desktop (md+): grupos + sub-tabs */}
             <div className="hidden md:block">
                 {/* Fila de grupos */}
-                <div className="flex gap-1">
+                <div className="flex gap-1 bg-[#FDFBF7] px-4 pt-4 rounded-t-2xl">
                     {TAB_GROUPS.map(group => {
                         const visibleTabs = group.tabs.filter(isTabVisible);
                         if (visibleTabs.length === 0) return null;
@@ -235,7 +235,7 @@ export default function PatientWorkspace({
             </div>
 
             {/* --- ÁREA DE RENDERIZADO DE PESTAÑAS --- */}
-            <div className="bg-white rounded-b-[2rem] rounded-tr-[2rem] p-6 sm:p-8 border border-[#DFD2C4]/40 shadow-sm" style={{ boxShadow: '0 10px 25px -5px rgba(91, 102, 81, 0.05)', marginTop: '-1px' }}>
+            <div className="bg-white rounded-b-[2rem] rounded-tl-[2rem] rounded-tr-[2rem] p-6 sm:p-8 border border-[#DFD2C4]/40 shadow-sm" style={{ boxShadow: '0 10px 25px -5px rgba(91, 102, 81, 0.05)', marginTop: '-1px' }}>
                 
                 {/* Asistente de Voz Global (Solo en Odontograma y Perio) */}
                 {(patientTab === 'clinical' || patientTab === 'perio') && (
