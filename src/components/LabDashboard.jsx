@@ -68,11 +68,18 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
         } catch (err) { console.error(err); }
     };
 
+    const formatDueDate = (dueDate) => {
+        if (!dueDate || typeof dueDate !== 'string') return 'Sin fecha';
+        if (!dueDate.includes('-')) return dueDate;
+        return dueDate.split('-').reverse().join('/');
+    };
+
     const columns = [
-        { id: 'recibido', title: 'Nuevos / Recibidos', icon: AlertCircle, color: 'border-amber-200 bg-amber-50', textColor: 'text-amber-600', nextStatus: 'cad_cam', btnText: 'A Diseño CAD' },
-        { id: 'cad_cam', title: 'Diseño & Fresado', icon: MonitorPlay, color: 'border-blue-200 bg-blue-50', textColor: 'text-blue-600', nextStatus: 'ceramica', btnText: 'A Cerámica' },
-        { id: 'ceramica', title: 'Cerámica / Terminado', icon: PaintBucket, color: 'border-purple-200 bg-purple-50', textColor: 'text-purple-600', nextStatus: 'listo', btnText: 'Aprobado' },
-        { id: 'listo', title: 'Control & Despacho', icon: CheckCircle2, color: 'border-emerald-200 bg-emerald-50', textColor: 'text-emerald-600', nextStatus: 'despachado', btnText: 'Despachado' }
+        { id: 'recibido',   title: 'Nuevos / Recibidos',    icon: AlertCircle,  color: 'border-amber-200 bg-amber-50',     textColor: 'text-amber-600',   nextStatus: 'cad_cam',    btnText: 'A Diseño CAD' },
+        { id: 'cad_cam',    title: 'Diseño & Fresado',       icon: MonitorPlay,  color: 'border-blue-200 bg-blue-50',       textColor: 'text-blue-600',    nextStatus: 'ceramica',   btnText: 'A Cerámica' },
+        { id: 'ceramica',   title: 'Cerámica / Terminado',   icon: PaintBucket,  color: 'border-purple-200 bg-purple-50',   textColor: 'text-purple-600',  nextStatus: 'listo',      btnText: 'Aprobado' },
+        { id: 'listo',      title: 'Control & Despacho',     icon: CheckCircle2, color: 'border-emerald-200 bg-emerald-50', textColor: 'text-emerald-600', nextStatus: 'despachado', btnText: 'Despachado' },
+        { id: 'despachado', title: 'Despachado',             icon: Truck,        color: 'border-[#CBAAA2]/30 bg-[#CBAAA2]/10', textColor: 'text-[#CBAAA2]', nextStatus: null,        btnText: null },
     ];
 
     return (
@@ -138,7 +145,7 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
                                                         ID: {job.id.substring(0,6)}
                                                     </span>
                                                     <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100 flex items-center gap-1">
-                                                        <Clock size={10}/> {job.dueDate.split('-').reverse().join('/')}
+                                                        <Clock size={10}/> {formatDueDate(job.dueDate)}
                                                     </span>
                                                 </div>
 
@@ -162,14 +169,16 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
                                                     <span className="flex items-center gap-1 text-[#9A8F84] shrink-0" title="Privacidad Activada"><UserCircle size={12}/> Ref: {job.patient.substring(0,3)}***</span>
                                                 </div>
 
-                                                <button 
-                                                    onClick={() => updateJobStatus(job.id, col.nextStatus)}
-                                                    className="w-full py-2.5 bg-[#FDFBF7] border border-[#DFD2C4] text-[#5B6651] hover:bg-[#5B6651] hover:text-white hover:border-[#5B6651] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    {col.id === 'listo' && <Truck size={14}/>}
-                                                    {col.btnText}
-                                                    {col.id !== 'listo' && <ArrowRight size={14}/>}
-                                                </button>
+                                                {col.nextStatus && (
+                                                    <button
+                                                        onClick={() => updateJobStatus(job.id, col.nextStatus)}
+                                                        className="w-full py-2.5 bg-[#FDFBF7] border border-[#DFD2C4] text-[#5B6651] hover:bg-[#5B6651] hover:text-white hover:border-[#5B6651] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        {col.id === 'listo' && <Truck size={14}/>}
+                                                        {col.btnText}
+                                                        {col.id !== 'listo' && <ArrowRight size={14}/>}
+                                                    </button>
+                                                )}
                                             </Card>
                                         ))
                                     )}

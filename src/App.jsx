@@ -226,6 +226,35 @@ export default function App() {
           .catch(() => setIsMasterAdmin(false));
   }, [session]);
 
+  // Marca el lab como aceptado la primera vez que inicia sesión
+  const markLabAsAccepted = async (labEmail) => {
+      try {
+          const { data: settingsRow } = await supabase
+              .from('settings')
+              .select('admin_email, data')
+              .filter('data->laboratories', 'cs', `[{"email":"${labEmail}"}]`)
+              .maybeSingle();
+          if (!settingsRow) return;
+          const labs = settingsRow.data?.laboratories || [];
+          const labIndex = labs.findIndex(l => l.email === labEmail);
+          if (labIndex === -1 || labs[labIndex].accepted_at) return;
+          labs[labIndex].accepted_at = new Date().toISOString();
+          await supabase
+              .from('settings')
+              .update({ data: { ...settingsRow.data, laboratories: labs } })
+              .eq('admin_email', settingsRow.admin_email);
+      } catch (e) {
+          console.error('Error marcando lab como aceptado:', e);
+      }
+  };
+
+  useEffect(() => {
+      if (!session || !userRole) return;
+      if (userRole === 'lab' && session.user?.email) {
+          markLabAsAccepted(session.user.email);
+      }
+  }, [session, userRole]);
+
   const {
       loadMorePatients, hasMorePatients, patientsLoading, totalPatients,
       isLoadingFinancials, hasOlderData, dateRange, setDateRange, loadFinancials,

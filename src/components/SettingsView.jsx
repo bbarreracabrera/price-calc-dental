@@ -56,6 +56,33 @@ export default function SettingsView({
     // --- GUARDADO AUTOMÁTICO AL AÑADIR LAB ---
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim().toLowerCase());
 
+    const sendLabInvitation = async (lab) => {
+        const clinicName = config?.name || 'la clínica';
+
+        // PASO 1: Supabase envía magic link nativo (siempre, como base)
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+            email: lab.email,
+            options: { emailRedirectTo: window.location.origin }
+        });
+        if (otpError) throw otpError;
+
+        // PASO 2: Intentar email HTML personalizado via Edge Function (si Resend está configurado)
+        try {
+            const { data, error } = await supabase.functions.invoke('invite-lab', {
+                body: {
+                    lab_email: lab.email,
+                    lab_name: lab.name,
+                    clinic_name: clinicName,
+                    magic_link: window.location.origin,
+                }
+            });
+            if (error || data?.fallback) return { method: 'supabase_default' };
+            return { method: 'resend_custom' };
+        } catch {
+            return { method: 'supabase_default' };
+        }
+    };
+
     const handleAddLab = async () => {
         if (!newLab.name) return notify("El nombre del laboratorio es obligatorio");
 
@@ -93,11 +120,11 @@ export default function SettingsView({
             setTeam([...team, u]);
             await saveToSupabase('team', labId, u);
 
-            const { error } = await supabase.auth.signInWithOtp({ email: u.email, options: { emailRedirectTo: window.location.origin } });
-            if(error) { 
-                notify("Laboratorio guardado, pero falló el envío de invitación: " + error.message); 
-            } else { 
+            try {
+                await sendLabInvitation({ email: u.email, name: newLab.name });
                 notify("Laboratorio guardado e invitación enviada.");
+            } catch (e) {
+                notify("Laboratorio guardado, pero falló el envío de invitación: " + e.message);
             }
         } else {
             notify("Laboratorio agregado exitosamente.");
@@ -122,11 +149,7 @@ export default function SettingsView({
 
     const handleResendInvite = async (lab) => {
         try {
-            const { error } = await supabase.auth.signInWithOtp({
-                email: lab.email,
-                options: { emailRedirectTo: window.location.origin }
-            });
-            if (error) throw error;
+            await sendLabInvitation(lab);
 
             const now = new Date().toISOString();
             const updatedLabs = laboratories.map(l =>
