@@ -192,6 +192,90 @@ Features que diferencian la versión paga. No son fixes, son nuevos productos.
 
 ---
 
+## 🧪 SPRINT LAB — Producto híbrido (vista gratis + Pro suscripción)
+
+Modelo de negocio:
+- Lab Socio (GRATIS): trabajos de clínicas ShiningCloud
+- Lab Pro ($12.990 CLP/mes): + trabajos externos + facturación SII + stock
+
+### Etapa 1 — LabDashboard Tier Gratis funcional
+- [ ] Migración de lab_works → lab_jobs con campo `source`
+- [ ] Tab "Mi Arancel" — CRUD del catálogo de servicios del lab
+- [ ] Tab "Mis Clínicas Socias" — stats por clínica SaaS conectada
+- [ ] Detalle expandido de trabajo (modal) con datos completos
+- [ ] Chat lab-clínica por trabajo (mensajes + archivos)
+- [ ] Stats reales en header del Kanban (recibidos hoy, en curso, vence)
+- [ ] Cuando clínica asigna trabajo, se autocompleta precio desde arancel
+
+### Etapa 2 — Lab Pro (suscripción)
+- [ ] Sistema de suscripción Lab con MercadoPago
+- [ ] Tab "Trabajos externos" — crear trabajos manualmente
+- [ ] Tab "Facturación" — boletas SII para el lab
+- [ ] Onboarding del lab que se autoinvita (sin clínica conectada)
+
+### Etapa 3 — Premium (futuro)
+- [ ] Materiales y stock con trazabilidad de lotes
+- [ ] Análisis avanzado (revenue mensual, top servicios, clínica top)
+- [ ] Multi-técnico interno
+
+---
+
+## 🌐 LANDING /laboratorios (cuando LabDashboard Etapa 1 esté listo)
+
+- [ ] Crear /laboratorios.jsx con landing específica
+- [ ] Hero: "Tu laboratorio, en una sola pantalla"
+- [ ] Sección 2 modalidades: Socio gratis vs Pro $12.990
+- [ ] Sección features detallada
+- [ ] FAQ específico para labs
+- [ ] CTA "Empezar gratis" (lleva a register con role=lab)
+- [ ] Navbar: agregar tab "Laboratorios" en landing principal
+- [ ] SEO meta tags para keywords lab dental chile
+
+---
+
+## 🏆 CERTIFICACIONES — Etapa de credibilidad (cuando tengas 5+ clientes)
+
+### Sello CENS (Universidad de Chile) — PRIORIDAD
+Certificación específica para software de salud en Chile.
+
+- [ ] Documentar políticas de privacidad y términos
+- [ ] Documentar políticas de seguridad de información
+- [ ] Documentar proceso de manejo de incidentes
+- [ ] Documentar plan de continuidad operacional
+- [ ] Documentar cumplimiento Ley 19.628, 19.799, 20.584
+- [ ] Auditoría con CENS (proceso 3-6 meses, ~$500k-2M CLP)
+- [ ] Mostrar sello en landing y dashboard
+
+Lo que YA tenemos para CENS (gracias a Sprints 1-5):
+✓ Cifrado AES-GCM con salt aleatorio
+✓ Soft-delete + retención 15 años (Ley 20.584)
+✓ RLS server-side con verificación de roles
+✓ Audit logs de todas las acciones
+✓ Hash SHA-256 de documentos
+✓ Consentimiento Ley 19.628 con metadata
+✓ Magic bytes en uploads
+✓ CSP sin unsafe-eval
+✓ Validación RUT módulo 11
+✓ Firma digital Ley 19.799
+
+### ISO/IEC 27001 — Etapa internacional
+Para venta a redes grandes, ISAPRES, contratos B2B.
+
+- [ ] Política de Sistema de Gestión de Seguridad de Información (SGSI)
+- [ ] Análisis de riesgos formal
+- [ ] Plan de tratamiento de riesgos
+- [ ] Métricas de SGSI
+- [ ] Auditoría interna
+- [ ] Auditoría con empresa certificadora (6-12 meses, $5-15M CLP)
+- [ ] Mostrar sello en landing
+
+### HIPAA-aligned (si vas a expandir a EEUU/internacional)
+- [ ] BAA (Business Associate Agreement) templates
+- [ ] Audit trail inmutable
+- [ ] Encryption at rest verificado
+
+---
+
 ## 📊 Métricas de éxito a monitorear
 
 Cuando empieces a tener usuarios, trackear:
@@ -229,4 +313,4 @@ Cuando empieces a tener usuarios, trackear:
 
 *Última actualización: 19 de mayo de 2026*
 *Producto: ShiningCloud Dental v1.0*
-*Estado: Producción · Vendible legalmente · 24 mejoras pendientes (0 críticas)*
+*Estado: Producción · Vendible legalmente · 24 mejoras técnicas + roadmap Lab + Certificaciones*

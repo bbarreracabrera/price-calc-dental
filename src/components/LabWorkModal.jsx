@@ -57,28 +57,36 @@ export default function LabWorkModal({
 
     const handleSave = async () => {
         if(newLabWork.patientId && newLabWork.workType && newLabWork.expectedDate){
-            const labId = newLabWork.id || `lab_${Date.now()}`;
+            const labId = newLabWork.id || `lab_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
             let nuevosRegistrosFinancieros = [...financialRecords];
             const autor = session?.user?.email || 'Desconocido';
             
             const selectedLab = laboratories.find(l => l.name === newLabWork.labName);
             const emailDelLaboratorio = selectedLab ? selectedLab.email : null;
-            
-            // 1. Preparamos el objeto JSON de datos para el Laboratorio
-            const fullLabData = { 
-                ...newLabWork, 
-                id: labId, 
-                admin_email: clinicOwner,
-                created_by: autor,
-                file_url: fileUrl,    
-                file_name: fileName,
+
+            // Schema híbrido: columnas críticas top-level + resto en data JSONB
+            const fullLabData = {
+                id: labId,
                 lab_email: emailDelLaboratorio,
-                // Inyectamos los nuevos detalles en la estructura de datos
-                shade: shade,
-                notes: notes,
-                status: 'recibido'
+                admin_email: clinicOwner,
+                status: 'recibido',
+                data: {
+                    patientId: newLabWork.patientId,
+                    patientName: newLabWork.patientName,
+                    workType: newLabWork.workType,
+                    tooth: newLabWork.tooth,
+                    labName: newLabWork.labName,
+                    sendDate: newLabWork.sendDate,
+                    expectedDate: newLabWork.expectedDate,
+                    file_url: fileUrl,
+                    file_name: fileName,
+                    created_by: autor,
+                    shade,
+                    notes,
+                    status: 'recibido',
+                },
             };
-            
+
             // Guardamos en la tabla lab_works
             const { error: labError } = await supabase.from('lab_works').insert([fullLabData]);
             if (labError) { notify("Error al guardar en la nube. Intenta de nuevo."); return; }
@@ -117,7 +125,9 @@ export default function LabWorkModal({
             }
 
             setFinancialRecords(nuevosRegistrosFinancieros);
-            setLabWorks([...labWorks, fullLabData]);
+            // Merge para que LabView pueda leer campos desde top-level
+            const mergedJob = { ...fullLabData, ...(fullLabData.data || {}), id: fullLabData.id, lab_email: fullLabData.lab_email, admin_email: fullLabData.admin_email, status: fullLabData.status };
+            setLabWorks([...labWorks, mergedJob]);
             setModal(null);
             notify("Orden y finanzas procesadas.");
             

@@ -163,7 +163,15 @@ export function useClinicData({
 
             const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
             if (!mounted) return;
-            if (labData) setLabWorks(labData);
+            if (labData) setLabWorks(labData.map(job => ({
+                ...job,
+                ...(job.data || {}),
+                id: job.id,
+                lab_email: job.lab_email,
+                admin_email: job.admin_email,
+                status: job.status,
+                deleted_at: job.deleted_at,
+            })));
 
             // Financials: carga inicial con rango por defecto (90 días)
             await loadFinancials(dateRange.start, dateRange.end);

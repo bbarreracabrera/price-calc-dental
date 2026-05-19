@@ -28,6 +28,28 @@ export default function SettingsView({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [colorPickerOpenFor]);
 
+    useEffect(() => {
+        const labs = config.laboratories;
+        if (!labs || labs.length === 0) return;
+        const needsBackfill = labs.some(l => !l.invited_at || l.accepted_at === undefined);
+        if (!needsBackfill) return;
+        if (window.__labsBackfillDone) return;
+        window.__labsBackfillDone = true;
+
+        const fallback = new Date('2026-01-01').toISOString();
+        const backfilled = labs.map(l => ({
+            ...l,
+            invited_at: l.invited_at || fallback,
+            accepted_at: l.accepted_at !== undefined ? l.accepted_at : fallback,
+            last_invite_sent_at: l.last_invite_sent_at || fallback,
+        }));
+
+        const updatedConfig = { ...config, laboratories: backfilled };
+        setConfigLocal(updatedConfig);
+        saveToSupabase('settings', 'general', updatedConfig);
+        saveToSupabase('clinic_config', session?.user?.email || 'general', updatedConfig);
+    }, [config.laboratories]);
+
     const updateMemberColor = async (memberId, newColor) => {
         const updated = team.map(m => m.id === memberId ? { ...m, color: newColor } : m);
         setTeam(updated);
@@ -89,11 +111,13 @@ export default function SettingsView({
         const labId = Date.now().toString();
         const now = new Date().toISOString();
         const labEntry = {
-            ...newLab,
             id: labId,
-            invited_at: newLab.email ? now : null,
+            name: newLab.name.trim(),
+            email: (newLab.email || '').trim().toLowerCase(),
+            phone: (newLab.phone || '').trim(),
+            invited_at: now,
             accepted_at: null,
-            last_invite_sent_at: newLab.email ? now : null,
+            last_invite_sent_at: now,
         };
         const updatedLabs = [...laboratories, labEntry];
         
