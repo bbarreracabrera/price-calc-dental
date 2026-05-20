@@ -1,19 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FlaskConical, Clock, CheckCircle2, Truck, AlertCircle, Building2, MonitorPlay, Droplets, PaintBucket, ArrowRight, UserCircle, Users, Lock, DollarSign } from 'lucide-react';
 import { Card } from './UIComponents';
 import { useLabData } from '../hooks/useLabData';
+import MyPricingTab from './lab/MyPricingTab';
+import MyClinicsTab from './lab/MyClinicsTab';
+import JobDetailModal from './lab/JobDetailModal';
 
 export default function LabDashboard({ config, supabase, notify, session, clinicOwner }) {
     const [activeTab, setActiveTab] = useState('kanban');
-    const { jobs, isLoading, refreshJobs } = useLabData(session);
+    const [detailJob, setDetailJob] = useState(null);
 
-    const today = new Date();
-    const formattedDate = today.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const { jobs, pricing, isLoading, refreshJobs, refreshPricing } = useLabData(session);
 
     const normalizeStatus = (status) => {
         const valid = ['recibido', 'cad_cam', 'ceramica', 'listo', 'despachado'];
         return valid.includes(status) ? status : 'recibido';
     };
+
+    const kanbanStats = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().slice(0, 10);
+        const weekFromNow = new Date(today);
+        weekFromNow.setDate(weekFromNow.getDate() + 7);
+
+        let receivedToday = 0;
+        let inProgress = 0;
+        let dueThisWeek = 0;
+
+        jobs.forEach(job => {
+            if (job.created_at?.slice(0, 10) === todayStr) receivedToday++;
+            if (job.status !== 'despachado') inProgress++;
+            if (job.expectedDate) {
+                const exp = new Date(job.expectedDate);
+                if (exp >= today && exp <= weekFromNow && job.status !== 'despachado') dueThisWeek++;
+            }
+        });
+
+        return { receivedToday, inProgress, dueThisWeek };
+    }, [jobs]);
 
     const updateJobStatus = async (jobId, newStatus) => {
         const job = jobs.find(j => j.id === jobId);
@@ -53,27 +78,31 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
     return (
         <div className="space-y-6 animate-in fade-in h-full flex flex-col pb-10">
 
-            {/* ENCABEZADO Y NAVEGACIÓN */}
+            {/* ENCABEZADO */}
             <div className="bg-white border border-[#DFD2C4]/50 rounded-[2rem] p-6 shadow-sm shrink-0">
-                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
-                    <div>
+                <div className="flex flex-col lg:flex-row justify-between lg:items-start gap-6">
+                    <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                             <FlaskConical size={14} className="text-blue-500"/>
                             <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">Lab Partner Portal</p>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-black text-[#312923] tracking-tighter">Panel Técnico</h1>
+                        <h1 className="text-3xl md:text-4xl font-black text-[#312923] tracking-tighter mb-4">Panel Técnico</h1>
+
+                        {/* Stats del kanban */}
+                        {!isLoading && (
+                            <div className="grid grid-cols-3 gap-3">
+                                <StatCard label="Recibidos hoy"      value={kanbanStats.receivedToday} color="#5B6651" />
+                                <StatCard label="En curso"           value={kanbanStats.inProgress}    color="#312923" />
+                                <StatCard label="Vencen esta semana" value={kanbanStats.dueThisWeek}   color="#D9A86C" />
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex gap-2 bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/50 w-fit overflow-x-auto">
-                        <button onClick={() => setActiveTab('kanban')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'kanban' ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-[#9A8F84] hover:text-[#312923]'}`}>
-                            <AlertCircle size={14}/> Trabajos
-                        </button>
-                        <button onClick={() => setActiveTab('arancel')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'arancel' ? 'bg-white text-emerald-600 shadow-sm border border-emerald-100' : 'text-[#9A8F84] hover:text-[#312923]'}`}>
-                            <DollarSign size={14}/> Mi Arancel
-                        </button>
-                        <button onClick={() => setActiveTab('clinicas')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'clinicas' ? 'bg-white text-purple-600 shadow-sm border border-purple-100' : 'text-[#9A8F84] hover:text-[#312923]'}`}>
-                            <Users size={14}/> Mis Clínicas
-                        </button>
+                    {/* Tabs */}
+                    <div className="flex gap-2 bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/50 w-fit overflow-x-auto shrink-0">
+                        <TabBtn active={activeTab === 'kanban'}   onClick={() => setActiveTab('kanban')}   icon={<AlertCircle size={14}/>}  label="Trabajos"    activeColor="text-blue-600 border-blue-100" />
+                        <TabBtn active={activeTab === 'arancel'}  onClick={() => setActiveTab('arancel')}  icon={<DollarSign size={14}/>}   label="Mi Arancel"  activeColor="text-emerald-600 border-emerald-100" />
+                        <TabBtn active={activeTab === 'clinicas'} onClick={() => setActiveTab('clinicas')} icon={<Users size={14}/>}        label="Mis Clínicas" activeColor="text-purple-600 border-purple-100" />
                     </div>
                 </div>
             </div>
@@ -104,8 +133,11 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
                                             Vacío
                                         </div>
                                     ) : columnJobs.map(job => (
-                                        <Card key={job.id} className="p-4 bg-white border border-[#DFD2C4] shadow-sm hover:shadow-md hover:border-[#5B6651] transition-all group">
-
+                                        <Card
+                                            key={job.id}
+                                            onClick={() => setDetailJob(job)}
+                                            className="p-4 bg-white border border-[#DFD2C4] shadow-sm hover:shadow-md hover:border-[#5B6651] transition-all group cursor-pointer"
+                                        >
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] px-2 py-0.5 rounded-md border border-[#DFD2C4]/50">
                                                     ID: {job.id.substring(0, 6)}
@@ -123,7 +155,7 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
                                             </div>
 
                                             {job.notes && (
-                                                <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded-lg text-xs font-medium text-stone-600 italic">
+                                                <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded-lg text-xs font-medium text-stone-600 italic line-clamp-2">
                                                     "{job.notes}"
                                                 </div>
                                             )}
@@ -135,7 +167,7 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
 
                                             {col.nextStatus && (
                                                 <button
-                                                    onClick={() => updateJobStatus(job.id, col.nextStatus)}
+                                                    onClick={e => { e.stopPropagation(); updateJobStatus(job.id, col.nextStatus); }}
                                                     className="w-full py-2.5 bg-[#FDFBF7] border border-[#DFD2C4] text-[#5B6651] hover:bg-[#5B6651] hover:text-white hover:border-[#5B6651] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                                                 >
                                                     {col.id === 'listo' && <Truck size={14}/>}
@@ -154,51 +186,54 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
 
             {/* MI ARANCEL */}
             {activeTab === 'arancel' && (
-                <div className="flex-1 bg-white border border-[#DFD2C4]/50 rounded-[2rem] flex flex-col items-center justify-center p-10 text-center shadow-sm">
-                    <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-6">
-                        <DollarSign size={40}/>
-                    </div>
-                    <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-3">Tu Arancel Digital</h2>
-                    <p className="text-[#6B615A] font-medium max-w-md mx-auto mb-8">
-                        Próximamente podrás cargar tu lista de precios de laboratorio. Las clínicas asociadas verán estos valores automáticamente al generar una orden de trabajo.
-                    </p>
-                    <button className="px-8 py-3 bg-[#DFD2C4]/30 text-[#9A8F84] font-black text-[11px] uppercase tracking-widest rounded-xl cursor-not-allowed border border-[#DFD2C4]">
-                        Módulo en Desarrollo
-                    </button>
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <MyPricingTab
+                        pricing={pricing}
+                        refreshPricing={refreshPricing}
+                        notify={notify}
+                        session={session}
+                    />
                 </div>
             )}
 
             {/* MIS CLÍNICAS */}
             {activeTab === 'clinicas' && (
-                <div className="flex-1 bg-white border border-[#DFD2C4]/50 rounded-[2rem] flex flex-col items-center justify-center p-10 text-center shadow-sm relative overflow-hidden">
-                    <div className="absolute -top-32 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]"></div>
-
-                    <div className="relative z-10 w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 mb-6 border border-purple-100">
-                        <Users size={40}/>
-                    </div>
-                    <h2 className="relative z-10 text-3xl font-black text-[#312923] tracking-tighter mb-3">Gestión de Clientes</h2>
-                    <p className="relative z-10 text-[#6B615A] font-medium max-w-lg mx-auto mb-8">
-                        Actualmente gestionas las órdenes de las clínicas que te invitaron a ShiningCloud de forma gratuita. ¿Quieres centralizar a <strong className="text-purple-600">todos tus clientes</strong> aunque no usen la plataforma?
-                    </p>
-
-                    <div className="relative z-10 bg-gradient-to-br from-[#312923] to-[#1a1512] p-8 rounded-3xl text-white max-w-md w-full shadow-2xl border border-stone-700">
-                        <div className="absolute -top-4 -right-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-lg flex items-center gap-1">
-                            <Lock size={12}/> Plan Pro Lab
-                        </div>
-                        <h3 className="text-xl font-black mb-4 flex items-center justify-center gap-2">
-                            ShiningCloud <span className="text-[#CBAAA2]">Lab Pro</span>
-                        </h3>
-                        <ul className="text-sm font-medium text-stone-300 space-y-3 mb-8 text-left">
-                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-400"/> Agrega clínicas manualmente.</li>
-                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-400"/> Crea órdenes de trabajo externas.</li>
-                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-400"/> Estadísticas de ingresos por clínica.</li>
-                        </ul>
-                        <button className="w-full py-3.5 bg-white text-[#312923] hover:bg-[#FDFBF7] rounded-xl font-black text-[11px] uppercase tracking-widest transition-all">
-                            Mejorar mi Plan
-                        </button>
-                    </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <MyClinicsTab jobs={jobs} />
                 </div>
             )}
+
+            {/* MODAL DETALLE */}
+            {detailJob && (
+                <JobDetailModal
+                    job={detailJob}
+                    onClose={() => setDetailJob(null)}
+                    onUpdateStatus={(id, status) => {
+                        updateJobStatus(id, status);
+                        setDetailJob(null);
+                    }}
+                />
+            )}
         </div>
+    );
+}
+
+function StatCard({ label, value, color }) {
+    return (
+        <div className="bg-[#FDFBF7] border border-[#DFD2C4]/50 rounded-2xl p-3">
+            <p className="text-[9px] uppercase tracking-widest text-[#9A8F84] font-black mb-1">{label}</p>
+            <p className="text-2xl font-black" style={{ color }}>{value}</p>
+        </div>
+    );
+}
+
+function TabBtn({ active, onClick, icon, label, activeColor }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${active ? `bg-white shadow-sm border ${activeColor}` : 'text-[#9A8F84] hover:text-[#312923]'}`}
+        >
+            {icon} {label}
+        </button>
     );
 }

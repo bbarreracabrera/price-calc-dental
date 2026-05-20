@@ -206,6 +206,14 @@ Modelo de negocio:
 - [ ] Chat lab-clínica por trabajo (mensajes + archivos)
 - [ ] Stats reales en header del Kanban (recibidos hoy, en curso, vence)
 - [ ] Cuando clínica asigna trabajo, se autocompleta precio desde arancel
+- [ ] **Sistema de archivos adjuntos por trabajo de lab**
+  - Múltiples archivos por orden (no solo uno como hoy)
+  - Bucket Supabase Storage 'lab-work-files' con RLS
+  - Tipos soportados: STL, PDF, JPG, PNG (validación magic bytes)
+  - Lado clínica: subir desde LabWorkModal
+  - Lado lab: previsualizar en JobDetailModal con thumbnails
+  - Botón descargar por archivo
+  - Soft-delete con `deleted_at`
 
 ### Etapa 2 — Lab Pro (suscripción)
 - [ ] Sistema de suscripción Lab con MercadoPago
