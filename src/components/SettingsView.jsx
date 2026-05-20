@@ -40,7 +40,19 @@ export default function SettingsView({
         const backfilled = labs.map(l => ({
             ...l,
             invited_at: l.invited_at || fallback,
-            accepted_at: l.accepted_at !== undefined ? l.accepted_at : fallback,
+            accepted_at: (() => {
+                // Si el campo existe (incluso null), respetarlo
+                if (l.accepted_at !== undefined) return l.accepted_at;
+                // Campo ausente: si tiene referencia reciente (< 30 días), asumir pendiente
+                const invitedAt  = l.invited_at          ? new Date(l.invited_at)          : null;
+                const lastSent   = l.last_invite_sent_at ? new Date(l.last_invite_sent_at) : null;
+                const reference  = invitedAt || lastSent;
+                if (reference) {
+                    const daysSince = (Date.now() - reference.getTime()) / (1000 * 60 * 60 * 24);
+                    if (daysSince < 30) return null; // pendiente
+                }
+                return fallback; // sin referencia o muy antiguo → asumir activo
+            })(),
             last_invite_sent_at: l.last_invite_sent_at || fallback,
         }));
 
