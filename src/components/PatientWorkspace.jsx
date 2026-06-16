@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import {
     ArrowLeft, AlertTriangle, User, FileQuestion, Activity,
     FileBarChart, FileText, FileSignature, ImageIcon,
@@ -58,7 +59,17 @@ export default function PatientWorkspace({
             label: 'Cotización Rápida',
             icon: Calculator,
             color: 'bg-[#CBAAA2]/20 text-[#8B5E57] hover:bg-[#CBAAA2]/40 border border-[#CBAAA2]/30',
-            action: () => setPatientTab('quotes')
+            action: () => {
+                // Precarga el paciente en el cotizador global y navega a él
+                if (setSessionData) {
+                    setSessionData(prev => ({
+                        ...prev,
+                        patientId: selectedPatientId,
+                        patientName: p.personal?.legalName || 'Paciente'
+                    }));
+                }
+                setActiveTab('quote');
+            }
         },
         {
             id: 'whatsapp',
@@ -231,27 +242,43 @@ export default function PatientWorkspace({
                         );
                     })}
 
-                    {/* Atajo de Voz */}
-                    <div className={`mt-2 p-3.5 rounded-3xl border transition-all ${isListening ? 'bg-red-50 border-red-200' : 'bg-[#FDFBF7] border-[#DFD2C4]/50'}`}>
-                        <div className="flex items-center gap-2.5 mb-2">
-                            <div className={`p-1.5 rounded-xl ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5B6651]/10 text-[#5B6651]'}`}>
-                                <Mic size={12} />
-                            </div>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#312923]">Asistente IA</span>
-                        </div>
-                        <p className="text-[9px] font-bold text-[#9A8F84] leading-relaxed mb-2.5">
-                            {isListening ? 'Escuchando comandos...' : 'Registra datos con tu voz.'}
-                        </p>
+                    {/* Atajo de Voz - Destacado */}
+                    <div className={`mt-2 rounded-3xl border-2 transition-all overflow-hidden ${
+                        isListening
+                            ? 'border-red-400 bg-red-50 shadow-lg shadow-red-100'
+                            : 'border-[#5B6651]/30 bg-gradient-to-br from-[#5B6651]/5 to-[#5B6651]/10'
+                    }`}>
                         <button
                             onClick={toggleVoice}
-                            className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                                isListening
-                                    ? 'bg-red-500 text-white'
-                                    : 'bg-white border border-[#DFD2C4] text-[#312923] hover:bg-[#5B6651] hover:text-white hover:border-[#5B6651]'
+                            className={`w-full p-4 flex flex-col items-center gap-2 transition-all group ${
+                                isListening ? 'cursor-pointer' : 'hover:bg-[#5B6651]/5'
                             }`}
                         >
-                            {isListening ? 'DETENER' : 'ACTIVAR VOZ'}
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${
+                                isListening
+                                    ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-300'
+                                    : 'bg-[#5B6651] text-white group-hover:scale-110 shadow-md shadow-[#5B6651]/30'
+                            }`}>
+                                <Mic size={18} />
+                            </div>
+                            <div className="text-center">
+                                <p className={`text-[10px] font-black uppercase tracking-widest ${
+                                    isListening ? 'text-red-600' : 'text-[#312923]'
+                                }`}>
+                                    {isListening ? '● Escuchando...' : 'Asistente de Voz'}
+                                </p>
+                                <p className="text-[9px] font-bold text-[#9A8F84] mt-0.5">
+                                    {isListening ? 'Toca para detener' : 'Toca para activar'}
+                                </p>
+                            </div>
                         </button>
+                        {voiceStatus && (
+                            <div className="px-3 pb-3">
+                                <p className="text-[9px] font-black text-[#5B6651] bg-white rounded-xl px-3 py-2 text-center border border-[#5B6651]/20 truncate">
+                                    {voiceStatus}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -269,7 +296,20 @@ export default function PatientWorkspace({
                     {/* RENDERIZADO DINÁMICO */}
                     <div className="animate-in fade-in duration-200">
                         {patientTab === 'personal'  && <PatientPersonalTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} />}
-                        {patientTab === 'anamnesis' && <PatientAnamnesisTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} />}
+                        {patientTab === 'anamnesis' && (
+                            <PatientAnamnesisTab
+                                p={p}
+                                getPatient={getPatient}
+                                selectedPatientId={selectedPatientId}
+                                savePatientData={savePatientData}
+                                notify={notify}
+                                session={session}
+                                activeFormType={activeFormType}
+                                setActiveFormType={setActiveFormType}
+                                viewingForm={viewingForm}
+                                setViewingForm={setViewingForm}
+                            />
+                        )}
                         {patientTab === 'clinical'  && (
                             <OdontogramTab
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
