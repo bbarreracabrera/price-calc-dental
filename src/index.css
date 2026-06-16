@@ -13,24 +13,21 @@
 
 html {
   background-color: #FDFBF7 !important;
-  min-height: 100%;
+  height: 100%;
 }
 
 body {
   background-color: #FDFBF7 !important;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 /* 
-  Clase para aplicar zoom solo al panel de la aplicación logueada 
-  sin afectar a la Landing Page.
+  En lugar de zoom, usamos una escala de fuente base menor 
+  para lograr la densidad visual sin romper el layout.
 */
 .app-zoom-container {
-  zoom: 0.9;
-  -moz-transform: scale(0.9);
-  -moz-transform-origin: 0 0;
-  width: 111.11%;
-  height: 111.11%;
+  font-size: 0.875rem; /* Equivalente a ~14px */
 }
 
 /* Ajustes de espaciado para compensar la reducción */
