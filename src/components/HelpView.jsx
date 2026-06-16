@@ -1,75 +1,121 @@
 import React from 'react';
 import { 
     BookOpen, Calculator, Wallet, Users, FileSpreadsheet, 
-    CheckCircle2, ArrowRight, MessageCircle, Info
+    CheckCircle2, ArrowRight, MessageCircle, Info, Mic, 
+    ShieldCheck, FlaskConical, Stethoscope, Mail
 } from 'lucide-react';
 import { Card } from './UIComponents';
 
 export default function HelpView() {
-    const tutorials = [
+    const contactWhatsApp = "56932745439";
+    const contactEmail = "b.barreracabrera.dent@gmail.com";
+
+    const handleWhatsApp = () => {
+        const msg = encodeURIComponent("Hola, necesito ayuda con ShiningCloud Dental.");
+        window.open(`https://wa.me/${contactWhatsApp}?text=${msg}`, '_blank');
+    };
+
+    const handleEmail = () => {
+        window.location.href = `mailto:${contactEmail}?subject=Soporte ShiningCloud Dental`;
+    };
+
+    const features = [
         {
-            title: "Análisis Financiero Avanzado",
-            icon: Calculator,
+            title: "Odontograma por Voz",
+            icon: Mic,
+            color: "text-red-600",
+            bg: "bg-red-50",
+            content: [
+                "Dicta hallazgos sin soltar tus instrumentos.",
+                "Usa comandos como 'Pieza 16 caries oclusal'.",
+                "Ahorra hasta 10 minutos por cada diagnóstico."
+            ]
+        },
+        {
+            title: "Importación Inteligente",
+            icon: FileSpreadsheet,
             color: "text-emerald-600",
             bg: "bg-emerald-50",
             content: [
-                "Entiende qué tratamientos son los más rentables para tu clínica.",
-                "Visualiza el 'Ticket Promedio' por especialidad.",
-                "Toma decisiones basadas en datos reales de tu recaudación."
+                "Sube tu Excel de Dentalink o Reservo directamente.",
+                "Mapeo automático de nombres, RUT y contactos.",
+                "Migra toda tu clínica en menos de 1 minuto."
             ]
         },
         {
-            title: "Gestión de Honorarios",
-            icon: Users,
-            color: "text-indigo-600",
-            bg: "bg-indigo-50",
+            title: "Análisis Financiero",
+            icon: Calculator,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
             content: [
-                "Cálculo automático de comisiones para tus colegas.",
-                "Diferencia entre producción real y pagos realizados.",
-                "Evita errores manuales en el pago de sueldos."
+                "Calcula la rentabilidad real de cada tratamiento.",
+                "Gestión automática de comisiones para doctores.",
+                "Exporta reportes listos para tu contador."
             ]
         },
         {
-            title: "Categorización de Gastos",
-            icon: Wallet,
+            title: "Retención CRM",
+            icon: Users,
             color: "text-amber-600",
             bg: "bg-amber-50",
             content: [
-                "Clasifica tus egresos en Insumos, Laboratorio, Sueldos, etc.",
-                "Mantén un flujo de caja ordenado para tu contador.",
-                "Exporta reportes en Excel listos para declarar."
+                "Identifica pacientes que no han vuelto en 6 meses.",
+                "Envía recordatorios masivos por WhatsApp.",
+                "Aumenta la recurrencia de tu clínica sin esfuerzo."
+            ]
+        },
+        {
+            title: "Laboratorio Digital",
+            icon: FlaskConical,
+            color: "text-purple-600",
+            bg: "bg-purple-50",
+            content: [
+                "Envía órdenes de trabajo con archivos STL y fotos.",
+                "Seguimiento en tiempo real del estado de prótesis.",
+                "Comunicación segura y centralizada con técnicos."
+            ]
+        },
+        {
+            title: "Recetas y Consentimientos",
+            icon: Stethoscope,
+            color: "text-indigo-600",
+            bg: "bg-indigo-50",
+            content: [
+                "Genera recetas profesionales en PDF en segundos.",
+                "Firma digital de consentimientos informados.",
+                "Historial clínico 100% digital y legal."
             ]
         }
     ];
 
     return (
-        <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+        <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 px-4">
             
             {/* Header */}
             <div className="text-center space-y-4">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B6651]/10 text-[#5B6651] rounded-full text-[10px] font-black uppercase tracking-widest">
-                    <BookOpen size={14}/> Centro de Aprendizaje
+                    <ShieldCheck size={14}/> Centro de Capacitación ShiningCloud
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black text-[#312923] tracking-tighter">
-                    Domina <span className="text-[#5B6651]">ShiningCloud</span>
+                <h1 className="text-4xl md:text-6xl font-black text-[#312923] tracking-tighter">
+                    Todo lo que puedes <span className="text-[#5B6651]">lograr</span>
                 </h1>
-                <p className="text-[#9A8F84] font-medium max-w-lg mx-auto">
-                    Aprende a usar las herramientas avanzadas que harán tu clínica más rentable y organizada.
+                <p className="text-[#9A8F84] font-medium max-w-2xl mx-auto text-lg">
+                    Descubre las herramientas diseñadas para hacer tu clínica más rápida, rentable y accesible.
                 </p>
             </div>
 
-            {/* Tutorial Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {tutorials.map((t, i) => (
-                    <Card key={i} className="p-6 border-[#DFD2C4]/50 hover:border-[#5B6651]/30 transition-all hover:shadow-xl group">
-                        <div className={`w-12 h-12 ${t.bg} ${t.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                            <t.icon size={24} />
+            {/* Features Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {features.map((f, i) => (
+                    <Card key={i} className="p-8 border-[#DFD2C4]/50 hover:border-[#5B6651]/40 transition-all hover:shadow-2xl group bg-white rounded-[2.5rem]">
+                        <div className={`w-14 h-14 ${f.bg} ${f.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm`}>
+                            <f.icon size={28} />
                         </div>
-                        <h3 className="text-lg font-black text-[#312923] mb-4">{t.title}</h3>
-                        <ul className="space-y-3">
-                            {t.content.map((item, j) => (
-                                <li key={j} className="flex gap-2 text-xs text-[#6B615A] font-medium leading-relaxed">
-                                    <CheckCircle2 size={14} className="text-[#5B6651] shrink-0 mt-0.5" />
+                        <h3 className="text-xl font-black text-[#312923] mb-4">{f.title}</h3>
+                        <ul className="space-y-4">
+                            {f.content.map((item, j) => (
+                                <li key={j} className="flex gap-3 text-sm text-[#6B615A] font-medium leading-relaxed">
+                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#5B6651] shrink-0" />
                                     {item}
                                 </li>
                             ))}
@@ -78,47 +124,61 @@ export default function HelpView() {
                 ))}
             </div>
 
-            {/* Detailed Guide Section */}
-            <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-[3rem] p-8 md:p-12 space-y-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-                    <FileSpreadsheet size={200} className="text-[#312923]" />
+            {/* Support Section */}
+            <div className="bg-[#312923] rounded-[3rem] p-8 md:p-16 text-white relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+                    <BookOpen size={300} />
                 </div>
 
-                <div className="relative z-10 space-y-6">
-                    <h2 className="text-2xl font-black text-[#312923] flex items-center gap-3">
-                        <Info className="text-[#CBAAA2]" /> Guía de Optimización Financiera
-                    </h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                            <h4 className="font-black text-[10px] uppercase tracking-widest text-[#9A8F84]">Paso 1: Análisis</h4>
-                            <p className="text-sm text-[#6B615A] leading-relaxed">
-                                Entra al <b>Centro Financiero</b> y activa el <b>Análisis de Rentabilidad</b>. Busca los tratamientos con el ticket promedio más alto; esos son tus "servicios estrella".
-                            </p>
-                        </div>
-                        <div className="space-y-4">
-                            <h4 className="font-black text-[10px] uppercase tracking-widest text-[#9A8F84]">Paso 2: Orden</h4>
-                            <p className="text-sm text-[#6B615A] leading-relaxed">
-                                Clasifica cada gasto. Al final del mes, usa el botón <b>Exportar Excel</b>. Tendrás un reporte profesional listo para tu contador en un segundo.
-                            </p>
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-6">
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight">¿Necesitas ayuda <br/><span className="text-[#CBAAA2]">personalizada?</span></h2>
+                        <p className="text-[#A3968B] text-lg font-medium leading-relaxed">
+                            Estamos aquí para apoyarte en el crecimiento de tu clínica. Contacta directamente con nuestro equipo técnico y comercial.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                            <button 
+                                onClick={handleWhatsApp}
+                                className="px-8 py-4 bg-[#25D366] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#128C7E] transition-all shadow-lg flex items-center justify-center gap-3"
+                            >
+                                <MessageCircle size={18} /> WhatsApp Directo
+                            </button>
+                            <button 
+                                onClick={handleEmail}
+                                className="px-8 py-4 bg-white text-[#312923] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#FDFBF7] transition-all shadow-lg flex items-center justify-center gap-3"
+                            >
+                                <Mail size={18} /> Enviar Email
+                            </button>
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-[#DFD2C4]/50 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-white rounded-full border border-[#DFD2C4] flex items-center justify-center shadow-sm">
-                                <MessageCircle size={20} className="text-[#25D366]" />
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#CBAAA2]">Contacto Directo</h4>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><MessageCircle size={18}/></div>
+                                <div>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-[#A3968B]">WhatsApp</p>
+                                    <p className="font-bold">+56 9 3274 5439</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm font-black text-[#312923]">¿Necesitas ayuda personalizada?</p>
-                                <p className="text-[10px] text-[#9A8F84] font-bold uppercase tracking-widest">Soporte técnico vía WhatsApp</p>
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><Mail size={18}/></div>
+                                <div>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-[#A3968B]">Email</p>
+                                    <p className="font-bold">b.barreracabrera.dent@gmail.com</p>
+                                </div>
                             </div>
                         </div>
-                        <button className="px-8 py-4 bg-[#312923] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2">
-                            Contactar Soporte <ArrowRight size={16} />
-                        </button>
                     </div>
                 </div>
+            </div>
+
+            {/* Footer help */}
+            <div className="text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#9A8F84]">
+                    ShiningCloud Dental © 2026 • Desarrollado para odontólogos, por odontólogos.
+                </p>
             </div>
         </div>
     );
