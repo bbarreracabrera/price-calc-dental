@@ -78,63 +78,56 @@ export function useVoiceAssistant(props) {
                                 newData.mobility = 0;
                                 newData.furcation = 0;
                             } else {
-                                // Procesamiento normal de números
-                                let pdText = cleanText;
-                                let mgText = "";
+                                // --- NUEVA LÓGICA DE MODO RÁFAGA Y PROCESAMIENTO POR SITIO ---
+                            const sites = ['distal', 'centro', 'medio', 'mesial'];
+                            const isV = face === 'v';
+                            
+                            // 1. Detectar ráfaga de números (ej: "3 2 3")
+                            const allNumbers = cleanText.match(/-?\d/g) || [];
+                            
+                            if (allNumbers.length >= 3 && !cleanText.includes('margen')) {
+                                // Ráfaga de Profundidad de Sondaje
+                                newData[`pd_${face}`] = [parseInt(allNumbers[0]), parseInt(allNumbers[1]), parseInt(allNumbers[2])];
+                                notify(`📏 Ráfaga: ${allNumbers[0]}-${allNumbers[1]}-${allNumbers[2]} en cara ${isV?'Vestibular':(parseInt(currentToothId)>30?'Lingual':'Palatina')}`);
+                            } else {
+                                // Procesamiento individual por sitio
+                                sites.forEach((site, idx) => {
+                                    if (cleanText.includes(site)) {
+                                        const actualIdx = site === 'distal' ? 0 : (site === 'mesial' ? 2 : 1);
+                                        
+                                        // Buscar número inmediatamente después o antes de la palabra del sitio
+                                        const siteNumbers = cleanText.split(site)[1]?.match(/-?\d/);
+                                        if (siteNumbers) {
+                                            if (cleanText.includes('margen')) {
+                                                newData[`mg_${face}`][actualIdx] = parseInt(siteNumbers[0]);
+                                            } else {
+                                                newData[`pd_${face}`][actualIdx] = parseInt(siteNumbers[0]);
+                                            }
+                                        }
 
-                                if (pdText.includes('margen')) {
-                                    const parts = pdText.split('margen');
-                                    pdText = parts[0]; mgText = parts[1];
-                                }
-
-                                const pdNumbers = pdText.match(/-?\d/g) || [];
-                                const mgNumbers = mgText.match(/-?\d/g) || [];
-                                
-                                const movMatch = cleanText.split('movilidad')[1]?.match(/\d/);
-                                if (movMatch) newData.mobility = parseInt(movMatch[0]);
-
-                                const furcMatch = cleanText.split('furca')[1]?.match(/\d/);
-                                if (furcMatch) newData.furcation = parseInt(furcMatch[0]);
-
-                                if (pdNumbers.length > 0) {
-                                    newData[`pd_${face}`] = [ pdNumbers[0] !== undefined ? parseInt(pdNumbers[0]) : newData[`pd_${face}`][0], pdNumbers[1] !== undefined ? parseInt(pdNumbers[1]) : newData[`pd_${face}`][1], pdNumbers[2] !== undefined ? parseInt(pdNumbers[2]) : newData[`pd_${face}`][2] ];
-                                }
-                                if (mgNumbers.length > 0) {
-                                    newData[`mg_${face}`] = [ mgNumbers[0] !== undefined ? parseInt(mgNumbers[0]) : newData[`mg_${face}`][0], mgNumbers[1] !== undefined ? parseInt(mgNumbers[1]) : newData[`mg_${face}`][1], mgNumbers[2] !== undefined ? parseInt(mgNumbers[2]) : newData[`mg_${face}`][2] ];
-                                }
-
-                                // --- LÓGICA DE SANGRADO (Añadir / Quitar) ---
-                                const isRemovingBOP = cleanText.includes('no sangra') || cleanText.includes('sin sangrad') || cleanText.includes('quita sangrad') || cleanText.includes('borra sangrad');
-                                const isAddingBOP = !isRemovingBOP && (cleanText.includes('sangra') || cleanText.includes('sangrado'));
-
-                                if (isAddingBOP || isRemovingBOP) {
-                                    const val = isAddingBOP;
-                                    if (cleanText.includes('distal')) newData[`bop_${face}`][0] = val;
-                                    if (cleanText.includes('centro') || cleanText.includes('medio')) newData[`bop_${face}`][1] = val;
-                                    if (cleanText.includes('mesial')) newData[`bop_${face}`][2] = val;
-                                    
-                                    // Si no especifica cara, aplicamos al centro (o borramos todo si es la orden de quitar)
-                                    if (!cleanText.includes('distal') && !cleanText.includes('mesial') && !cleanText.includes('centro') && !cleanText.includes('medio')) {
-                                        if (isRemovingBOP) newData[`bop_${face}`] = [false, false, false];
-                                        else newData[`bop_${face}`][1] = true;
+                                        // Sangrado y Pus por sitio específico
+                                        if (cleanText.includes('sangra') || cleanText.includes('sangrado')) {
+                                            newData[`bop_${face}`][actualIdx] = !cleanText.includes('no');
+                                        }
+                                        if (cleanText.includes('pus') || cleanText.includes('supura')) {
+                                            newData[`pus_${face}`][actualIdx] = !cleanText.includes('no');
+                                        }
                                     }
-                                }
+                                });
 
-                                // --- LÓGICA DE PUS (Añadir / Quitar) ---
-                                const isRemovingPus = cleanText.includes('no pus') || cleanText.includes('sin pus') || cleanText.includes('quita pus') || cleanText.includes('borra pus') || cleanText.includes('no supura');
-                                const isAddingPus = !isRemovingPus && (cleanText.includes('pus') || cleanText.includes('supura'));
-
-                                if (isAddingPus || isRemovingPus) {
-                                    const val = isAddingPus;
-                                    if (cleanText.includes('distal')) newData[`pus_${face}`][0] = val;
-                                    if (cleanText.includes('centro') || cleanText.includes('medio')) newData[`pus_${face}`][1] = val;
-                                    if (cleanText.includes('mesial')) newData[`pus_${face}`][2] = val;
-                                    
-                                    if (!cleanText.includes('distal') && !cleanText.includes('mesial') && !cleanText.includes('centro') && !cleanText.includes('medio')) {
-                                        if (isRemovingPus) newData[`pus_${face}`] = [false, false, false];
-                                        else newData[`pus_${face}`][1] = true;
-                                    }
+                                // Si solo hay números sin sitio, y no es ráfaga, aplicamos al "centro" por defecto
+                                if (allNumbers.length === 1 && !sites.some(s => cleanText.includes(s))) {
+                                    if (cleanText.includes('margen')) newData[`mg_${face}`][1] = parseInt(allNumbers[0]);
+                                    else newData[`pd_${face}`][1] = parseInt(allNumbers[0]);
                                 }
+                            }
+                            
+                            // Movilidad y Furca (Globales del diente)
+                            const movMatch = cleanText.match(/movilidad\s?(\d)/);
+                            if (movMatch) newData.mobility = parseInt(movMatch[1]);
+
+                            const furcMatch = cleanText.match(/furca\s?(\d)/);
+                            if (furcMatch) newData.furcation = parseInt(furcMatch[1]);
                             }
 
                             setPerioData(newData);
