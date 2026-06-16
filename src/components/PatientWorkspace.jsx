@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import {
     ArrowLeft, AlertTriangle, User, FileQuestion, Activity,
     FileBarChart, FileText, FileSignature, ImageIcon,
-    Mic, MicOff, Sparkles, Calculator, Heart, Stethoscope, ChevronDown,
-    LayoutDashboard, ClipboardList, TrendingUp, FolderOpen, ChevronRight
+    Mic, Sparkles, Calculator, Heart, Stethoscope,
+    FolderOpen, ChevronRight, Plus, MessageCircle, Calendar,
+    Zap, ClipboardList, Phone
 } from 'lucide-react';
 
 // --- IMPORTACIÓN DE PESTAÑAS ---
@@ -19,27 +20,16 @@ import PRATab from './PRATab';
 import CariogramTab from './CariogramTab';
 
 export default function PatientWorkspace({
-    // Datos y Estado
-    selectedPatientId, setSelectedPatientId, patientTab, setPatientTab, 
-    userRole, themeMode, session, clinicOwner, patientRecords, setActiveTab, 
+    selectedPatientId, setSelectedPatientId, patientTab, setPatientTab,
+    userRole, themeMode, session, clinicOwner, patientRecords, setActiveTab,
     activeFormType, setActiveFormType, viewingForm, setViewingForm,
-    
-    // Config Odontograma/Perio
     odontogramMode, setOdontogramMode, odontogramType, setOdontogramType,
     toothModalData, setToothModalData, catalog, sessionData, setSessionData,
-    
-    // Voz
     isListening, voiceStatus, toggleVoice,
-    
-    // Evolución/Consentimiento/Imágenes
-    newEvolution, setNewEvolution, activeFolder, setActiveFolder, uploading, 
+    newEvolution, setNewEvolution, activeFolder, setActiveFolder, uploading,
     consentTemplate, setConsentTemplate, consentText, setConsentText, modal,
-    
-    // Funciones Maestras (Setters y Puentes)
     getPatient, savePatientData, setPatientRecords, setModal, setQuoteItems,
     setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
-    
-    // Puentes (Wrappers) y Configuración
     handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg, config
 }) {
     const p = getPatient(selectedPatientId);
@@ -47,28 +37,82 @@ export default function PatientWorkspace({
     const activeQuotesCount = p.clinical?.quotes?.filter(q => q.status === 'en_proceso' || q.status === 'active')?.length || 0;
     const consentsCount = p.consents?.length || 0;
 
-    const TAB_GROUPS = [
-        { id: 'data',      label: 'Ficha & Datos', icon: User,          tabs: ['personal', 'anamnesis'] },
-        { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope,   tabs: ['clinical', 'perio', 'evolution'] },
-        { id: 'risk',      label: 'Prevención',    icon: ShieldCheckIcon, tabs: ['pra', 'cariogram'] },
-        { id: 'documents', label: 'Gestión',       icon: FolderOpen,    tabs: ['quotes', 'consent', 'images'] },
+    // --- ACCIONES RÁPIDAS ---
+    const quickActions = [
+        {
+            id: 'evolution',
+            label: 'Nueva Evolución',
+            icon: Plus,
+            color: 'bg-[#5B6651] text-white hover:bg-[#4a5442]',
+            action: () => {
+                setPatientTab('evolution');
+                // Foco automático en el campo de texto de evolución
+                setTimeout(() => {
+                    const el = document.getElementById('new-evolution-input');
+                    if (el) el.focus();
+                }, 200);
+            }
+        },
+        {
+            id: 'quote',
+            label: 'Cotización Rápida',
+            icon: Calculator,
+            color: 'bg-[#CBAAA2]/20 text-[#8B5E57] hover:bg-[#CBAAA2]/40 border border-[#CBAAA2]/30',
+            action: () => setPatientTab('quotes')
+        },
+        {
+            id: 'whatsapp',
+            label: 'WhatsApp',
+            icon: MessageCircle,
+            color: 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200',
+            action: () => {
+                const phone = p.personal?.phone?.replace(/\D/g, '');
+                if (!phone) { notify('El paciente no tiene teléfono registrado.'); return; }
+                const name = p.personal?.legalName || 'paciente';
+                window.open(`https://wa.me/56${phone.replace(/^0/, '')}?text=Hola%20${encodeURIComponent(name)}%2C%20le%20contactamos%20desde%20la%20cl%C3%ADnica.`, '_blank');
+            }
+        },
+        {
+            id: 'agenda',
+            label: 'Agendar Cita',
+            icon: Calendar,
+            color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200',
+            action: () => setModal('appointment')
+        },
+        {
+            id: 'call',
+            label: 'Llamar',
+            icon: Phone,
+            color: 'bg-[#FDFBF7] text-[#6B615A] hover:bg-[#DFD2C4]/40 border border-[#DFD2C4]',
+            action: () => {
+                const phone = p.personal?.phone?.replace(/\D/g, '');
+                if (!phone) { notify('El paciente no tiene teléfono registrado.'); return; }
+                window.location.href = `tel:+56${phone.replace(/^0/, '')}`;
+            }
+        }
     ];
 
-    function ShieldCheckIcon(props) {
-        return <Heart {...props} />;
-    }
+    // --- GRUPOS Y BOTONES DE NAVEGACIÓN ---
+    function ShieldIcon(props) { return <Heart {...props} />; }
+
+    const TAB_GROUPS = [
+        { id: 'data',      label: 'Ficha & Datos', icon: User,        tabs: ['personal', 'anamnesis'] },
+        { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope, tabs: ['clinical', 'perio', 'evolution'] },
+        { id: 'risk',      label: 'Prevención',    icon: ShieldIcon,  tabs: ['pra', 'cariogram'] },
+        { id: 'documents', label: 'Gestión',       icon: FolderOpen,  tabs: ['quotes', 'consent', 'images'] },
+    ];
 
     const tabButtons = [
-        {id:'personal', label:'Datos Personales', icon: User, group: 'data'},
-        {id:'anamnesis', label:'Anamnesis / Ficha', icon: FileQuestion, group: 'data', restricted: true},
-        {id:'clinical', label:'Odontograma', icon: Activity, group: 'clinical'},
-        {id:'perio', label:'Periodontograma', icon: FileBarChart, group: 'clinical', restricted: true},
-        {id:'evolution', label:'Evolución Clínica', icon: FileText, group: 'clinical', restricted: true},
-        {id:'pra',       label:'Riesgo Periodontal',  icon: Heart, group: 'risk', restricted: true},
-        {id:'cariogram', label:'Riesgo Caries', icon: Calculator, group: 'risk', restricted: true},
-        {id:'quotes', label:'Presupuestos', icon: Calculator, group: 'documents', badge: activeQuotesCount},
-        {id:'consent', label:'Consentimientos', icon: FileSignature, group: 'documents', badge: consentsCount},
-        {id:'images', label:'Galería Multimedia', icon: ImageIcon, group: 'documents'}
+        { id: 'personal',  label: 'Datos Personales',    icon: User,          group: 'data' },
+        { id: 'anamnesis', label: 'Anamnesis / Ficha',   icon: FileQuestion,  group: 'data',      restricted: true },
+        { id: 'clinical',  label: 'Odontograma',         icon: Activity,      group: 'clinical' },
+        { id: 'perio',     label: 'Periodontograma',     icon: FileBarChart,  group: 'clinical',  restricted: true },
+        { id: 'evolution', label: 'Evolución Clínica',   icon: FileText,      group: 'clinical',  restricted: true },
+        { id: 'pra',       label: 'Riesgo Periodontal',  icon: Heart,         group: 'risk',      restricted: true },
+        { id: 'cariogram', label: 'Riesgo Caries',       icon: Calculator,    group: 'risk',      restricted: true },
+        { id: 'quotes',    label: 'Presupuestos',        icon: Calculator,    group: 'documents', badge: activeQuotesCount },
+        { id: 'consent',   label: 'Consentimientos',     icon: FileSignature, group: 'documents', badge: consentsCount },
+        { id: 'images',    label: 'Galería Multimedia',  icon: ImageIcon,     group: 'documents' }
     ];
 
     const isTabVisible = (tabId) => {
@@ -76,144 +120,158 @@ export default function PatientWorkspace({
         return t && !(userRole === 'assistant' && t.restricted);
     };
 
-    const switchTab = (tabId) => {
-        setPatientTab(tabId);
-    };
+    // Alertas médicas críticas
+    const criticalConditions = ['Diabetes', 'Hipertensión', 'Cardiopatía', 'Alergias', 'Asma', 'Coagulopatía', 'Epilepsia'];
+    const activeAlerts = Object.entries(p.anamnesis?.conditions || {})
+        .filter(([k, v]) => v && criticalConditions.includes(k))
+        .map(([k]) => k);
 
     return (
         <div className="flex flex-col h-full animate-in slide-in-from-right pb-10">
-            
-            {/* --- ENCABEZADO DEL DOSSIER --- */}
-            <div className="flex flex-col gap-2 border-b border-[#DFD2C4]/50 pb-4 mb-6">
-                <button 
-                    onClick={() => setSelectedPatientId(null)} 
-                    className="flex items-center gap-2 text-[10px] font-black text-[#9A8F84] hover:text-[#5B6651] transition-colors w-fit tracking-widest uppercase"
-                >
-                    <ArrowLeft size={12}/> VOLVER AL BUSCADOR
-                </button>
-                
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#5B6651]/10 flex items-center justify-center text-[#5B6651] font-black text-xl shadow-inner border border-[#5B6651]/10">
-                            {p.personal?.legalName?.charAt(0) || 'P'}
-                        </div>
-                        <div>
-                            <h2 className="text-3xl font-black text-[#312923] tracking-tight capitalize leading-none">
-                                {p.personal?.legalName || 'Paciente'}
-                            </h2>
-                            <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1">
-                                RUT: {p.personal?.rut || 'Sin RUT'} • {p.personal?.phone || 'Sin Teléfono'}
-                            </p>
-                        </div>
-                    </div>
 
-                    {/* Alertas Rápidas */}
-                    <div className="flex gap-2">
-                        {(() => {
-                            const criticalConditions = ['Diabetes', 'Hipertensión', 'Cardiopatía', 'Alergias', 'Asma', 'Coagulopatía', 'Epilepsia'];
-                            const activeAlerts = Object.entries(p.anamnesis?.conditions || {}).filter(([k, v]) => v && criticalConditions.includes(k)).map(([k]) => k);
-                            
-                            if (activeAlerts.length > 0) {
-                                return (
-                                    <div className="bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl flex items-center gap-2">
-                                        <AlertTriangle size={14} className="text-red-500" />
-                                        <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">{activeAlerts[0]} {activeAlerts.length > 1 ? `+${activeAlerts.length-1}` : ''}</span>
-                                    </div>
-                                );
-                            }
-                            return null;
-                        })()}
+            {/* ===== ENCABEZADO DEL DOSSIER ===== */}
+            <div className="flex flex-col gap-3 border-b border-[#DFD2C4]/50 pb-5 mb-5">
+                
+                {/* Fila 1: Volver + Alertas */}
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={() => setSelectedPatientId(null)}
+                        className="flex items-center gap-2 text-[10px] font-black text-[#9A8F84] hover:text-[#5B6651] transition-colors tracking-widest uppercase"
+                    >
+                        <ArrowLeft size={12} /> VOLVER AL BUSCADOR
+                    </button>
+                    {activeAlerts.length > 0 && (
+                        <div className="bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                            <AlertTriangle size={13} className="text-red-500" />
+                            <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">
+                                {activeAlerts[0]}{activeAlerts.length > 1 ? ` +${activeAlerts.length - 1}` : ''}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Fila 2: Avatar + Nombre */}
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#5B6651]/10 flex items-center justify-center text-[#5B6651] font-black text-xl shadow-inner border border-[#5B6651]/10 shrink-0">
+                        {p.personal?.legalName?.charAt(0)?.toUpperCase() || 'P'}
                     </div>
+                    <div>
+                        <h2 className="text-2xl font-black text-[#312923] tracking-tight capitalize leading-none">
+                            {p.personal?.legalName || 'Paciente'}
+                        </h2>
+                        <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1">
+                            RUT: {p.personal?.rut || '—'} &nbsp;·&nbsp; {p.personal?.phone || 'Sin teléfono'} &nbsp;·&nbsp; {p.personal?.email || 'Sin email'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Fila 3: BARRA DE ACCIONES RÁPIDAS */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 mr-1">
+                        <Zap size={11} className="text-amber-500" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#9A8F84]">Acciones</span>
+                    </div>
+                    {quickActions.map(action => (
+                        <button
+                            key={action.id}
+                            onClick={action.action}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black transition-all hover:-translate-y-0.5 shadow-sm ${action.color}`}
+                        >
+                            <action.icon size={12} />
+                            {action.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            <div className="flex gap-6 flex-1 min-h-0">
-                {/* --- MENÚ LATERAL DE NAVEGACIÓN (SELECTOR 360) --- */}
-                <div className="w-64 shrink-0 flex flex-col gap-6">
+            {/* ===== CUERPO PRINCIPAL: MENÚ LATERAL + CONTENIDO ===== */}
+            <div className="flex gap-5 flex-1 min-h-0">
+
+                {/* --- MENÚ LATERAL DE NAVEGACIÓN --- */}
+                <div className="w-56 shrink-0 flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-1">
                     {TAB_GROUPS.map(group => {
                         const visibleTabs = tabButtons.filter(t => t.group === group.id && isTabVisible(t.id));
                         if (visibleTabs.length === 0) return null;
-
                         return (
-                            <div key={group.id} className="space-y-2">
-                                <h3 className="text-[10px] font-black text-[#9A8F84] uppercase tracking-[0.2em] px-3 flex items-center gap-2">
-                                    <group.icon size={12} />
+                            <div key={group.id} className="space-y-1">
+                                <h3 className="text-[9px] font-black text-[#9A8F84] uppercase tracking-[0.2em] px-3 flex items-center gap-2 mb-2">
+                                    <group.icon size={11} />
                                     {group.label}
                                 </h3>
-                                <div className="space-y-1">
-                                    {visibleTabs.map(tab => {
-                                        const isActive = patientTab === tab.id;
-                                        return (
-                                            <button
-                                                key={tab.id}
-                                                onClick={() => switchTab(tab.id)}
-                                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl transition-all group ${
-                                                    isActive 
-                                                    ? 'bg-[#312923] text-white shadow-md' 
+                                {visibleTabs.map(tab => {
+                                    const isActive = patientTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setPatientTab(tab.id)}
+                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl transition-all group ${
+                                                isActive
+                                                    ? 'bg-[#312923] text-white shadow-md'
                                                     : 'bg-white hover:bg-[#FDFBF7] text-[#6B615A] border border-transparent hover:border-[#DFD2C4]/50'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <tab.icon size={16} className={isActive ? 'text-white' : 'text-[#9A8F84] group-hover:text-[#5B6651]'} />
-                                                    <span className={`text-xs font-bold tracking-tight ${isActive ? 'text-white' : 'text-[#312923]'}`}>
-                                                        {tab.label}
-                                                    </span>
-                                                </div>
-                                                {tab.badge > 0 && (
-                                                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${
-                                                        isActive ? 'bg-white/20 text-white' : 'bg-[#CBAAA2]/20 text-[#CBAAA2]'
-                                                    }`}>
-                                                        {tab.badge}
-                                                    </span>
-                                                )}
-                                                {isActive && <ChevronRight size={14} className="text-white/40" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2.5">
+                                                <tab.icon size={14} className={isActive ? 'text-white' : 'text-[#9A8F84] group-hover:text-[#5B6651]'} />
+                                                <span className={`text-[11px] font-bold tracking-tight ${isActive ? 'text-white' : 'text-[#312923]'}`}>
+                                                    {tab.label}
+                                                </span>
+                                            </div>
+                                            {tab.badge > 0 && (
+                                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${
+                                                    isActive ? 'bg-white/20 text-white' : 'bg-[#CBAAA2]/20 text-[#CBAAA2]'
+                                                }`}>
+                                                    {tab.badge}
+                                                </span>
+                                            )}
+                                            {isActive && <ChevronRight size={12} className="text-white/40 ml-auto" />}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         );
                     })}
 
-                    {/* Atajo de Voz Rápido */}
-                    <div className={`mt-auto p-4 rounded-3xl border transition-all ${isListening ? 'bg-red-50 border-red-200' : 'bg-[#FDFBF7] border-[#DFD2C4]/50'}`}>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className={`p-2 rounded-xl ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5B6651]/10 text-[#5B6651]'}`}>
-                                <Mic size={14} />
+                    {/* Atajo de Voz */}
+                    <div className={`mt-2 p-3.5 rounded-3xl border transition-all ${isListening ? 'bg-red-50 border-red-200' : 'bg-[#FDFBF7] border-[#DFD2C4]/50'}`}>
+                        <div className="flex items-center gap-2.5 mb-2">
+                            <div className={`p-1.5 rounded-xl ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#5B6651]/10 text-[#5B6651]'}`}>
+                                <Mic size={12} />
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#312923]">Asistente</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#312923]">Asistente IA</span>
                         </div>
-                        <p className="text-[9px] font-bold text-[#9A8F84] leading-relaxed mb-3">
-                            {isListening ? "Escuchando comandos..." : "Usa tu voz para registrar datos."}
+                        <p className="text-[9px] font-bold text-[#9A8F84] leading-relaxed mb-2.5">
+                            {isListening ? 'Escuchando comandos...' : 'Registra datos con tu voz.'}
                         </p>
-                        <button 
+                        <button
                             onClick={toggleVoice}
                             className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                                isListening ? 'bg-red-500 text-white' : 'bg-white border border-[#DFD2C4] text-[#312923] hover:bg-[#5B6651] hover:text-white hover:border-[#5B6651]'
+                                isListening
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-white border border-[#DFD2C4] text-[#312923] hover:bg-[#5B6651] hover:text-white hover:border-[#5B6651]'
                             }`}
                         >
-                            {isListening ? "DETENER" : "ACTIVAR VOZ"}
+                            {isListening ? 'DETENER' : 'ACTIVAR VOZ'}
                         </button>
                     </div>
                 </div>
 
                 {/* --- ÁREA DE CONTENIDO PRINCIPAL --- */}
-                <div className="flex-1 bg-white rounded-[2.5rem] p-8 border border-[#DFD2C4]/40 shadow-sm overflow-y-auto custom-scrollbar relative">
-                    
-                    {/* Indicador de Estado de Voz Flotante */}
+                <div className="flex-1 bg-white rounded-[2.5rem] p-7 border border-[#DFD2C4]/40 shadow-sm overflow-y-auto custom-scrollbar relative">
+
+                    {/* Indicador flotante de estado de voz */}
                     {voiceStatus && (
-                        <div className="absolute top-4 right-8 bg-[#312923] text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl animate-bounce z-10 flex items-center gap-2">
-                            <Sparkles size={12} className="text-amber-400" />
+                        <div className="absolute top-4 right-6 bg-[#312923] text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl animate-bounce z-10 flex items-center gap-2">
+                            <Sparkles size={11} className="text-amber-400" />
                             {voiceStatus}
                         </div>
                     )}
 
-                    {/* RENDERIZADO DINÁMICO DE PESTAÑAS */}
-                    <div className="animate-in fade-in duration-300">
-                        {patientTab === 'personal' && <PatientPersonalTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} />}
+                    {/* RENDERIZADO DINÁMICO */}
+                    <div className="animate-in fade-in duration-200">
+                        {patientTab === 'personal'  && <PatientPersonalTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} />}
                         {patientTab === 'anamnesis' && <PatientAnamnesisTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} />}
-                        {patientTab === 'clinical' && (
-                            <OdontogramTab 
+                        {patientTab === 'clinical'  && (
+                            <OdontogramTab
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 odontogramMode={odontogramMode} setOdontogramMode={setOdontogramMode}
                                 odontogramType={odontogramType} setOdontogramType={setOdontogramType}
@@ -221,28 +279,28 @@ export default function PatientWorkspace({
                             />
                         )}
                         {patientTab === 'perio' && (
-                            <PerioTab 
+                            <PerioTab
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 setPerioData={setPerioData} setModal={setModal} setToothModalData={setToothModalData}
                                 restoreSnapshot={restoreSnapshot} savePerioSnapshot={savePerioSnapshot} getPerioStats={getPerioStats}
                             />
                         )}
                         {patientTab === 'evolution' && (
-                            <PatientEvolutionTab 
+                            <PatientEvolutionTab
                                 newEvolution={newEvolution} setNewEvolution={setNewEvolution}
                                 getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 session={session} logAction={logAction}
                             />
                         )}
                         {patientTab === 'quotes' && (
-                            <ActiveQuotesTab 
+                            <ActiveQuotesTab
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 setModal={setModal} setQuoteItems={setQuoteItems} handleGeneratePDF={handleGeneratePDF}
                                 sendWhatsApp={sendWhatsApp} notify={notify}
                             />
                         )}
                         {patientTab === 'consent' && (
-                            <PatientConsentTab 
+                            <PatientConsentTab
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate}
                                 consentText={consentText} setConsentText={setConsentText}
@@ -250,15 +308,15 @@ export default function PatientWorkspace({
                             />
                         )}
                         {patientTab === 'images' && (
-                            <PatientImagesTab 
+                            <PatientImagesTab
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 activeFolder={activeFolder} setActiveFolder={setActiveFolder}
                                 uploading={uploading} handleImageUpload={handleImageUpload}
                                 setSelectedImg={setSelectedImg} setModal={setModal} notify={notify}
                             />
                         )}
-                        {patientTab === 'pra' && <PRATab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} handleGeneratePDF={handleGeneratePDF} />}
-                        {patientTab === 'cariogram' && <CariogramTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} handleGeneratePDF={handleGeneratePDF} />}
+                        {patientTab === 'pra'      && <PRATab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} handleGeneratePDF={handleGeneratePDF} />}
+                        {patientTab === 'cariogram'&& <CariogramTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} handleGeneratePDF={handleGeneratePDF} />}
                     </div>
                 </div>
             </div>
