@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Cloud, Mic, ShieldCheck, Zap, CheckCircle2, ArrowRight, Box, FlaskConical, BarChart3, 
   ChevronRight, Lock, Calculator, Users, MessageCircle, Phone, Menu, X, Star, Sparkles,
-  Stethoscope, FileSpreadsheet, Activity, Globe, Heart, MousePointer2
+  Stethoscope, FileSpreadsheet, Activity, Globe, Heart, MousePointer2, Mail
 } from 'lucide-react';
 
 export default function LandingPage({ onLoginClick }) {
