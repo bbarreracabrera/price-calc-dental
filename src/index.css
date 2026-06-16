@@ -1,9 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 
+  Optimización de Densidad Visual:
+  Reducimos la escala global para que la app no se sienta "abultada" 
+  y se aproveche mejor el espacio en pantalla.
+*/
+:root {
+  font-size: 14px; /* Bajamos de 16px predeterminado */
+}
+
 body {
   background-color: rgb(221, 209, 209) !important;
+  zoom: 0.9; /* Efecto de zoom ligero para navegadores compatibles */
+  -moz-transform: scale(0.9); /* Para Firefox */
+  -moz-transform-origin: 0 0;
 }
+
+/* Ajustes de espaciado para compensar la reducción */
+.card, .p-6, .p-8 {
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+}
+
+h1 { font-size: 1.875rem !important; }
+h2 { font-size: 1.5rem !important; }
 
 @media print {
     body * { visibility: hidden; }
