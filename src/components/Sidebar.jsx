@@ -25,6 +25,7 @@ export default function Sidebar({
         if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'lab', label: 'Laboratorio', icon: FlaskConical }); }
         if (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') { base.push({ id: 'sterilization', label: 'Esterilización', icon: ShieldCheck }); }
         if (userRole === 'admin') { base.push({ id: 'inventory', label: 'Insumos', icon: Box }); base.push({ id: 'settings', label: 'Ajustes', icon: Settings }); }
+        base.push({ id: 'help', label: 'Ayuda', icon: HelpCircle });
         base.push({ id: 'terms', label: 'Legal', icon: Shield });
         return base;
     };

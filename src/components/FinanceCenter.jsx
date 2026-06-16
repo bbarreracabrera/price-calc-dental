@@ -24,7 +24,8 @@ export default function FinanceCenter({
     isLoadingFinancials = false, hasOlderData = false, dateRange, setDateRange,
 }) {
     const { confirm } = useDialog();
-    const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '' });
+    const [newExpense, setNewExpense] = useState({ description: '', amount: '', category: 'Insumos', date: getLocalDate(), patientRef: '', doctor_email: '' });
+    const [showProfitability, setShowProfitability] = useState(false);
     const [boletaModal, setBoletaModal] = useState({ open: false, payment: null, patient: null });
 
     // La DB ya filtró por rango — usamos todos los registros recibidos
@@ -193,6 +194,47 @@ export default function FinanceCenter({
                 {/* --- TAB 1: RESUMEN --- */}
                 {financeTab === 'resumen' && (
                     <div className="space-y-6 animate-in fade-in">
+                        
+                        {/* BOTÓN DE RENTABILIDAD */}
+                        <div className="flex justify-end">
+                            <button 
+                                onClick={() => setShowProfitability(!showProfitability)}
+                                className="flex items-center gap-2 px-4 py-2 bg-[#5B6651]/10 text-[#5B6651] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#5B6651]/20 transition-all"
+                            >
+                                <TrendingDown size={14}/> {showProfitability ? 'Ver Resumen' : 'Análisis de Rentabilidad'}
+                            </button>
+                        </div>
+
+                        {showProfitability && (
+                            <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-[2.5rem] p-8 animate-in zoom-in-95">
+                                <h3 className="text-xl font-black text-[#312923] mb-6 flex items-center gap-2">
+                                    <Calculator className="text-[#CBAAA2]"/> Rentabilidad por Tratamiento
+                                </h3>
+                                <div className="space-y-4">
+                                    {(() => {
+                                        const stats = incomeRecords.reduce((acc, rec) => {
+                                            const t = rec.treatment || 'General';
+                                            if(!acc[t]) acc[t] = { income: 0, count: 0 };
+                                            acc[t].income += (rec.payments || []).reduce((s, p) => s + p.amount, 0) + (rec.paid && !rec.payments ? rec.paid : 0);
+                                            acc[t].count += 1;
+                                            return acc;
+                                        }, {});
+                                        return Object.entries(stats).sort((a,b) => b[1].income - a[1].income).map(([name, data]) => (
+                                            <div key={name} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#DFD2C4]/40">
+                                                <div>
+                                                    <p className="font-bold text-[#312923]">{name}</p>
+                                                    <p className="text-[10px] text-[#9A8F84] font-black uppercase tracking-widest">{data.count} atenciones</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-black text-[#5B6651]">${data.income.toLocaleString()}</p>
+                                                    <p className="text-[9px] text-[#9A8F84] font-bold">Ticket Prom: ${(data.income/data.count).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Filtro de rango de fechas (carga desde DB) */}
                         <div className="flex flex-wrap items-center gap-3">

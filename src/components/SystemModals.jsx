@@ -12,16 +12,14 @@ export const PrivateImage = ({ img, onClick }) => {
     useEffect(() => {
         let isMounted = true; 
         const fetchUrl = async () => {
-            if (img.url && img.url.startsWith('http')) {
-                if (isMounted) setSignedUrl(img.url);
-                return;
-            }
+            const filePath = img.path || img.url;
+            if (!filePath) return;
+
+            // Intentar obtener URL firmada (o manejar URL pública si es legacy)
+            const { getSecureUrl } = await import('../utils/securityFixes');
+            const url = await getSecureUrl('patient-images', filePath);
             
-            const filePath = img.path || img.url; 
-            const { data, error } = await supabase.storage.from('patient-images').createSignedUrl(filePath, 3600);
-            
-            if (isMounted && data) setSignedUrl(data.signedUrl);
-            if (error) console.error("Error seguridad imagen:", error);
+            if (isMounted && url) setSignedUrl(url);
         };
         fetchUrl();
         return () => { isMounted = false; }; 

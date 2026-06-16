@@ -13,6 +13,28 @@ export default function ApptModal({
     const [newPatId, setNewPatId] = useState(null);
     const [newPatPhone, setNewPatPhone] = useState('');
 
+    const handleSendReminder = async (type) => {
+        const patient = getPatient(newAppt.patient_id);
+        const { getWhatsAppReminderLink, sendEmailReminder } = await import('../utils/appointmentAutomation');
+        
+        if (type === 'whatsapp') {
+            const phone = patient?.personal?.phone || newPatPhone;
+            const link = getWhatsAppReminderLink(phone, newAppt.name, newAppt.date, newAppt.time, adminEmail);
+            if (link) window.open(link, '_blank');
+            else notify("El paciente no tiene un teléfono válido");
+        } else {
+            const email = patient?.personal?.email;
+            if (email) {
+                notify("Enviando recordatorio por email...");
+                const res = await sendEmailReminder(email, newAppt.name, newAppt.date, newAppt.time, adminEmail);
+                if (res.success) notify("✅ Recordatorio enviado");
+                else notify("❌ Error al enviar email");
+            } else {
+                notify("El paciente no tiene un email registrado");
+            }
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[100] bg-[#312923]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
             {/* Contenedor principal con alto máximo controlado */}
@@ -195,6 +217,22 @@ export default function ApptModal({
 
                 {/* --- BOTONES DE ACCIÓN (Fijos abajo) --- */}
                 <div className="flex flex-col gap-3 pt-4 border-t border-[#DFD2C4]/40 shrink-0">
+                    {newAppt.id && (
+                        <div className="flex gap-2 mb-2">
+                            <button 
+                                onClick={() => handleSendReminder('whatsapp')}
+                                className="flex-1 py-2 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#25D366]/20 transition-all"
+                            >
+                                <MessageCircle size={14}/> Recordatorio WhatsApp
+                            </button>
+                            <button 
+                                onClick={() => handleSendReminder('email')}
+                                className="flex-1 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-100 transition-all"
+                            >
+                                <FileText size={14}/> Recordatorio Email
+                            </button>
+                        </div>
+                    )}
                     <div className="flex gap-3">
                         {newAppt.id && (
                             <Button
@@ -223,6 +261,14 @@ export default function ApptModal({
                             className="flex-1 py-4 text-xs tracking-widest uppercase shadow-lg shadow-[#5B6651]/20 hover:-translate-y-0.5" 
                             onClick={async () => {
                                 if(newAppt.name) {
+                                    // Validación de conflictos
+                                    const { checkAppointmentConflict } = await import('../utils/appointmentAutomation');
+                                    const conflict = checkAppointmentConflict(appointments, newAppt);
+                                    if (conflict) {
+                                        notify(`⚠️ Conflicto: El Dr/a ya tiene una cita a esta hora.`);
+                                        return;
+                                    }
+
                                     const id = newAppt.id || Date.now().toString();
                                     const nd = {...newAppt, id, patient_id: newAppt.patient_id || null};
                                     if (newAppt.id) {

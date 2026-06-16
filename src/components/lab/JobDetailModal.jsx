@@ -101,15 +101,17 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                     {/* Archivo adjunto */}
                     {job.file_url && (
                         <Section icon={<FileText size={15} />} title="Archivo adjunto">
-                            <a
-                                href={job.file_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <button
+                                onClick={async () => {
+                                    const { getSecureUrl } = await import('../../utils/securityFixes');
+                                    const url = await getSecureUrl('patient-images', job.file_url);
+                                    if (url) window.open(url, '_blank');
+                                }}
                                 className="inline-flex items-center gap-2 text-sm text-[#5B6651] font-bold hover:underline"
                             >
                                 <FileText size={14} />
-                                {job.file_name || 'Descargar archivo'}
-                            </a>
+                                {job.file_name || 'Descargar archivo seguro'} 🔒
+                            </button>
                         </Section>
                     )}
 

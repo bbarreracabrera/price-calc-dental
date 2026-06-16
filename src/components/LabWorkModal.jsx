@@ -34,22 +34,27 @@ export default function LabWorkModal({
         if (!file) return;
         setUploading(true);
         try {
+            // 1. Validar seguridad del archivo (Magic Bytes + Extensiones Lab)
+            const { validateFileSecurity } = await import('../utils/securityFixes');
+            await validateFileSecurity(file, 'lab');
+
             const fileExt = file.name.split('.').pop();
             const safeName = `lab_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `lab_files/${clinicOwner}/${safeName}`;
 
+            // 2. Subir a bucket (privado por defecto en RLS)
             const { error: uploadError } = await supabase.storage
                 .from('patient-images') 
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
-            const { data } = supabase.storage.from('patient-images').getPublicUrl(filePath);
-            setFileUrl(data.publicUrl);
+            // 3. Guardamos la PATH, NO la URL pública (Seguridad Ley 19.628)
+            setFileUrl(filePath); 
             setFileName(file.name);
-            notify("Archivo adjuntado correctamente.");
+            notify("Archivo validado y adjuntado de forma segura 🔒");
         } catch (error) {
-            notify("Error al subir archivo. Verifica tu conexión e intenta de nuevo.");
+            notify("Error de seguridad: " + error.message);
         } finally {
             setUploading(false);
         }
