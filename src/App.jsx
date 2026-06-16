@@ -34,6 +34,7 @@ const CRMView          = lazy(() => import('./components/CRMView'));
 const PatientWorkspace = lazy(() => import('./components/PatientWorkspace'));
 const SterilizationView = lazy(() => import('./components/SterilizationView'));
 const LabDashboard     = lazy(() => import('./components/LabDashboard'));
+const HelpView         = lazy(() => import('./components/HelpView'));
 
 // --- MODALS ---
 import ToothModal from './components/ToothModal';
@@ -909,7 +910,11 @@ const saveToOfflineVault = async (table, id, data) => {
         {activeTab === 'inventory' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && <InventoryView themeMode={themeMode} t={t} inventory={inventory} setInventory={setInventory} filteredInventory={filteredInventory} inventorySearch={inventorySearch} setInventorySearch={setInventorySearch} setNewItem={setNewItem} setModal={setModal} saveToSupabase={saveToSupabase} session={session} team={team} notify={notify} />}
         {activeTab === 'lab' && <LabView themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks} setNewLabWork={setNewLabWork} setModal={setModal} notify={notify} team={team} sendWhatsApp={sendWhatsApp} config={config} />}        
         {activeTab === 'settings' && <SettingsView themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal} logoInputRef={logoInputRef} handleLogoUpload={handleLogoUploadWrapper} userRole={userRole} saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam} newMember={newMember} setNewMember={setNewMember} session={session} />}
-        {activeTab === 'help' && <HelpView />}
+        {activeTab === 'help' && (
+          <Suspense fallback={<LoadingScreen />}>
+            <HelpView />
+          </Suspense>
+        )}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <QuoteView themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems} newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog} patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData} getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase} notify={notify} generatePDF={handleGeneratePDF} setActiveTab={setActiveTab} adminEmail={clinicOwner} />}
         {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} />}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} adminEmail={clinicOwner} />}
