@@ -199,7 +199,7 @@ export default function PatientWorkspace({
             <div className="flex gap-5 flex-1 min-h-0">
 
                 {/* --- MENÚ LATERAL DE NAVEGACIÓN --- */}
-                <div className="w-56 shrink-0 flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-1">
+                <div className="w-56 shrink-0 flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 pb-4">
                     {TAB_GROUPS.map(group => {
                         const visibleTabs = tabButtons.filter(t => t.group === group.id && isTabVisible(t.id));
                         if (visibleTabs.length === 0) return null;
@@ -242,8 +242,8 @@ export default function PatientWorkspace({
                         );
                     })}
 
-                    {/* Atajo de Voz - Destacado */}
-                    <div className={`mt-2 rounded-3xl border-2 transition-all overflow-hidden ${
+                    {/* Atajo de Voz - Destacado: siempre pegado al fondo */}
+                    <div className={`mt-auto rounded-3xl border-2 transition-all overflow-hidden shrink-0 ${
                         isListening
                             ? 'border-red-400 bg-red-50 shadow-lg shadow-red-100'
                             : 'border-[#5B6651]/30 bg-gradient-to-br from-[#5B6651]/5 to-[#5B6651]/10'
