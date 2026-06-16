@@ -12,18 +12,25 @@
 }
 
 html {
-  background-color: #FDFBF7 !important; /* Color de fondo base para evitar el rectángulo inferior */
-  height: 100%;
-  overflow: hidden;
+  background-color: #FDFBF7 !important;
+  min-height: 100%;
 }
 
 body {
   background-color: #FDFBF7 !important;
+  min-height: 100%;
+}
+
+/* 
+  Clase para aplicar zoom solo al panel de la aplicación logueada 
+  sin afectar a la Landing Page.
+*/
+.app-zoom-container {
   zoom: 0.9;
   -moz-transform: scale(0.9);
   -moz-transform-origin: 0 0;
-  width: 111.11%; /* Compensamos el ancho para que el 90% cubra el 100% de la pantalla */
-  height: 111.11%; /* Compensamos la altura */
+  width: 111.11%;
+  height: 111.11%;
 }
 
 /* Ajustes de espaciado para compensar la reducción */

@@ -865,7 +865,7 @@ const saveToOfflineVault = async (table, id, data) => {
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
 
   return (
-    <div className={`min-h-screen flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans`}>
+    <div className={`min-h-screen flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans ${session ? 'app-zoom-container' : ''}`}>
       <Toaster position="bottom-center" reverseOrder={false} />
       
       {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-[#2A2421]/30 backdrop-blur-sm md:hidden" onClick={()=>setMobileMenuOpen(false)}></div>}
