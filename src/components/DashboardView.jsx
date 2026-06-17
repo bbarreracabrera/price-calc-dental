@@ -1,6 +1,7 @@
 import React from 'react';
 import { DollarSign, TrendingDown, BarChart2, PieChart, ArrowRight, Clock, CalendarClock, User, Calculator, Wallet, Plus, Calendar, AlertTriangle, FlaskConical, AlertCircle, Box } from 'lucide-react';
 import { Card, Button, SimpleLineChart } from './UIComponents';
+import { DashboardSkeleton } from './SkeletonLoaders';
 
 export default function DashboardView({
     config, userRole, themeMode, t,
@@ -9,8 +10,23 @@ export default function DashboardView({
     lowStockItems = [],
     pendingLabWorks = [],
     expirationAlerts = { expired: [], near: [] },
-    incomeRecords = []
+    incomeRecords = [],
+    isLoading = false
 }) {
+    if (isLoading) {
+        return (
+            <div className="space-y-8 animate-in fade-in custom-scrollbar pb-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#DFD2C4]/50 pb-6 bg-gradient-to-r from-transparent to-[#FDFBF7] rounded-3xl p-2">
+                    <div className="h-16 w-64 bg-[#DFD2C4]/20 animate-pulse rounded-2xl"></div>
+                    <div className="flex gap-3">
+                        <div className="h-12 w-32 bg-[#DFD2C4]/20 animate-pulse rounded-xl"></div>
+                        <div className="h-12 w-40 bg-[#DFD2C4]/20 animate-pulse rounded-xl"></div>
+                    </div>
+                </div>
+                <DashboardSkeleton />
+            </div>
+        );
+    }
     const treatmentTotals = {};
     incomeRecords.forEach(r => {
         const cat = r.treatment || r.description?.split(':')[0]?.trim() || 'Otros';

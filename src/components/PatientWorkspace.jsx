@@ -19,6 +19,7 @@ import PatientImagesTab from './PatientImagesTab';
 import ActiveQuotesTab from './ActiveQuotesTab';
 import PRATab from './PRATab';
 import CariogramTab from './CariogramTab';
+import { PatientCardSkeleton, FormSkeleton } from './SkeletonLoaders';
 
 export default function PatientWorkspace({
     selectedPatientId, setSelectedPatientId, patientTab, setPatientTab,
@@ -31,8 +32,29 @@ export default function PatientWorkspace({
     consentTemplate, setConsentTemplate, consentText, setConsentText, modal,
     getPatient, savePatientData, setPatientRecords, setModal, setQuoteItems,
     setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
-    handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg, config
+    handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg, config,
+    isLoading = false
 }) {
+    if (isLoading || (selectedPatientId && !getPatient(selectedPatientId))) {
+        return (
+            <div className="flex h-[calc(100vh-100px)] gap-6 animate-in fade-in">
+                <div className="w-56 shrink-0 space-y-4">
+                    <div className="h-40 bg-[#DFD2C4]/20 animate-pulse rounded-2xl"></div>
+                    <div className="space-y-2">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="h-10 bg-[#DFD2C4]/10 animate-pulse rounded-xl"></div>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex-1 bg-white rounded-[2.5rem] border border-[#DFD2C4]/60 p-8 shadow-sm overflow-hidden">
+                    <PatientCardSkeleton />
+                    <div className="mt-8">
+                        <FormSkeleton />
+                    </div>
+                </div>
+            </div>
+        );
+    }
     const p = getPatient(selectedPatientId);
 
     const activeQuotesCount = p.clinical?.quotes?.filter(q => q.status === 'en_proceso' || q.status === 'active')?.length || 0;

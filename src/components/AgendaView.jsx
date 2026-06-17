@@ -1,7 +1,29 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, CalendarClock, Filter, Calendar } from 'lucide-react';
 
-export default function AgendaView({ appointments, onOpenModal, team }) {
+import { AppointmentCardSkeleton } from './SkeletonLoaders';
+
+export default function AgendaView({ appointments, onOpenModal, team, isLoading = false }) {
+    if (isLoading) {
+        return (
+            <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in pb-4">
+                <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 mb-4 border-b border-[#DFD2C4]/50 shrink-0">
+                    <div className="h-20 w-80 bg-[#DFD2C4]/20 animate-pulse rounded-2xl"></div>
+                    <div className="h-12 w-48 bg-[#DFD2C4]/20 animate-pulse rounded-xl"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-4 h-full">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                        <div key={i} className="space-y-4">
+                            <div className="h-8 bg-[#DFD2C4]/10 animate-pulse rounded-lg"></div>
+                            {Array.from({ length: 3 }).map((_, j) => (
+                                <AppointmentCardSkeleton key={j} />
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDentistFilter, setSelectedDentistFilter] = useState('all');
     const [viewMode, setViewMode] = useState('week');
