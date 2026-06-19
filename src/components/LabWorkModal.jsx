@@ -52,7 +52,7 @@ export default function LabWorkModal({
             // 3. Guardamos la PATH, NO la URL pública (Seguridad Ley 19.628)
             setFileUrl(filePath); 
             setFileName(file.name);
-            notify("Archivo validado y adjuntado de forma segura 🔒");
+            notify("Archivo validado y adjuntado de forma segura");
         } catch (error) {
             notify("Error de seguridad: " + error.message);
         } finally {

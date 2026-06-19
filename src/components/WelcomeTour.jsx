@@ -49,7 +49,7 @@ export default function WelcomeTour({ run, onComplete, setActiveTab, setMobileMe
         {
             target: 'body',
             placement: 'center',
-            title: '¡Listo para empezar! ✨',
+            title: '¡Listo para empezar!',
             content: 'Ya conoces lo principal. Ahora es tu turno. Si tienes dudas, puedes repetir el tour desde Ajustes.',
         },
     ];

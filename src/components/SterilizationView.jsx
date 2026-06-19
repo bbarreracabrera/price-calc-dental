@@ -30,7 +30,7 @@ export default function SterilizationView({
         setSterilizationItems([...sterilizationItems, newKit]);
         await saveToSupabase('sterilization', newId, newKit);
         setNewKitName('');
-        notify(`Kit "${newKit.name}" registrado con éxito 🛡️`);
+        notify(`Kit "${newKit.name}" registrado con éxito`);
     };
 
     const handleMove = async (kit, newStatus) => {
@@ -40,7 +40,7 @@ export default function SterilizationView({
         if (newStatus === 'sterile') {
             const days = config?.sterilizationDays || 30;
             updatedKit.expiry_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-            notify(`Kit esterilizado. Válido por ${days} días ✨`);
+            notify(`Kit esterilizado. Válido por ${days} días`);
         } else if (newStatus === 'dirty') {
             notify(`Kit enviado a área sucia 🔴`);
         } else {

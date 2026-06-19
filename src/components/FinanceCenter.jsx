@@ -634,7 +634,7 @@ export default function FinanceCenter({
                                                             };
                                                             setFinancialRecords([...financialRecords, newEx]);
                                                             await saveToSupabase('financials', exId, newEx);
-                                                            notify(`Honorarios liquidados con éxito 💰`);
+                                                            notify(`Honorarios liquidados con éxito`);
                                                         }
                                                     }}
                                                     className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2"

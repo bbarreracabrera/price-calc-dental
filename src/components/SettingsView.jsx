@@ -241,7 +241,7 @@ export default function SettingsView({
                             }}
                             className="flex items-center gap-2 px-5 py-3.5 bg-[#FDFBF7] border border-[#DFD2C4] text-[#312923] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#DFD2C4]/30 transition-all"
                         >
-                            🎯 Repetir tour
+                            Repetir tour
                         </button>
                         <button
                             onClick={()=>{

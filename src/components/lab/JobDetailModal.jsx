@@ -110,7 +110,7 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                                 className="inline-flex items-center gap-2 text-sm text-[#5B6651] font-bold hover:underline"
                             >
                                 <FileText size={14} />
-                                {job.file_name || 'Descargar archivo seguro'} ðŸ”’
+                                {job.file_name || 'Descargar archivo seguro'}’
                             </button>
                         </Section>
                     )}

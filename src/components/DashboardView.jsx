@@ -55,7 +55,7 @@ export default function DashboardView({
                         <Calendar size={14} className="text-[#A3968B]"/>
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">{formattedDate}</p>
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-black text-[#312923] tracking-tighter">Hola, {config.name.split(' ')[0]} 👋</h1>
+                    <h1 className="text-4xl md:text-5xl font-black text-[#312923] tracking-tighter">Hola, {config.name.split(' ')[0]}</h1>
                 </div>
                 <div className="flex gap-3">
                     <button onClick={() => openApptModal ? openApptModal() : setModal('appt')} className="px-5 py-3 rounded-xl border border-[#DFD2C4] bg-white text-[#5B6651] text-[11px] font-black uppercase tracking-widest hover:bg-[#FDFBF7] hover:border-[#5B6651]/50 transition-all flex items-center gap-2 shadow-sm" title="Agendar cita (A)">

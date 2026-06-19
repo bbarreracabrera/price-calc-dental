@@ -292,7 +292,6 @@ export default function PatientEvolutionTab({
 
                 {showDraftRecovered && (
                     <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-3 mb-4 flex items-center gap-2">
-                        <span className="text-sm">✨</span>
                         <p className="text-sm font-bold text-[#312923]">Recuperamos un borrador que dejaste sin guardar</p>
                     </div>
                 )}
