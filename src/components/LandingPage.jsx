@@ -242,49 +242,102 @@ export default function LandingPage({ onLoginClick }) {
           </button>
           
           <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] relative z-10">
-            Paga solo por lo que usas • Sin contratos de permanencia
+            Paga solo por lo que usas. Sin contratos de largo plazo.
           </p>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-32 px-6 text-center space-y-12">
-         <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-[#312923]">¿Hablamos?</h2>
-         <p className="text-xl text-[#6B615A] font-medium max-w-2xl mx-auto">
-           Si tienes dudas sobre la migración o quieres una demo personalizada, escríbenos directamente.
-         </p>
-         <div className="flex flex-col sm:flex-row gap-6 justify-center">
+      {/* Trust & Security */}
+      <section className="py-20 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-[#5B6651]/10 rounded-2xl flex items-center justify-center mx-auto">
+              <Lock size={32} className="text-[#5B6651]" />
+            </div>
+            <h3 className="text-lg font-black text-[#312923]">Ley 19.628 Cumplida</h3>
+            <p className="text-sm text-[#6B615A] font-medium">Encriptación de datos de pacientes. URLs firmadas. Cumplimiento total.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-[#5B6651]/10 rounded-2xl flex items-center justify-center mx-auto">
+              <Cloud size={32} className="text-[#5B6651]" />
+            </div>
+            <h3 className="text-lg font-black text-[#312923]">AWS Encriptado</h3>
+            <p className="text-sm text-[#6B615A] font-medium">Infraestructura de clase mundial. Backups automáticos. 99.9% uptime.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-[#5B6651]/10 rounded-2xl flex items-center justify-center mx-auto">
+              <ShieldCheck size={32} className="text-[#5B6651]" />
+            </div>
+            <h3 className="text-lg font-black text-[#312923]">Soporte 24/7</h3>
+            <p className="text-sm text-[#6B615A] font-medium">Equipo dedicado. Respuestas en menos de 1 hora. Siempre disponibles.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Final */}
+      <section className="py-20 px-6 bg-[#5B6651] text-white">
+        <div className="max-w-4xl mx-auto text-center space-y-8">
+          <h2 className="text-5xl font-black tracking-tighter">Transforma tu Clínica Hoy</h2>
+          <p className="text-xl font-medium text-[#DFD2C4]">15 días gratis. Sin tarjeta de crédito. Acceso completo a todas las funciones.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={onLoginClick}
+              className="px-12 py-6 bg-white text-[#5B6651] rounded-[2.5rem] font-black text-xs uppercase tracking-[0.25em] hover:bg-[#FDFBF7] transition-all shadow-xl flex items-center justify-center gap-3"
+            >
+              Comenzar Prueba Gratis <ArrowRight size={18} />
+            </button>
             <button 
               onClick={handleWhatsApp}
-              className="px-12 py-6 bg-[#25D366] text-white rounded-[2.5rem] font-black text-xs uppercase tracking-[0.25em] hover:bg-[#128C7E] transition-all shadow-xl flex items-center justify-center gap-3"
+              className="px-12 py-6 bg-white/10 text-white border border-white/30 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.25em] hover:bg-white/20 transition-all flex items-center justify-center gap-3"
             >
-              <MessageCircle size={20} /> WhatsApp Directo
+              <MessageCircle size={18} /> Hablar con Ventas
             </button>
-            <button 
-              onClick={() => window.location.href = `mailto:${contactEmail}`}
-              className="px-12 py-6 bg-[#312923] text-white rounded-[2.5rem] font-black text-xs uppercase tracking-[0.25em] hover:bg-black transition-all shadow-xl flex items-center justify-center gap-3"
-            >
-              <Mail size={20} /> Enviar Email
-            </button>
-         </div>
+          </div>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-20 px-6 border-t border-[#DFD2C4]/50 text-center">
-        <div className="max-w-7xl mx-auto space-y-10">
-          <div className="flex items-center justify-center gap-2">
-            <Cloud className="text-[#312923]" size={28} />
-            <span className="text-2xl font-black tracking-tighter text-[#312923]">ShiningCloud <span className="text-[#9A8F84]">Dental</span></span>
+      <footer className="py-16 px-6 border-t border-[#DFD2C4]/50 bg-[#FDFBF7]">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-[#312923] rounded-lg flex items-center justify-center text-white font-black text-xs">SC</div>
+                <span className="font-black text-[#312923]">ShiningCloud Dental</span>
+              </div>
+              <p className="text-[11px] text-[#9A8F84] font-bold">La odontología más rápida de Chile.</p>
+            </div>
+            <div>
+              <h4 className="font-black text-[#312923] text-[10px] uppercase tracking-widest mb-4">Producto</h4>
+              <ul className="space-y-2 text-[10px] text-[#6B615A] font-bold">
+                <li><button onClick={onLoginClick} className="hover:text-[#5B6651] transition-colors">Características</button></li>
+                <li><button onClick={() => window.location.href = '#precios'} className="hover:text-[#5B6651] transition-colors">Precios</button></li>
+                <li><button onClick={handleWhatsApp} className="hover:text-[#5B6651] transition-colors">Contacto</button></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-black text-[#312923] text-[10px] uppercase tracking-widest mb-4">Legal</h4>
+              <ul className="space-y-2 text-[10px] text-[#6B615A] font-bold">
+                <li><span className="hover:text-[#5B6651] cursor-pointer transition-colors">Privacidad</span></li>
+                <li><span className="hover:text-[#5B6651] cursor-pointer transition-colors">Términos</span></li>
+                <li><span className="hover:text-[#5B6651] cursor-pointer transition-colors">Ley 19.628</span></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-black text-[#312923] text-[10px] uppercase tracking-widest mb-4">Contacto Directo</h4>
+              <div className="space-y-3">
+                <button onClick={handleWhatsApp} className="flex items-center gap-2 text-[10px] font-bold text-[#5B6651] hover:text-[#4a5442] transition-colors">
+                  <MessageCircle size={14} /> +56 9 3274 5439
+                </button>
+                <button onClick={() => window.location.href = `mailto:${contactEmail}`} className="flex items-center gap-2 text-[10px] font-bold text-[#5B6651] hover:text-[#4a5442] transition-colors">
+                  <Mail size={14} /> Email
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-8 text-[10px] font-black uppercase tracking-[0.3em] text-[#9A8F84]">
-            <a href="#" className="hover:text-[#312923]">Privacidad</a>
-            <a href="#" className="hover:text-[#312923]">Términos</a>
-            <a href="#" className="hover:text-[#312923]">Seguridad</a>
-            <a href="#" className="hover:text-[#312923]">Ley 19.628</a>
+          <div className="border-t border-[#DFD2C4]/50 pt-8 text-center">
+            <p className="text-[10px] font-bold text-[#9A8F84]">© 2026 ShiningCloud Dental. Todos los derechos reservados.</p>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#DFD2C4] pt-10">
-            © 2026 ShiningCloud Dental • Desarrollado en Chile 🇨🇱
-          </p>
         </div>
       </footer>
     </div>
