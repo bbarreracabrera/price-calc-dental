@@ -6,6 +6,9 @@ import {
 import { Card, InputField, Button } from './UIComponents';
 import { ANAMNESIS_TAGS } from '../constants';
 import { useDialog } from './DialogProvider';
+import OrthodonticsTab from './specialties/OrthodonticsTab';
+import ImplantologyTab from './specialties/ImplantologyTab';
+import EndodonticsTab from './specialties/EndodonticsTab';
 
 export default function PatientAnamnesisTab({
     getPatient, selectedPatientId, savePatientData,
@@ -27,9 +30,9 @@ export default function PatientAnamnesisTab({
         { id: 'general', label: 'Anamnesis General', icon: FileText, quickAccess: true },
         { id: 'cirugia', label: 'Ficha de Cirugía', icon: Syringe, quickAccess: true },
         { id: 'endodoncia', label: 'Ficha Endodoncia', icon: Activity, quickAccess: true },
-        { id: 'ortodoncia', label: 'Ortodoncia', icon: FilePlus2, quickAccess: false },
+        { id: 'ortodoncia', label: 'Ortodoncia', icon: FilePlus2, quickAccess: true },
+        { id: 'implantologia', label: 'Implantología', icon: Syringe, quickAccess: true },
         { id: 'periodoncia', label: 'Periodoncia', icon: FilePlus2, quickAccess: false },
-        { id: 'implantologia', label: 'Implantología', icon: FilePlus2, quickAccess: false },
         { id: 'pediatria', label: 'Odontopediatría', icon: FilePlus2, quickAccess: false },
     ];
 
@@ -188,39 +191,18 @@ export default function PatientAnamnesisTab({
                     )}
 
                     {(isReadOnly ? viewingForm.type === 'endodoncia' : activeFormType === 'endodoncia') && (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <InputField label="Diente" type="number" placeholder="Ej: 36" disabled={isReadOnly} value={activeData.diente || ''} onChange={e=>setDraft('endodoncia', 'diente', e.target.value)} />
-                                <div className="md:col-span-2"><InputField label="Semiología del Dolor" disabled={isReadOnly} value={activeData.dolor || ''} onChange={e=>setDraft('endodoncia', 'dolor', e.target.value)} /></div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-[#9A8F84] ml-1">Sensibilidad (Frío)</label>
-                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.frio || ''} onChange={e=>setDraft('endodoncia', 'frio', e.target.value)}>
-                                        <option value="">Seleccione...</option><option value="Normal">Normal</option><option value="Aumentada (+)">Aumentada (+)</option><option value="Disminuida (-)">Disminuida (-)</option><option value="Sin Respuesta">Sin Respuesta</option>
-                                    </select>
-                                </div>
-                                <InputField label="Percusión / Palpación" disabled={isReadOnly} value={activeData.percusion || ''} onChange={e=>setDraft('endodoncia', 'percusion', e.target.value)} />
-                            </div>
-                            <InputField textarea label="Examen Radiográfico" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('endodoncia', 'rx', e.target.value)} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#FDFBF7] p-5 rounded-[2rem] border border-[#DFD2C4]/50">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-[#5B6651] ml-1">Diagnóstico Pulpar</label>
-                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-white font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.dxPulpar || ''} onChange={e=>setDraft('endodoncia', 'dxPulpar', e.target.value)}>
-                                        <option value="">Seleccione...</option><option value="Pulpa Normal">Pulpa Normal</option><option value="Pulpitis Reversible">Pulpitis Reversible</option><option value="Pulpitis Irreversible Sintomática">Pulpitis Irreversible Sintomática</option><option value="Pulpitis Irreversible Asintomática">Pulpitis Irreversible Asintomática</option><option value="Necrosis Pulpar">Necrosis Pulpar</option><option value="Diente Previamente Tratado">Diente Previamente Tratado</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-[#5B6651] ml-1">Diagnóstico Periapical</label>
-                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-white font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.dxPeriapical || ''} onChange={e=>setDraft('endodoncia', 'dxPeriapical', e.target.value)}>
-                                        <option value="">Seleccione...</option><option value="Tejido Apical Normal">Tejido Apical Normal</option><option value="Periodontitis Apical Sintomática">Periodontitis Apical Sintomática</option><option value="Periodontitis Apical Asintomática">Periodontitis Apical Asintomática</option><option value="Absceso Apical Agudo">Absceso Apical Agudo</option><option value="Absceso Apical Crónico">Absceso Apical Crónico</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </>
+                        <EndodonticsTab patientId={selectedPatientId} onSave={(data) => setDraft('endodoncia', 'data', data)} />
                     )}
 
-                    {!isReadOnly && !['general', 'cirugia', 'endodoncia'].includes(activeFormType) && (
+                    {(isReadOnly ? viewingForm.type === 'ortodoncia' : activeFormType === 'ortodoncia') && (
+                        <OrthodonticsTab patientId={selectedPatientId} onSave={(data) => setDraft('ortodoncia', 'data', data)} />
+                    )}
+
+                    {(isReadOnly ? viewingForm.type === 'implantologia' : activeFormType === 'implantologia') && (
+                        <ImplantologyTab patientId={selectedPatientId} onSave={(data) => setDraft('implantologia', 'data', data)} />
+                    )}
+
+                    {!isReadOnly && !['general', 'cirugia', 'endodoncia', 'ortodoncia', 'implantologia'].includes(activeFormType) && (
                         <div className="text-center py-16 bg-[#FDFBF7] border-2 border-dashed border-[#DFD2C4] rounded-[2.5rem]">
                             <FilePlus2 className="mx-auto text-[#DFD2C4] mb-4" size={48}/>
                             <h3 className="text-xl font-black text-[#312923]">Ficha de {currentFormDef.label}</h3>
