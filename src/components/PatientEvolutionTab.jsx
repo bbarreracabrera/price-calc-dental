@@ -1,9 +1,290 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck, ListTodo, CheckCircle2 } from 'lucide-react';
+import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck, ListTodo, CheckCircle2, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, X, Tag } from 'lucide-react';
 import { Button } from './UIComponents';
 import { supabase } from '../supabase';
 import { getVaultItem, setVaultItem, removeVaultItem } from '../utils/cryptoVault';
 
+// ─── Categorías predefinidas para las plantillas ───────────────────────────
+const TEMPLATE_CATEGORIES = [
+    { id: 'general', label: 'General' },
+    { id: 'ortodoncia', label: 'Ortodoncia' },
+    { id: 'implantologia', label: 'Implantología' },
+    { id: 'endodoncia', label: 'Endodoncia' },
+    { id: 'periodoncia', label: 'Periodoncia' },
+    { id: 'cirugia', label: 'Cirugía' },
+    { id: 'pediatria', label: 'Pediatría' },
+    { id: 'estetica', label: 'Estética' },
+];
+
+// ─── Sub-componente: Modal para crear nueva plantilla ─────────────────────
+function NewTemplateModal({ onClose, onSave, clinicEmail }) {
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [category, setCategory] = useState('general');
+    const [saving, setSaving] = useState(false);
+
+    const handleSave = async () => {
+        if (!title.trim() || !content.trim()) return;
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('evolution_templates')
+                .insert([{ clinic_email: clinicEmail, title: title.trim(), content: content.trim(), category }]);
+            if (error) throw error;
+            onSave();
+        } catch (err) {
+            console.error('Error guardando plantilla:', err);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg border border-[#DFD2C4]/60 animate-in fade-in zoom-in-95">
+                <div className="p-6 border-b border-[#DFD2C4]/50 flex justify-between items-center">
+                    <h3 className="text-lg font-black text-[#312923] flex items-center gap-2">
+                        <BookOpen size={18} className="text-[#CBAAA2]" />
+                        Nueva Plantilla de Evolución
+                    </h3>
+                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-[#F5EFE8] text-[#9A8F84] transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1.5">
+                            Título de la Plantilla
+                        </label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                            placeholder="Ej: Control de Ortodoncia Estándar"
+                            className="w-full bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#312923] outline-none focus:border-[#5B6651]/50 transition-colors placeholder:text-[#9A8F84]/50"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1.5">
+                            Categoría
+                        </label>
+                        <select
+                            value={category}
+                            onChange={e => setCategory(e.target.value)}
+                            className="w-full bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#312923] outline-none focus:border-[#5B6651]/50 transition-colors"
+                        >
+                            {TEMPLATE_CATEGORIES.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1.5">
+                            Contenido de la Plantilla
+                        </label>
+                        <textarea
+                            rows={5}
+                            value={content}
+                            onChange={e => setContent(e.target.value)}
+                            placeholder="Redacte el texto que se autocompletará al seleccionar esta plantilla..."
+                            className="w-full bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#312923] outline-none focus:border-[#5B6651]/50 transition-colors resize-none placeholder:text-[#9A8F84]/50 custom-scrollbar"
+                        />
+                    </div>
+                </div>
+                <div className="p-6 border-t border-[#DFD2C4]/50 flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        className="px-5 py-2.5 rounded-xl text-sm font-bold text-[#9A8F84] hover:bg-[#F5EFE8] transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={!title.trim() || !content.trim() || saving}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${
+                            title.trim() && content.trim() && !saving
+                                ? 'bg-[#5B6651] text-white hover:bg-[#4a5542] shadow-sm'
+                                : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
+                        }`}
+                    >
+                        {saving ? <span className="animate-pulse">Guardando...</span> : <><Plus size={14} /> Guardar Plantilla</>}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Sub-componente: Panel selector de plantillas ─────────────────────────
+function TemplateSelector({ templates, loading, onSelect, onDelete, onNew, clinicEmail }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [activeCategory, setActiveCategory] = useState('all');
+    const [confirmDelete, setConfirmDelete] = useState(null);
+
+    const filteredTemplates = useMemo(() => {
+        if (activeCategory === 'all') return templates;
+        return templates.filter(t => t.category === activeCategory);
+    }, [templates, activeCategory]);
+
+    const usedCategories = useMemo(() => {
+        const cats = new Set(templates.map(t => t.category));
+        return TEMPLATE_CATEGORIES.filter(c => cats.has(c.id));
+    }, [templates]);
+
+    const handleDelete = async (templateId) => {
+        try {
+            const { error } = await supabase
+                .from('evolution_templates')
+                .delete()
+                .eq('id', templateId);
+            if (error) throw error;
+            onDelete(templateId);
+            setConfirmDelete(null);
+        } catch (err) {
+            console.error('Error eliminando plantilla:', err);
+        }
+    };
+
+    return (
+        <div className="mb-5 border border-[#DFD2C4]/60 rounded-2xl overflow-hidden">
+            {/* Header del panel */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-5 py-3.5 bg-[#FDFBF7] hover:bg-[#F5EFE8] transition-colors"
+            >
+                <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-[#CBAAA2]/15 rounded-lg">
+                        <BookOpen size={14} className="text-[#CBAAA2]" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#312923]">
+                        Plantillas de Evolución
+                    </span>
+                    {templates.length > 0 && (
+                        <span className="bg-[#5B6651]/10 text-[#5B6651] text-[9px] font-black px-2 py-0.5 rounded-full">
+                            {templates.length}
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={e => { e.stopPropagation(); onNew(); }}
+                        className="p-1.5 rounded-lg bg-[#5B6651]/10 text-[#5B6651] hover:bg-[#5B6651]/20 transition-colors"
+                        title="Nueva plantilla"
+                    >
+                        <Plus size={13} />
+                    </button>
+                    {isOpen ? <ChevronUp size={16} className="text-[#9A8F84]" /> : <ChevronDown size={16} className="text-[#9A8F84]" />}
+                </div>
+            </button>
+
+            {/* Contenido expandible */}
+            {isOpen && (
+                <div className="border-t border-[#DFD2C4]/50 bg-white">
+                    {loading ? (
+                        <div className="py-8 text-center text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] animate-pulse">
+                            Cargando plantillas...
+                        </div>
+                    ) : templates.length === 0 ? (
+                        <div className="py-8 text-center">
+                            <BookOpen size={28} className="mx-auto text-[#DFD2C4] mb-2" />
+                            <p className="text-sm font-bold text-[#9A8F84] mb-1">Sin plantillas aún</p>
+                            <p className="text-xs text-[#A3968B] mb-4">Crea tu primera plantilla para ahorrar tiempo en cada consulta</p>
+                            <button
+                                onClick={onNew}
+                                className="px-5 py-2 rounded-xl text-xs font-black bg-[#5B6651] text-white hover:bg-[#4a5542] transition-colors"
+                            >
+                                + Crear primera plantilla
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Filtro por categoría */}
+                            {usedCategories.length > 1 && (
+                                <div className="px-4 pt-3 pb-2 flex gap-1.5 flex-wrap border-b border-[#DFD2C4]/30">
+                                    <button
+                                        onClick={() => setActiveCategory('all')}
+                                        className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                                            activeCategory === 'all'
+                                                ? 'bg-[#312923] text-white'
+                                                : 'bg-[#F5EFE8] text-[#9A8F84] hover:bg-[#DFD2C4]/50'
+                                        }`}
+                                    >
+                                        Todas
+                                    </button>
+                                    {usedCategories.map(cat => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setActiveCategory(cat.id)}
+                                            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                activeCategory === cat.id
+                                                    ? 'bg-[#CBAAA2] text-white'
+                                                    : 'bg-[#F5EFE8] text-[#9A8F84] hover:bg-[#DFD2C4]/50'
+                                            }`}
+                                        >
+                                            {cat.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Lista de plantillas */}
+                            <div className="p-3 space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                {filteredTemplates.length === 0 ? (
+                                    <p className="text-center text-xs text-[#9A8F84] py-4">No hay plantillas en esta categoría</p>
+                                ) : (
+                                    filteredTemplates.map(template => (
+                                        <div
+                                            key={template.id}
+                                            className="group flex items-start gap-3 p-3 rounded-xl border border-[#DFD2C4]/50 hover:border-[#5B6651]/30 hover:bg-[#FDFBF7] transition-all cursor-pointer"
+                                            onClick={() => { onSelect(template); setIsOpen(false); }}
+                                        >
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="text-sm font-bold text-[#312923] truncate">{template.title}</p>
+                                                    {template.category && (
+                                                        <span className="flex-shrink-0 flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-[#CBAAA2] bg-[#CBAAA2]/10 px-2 py-0.5 rounded-full">
+                                                            <Tag size={8} />
+                                                            {TEMPLATE_CATEGORIES.find(c => c.id === template.category)?.label || template.category}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-[#9A8F84] line-clamp-2 leading-relaxed">{template.content}</p>
+                                            </div>
+                                            <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-[9px] font-black text-[#5B6651] bg-[#5B6651]/10 px-2 py-1 rounded-lg">
+                                                    Usar
+                                                </span>
+                                                {confirmDelete === template.id ? (
+                                                    <button
+                                                        onClick={e => { e.stopPropagation(); handleDelete(template.id); }}
+                                                        className="p-1.5 rounded-lg bg-red-100 text-red-500 hover:bg-red-200 transition-colors"
+                                                        title="Confirmar eliminación"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={e => { e.stopPropagation(); setConfirmDelete(template.id); setTimeout(() => setConfirmDelete(null), 3000); }}
+                                                        className="p-1.5 rounded-lg text-[#9A8F84] hover:bg-red-50 hover:text-red-400 transition-colors"
+                                                        title="Eliminar plantilla"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Componente Principal ──────────────────────────────────────────────────
 export default function PatientEvolutionTab({ 
     newEvolution, setNewEvolution, 
     getPatient, selectedPatientId, savePatientData, session, logAction
@@ -16,9 +297,15 @@ export default function PatientEvolutionTab({
     const [draftStatus, setDraftStatus] = useState('');
     const [showDraftRecovered, setShowDraftRecovered] = useState(false);
 
-    const draftKey = `evolution_draft_${selectedPatientId}`;
+    // ── Estado para Plantillas de Evolución ──
+    const [templates, setTemplates] = useState([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(true);
+    const [showNewTemplateModal, setShowNewTemplateModal] = useState(false);
+    const [templateApplied, setTemplateApplied] = useState('');
 
+    const draftKey = `evolution_draft_${selectedPatientId}`;
     const userId = session?.user?.id;
+    const clinicEmail = patient?.admin_email || session?.user?.email || '';
 
     // Cargar borrador cifrado al montar o cambiar de paciente
     useEffect(() => {
@@ -49,10 +336,60 @@ export default function PatientEvolutionTab({
         return () => clearTimeout(timer);
     }, [newEvolution, draftKey]);
 
-    // NUEVO: Estado para los tratamientos que el doctor selecciona hoy
+    // ── Cargar plantillas de la clínica ──
+    useEffect(() => {
+        if (!clinicEmail) return;
+        let isMounted = true;
+        const fetchTemplates = async () => {
+            setLoadingTemplates(true);
+            try {
+                const { data, error } = await supabase
+                    .from('evolution_templates')
+                    .select('*')
+                    .eq('clinic_email', clinicEmail)
+                    .order('category', { ascending: true })
+                    .order('title', { ascending: true });
+                if (error) throw error;
+                if (isMounted && data) setTemplates(data);
+            } catch (err) {
+                console.error('Error cargando plantillas:', err);
+            } finally {
+                if (isMounted) setLoadingTemplates(false);
+            }
+        };
+        fetchTemplates();
+        return () => { isMounted = false; };
+    }, [clinicEmail]);
+
+    // ── Aplicar plantilla al textarea ──
+    const handleSelectTemplate = (template) => {
+        const prefix = newEvolution.trim() ? `${newEvolution}\n\n` : '';
+        setNewEvolution(prefix + template.content);
+        setTemplateApplied(template.title);
+        setTimeout(() => setTemplateApplied(''), 2500);
+    };
+
+    // ── Recargar plantillas tras crear una nueva ──
+    const handleTemplateSaved = async () => {
+        setShowNewTemplateModal(false);
+        const { data } = await supabase
+            .from('evolution_templates')
+            .select('*')
+            .eq('clinic_email', clinicEmail)
+            .order('category', { ascending: true })
+            .order('title', { ascending: true });
+        if (data) setTemplates(data);
+    };
+
+    // ── Eliminar plantilla del estado local ──
+    const handleTemplateDeleted = (templateId) => {
+        setTemplates(prev => prev.filter(t => t.id !== templateId));
+    };
+
+    // Estado para los tratamientos que el doctor selecciona hoy
     const [linkedItems, setLinkedItems] = useState([]);
 
-    // --- CARGAR EVOLUCIONES (TU CÓDIGO ORIGINAL) ---
+    // --- CARGAR EVOLUCIONES ---
     useEffect(() => {
         let isMounted = true;
         const fetchEvolutions = async () => {
@@ -77,7 +414,7 @@ export default function PatientEvolutionTab({
         return () => { isMounted = false; };
     }, [selectedPatientId]);
 
-    // --- MAGIA: BUSCAR TRATAMIENTOS PENDIENTES DEL PLAN ---
+    // --- BUSCAR TRATAMIENTOS PENDIENTES DEL PLAN ---
     const pendingTreatments = useMemo(() => {
         if (!patient.clinical?.quotes) return [];
         let pending = [];
@@ -85,7 +422,6 @@ export default function PatientEvolutionTab({
         patient.clinical.quotes.forEach(quote => {
             if (quote.status === 'en_proceso') {
                 quote.items.forEach(item => {
-                    // Solo traemos los que nacieron 'pending' (como programamos en la vista de presupuestos)
                     if (item.status === 'pending') {
                         pending.push({ ...item, quoteId: quote.id });
                     }
@@ -107,7 +443,7 @@ export default function PatientEvolutionTab({
         setLinkedItems(linkedItems.filter(i => i.id !== itemId));
     };
 
-    // --- MOTOR DE DICTADO (TU CÓDIGO ORIGINAL) ---
+    // --- MOTOR DE DICTADO ---
     const [isDictating, setIsDictating] = useState(false);
     const recognitionRef = useRef(null);
 
@@ -149,7 +485,7 @@ export default function PatientEvolutionTab({
         recognitionRef.current = recognition;
     };
 
-    // --- FUNCIÓN CRIPTOGRÁFICA (TU CÓDIGO ORIGINAL) ---
+    // --- FUNCIÓN CRIPTOGRÁFICA ---
     const generateHash = async (text) => {
         const encoder = new TextEncoder();
         const data = encoder.encode(text + Date.now().toString());
@@ -165,13 +501,13 @@ export default function PatientEvolutionTab({
         
         try {
             const authorEmail = session?.user?.email || 'Usuario Clínico';
-            const clinicEmail = patient.admin_email || authorEmail; 
+            const clinicEmailForRecord = patient.admin_email || authorEmail; 
             
             const signature = await generateHash(newEvolution + authorEmail + selectedPatientId);
 
             const newRecord = {
                 patient_id: selectedPatientId,
-                clinic_email: clinicEmail,
+                clinic_email: clinicEmailForRecord,
                 author: authorEmail,
                 evolution_text: newEvolution,
                 signature_hash: signature
@@ -185,14 +521,14 @@ export default function PatientEvolutionTab({
 
             if (error) throw error;
 
-            // 2. MAGIA: Si el doctor seleccionó tratamientos, los marcamos como completados en el JSON
+            // 2. Si el doctor seleccionó tratamientos, los marcamos como completados
             if (linkedItems.length > 0 && patient.clinical?.quotes) {
                 const updatedQuotes = patient.clinical.quotes.map(quote => {
                     let quoteHasChanges = false;
                     const newItems = quote.items.map(item => {
                         if (linkedItems.find(link => link.id === item.id)) {
                             quoteHasChanges = true;
-                            return { ...item, status: 'completed' }; // Cambiamos de pending a completed
+                            return { ...item, status: 'completed' };
                         }
                         return item;
                     });
@@ -206,7 +542,6 @@ export default function PatientEvolutionTab({
                     } : quote;
                 });
 
-                // Guardamos el JSON actualizado usando tu función global
                 await savePatientData(selectedPatientId, {
                     ...patient,
                     clinical: { ...patient.clinical, quotes: updatedQuotes }
@@ -238,6 +573,15 @@ export default function PatientEvolutionTab({
     return (
         <div className="space-y-8 animate-in fade-in max-w-4xl mx-auto pb-10">
             
+            {/* Modal para nueva plantilla */}
+            {showNewTemplateModal && (
+                <NewTemplateModal
+                    onClose={() => setShowNewTemplateModal(false)}
+                    onSave={handleTemplateSaved}
+                    clinicEmail={clinicEmail}
+                />
+            )}
+
             <div className="border-b border-[#DFD2C4]/50 pb-4 flex justify-between items-end">
                 <div>
                     <h2 className="text-2xl font-black text-[#312923] tracking-tight flex items-center gap-3">
@@ -254,7 +598,27 @@ export default function PatientEvolutionTab({
 
             <div className="bg-white border border-[#DFD2C4]/60 rounded-[2rem] p-6 shadow-sm relative">
                 
-                {/* --- PANEL DE ASISTENCIA CLÍNICA --- */}
+                {/* ── SELECTOR DE PLANTILLAS DE EVOLUCIÓN ── */}
+                <TemplateSelector
+                    templates={templates}
+                    loading={loadingTemplates}
+                    onSelect={handleSelectTemplate}
+                    onDelete={handleTemplateDeleted}
+                    onNew={() => setShowNewTemplateModal(true)}
+                    clinicEmail={clinicEmail}
+                />
+
+                {/* Notificación de plantilla aplicada */}
+                {templateApplied && (
+                    <div className="mb-4 flex items-center gap-2 bg-[#5B6651]/10 border border-[#5B6651]/20 rounded-xl px-4 py-2.5 animate-in fade-in slide-in-from-top-1">
+                        <CheckCircle2 size={14} className="text-[#5B6651]" />
+                        <p className="text-xs font-bold text-[#5B6651]">
+                            Plantilla aplicada: <span className="font-black">"{templateApplied}"</span>
+                        </p>
+                    </div>
+                )}
+
+                {/* --- PANEL DE ASISTENCIA CLÍNICA (TRATAMIENTOS PENDIENTES) --- */}
                 {pendingTreatments.length > 0 && (
                     <div className="mb-6 p-4 bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-2xl">
                         <div className="flex items-center gap-2 mb-3">
@@ -333,7 +697,7 @@ export default function PatientEvolutionTab({
                 <div className="mt-3 flex justify-end">
                     <Button 
                         variant="primary" 
-                        className={`flex items-center gap-2 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all shadow-lg ${
+                        className={`flex items-center gap-2 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm ${
                             newEvolution.trim() && !isSaving
                             ? 'bg-[#312923] text-white hover:bg-[#1a1512] shadow-[#312923]/20 hover:-translate-y-0.5' 
                             : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed shadow-none'
@@ -346,7 +710,7 @@ export default function PatientEvolutionTab({
                 </div>
             </div>
 
-            {/* --- HISTORIAL (TU CÓDIGO ORIGINAL) --- */}
+            {/* --- HISTORIAL --- */}
             <div className="pt-6">
                 {loadingEvo ? (
                     <div className="text-center py-12 text-[#9A8F84] text-xs font-bold uppercase tracking-widest animate-pulse">
