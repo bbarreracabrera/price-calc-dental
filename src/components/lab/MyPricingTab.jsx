@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Search } from 'lucide-react';
 import { supabase } from '../../supabase';
+import { ConfirmModal } from '../UIComponents';
 
 const CATEGORIES = [
     { id: 'coronas',            label: 'Coronas y Carillas' },
@@ -18,6 +19,7 @@ export default function MyPricingTab({ pricing, refreshPricing, notify, session 
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [showModal, setShowModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm }
 
     const filteredPricing = pricing.filter(item => {
         const d = item.data || {};
@@ -71,18 +73,25 @@ export default function MyPricingTab({ pricing, refreshPricing, notify, session 
     };
 
     const handleDelete = async (item) => {
-        if (!window.confirm(`¿Eliminar "${item.data?.name}" del arancel?`)) return;
-        try {
-            const { error } = await supabase
-                .from('lab_pricing')
-                .update({ deleted_at: new Date().toISOString() })
-                .eq('id', item.id);
-            if (error) throw error;
-            notify('Servicio eliminado');
-            refreshPricing();
-        } catch (e) {
-            notify('Error al eliminar: ' + e.message);
-        }
+        setConfirmModal({
+            title: 'Eliminar Servicio',
+            message: `¿Deseas eliminar "${item.data?.name}" del arancel?`,
+            onConfirm: async () => {
+                try {
+                    const { error } = await supabase
+                        .from('lab_pricing')
+                        .update({ deleted_at: new Date().toISOString() })
+                        .eq('id', item.id);
+                    if (error) throw error;
+                    notify('Servicio eliminado');
+                    refreshPricing();
+                    setConfirmModal(null);
+                } catch (e) {
+                    notify('Error al eliminar: ' + e.message);
+                    setConfirmModal(null);
+                }
+            }
+        });
     };
 
     const openAdd = () => { setEditingItem(null); setShowModal(true); };
@@ -171,6 +180,16 @@ export default function MyPricingTab({ pricing, refreshPricing, notify, session 
                     item={editingItem}
                     onSave={handleSave}
                     onClose={() => { setShowModal(false); setEditingItem(null); }}
+                />
+            )}
+
+            {/* Modal de confirmación */}
+            {confirmModal && (
+                <ConfirmModal
+                    title={confirmModal.title}
+                    message={confirmModal.message}
+                    onConfirm={confirmModal.onConfirm}
+                    onCancel={() => setConfirmModal(null)}
                 />
             )}
         </div>

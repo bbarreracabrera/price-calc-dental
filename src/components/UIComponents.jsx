@@ -213,3 +213,70 @@ export const SimpleLineChart = ({ data }) => {
         </ResponsiveContainer>
     );
 };
+
+// --- MODAL DE CONFIRMACIÓN (reemplaza window.confirm) ---
+// Uso: <ConfirmModal title="..." message="..." onConfirm={fn} onCancel={fn} danger={bool} />
+export const ConfirmModal = ({ title, message, onConfirm, onCancel, confirmLabel = 'Confirmar', danger = false }) => {
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onCancel}>
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+            <div
+                className="relative bg-white rounded-[2rem] shadow-2xl border border-[#DFD2C4]/50 p-8 max-w-sm w-full animate-in zoom-in-95 duration-200"
+                onClick={e => e.stopPropagation()}
+            >
+                <h3 className="text-xl font-black text-[#312923] tracking-tight mb-3">{title}</h3>
+                {message && <p className="text-sm text-[#9A8F84] font-medium leading-relaxed mb-6">{message}</p>}
+                <div className="flex gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 py-3 rounded-2xl border border-[#DFD2C4] text-[11px] font-black uppercase tracking-widest text-[#9A8F84] hover:bg-[#FDFBF7] transition-all"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className={`flex-1 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                            danger
+                                ? 'bg-red-50 text-red-500 hover:bg-red-100 border border-red-100'
+                                : 'bg-[#5B6651] text-white hover:bg-[#4a5442]'
+                        }`}
+                    >
+                        {confirmLabel}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- MODAL DE TEXTO (reemplaza window.prompt) ---
+// Uso: <PromptModal message="..." placeholder="..." value={str} onChange={fn} onSubmit={fn} onCancel={fn} />
+export const PromptModal = ({ message, placeholder = '', value = '', onChange, onSubmit, onCancel, confirmLabel = 'Confirmar' }) => {
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onCancel}>
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+            <div
+                className="relative bg-white rounded-[2rem] shadow-2xl border border-[#DFD2C4]/50 p-8 max-w-sm w-full animate-in zoom-in-95 duration-200"
+                onClick={e => e.stopPropagation()}
+            >
+                <h3 className="text-xl font-black text-[#312923] tracking-tight mb-4">{message}</h3>
+                <input
+                    autoFocus
+                    value={value}
+                    onChange={e => onChange(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && value.trim()) onSubmit(); if (e.key === 'Escape') onCancel(); }}
+                    placeholder={placeholder}
+                    className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] focus:bg-white focus:border-[#5B6651] focus:ring-4 focus:ring-[#5B6651]/20 outline-none transition-all font-medium text-[#312923] mb-6"
+                />
+                <div className="flex gap-3">
+                    <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border border-[#DFD2C4] text-[11px] font-black uppercase tracking-widest text-[#9A8F84] hover:bg-[#FDFBF7] transition-all">Cancelar</button>
+                    <button
+                        onClick={onSubmit}
+                        disabled={!value.trim()}
+                        className="flex-1 py-3 rounded-2xl bg-[#5B6651] text-white text-[11px] font-black uppercase tracking-widest hover:bg-[#4a5442] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >{confirmLabel}</button>
+                </div>
+            </div>
+        </div>
+    );
+};
