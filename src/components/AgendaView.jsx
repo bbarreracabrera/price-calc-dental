@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, CalendarClock, Filter, Calendar } from
 
 import { AppointmentCardSkeleton } from './SkeletonLoaders';
 
-export default function AgendaView({ appointments, onOpenModal, team, isLoading = false }) {
+export default function AgendaView({ appointments, onOpenModal, team, isLoading = false, onGoToPatient }) {
     if (isLoading) {
         return (
             <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in pb-4">
@@ -221,8 +221,8 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
                                                 return (
                                                     <div
                                                         key={appt.id || index}
+                                                        className={`absolute left-1.5 right-1.5 rounded-xl border-l-[4px] flex flex-col justify-between cursor-pointer transition-all hover:-translate-y-[2px] hover:z-30 p-2 z-10 overflow-hidden group ${statusColors[appt.status || 'agendado']}`}
                                                         onClick={(e) => { e.stopPropagation(); onOpenModal(appt); }}
-                                                        className={`absolute left-1.5 right-1.5 rounded-xl border-l-[4px] flex flex-col justify-between cursor-pointer transition-all hover:-translate-y-[2px] hover:z-30 p-2 z-10 overflow-hidden ${statusColors[appt.status || 'agendado']}`}
                                                         style={{
                                                             top: `calc(${topOffset}% + 2px)`,
                                                             height: `calc(${heightPercent}% - 4px)`,
@@ -236,6 +236,14 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
                                                                 <p className="text-[9px] font-bold opacity-80 truncate mt-1.5 leading-none tracking-wide">{appt.time} • {appt.treatment}</p>
                                                             )}
                                                         </div>
+                                                        {onGoToPatient && appt.patient_id && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onGoToPatient(appt.patient_id); }}
+                                                                className="text-[8px] font-black uppercase tracking-widest text-[#5B6651] hover:text-white bg-white/0 hover:bg-[#5B6651]/80 px-2 py-1 rounded-lg transition-all mt-1 opacity-0 group-hover:opacity-100"
+                                                            >
+                                                                Ver Ficha
+                                                            </button>
+                                                        )}
                                                         {(appt.duration || 60) >= 45 && appt.dentist_name && (
                                                             <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mt-1 truncate">
                                                                 👨‍⚕️ Dr. {appt.dentist_name.split(' ')[0]}

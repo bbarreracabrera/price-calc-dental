@@ -52,7 +52,6 @@ export default function NetworkMonitor() {
         if (queue.length === 0) return;
 
         setSyncing(true);
-        console.log(`Iniciando sincronización de ${queue.length} elementos...`);
 
         const failedItems = [];
 

@@ -239,8 +239,8 @@ function PricingModal({ item, onSave, onClose }) {
     const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
     const handleSubmit = () => {
-        if (!form.name.trim())                       { alert('El nombre es obligatorio'); return; }
-        if (!form.price || parseInt(form.price) <= 0) { alert('Ingresa un precio válido'); return; }
+        if (!form.name.trim())                       { notify('El nombre es obligatorio', 'error'); return; }
+        if (!form.price || parseInt(form.price) <= 0) { notify('Ingresa un precio válido', 'error'); return; }
         onSave(form);
     };
 

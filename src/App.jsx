@@ -35,6 +35,7 @@ const PatientWorkspace = lazy(() => import('./components/PatientWorkspace'));
 const SterilizationView = lazy(() => import('./components/SterilizationView'));
 const LabDashboard     = lazy(() => import('./components/LabDashboard'));
 const HelpView         = lazy(() => import('./components/HelpView'));
+const SupplyView       = lazy(() => import('./components/SupplyView'));
 
 // --- MODALS ---
 import ToothModal from './components/ToothModal';
@@ -90,6 +91,7 @@ export default function App() {
   const [sterilizationItems, setSterilizationItems] = useState([]); 
   const [catalog, setCatalog] = useState([]);
   const [labWorks, setLabWorks] = useState([]);
+  const [supplyOrders, setSupplyOrders] = useState([]);
   const [team, setTeam] = useState([]); 
   const [userRole, setUserRole] = useState('admin');
   const [clinicOwner, setClinicOwner] = useState('');
@@ -916,9 +918,10 @@ const saveToOfflineVault = async (table, id, data) => {
           </Suspense>
         )}
         {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <QuoteView themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems} newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog} patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData} getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase} notify={notify} generatePDF={handleGeneratePDF} setActiveTab={setActiveTab} adminEmail={clinicOwner} />}
-        {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} />}
+        {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} onGoToPatient={(patientId) => { setSelectedPatientId(patientId); setActiveTab('ficha'); }} />}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} adminEmail={clinicOwner} />}
         {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <CRMView themeMode={themeMode} t={t} getRecalls={getRecalls} patientRecords={patientRecords} setActiveTab={setActiveTab} setSelectedPatientId={setSelectedPatientId} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} />}
+        {activeTab === 'supply' && (userRole === 'admin' || userRole === 'dentist') && <SupplyView orders={supplyOrders} catalog={catalog} onOrderCreate={() => { const newOrder = { id: `order_${Date.now()}`, date: getLocalDate(), status: 'pending', items: [] }; setSupplyOrders([...supplyOrders, newOrder]); }} />}
         
         {activeTab === 'sterilization' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && (
             <SterilizationView 
