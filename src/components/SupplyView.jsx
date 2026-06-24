@@ -35,16 +35,16 @@ export default function SupplyView({ orders = [], catalog = DEFAULT_SUPPLY_CATAL
       </div>
 
       {/* --- MÉTRICAS PRINCIPALES --- */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="rounded-[2rem] border border-[#DFD2C4]/50 bg-white shadow-sm p-6">
-          <div className="flex justify-between mb-4 items-start">
-            <div className="p-3 bg-[#5B6651]/10 rounded-2xl text-[#5B6651]">
-              <ShoppingCart size={24} strokeWidth={2.5} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+        <Card className="rounded-[1.5rem] sm:rounded-[2rem] border border-[#DFD2C4]/50 bg-white shadow-sm p-4 sm:p-6">
+          <div className="flex justify-between mb-3 sm:mb-4 items-start">
+            <div className="p-2 sm:p-3 bg-[#5B6651]/10 rounded-xl sm:rounded-2xl text-[#5B6651]">
+              <ShoppingCart size={18} sm:size={24} strokeWidth={2.5} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] px-3 py-1 rounded-full">Órdenes</span>
+            <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">Órdenes</span>
           </div>
-          <h2 className="text-4xl font-black text-[#312923] tracking-tighter">{stats.monthlyOrders}</h2>
-          <p className="text-[11px] font-bold text-[#A3968B] mt-2">Este Mes</p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#312923] tracking-tighter">{stats.monthlyOrders}</h2>
+          <p className="text-[9px] sm:text-[11px] font-bold text-[#A3968B] mt-1 sm:mt-2">Este Mes</p>
         </Card>
 
         <Card className="rounded-[2rem] border border-[#DFD2C4]/50 bg-white shadow-sm p-6">

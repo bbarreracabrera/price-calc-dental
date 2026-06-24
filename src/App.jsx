@@ -883,7 +883,7 @@ const saveToOfflineVault = async (table, id, data) => {
           isMasterAdmin={isMasterAdmin}
       />
 
-      <main className={`flex-1 p-4 md:p-8 h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
+      <main className={`flex-1 p-3 sm:p-4 md:p-6 lg:p-8 min-h-[calc(100vh-80px)] md:min-h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
         <div className="md:hidden flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-stone-100">
             <button onClick={()=>setMobileMenuOpen(true)} className={`p-2 rounded-xl bg-[#FDFBF7] text-[#5C544D]`}><Menu/></button>
             <span className="font-black text-lg tracking-tight">ShiningCloud <span className="text-[#A3968B]">Dental</span></span>
