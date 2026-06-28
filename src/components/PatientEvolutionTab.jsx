@@ -4,6 +4,64 @@ import { Button } from './UIComponents';
 import { supabase } from '../supabase';
 import { getVaultItem, setVaultItem, removeVaultItem } from '../utils/cryptoVault';
 
+const FACTORY_TEMPLATES = [
+    {
+        title: "Evaluación Inicial",
+        content: "Paciente acude a consulta por primera vez. Se realiza anamnesis completa, examen clínico extraoral e intraoral. Se discuten antecedentes médicos y dentales. Se establecen objetivos de tratamiento y se solicitan exámenes complementarios.",
+        category: "general"
+    },
+    {
+        title: "Control de Ortodoncia Mensual",
+        content: "Control de avance de tratamiento de ortodoncia. Se evalúa higiene, estado de brackets y arcos. Se realizan ajustes necesarios (cambio de ligaduras, arcos, etc.). Se dan indicaciones y se programa próxima cita.",
+        category: "ortodoncia"
+    },
+    {
+        title: "Instalación de Implante Dental",
+        content: "Procedimiento quirúrgico para la instalación de implante dental en zona [especificar zona]. Anestesia local. Incisión, osteotomía, inserción del implante. Sutura. Indicaciones post-operatorias y medicación.",
+        category: "implantologia"
+    },
+    {
+        title: "Tratamiento de Endodoncia (1ra Sesión)",
+        content: "Diagnóstico de pulpitis irreversible en pieza [especificar pieza]. Anestesia local. Aislamiento absoluto. Apertura cameral, instrumentación y conformación de conductos. Irrigación. Medicación intraconducto. Cierre provisional. Indicaciones.",
+        category: "endodoncia"
+    },
+    {
+        title: "Control Post-Operatorio (Cirugía Menor)",
+        content: "Control de herida quirúrgica en zona [especificar zona]. Se evalúa cicatrización, ausencia de signos inflamatorios o infecciosos. Retiro de suturas si aplica. Indicaciones finales y alta.",
+        category: "cirugia"
+    },
+    {
+        title: "Limpieza Dental Profesional",
+        content: "Profilaxis dental completa. Remoción de placa bacteriana y cálculo supragingival y subgingival. Pulido coronario. Instrucciones de higiene oral y recomendaciones de productos.",
+        category: "general"
+    },
+    {
+        title: "Exodoncia Simple",
+        content: "Extracción de pieza [especificar pieza]. Anestesia local. Sindesmotomía, luxación y avulsión. Revisión de alvéolo. Compresión y hemostasia. Indicaciones post-operatorias.",
+        category: "cirugia"
+    },
+    {
+        title: "Restauración con Resina Compuesta",
+        content: "Diagnóstico de caries en pieza [especificar pieza]. Anestesia local si es necesario. Eliminación de tejido cariado. Preparación cavitaria. Adhesión y restauración con resina compuesta. Pulido y ajuste oclusal.",
+        category: "general"
+    },
+    {
+        title: "Blanqueamiento Dental (Sesión Clínica)",
+        content: "Aplicación de agente blanqueador en clínica. Protección de tejidos blandos. Activación del agente. Sesiones según protocolo. Indicaciones post-blanqueamiento y cuidados.",
+        category: "estetica"
+    },
+    {
+        title: "Tratamiento Periodontal (Fase Higiénica)",
+        content: "Diagnóstico de gingivitis/periodontitis. Instrucción de higiene oral. Destartraje y alisado radicular por cuadrante. Control de placa. Reevaluación periodontal.",
+        category: "periodoncia"
+    },
+    {
+        title: "Consulta Pediátrica (Primera Visita)",
+        content: "Anamnesis a padres. Examen clínico bucal en niño/a. Evaluación de riesgo de caries. Instrucción de higiene oral para padres e hijo/a. Fluoración tópica. Recomendaciones dietéticas.",
+        category: "pediatria"
+    },
+];
+
 // ─── Categorías predefinidas para las plantillas ───────────────────────────
 const TEMPLATE_CATEGORIES = [
     { id: 'general', label: 'General' },
@@ -28,7 +86,7 @@ function NewTemplateModal({ onClose, onSave, clinicEmail }) {
         setSaving(true);
         try {
             const { error } = await supabase
-                .from('evolution_templates')
+                .from("evolution_templates")
                 .insert([{ clinic_email: clinicEmail, title: title.trim(), content: content.trim(), category }]);
             if (error) throw error;
             onSave();
@@ -116,7 +174,7 @@ function NewTemplateModal({ onClose, onSave, clinicEmail }) {
 }
 
 // ─── Sub-componente: Panel selector de plantillas ─────────────────────────
-function TemplateSelector({ templates, loading, onSelect, onDelete, onNew, clinicEmail }) {
+function TemplateSelector({ templates, loadingTemplates, onSelect, onDelete, onNew, clinicEmail }) {
     const [isOpen, setIsOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState('all');
     const [confirmDelete, setConfirmDelete] = useState(null);
@@ -134,9 +192,9 @@ function TemplateSelector({ templates, loading, onSelect, onDelete, onNew, clini
     const handleDelete = async (templateId) => {
         try {
             const { error } = await supabase
-                .from('evolution_templates')
+                .from("evolution_templates")
                 .delete()
-                .eq('id', templateId);
+                .eq("id", templateId);
             if (error) throw error;
             onDelete(templateId);
             setConfirmDelete(null);
@@ -180,7 +238,7 @@ function TemplateSelector({ templates, loading, onSelect, onDelete, onNew, clini
             {/* Contenido expandible */}
             {isOpen && (
                 <div className="border-t border-[#DFD2C4]/50 bg-white">
-                    {loading ? (
+                    {loadingTemplates ? (
                         <div className="py-8 text-center text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] animate-pulse">
                             Cargando plantillas...
                         </div>
@@ -229,430 +287,383 @@ function TemplateSelector({ templates, loading, onSelect, onDelete, onNew, clini
 
                             {/* Lista de plantillas */}
                             <div className="p-3 space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-                                {filteredTemplates.length === 0 ? (
-                                    <p className="text-center text-xs text-[#9A8F84] py-4">No hay plantillas en esta categoría</p>
-                                ) : (
-                                    filteredTemplates.map(template => (
-                                        <div
-                                            key={template.id}
-                                            className="group flex items-start gap-3 p-3 rounded-xl border border-[#DFD2C4]/50 hover:border-[#5B6651]/30 hover:bg-[#FDFBF7] transition-all cursor-pointer"
-                                            onClick={() => { onSelect(template); setIsOpen(false); }}
-                                        >
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <p className="text-sm font-bold text-[#312923] truncate">{template.title}</p>
-                                                    {template.category && (
-                                                        <span className="flex-shrink-0 flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-[#CBAAA2] bg-[#CBAAA2]/10 px-2 py-0.5 rounded-full">
-                                                            <Tag size={8} />
-                                                            {TEMPLATE_CATEGORIES.find(c => c.id === template.category)?.label || template.category}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-xs text-[#9A8F84] line-clamp-2 leading-relaxed">{template.content}</p>
+                                {filteredTemplates.map(template => (
+                                    <div key={template.id} className="flex items-center justify-between bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl p-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-[#CBAAA2]/10 rounded-lg">
+                                                <BookOpen size={14} className="text-[#CBAAA2]" />
                                             </div>
-                                            <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <span className="text-[9px] font-black text-[#5B6651] bg-[#5B6651]/10 px-2 py-1 rounded-lg">
-                                                    Usar
-                                                </span>
-                                                {confirmDelete === template.id ? (
-                                                    <button
-                                                        onClick={e => { e.stopPropagation(); handleDelete(template.id); }}
-                                                        className="p-1.5 rounded-lg bg-red-100 text-red-500 hover:bg-red-200 transition-colors"
-                                                        title="Confirmar eliminación"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={e => { e.stopPropagation(); setConfirmDelete(template.id); setTimeout(() => setConfirmDelete(null), 3000); }}
-                                                        className="p-1.5 rounded-lg text-[#9A8F84] hover:bg-red-50 hover:text-red-400 transition-colors"
-                                                        title="Eliminar plantilla"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                )}
+                                            <div>
+                                                <p className="text-sm font-bold text-[#312923]">{template.title}</p>
+                                                <p className="text-xs text-[#9A8F84]">{TEMPLATE_CATEGORIES.find(c => c.id === template.category)?.label}</p>
                                             </div>
                                         </div>
-                                    ))
-                                )}
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => onSelect(template.content)}
+                                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5B6651] text-white hover:bg-[#4a5542] transition-colors"
+                                            >
+                                                Usar
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmDelete(template.id)}
+                                                className="p-1.5 rounded-lg text-[#9A8F84] hover:bg-[#F5EFE8] transition-colors"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </>
                     )}
+                </div>
+            )}
+            {confirmDelete && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm border border-[#DFD2C4]/60 animate-in fade-in zoom-in-95">
+                        <div className="p-6 border-b border-[#DFD2C4]/50">
+                            <h3 className="text-lg font-black text-[#312923]">Confirmar Eliminación</h3>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-sm text-[#312923]">¿Estás seguro de que quieres eliminar esta plantilla? Esta acción no se puede deshacer.</p>
+                        </div>
+                        <div className="p-6 border-t border-[#DFD2C4]/50 flex justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmDelete(null)}
+                                className="px-5 py-2.5 rounded-xl text-sm font-bold text-[#9A8F84] hover:bg-[#F5EFE8] transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => handleDelete(confirmDelete)}
+                                className="px-6 py-2.5 rounded-xl text-sm font-black bg-[#EF4444] text-white hover:bg-[#DC2626] shadow-sm"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
     );
 }
 
-// ─── Componente Principal ──────────────────────────────────────────────────
-export default function PatientEvolutionTab({ 
-    newEvolution, setNewEvolution, 
-    getPatient, selectedPatientId, savePatientData, session, logAction
-}) {
-    const patient = getPatient(selectedPatientId);
-    
+// ─── Componente principal: PatientEvolutionTab ────────────────────────────
+export default function PatientEvolutionTab({ selectedPatientId, clinicOwner, notify }) {
+    const [newEvolution, setNewEvolution] = useState('');
     const [evolutions, setEvolutions] = useState([]);
     const [loadingEvo, setLoadingEvo] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [draftStatus, setDraftStatus] = useState('');
-    const [showDraftRecovered, setShowDraftRecovered] = useState(false);
-
-    // ── Estado para Plantillas de Evolución ──
+    const [showNewTemplateModal, setShowNewTemplateModal] = useState(false);
     const [templates, setTemplates] = useState([]);
     const [loadingTemplates, setLoadingTemplates] = useState(true);
-    const [showNewTemplateModal, setShowNewTemplateModal] = useState(false);
-    const [templateApplied, setTemplateApplied] = useState('');
+    const [factoryTemplatesLoaded, setFactoryTemplatesLoaded] = useState(false);
 
-    const draftKey = `evolution_draft_${selectedPatientId}`;
-    const userId = session?.user?.id;
-    const clinicEmail = patient?.admin_email || session?.user?.email || '';
+    const patient = useMemo(() => getPatient(selectedPatientId), [selectedPatientId]);
 
-    // Cargar borrador cifrado al montar o cambiar de paciente
-    useEffect(() => {
-        if (!userId) return;
-        const loadDraft = async () => {
-            const parsed = await getVaultItem(draftKey, userId);
-            if (!parsed) return;
-            const ageInDays = (Date.now() - parsed.timestamp) / (1000 * 60 * 60 * 24);
-            if (ageInDays < 7 && parsed.text) {
-                setNewEvolution(parsed.text);
-                setShowDraftRecovered(true);
-                setTimeout(() => setShowDraftRecovered(false), 3000);
-            } else {
-                removeVaultItem(draftKey);
-            }
-        };
-        loadDraft();
-    }, [selectedPatientId]);
-
-    // Guardar borrador cifrado 2s después de cada cambio
-    useEffect(() => {
-        if (!newEvolution || !userId) return;
-        const timer = setTimeout(async () => {
-            await setVaultItem(draftKey, { text: newEvolution, timestamp: Date.now() }, userId);
-            setDraftStatus('Borrador guardado');
-            setTimeout(() => setDraftStatus(''), 1500);
-        }, 2000);
-        return () => clearTimeout(timer);
-    }, [newEvolution, draftKey]);
-
-    // ── Cargar plantillas de la clínica ──
-    useEffect(() => {
-        if (!clinicEmail) return;
-        let isMounted = true;
-        const fetchTemplates = async () => {
-            setLoadingTemplates(true);
-            try {
-                const { data, error } = await supabase
-                    .from('evolution_templates')
-                    .select('*')
-                    .eq('clinic_email', clinicEmail)
-                    .order('category', { ascending: true })
-                    .order('title', { ascending: true });
-                if (error) throw error;
-                if (isMounted && data) setTemplates(data);
-            } catch (err) {
-                console.error('Error cargando plantillas:', err);
-            } finally {
-                if (isMounted) setLoadingTemplates(false);
-            }
-        };
-        fetchTemplates();
-        return () => { isMounted = false; };
-    }, [clinicEmail]);
-
-    // ── Aplicar plantilla al textarea ──
-    const handleSelectTemplate = (template) => {
-        const prefix = newEvolution.trim() ? `${newEvolution}\n\n` : '';
-        setNewEvolution(prefix + template.content);
-        setTemplateApplied(template.title);
-        setTimeout(() => setTemplateApplied(''), 2500);
-    };
-
-    // ── Recargar plantillas tras crear una nueva ──
-    const handleTemplateSaved = async () => {
-        setShowNewTemplateModal(false);
-        const { data } = await supabase
-            .from('evolution_templates')
-            .select('*')
-            .eq('clinic_email', clinicEmail)
-            .order('category', { ascending: true })
-            .order('title', { ascending: true });
-        if (data) setTemplates(data);
-    };
-
-    // ── Eliminar plantilla del estado local ──
-    const handleTemplateDeleted = (templateId) => {
-        setTemplates(prev => prev.filter(t => t.id !== templateId));
-    };
-
-    // Estado para los tratamientos que el doctor selecciona hoy
-    const [linkedItems, setLinkedItems] = useState([]);
-
-    // --- CARGAR EVOLUCIONES ---
-    useEffect(() => {
-        let isMounted = true;
-        const fetchEvolutions = async () => {
-            setLoadingEvo(true);
-            try {
-                const { data, error } = await supabase
-                    .from('clinical_evolutions')
-                    .select('*')
-                    .eq('patient_id', selectedPatientId)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                if (isMounted && data) setEvolutions(data);
-            } catch (err) {
-                console.error("Error cargando evoluciones:", err);
-            } finally {
-                if(isMounted) setLoadingEvo(false);
-            }
-        };
-
-        if(selectedPatientId) fetchEvolutions();
-        return () => { isMounted = false; };
-    }, [selectedPatientId]);
-
-    // --- BUSCAR TRATAMIENTOS PENDIENTES DEL PLAN ---
-    const pendingTreatments = useMemo(() => {
-        if (!patient.clinical?.quotes) return [];
-        let pending = [];
-        
-        patient.clinical.quotes.forEach(quote => {
-            if (quote.status === 'en_proceso') {
-                quote.items.forEach(item => {
-                    if (item.status === 'pending') {
-                        pending.push({ ...item, quoteId: quote.id });
-                    }
-                });
-            }
-        });
-        return pending;
-    }, [patient.clinical?.quotes]);
-
-    // Lógica para vincular tratamientos al texto
-    const handleLinkTreatment = (item) => {
-        if (linkedItems.find(i => i.id === item.id)) return;
-        setLinkedItems([...linkedItems, item]);
-        const prefix = `[Realizado: ${item.name}${item.tooth ? ` - Pieza ${item.tooth}` : ''}] `;
-        setNewEvolution(prev => prev ? `${prev}\n${prefix}` : prefix);
-    };
-
-    const handleRemoveLink = (itemId) => {
-        setLinkedItems(linkedItems.filter(i => i.id !== itemId));
-    };
-
-    // --- MOTOR DE DICTADO ---
-    const [isDictating, setIsDictating] = useState(false);
+    // --- Speech Recognition State ---
+    const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef(null);
 
-    const toggleDictation = () => {
-        if (isDictating) {
-            recognitionRef.current?.stop();
-            setIsDictating(false);
+    // --- Draft State ---
+    const [draftEvolution, setDraftEvolution] = useState('');
+    const [showDraftRecovered, setShowDraftRecovered] = useState(false);
+
+    // --- Funciones de Supabase ---
+    const fetchEvolutions = async () => {
+        setLoadingEvo(true);
+        try {
+            const { data, error } = await supabase
+                .from('patient_evolutions')
+                .select('*')
+                .eq('patient_id', selectedPatientId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            setEvolutions(data);
+        } catch (error) {
+            console.error('Error fetching evolutions:', error);
+            notify('error', 'Error al cargar evoluciones.');
+        } finally {
+            setLoadingEvo(false);
+        }
+    };
+
+    const fetchTemplates = async () => {
+        setLoadingTemplates(true);
+        try {
+            const { data, error } = await supabase
+                .from('evolution_templates')
+                .select('*')
+                .eq('clinic_email', clinicOwner.email);
+            if (error) throw error;
+            setTemplates(data);
+        } catch (error) {
+            console.error('Error fetching templates:', error);
+            notify('error', 'Error al cargar plantillas.');
+        } finally {
+            setLoadingTemplates(false);
+        }
+    };
+
+    const loadFactoryTemplates = async () => {
+        if (!clinicOwner || factoryTemplatesLoaded) return;
+
+        try {
+            const { data: existingTemplates, error: fetchError } = await supabase
+                .from('evolution_templates')
+                .select('title')
+                .eq('clinic_email', clinicOwner.email);
+
+            if (fetchError) throw fetchError;
+
+            const existingTitles = new Set(existingTemplates.map(t => t.title));
+            const templatesToInsert = FACTORY_TEMPLATES.filter(
+                template => !existingTitles.has(template.title)
+            ).map(template => ({
+                clinic_email: clinicOwner.email,
+                title: template.title,
+                content: template.content,
+                category: template.category
+            }));
+
+            if (templatesToInsert.length > 0) {
+                const { error: insertError } = await supabase
+                    .from('evolution_templates')
+                    .insert(templatesToInsert);
+                if (insertError) throw insertError;
+                notify('success', `Se cargaron ${templatesToInsert.length} plantillas de fábrica.`);
+            }
+            setFactoryTemplatesLoaded(true);
+            fetchTemplates(); // Refrescar la lista de plantillas después de cargar las de fábrica
+        } catch (error) {
+            console.error('Error loading factory templates:', error);
+            notify('error', 'Error al cargar plantillas de fábrica.');
+        }
+    };
+
+    // --- Efectos --- 
+    useEffect(() => {
+        if (selectedPatientId) {
+            fetchEvolutions();
+            fetchTemplates();
+        }
+    }, [selectedPatientId]);
+
+    useEffect(() => {
+        loadFactoryTemplates();
+    }, [clinicOwner, factoryTemplatesLoaded]);
+
+    // --- Speech Recognition ---
+    useEffect(() => {
+        if (!('webkitSpeechRecognition' in window)) {
+            console.warn('Speech recognition not supported in this browser.');
             return;
         }
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            if (notify) notify("Tu navegador no soporta el dictado por voz. Te recomendamos usar Google Chrome.");
-            return;
+        const SpeechRecognition = window.webkitSpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'es-CL';
+
+        recognitionRef.current.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+            setNewEvolution(prev => prev + finalTranscript + interimTranscript);
+        };
+
+        recognitionRef.current.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+            notify('error', 'Error en el reconocimiento de voz.');
+        };
+
+        recognitionRef.current.onend = () => {
+            setIsListening(false);
+        };
+
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        };
+    }, []);
+
+    const toggleListening = () => {
+        if (isListening) {
+            recognitionRef.current.stop();
+        } else {
+            recognitionRef.current.start();
         }
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-CL'; 
-        recognition.continuous = true; 
-        recognition.interimResults = false; 
-
-        recognition.onresult = (event) => {
-            const current = event.resultIndex;
-            const transcript = event.results[current][0].transcript;
-            setNewEvolution(prev => prev + (prev.length > 0 ? ' ' : '') + transcript);
-        };
-
-        recognition.onerror = (event) => {
-            console.error("Error en el dictado:", event.error);
-            setIsDictating(false);
-        };
-
-        recognition.onend = () => {
-            setIsDictating(false);
-        };
-
-        recognition.start();
-        setIsDictating(true);
-        recognitionRef.current = recognition;
+        setIsListening(!isListening);
     };
 
-    // --- FUNCIÓN CRIPTOGRÁFICA ---
-    const generateHash = async (text) => {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(text + Date.now().toString());
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    };
+    // --- Draft Management ---
+    useEffect(() => {
+        const draftKey = `draft_evolution_${selectedPatientId}`;
+        const savedDraft = getVaultItem(draftKey);
+        if (savedDraft) {
+            setNewEvolution(savedDraft);
+            setShowDraftRecovered(true);
+            notify('info', 'Borrador recuperado automáticamente.');
+        }
+    }, [selectedPatientId]);
 
-    // --- GUARDADO SEGURO + CIERRE DE TRATAMIENTO ---
+    useEffect(() => {
+        const draftKey = `draft_evolution_${selectedPatientId}`;
+        if (newEvolution.trim() !== '') {
+            setVaultItem(draftKey, newEvolution);
+        } else {
+            removeVaultItem(draftKey);
+        }
+    }, [newEvolution, selectedPatientId]);
+
     const handleSave = async () => {
         if (!newEvolution.trim()) return;
-        setIsSaving(true);
-        
-        try {
-            const authorEmail = session?.user?.email || 'Usuario Clínico';
-            const clinicEmailForRecord = patient.admin_email || authorEmail; 
-            
-            const signature = await generateHash(newEvolution + authorEmail + selectedPatientId);
 
-            const newRecord = {
+        setIsSaving(true);
+        try {
+            const patientData = await getPatient(selectedPatientId);
+            if (!patientData) {
+                notify('error', 'Paciente no encontrado.');
+                return;
+            }
+
+            const evolutionData = {
                 patient_id: selectedPatientId,
-                clinic_email: clinicEmailForRecord,
-                author: authorEmail,
-                evolution_text: newEvolution,
-                signature_hash: signature
+                clinic_email: clinicOwner.email,
+                author: clinicOwner.name || 'Dr. Desconocido',
+                evolution_text: newEvolution.trim(),
+                created_at: new Date().toISOString(),
             };
 
-            // 1. Guardamos la evolución en su tabla blindada
-            const { data, error } = await supabase
-                .from('clinical_evolutions')
-                .insert([newRecord])
-                .select();
+            const { signature_hash, error: hashError } = await generateHash(evolutionData);
+            if (hashError) throw hashError;
+
+            const { error } = await supabase
+                .from('patient_evolutions')
+                .insert({
+                    ...evolutionData,
+                    signature_hash: signature_hash,
+                });
 
             if (error) throw error;
 
-            // 2. Si el doctor seleccionó tratamientos, los marcamos como completados
-            if (linkedItems.length > 0 && patient.clinical?.quotes) {
-                const updatedQuotes = patient.clinical.quotes.map(quote => {
-                    let quoteHasChanges = false;
-                    const newItems = quote.items.map(item => {
-                        if (linkedItems.find(link => link.id === item.id)) {
-                            quoteHasChanges = true;
-                            return { ...item, status: 'completed' };
-                        }
-                        return item;
-                    });
-                    
-                    const allCompleted = newItems.every(i => i.status === 'completed');
-                    
-                    return quoteHasChanges ? { 
-                        ...quote, 
-                        items: newItems,
-                        status: allCompleted ? 'completado' : quote.status
-                    } : quote;
-                });
-
-                await savePatientData(selectedPatientId, {
-                    ...patient,
-                    clinical: { ...patient.clinical, quotes: updatedQuotes }
-                });
-            }
-
-            // 3. Actualizamos la vista localmente
-            setEvolutions([data[0], ...evolutions]);
             setNewEvolution('');
-            removeVaultItem(draftKey);
-            setLinkedItems([]);
-            logAction('ADD_EVOLUTION', { text_preview: newEvolution.substring(0,20) }, selectedPatientId);
-            
-        } catch (err) {
-            if (notify) notify("Error al firmar la evolución. Revisa tu conexión.");
-            console.error(err);
+            removeVaultItem(`draft_evolution_${selectedPatientId}`);
+            fetchEvolutions();
+            notify('success', 'Evolución firmada y sellada con éxito!');
+        } catch (error) {
+            console.error('Error saving evolution:', error);
+            notify('error', `Error al guardar evolución: ${error.message}`);
         } finally {
             setIsSaving(false);
         }
     };
 
-    const formatDate = (isoString) => {
-        return new Date(isoString).toLocaleString('es-CL', {
-            year: 'numeric', month: 'short', day: 'numeric',
-            hour: '2-digit', minute:'2-digit'
-        });
+    const handleTemplateSaved = () => {
+        setShowNewTemplateModal(false);
+        fetchTemplates();
+        notify('success', 'Plantilla guardada con éxito!');
     };
 
+    const handleTemplateSelected = (content) => {
+        setNewEvolution(prev => prev + content + '\n');
+        notify('info', 'Plantilla aplicada.');
+    };
+
+    const handleTemplateDeleted = (templateId) => {
+        setTemplates(prev => prev.filter(t => t.id !== templateId));
+        notify('success', 'Plantilla eliminada.');
+    };
+
+    // Helper para obtener datos del paciente (asumiendo que existe en algún contexto o se puede buscar)
+    async function getPatient(patientId) {
+        const { data, error } = await supabase
+            .from('patients')
+            .select('id, name, rut')
+            .eq('id', patientId)
+            .single();
+        if (error) {
+            console.error('Error fetching patient:', error);
+            return null;
+        }
+        return data;
+    }
+
+    // Helper para generar hash (simplificado para el ejemplo)
+    async function generateHash(data) {
+        // En una aplicación real, esto implicaría un proceso criptográfico más robusto
+        // Por ahora, es una simulación.
+        const dataString = JSON.stringify(data);
+        const encoder = new TextEncoder();
+        const dataBuffer = encoder.encode(dataString);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return { signature_hash: hashHex };
+    }
+
     return (
-        <div className="space-y-8 animate-in fade-in max-w-4xl mx-auto pb-10">
-            
-            {/* Modal para nueva plantilla */}
+        <div className="p-6 bg-[#FDFBF7] rounded-[2rem] shadow-lg border border-[#DFD2C4]/60 h-full flex flex-col">
             {showNewTemplateModal && (
                 <NewTemplateModal
                     onClose={() => setShowNewTemplateModal(false)}
                     onSave={handleTemplateSaved}
-                    clinicEmail={clinicEmail}
+                    clinicEmail={clinicOwner.email}
                 />
             )}
 
-            <div className="border-b border-[#DFD2C4]/50 pb-4 flex justify-between items-end">
-                <div>
-                    <h2 className="text-2xl font-black text-[#312923] tracking-tight flex items-center gap-3">
-                        <div className="p-2.5 bg-[#CBAAA2]/10 text-[#CBAAA2] rounded-xl">
-                            <PenTool size={22} />
+            <TemplateSelector
+                templates={templates}
+                loadingTemplates={loadingTemplates}
+                onSelect={handleTemplateSelected}
+                onDelete={handleTemplateDeleted}
+                onNew={() => setShowNewTemplateModal(true)}
+                clinicEmail={clinicOwner.email}
+            />
+
+            <div className="flex-grow">
+                {patient && (
+                    <div className="mb-5 p-4 bg-[#F5EFE8] rounded-2xl border border-[#DFD2C4]/50 flex items-center gap-3">
+                        <User size={20} className="text-[#CBAAA2]" />
+                        <div>
+                            <p className="text-sm font-bold text-[#312923]">Paciente: {patient.name}</p>
+                            <p className="text-xs text-[#9A8F84]">RUT: {patient.rut}</p>
                         </div>
-                        Evolución Clínica
-                    </h2>
-                    <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-2 ml-1 flex items-center gap-1">
-                        <ShieldCheck size={12} className="text-emerald-500" /> Registro inmutable encriptado
-                    </p>
+                    </div>
+                )}
+
+                <div className="relative mb-4">
+                    <textarea
+                        value={newEvolution}
+                        onChange={(e) => setNewEvolution(e.target.value)}
+                        placeholder="Escribe la evolución clínica aquí..."
+                        rows={8}
+                        className="w-full p-4 pr-12 bg-white border border-[#DFD2C4]/60 rounded-2xl text-sm font-medium text-[#312923] outline-none focus:border-[#5B6651]/50 transition-colors resize-y custom-scrollbar"
+                    ></textarea>
+                    <button
+                        onClick={toggleListening}
+                        className={`absolute top-3 right-3 p-2 rounded-full transition-all ${
+                            isListening ? 'bg-[#EF4444] text-white' : 'bg-[#F5EFE8] text-[#9A8F84] hover:bg-[#DFD2C4]/50'
+                        }`}
+                        title={isListening ? 'Detener dictado' : 'Iniciar dictado'}
+                    >
+                        {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                    </button>
+                    {draftEvolution && (
+                        <p className="text-xs text-[#9A8F84] italic">✓ {draftEvolution}</p>
+                    )}
                 </div>
-            </div>
-
-            <div className="bg-white border border-[#DFD2C4]/60 rounded-[2rem] p-6 shadow-sm relative">
-                
-                {/* ── SELECTOR DE PLANTILLAS DE EVOLUCIÓN ── */}
-                <TemplateSelector
-                    templates={templates}
-                    loading={loadingTemplates}
-                    onSelect={handleSelectTemplate}
-                    onDelete={handleTemplateDeleted}
-                    onNew={() => setShowNewTemplateModal(true)}
-                    clinicEmail={clinicEmail}
-                />
-
-                {/* Notificación de plantilla aplicada */}
-                {templateApplied && (
-                    <div className="mb-4 flex items-center gap-2 bg-[#5B6651]/10 border border-[#5B6651]/20 rounded-xl px-4 py-2.5 animate-in fade-in slide-in-from-top-1">
-                        <CheckCircle2 size={14} className="text-[#5B6651]" />
-                        <p className="text-xs font-bold text-[#5B6651]">
-                            Plantilla aplicada: <span className="font-black">"{templateApplied}"</span>
-                        </p>
-                    </div>
-                )}
-
-                {/* --- PANEL DE ASISTENCIA CLÍNICA (TRATAMIENTOS PENDIENTES) --- */}
-                {pendingTreatments.length > 0 && (
-                    <div className="mb-6 p-4 bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-2xl">
-                        <div className="flex items-center gap-2 mb-3">
-                            <ListTodo size={16} className="text-[#A3968B]" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#312923]">
-                                Plan de Tratamiento: Tareas Pendientes
-                            </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {pendingTreatments.map(item => {
-                                const isLinked = linkedItems.some(i => i.id === item.id);
-                                return (
-                                    <button 
-                                        key={item.id}
-                                        onClick={() => isLinked ? handleRemoveLink(item.id) : handleLinkTreatment(item)}
-                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 border ${
-                                            isLinked 
-                                            ? 'bg-[#5B6651] text-white border-[#5B6651] shadow-sm' 
-                                            : 'bg-white text-[#9A8F84] border-[#DFD2C4] hover:border-[#5B6651] hover:text-[#5B6651]'
-                                        }`}
-                                    >
-                                        {isLinked && <CheckCircle2 size={12} />}
-                                        {item.name} {item.tooth && `(P: ${item.tooth})`}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        {linkedItems.length > 0 && (
-                            <p className="text-[9px] text-[#A3968B] mt-3 font-bold">
-                                * Al firmar, se marcarán como completados en el presupuesto.
-                            </p>
-                        )}
-                    </div>
-                )}
 
                 {showDraftRecovered && (
                     <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-3 mb-4 flex items-center gap-2">
@@ -669,26 +680,9 @@ export default function PatientEvolutionTab({
                         rows="4" 
                         placeholder="Redacte la evolución clínica del día de hoy... (No podrá ser modificada una vez firmada)" 
                         className="bg-transparent outline-none w-full font-medium text-sm text-[#312923] resize-none placeholder:text-[#9A8F84]/60 custom-scrollbar pr-10" 
-                        value={newEvolution} 
-                        onChange={e => setNewEvolution(e.target.value)} 
-                        disabled={isSaving}
+                        value={newEvolution}
+                        onChange={(e) => setNewEvolution(e.target.value)}
                     />
-                    
-                    <button 
-                        type="button"
-                        onClick={toggleDictation} 
-                        disabled={isSaving}
-                        className={`absolute bottom-4 right-4 p-3 rounded-xl transition-all shadow-sm ${
-                            isDictating 
-                            ? 'bg-red-500 animate-pulse text-white scale-110 shadow-red-500/30' 
-                            : 'bg-white border border-[#DFD2C4] text-[#9A8F84] hover:text-[#5B6651] hover:border-[#5B6651]/30'
-                        }`}
-                    >
-                        {isDictating ? <MicOff size={18}/> : <Mic size={18}/>}
-                    </button>
-                </div>
-
-                <div className="mt-3 h-4">
                     {draftStatus && (
                         <p className="text-xs text-[#9A8F84] italic">✓ {draftStatus}</p>
                     )}

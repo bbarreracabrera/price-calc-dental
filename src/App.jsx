@@ -921,7 +921,14 @@ const saveToOfflineVault = async (table, id, data) => {
         {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} onGoToPatient={(patientId) => { setSelectedPatientId(patientId); setActiveTab('ficha'); }} />}
         {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} adminEmail={clinicOwner} />}
         {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <CRMView themeMode={themeMode} t={t} getRecalls={getRecalls} patientRecords={patientRecords} setActiveTab={setActiveTab} setSelectedPatientId={setSelectedPatientId} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} />}
-        {activeTab === 'supply' && (userRole === 'admin' || userRole === 'dentist') && <SupplyView orders={supplyOrders} catalog={catalog} onOrderCreate={() => { const newOrder = { id: `order_${Date.now()}`, date: getLocalDate(), status: 'pending', items: [] }; setSupplyOrders([...supplyOrders, newOrder]); }} />}
+        {activeTab === 'supply' && (userRole === 'admin' || userRole === 'dentist') && (
+            <SupplyView 
+                orders={supplyOrders} 
+                catalog={catalog} 
+                onOrderCreate={handleOrderCreate} 
+                notify={notify}
+            />
+        )}
         
         {activeTab === 'sterilization' && (userRole === 'admin' || userRole === 'assistant' || userRole === 'dentist') && (
             <SterilizationView 

@@ -216,6 +216,37 @@ export const SimpleLineChart = ({ data }) => {
 
 // --- MODAL DE CONFIRMACIÓN (reemplaza window.confirm) ---
 // Uso: <ConfirmModal title="..." message="..." onConfirm={fn} onCancel={fn} danger={bool} />
+import { Paperclip } from 'lucide-react';
+import { getSecureUrl } from '../utils/securityFixes';
+
+export const SecureFileLink = ({ bucket, filePath, fileName }) => {
+    const [secureUrl, setSecureUrl] = useState(null);
+
+    useEffect(() => {
+        const fetchSecureLink = async () => {
+            if (filePath) {
+                const url = await getSecureUrl(bucket, filePath);
+                setSecureUrl(url);
+            }
+        };
+        fetchSecureLink();
+    }, [bucket, filePath]);
+
+    if (!secureUrl) return null; // O un spinner de carga
+
+    return (
+        <a 
+            href={secureUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex items-center gap-1 text-[9px] bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-0.5 rounded-full font-black border border-indigo-200 transition-colors"
+            title={fileName}
+        >
+            <Paperclip size={10}/> {fileName || 'Archivo Adjunto'}
+        </a>
+    );
+};
+
 export const ConfirmModal = ({ title, message, onConfirm, onCancel, confirmLabel = 'Confirmar', danger = false }) => {
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onCancel}>

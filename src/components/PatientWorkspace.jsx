@@ -351,7 +351,7 @@ export default function PatientWorkspace({
                             <PatientEvolutionTab
                                 newEvolution={newEvolution} setNewEvolution={setNewEvolution}
                                 getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                session={session} logAction={logAction}
+                                session={session} logAction={logAction} notify={notify}
                             />
                         )}
                         {patientTab === 'quotes' && (

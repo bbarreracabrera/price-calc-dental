@@ -1,8 +1,9 @@
 import React from 'react';
 import { FlaskConical, Trash2, Plus, AlertCircle, CheckCircle2, Clock, User, Send, Paperclip } from 'lucide-react';
-import { Card } from './UIComponents';
+import { Card, SecureFileLink } from './UIComponents';
 import { supabase } from '../supabase';
 import { getLocalDate } from '../constants';
+import { getSecureUrl } from '../utils/securityFixes';
 import { useDialog } from './DialogProvider';
 
 export default function LabView({ 
@@ -105,9 +106,7 @@ export default function LabView({
                                                     </span>
                                                 )}
                                                 {work.file_url && (
-                                                    <a href={work.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[9px] bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-0.5 rounded-full font-black border border-indigo-200 transition-colors" title={work.file_name}>
-                                                        <Paperclip size={10}/> Archivo Adjunto
-                                                    </a>
+                                                    <SecureFileLink bucket="patient-images" filePath={work.file_url} fileName={work.file_name} />
                                                 )}
                                             </div>
                                         </div>

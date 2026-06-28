@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Library, Plus, Edit3, Trash2, Search, Tag, Upload, Download, FileSpreadsheet, CheckCircle, X, AlertCircle } from 'lucide-react';
-import { Card } from './UIComponents';
+import { Card, ConfirmModal } from './UIComponents';
 import { DEFAULT_CATALOG } from '../constants';
 import { supabase } from '../supabase';
 import * as XLSX from 'xlsx';
@@ -13,6 +13,8 @@ export default function CatalogView({
     const [activeCategory, setActiveCategory] = useState('Todos');
     const [importPreview, setImportPreview] = useState(null); // { items, errors }
     const [importing, setImporting] = useState(false);
+    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
     const fileInputRef = useRef(null);
 
     // --- LÓGICA DE IMPORTACIÓN INTELIGENTE ---
@@ -228,6 +230,34 @@ export default function CatalogView({
             )}
 
             {/* --- CONTROLES DE BÚSQUEDA Y FILTROS --- */}
+            {showConfirmDeleteModal && itemToDelete && (
+                <ConfirmModal
+                    title="Eliminar Tratamiento"
+                    message={`¿Estás seguro de que quieres eliminar "${itemToDelete.name}"? Esta acción no se puede deshacer.`}
+                    onConfirm={async () => {
+                        try {
+                            const { error } = await supabase
+                                .from("catalog")
+                                .update({ deleted_at: new Date().toISOString() })
+                                .eq("id", itemToDelete.id)
+                                .eq("admin_email", clinicOwner || session?.user?.email);
+                            if (error) throw error;
+                            setCatalog(catalog.filter(c => c.id !== itemToDelete.id));
+                            notify("Tratamiento eliminado");
+                        } catch (err) {
+                              console.error("Error eliminando de catalog:", err.message);
+                            notify("Error al eliminar el tratamiento");
+                        } finally {
+                            setShowConfirmDeleteModal(false);
+                            setItemToDelete(null);
+                        }
+                    }}
+                    onCancel={() => { setShowConfirmDeleteModal(false); setItemToDelete(null); }}
+                    danger={true}
+                />
+            )}
+
+            {/* --- CONTROLES DE BÚSQUEDA Y FILTROS --- */}
             {catalog.length > 0 && (
                 <div className="space-y-4 shrink-0">
                     <div className="relative">
@@ -322,20 +352,7 @@ export default function CatalogView({
                                             <Edit3 size={18}/>
                                         </button>
                                         <button
-                                            onClick={async () => {
-                                                const { error } = await supabase
-                                                    .from('catalog')
-                                                    .update({ deleted_at: new Date().toISOString() })
-                                                    .eq('id', item.id)
-                                                    .eq('admin_email', clinicOwner || session?.user?.email);
-                                                if (error) {
-                                                    notify("Error al eliminar el tratamiento");
-                                                    console.error('Error eliminando de catalog:', error.message);
-                                                    return;
-                                                }
-                                                setCatalog(catalog.filter(c => c.id !== item.id));
-                                                notify("Tratamiento eliminado");
-                                            }}
+                                            onClick={() => { setItemToDelete(item); setShowConfirmDeleteModal(true); }}
                                             className="p-2.5 rounded-xl text-[#9A8F84] hover:text-red-500 hover:bg-red-50 transition-all"
                                             title="Eliminar"
                                         >
