@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, TrendingUp, ShoppingCart, AlertTriangle, Plus, Filter, Download, Trash2, X, CheckCircle } from 'lucide-react';
+import { Package, TrendingUp, ShoppingCart, AlertTriangle, Plus, Filter, Download, Trash2, X, CheckCircle, Minus } from 'lucide-react';
 import { Card } from './UIComponents';
 import { SUPPLY_CATEGORIES, DEFAULT_SUPPLY_CATALOG, getSupplyStats } from '../utils/supplyManager';
 
@@ -70,6 +70,8 @@ export default function SupplyView({ orders = [], catalog = DEFAULT_SUPPLY_CATAL
     }
   };
 
+
+
   return (
     <div className="space-y-8 animate-in fade-in pb-10">
       {/* --- ENCABEZADO --- */}
@@ -138,12 +140,12 @@ export default function SupplyView({ orders = [], catalog = DEFAULT_SUPPLY_CATAL
           <p className="text-[9px] sm:text-[11px] font-bold text-[#A3968B] mt-1 sm:mt-2">Comisión (15%)</p>
         </Card>
 
-        <Card className={`rounded-[1.5rem] sm:rounded-[2rem] border border-[#DFD2C4]/50 shadow-sm p-4 sm:p-6 ${stats.inventory.lowStockCount > 0 ? 'bg-red-50 border-red-200' : 'bg-white'}`}>
+        <Card className="rounded-[1.5rem] sm:rounded-[2rem] border border-[#DFD2C4]/50 bg-white shadow-sm p-4 sm:p-6">
           <div className="flex justify-between mb-3 sm:mb-4 items-start">
-            <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stats.inventory.lowStockCount > 0 ? 'bg-red-100 text-red-600' : 'bg-[#FDFBF7] text-[#A3968B]'}`}>
+            <div className="p-2 sm:p-3 bg-[#FDFBF7] rounded-xl sm:rounded-2xl text-[#A3968B]">
               <AlertTriangle size={18} sm:size={24} strokeWidth={2.5} />
             </div>
-            <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-[#9A8F84] bg-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">Stock Bajo</span>
+            <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">Stock Bajo</span>
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#312923] tracking-tighter">{stats.inventory.lowStockCount}</h2>
           <p className="text-[9px] sm:text-[11px] font-bold text-[#A3968B] mt-1 sm:mt-2">Productos Críticos</p>
@@ -206,10 +208,9 @@ export default function SupplyView({ orders = [], catalog = DEFAULT_SUPPLY_CATAL
             </thead>
             <tbody>
               {filteredCatalog.map(item => {
-                const isLowStock = item.stock <= item.minStock;
                 const inCart = cart.find(c => c.id === item.id);
                 return (
-                  <tr key={item.id} className={`border-b border-[#DFD2C4]/30 hover:bg-[#FDFBF7] transition-colors ${isLowStock ? 'bg-red-50' : ''}`}>
+                  <tr key={item.id} className="border-b border-[#DFD2C4]/30 hover:bg-[#FDFBF7] transition-colors">
                     <td className="py-3 px-4">
                         <div className="font-bold text-[#312923]">{item.name}</div>
                         <div className="sm:hidden text-[9px] text-[#9A8F84]">{SUPPLY_CATEGORIES.find(c => c.id === item.category)?.name}</div>
@@ -218,9 +219,7 @@ export default function SupplyView({ orders = [], catalog = DEFAULT_SUPPLY_CATAL
                       {SUPPLY_CATEGORIES.find(c => c.id === item.category)?.name}
                     </td>
                     <td className="py-3 px-4 text-right font-bold text-[#5B6651]">${item.price.toLocaleString()}</td>
-                    <td className={`py-3 px-4 text-right font-black hidden sm:table-cell ${isLowStock ? 'text-red-600' : 'text-[#312923]'}`}>
-                      {item.stock} {isLowStock && <span className="text-red-600 ml-1">⚠️</span>}
-                    </td>
+                    <td className="py-3 px-4 text-right font-black text-[#312923] hidden sm:table-cell">{item.stock}</td>
                     <td className="py-3 px-4 text-center">
                       <button 
                         onClick={() => addToCart(item)}
