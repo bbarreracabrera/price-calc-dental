@@ -4,7 +4,7 @@ import {
     FileBarChart, FileText, FileSignature, ImageIcon,
     Mic, Sparkles, Calculator, Heart, Stethoscope,
     FolderOpen, ChevronRight, Plus, MessageCircle, Calendar,
-    Zap, ClipboardList, Phone, Menu, X
+    Zap, ClipboardList, Phone, Menu, X, GitBranch, HardDrive, Microscope
 } from 'lucide-react';
 
 // --- IMPORTACIÓN DE PESTAÑAS ---
@@ -19,6 +19,11 @@ import ActiveQuotesTab from './ActiveQuotesTab';
 import PRATab from './PRATab';
 import CariogramTab from './CariogramTab';
 import { PatientCardSkeleton, FormSkeleton } from './SkeletonLoaders';
+
+// Nuevos componentes de seguimiento de especialidades
+import OrthodonticsTrackingTab from './OrthodonticsTrackingTab';
+import ImplantologyTrackingTab from './ImplantologyTrackingTab';
+import EndodonticsTrackingTab from './EndodonticsTrackingTab';
 
 export default function PatientWorkspace({
     selectedPatientId, setSelectedPatientId, patientTab, setPatientTab,
@@ -130,7 +135,7 @@ export default function PatientWorkspace({
 
     const TAB_GROUPS = [
         { id: 'data',      label: 'Ficha & Datos', icon: User,        tabs: ['personal', 'anamnesis'] },
-        { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope, tabs: ['clinical', 'perio', 'evolution'] },
+        { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope, tabs: ['clinical', 'perio', 'evolution', 'orthodontics', 'implantology', 'endodontics'] }, // Añadido aquí
         { id: 'risk',      label: 'Prevención',    icon: ShieldIcon,  tabs: ['pra', 'cariogram'] },
         { id: 'documents', label: 'Gestión',       icon: FolderOpen,  tabs: ['quotes', 'consent', 'images'] },
     ];
@@ -141,6 +146,9 @@ export default function PatientWorkspace({
         { id: 'clinical',  label: 'Odontograma',         icon: Activity,      group: 'clinical' },
         { id: 'perio',     label: 'Periodontograma',     icon: FileBarChart,  group: 'clinical',  restricted: true },
         { id: 'evolution', label: 'Evolución Clínica',   icon: FileText,      group: 'clinical',  restricted: true },
+        { id: 'orthodontics', label: 'Ortodoncia',       icon: GitBranch,     group: 'clinical',  restricted: true }, // Nueva pestaña
+        { id: 'implantology', label: 'Implantología',   icon: HardDrive,     group: 'clinical',  restricted: true }, // Nueva pestaña
+        { id: 'endodontics', label: 'Endodoncia',       icon: Microscope,    group: 'clinical',  restricted: true }, // Nueva pestaña
         { id: 'pra',       label: 'Riesgo Periodontal',  icon: Heart,         group: 'risk',      restricted: true },
         { id: 'cariogram', label: 'Riesgo Caries',       icon: Calculator,    group: 'risk',      restricted: true },
         { id: 'quotes',    label: 'Presupuestos',        icon: Calculator,    group: 'documents', badge: activeQuotesCount },
@@ -372,6 +380,24 @@ export default function PatientWorkspace({
                             <PatientEvolutionTab
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 newEvolution={newEvolution} setNewEvolution={setNewEvolution} notify={notify} session={session}
+                            />
+                        )}
+                        {patientTab === 'orthodontics' && (
+                            <OrthodonticsTrackingTab
+                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
+                                notify={notify} session={session}
+                            />
+                        )}
+                        {patientTab === 'implantology' && (
+                            <ImplantologyTrackingTab
+                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
+                                notify={notify} session={session}
+                            />
+                        )}
+                        {patientTab === 'endodontics' && (
+                            <EndodonticsTrackingTab
+                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
+                                notify={notify} session={session}
                             />
                         )}
                         {patientTab === 'pra' && (
