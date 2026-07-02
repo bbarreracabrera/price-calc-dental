@@ -4,7 +4,7 @@ import {
     FileBarChart, FileText, FileSignature, ImageIcon,
     Mic, Sparkles, Calculator, Heart, Stethoscope,
     FolderOpen, ChevronRight, Plus, MessageCircle, Calendar,
-    Zap, ClipboardList, Phone, Menu, X, GitBranch, HardDrive, Microscope
+    Zap, ClipboardList, Phone, Menu, X, GitBranch, HardDrive, Microscope, FastForward
 } from 'lucide-react';
 
 // --- IMPORTACIÓN DE PESTAÑAS ---
@@ -69,6 +69,17 @@ export default function PatientWorkspace({
 
     // --- ACCIONES RÁPIDAS ---
     const quickActions = [
+        {
+            id: 'fast_exam',
+            label: 'Examen Rápido',
+            icon: FastForward,
+            color: 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-200',
+            action: () => {
+                setPatientTab('clinical');
+                setOdontogramMode('hallazgos');
+                notify('Modo Examen Rápido activado. Selecciona los hallazgos directamente en el odontograma.');
+            }
+        },
         {
             id: 'evolution',
             label: 'Nueva Evolución',
@@ -135,7 +146,7 @@ export default function PatientWorkspace({
 
     const TAB_GROUPS = [
         { id: 'data',      label: 'Ficha & Datos', icon: User,        tabs: ['personal', 'anamnesis'] },
-        { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope, tabs: ['clinical', 'perio', 'evolution', 'orthodontics', 'implantology', 'endodontics'] }, // Añadido aquí
+        { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope, tabs: ['clinical', 'perio', 'evolution', 'orthodontics', 'implantology', 'endodontics'] },
         { id: 'risk',      label: 'Prevención',    icon: ShieldIcon,  tabs: ['pra', 'cariogram'] },
         { id: 'documents', label: 'Gestión',       icon: FolderOpen,  tabs: ['quotes', 'consent', 'images'] },
     ];
@@ -146,9 +157,9 @@ export default function PatientWorkspace({
         { id: 'clinical',  label: 'Odontograma',         icon: Activity,      group: 'clinical' },
         { id: 'perio',     label: 'Periodontograma',     icon: FileBarChart,  group: 'clinical',  restricted: true },
         { id: 'evolution', label: 'Evolución Clínica',   icon: FileText,      group: 'clinical',  restricted: true },
-        { id: 'orthodontics', label: 'Ortodoncia',       icon: GitBranch,     group: 'clinical',  restricted: true }, // Nueva pestaña
-        { id: 'implantology', label: 'Implantología',   icon: HardDrive,     group: 'clinical',  restricted: true }, // Nueva pestaña
-        { id: 'endodontics', label: 'Endodoncia',       icon: Microscope,    group: 'clinical',  restricted: true }, // Nueva pestaña
+        { id: 'orthodontics', label: 'Ortodoncia',       icon: GitBranch,     group: 'clinical',  restricted: true },
+        { id: 'implantology', label: 'Implantología',   icon: HardDrive,     group: 'clinical',  restricted: true },
+        { id: 'endodontics', label: 'Endodoncia',       icon: Microscope,    group: 'clinical',  restricted: true },
         { id: 'pra',       label: 'Riesgo Periodontal',  icon: Heart,         group: 'risk',      restricted: true },
         { id: 'cariogram', label: 'Riesgo Caries',       icon: Calculator,    group: 'risk',      restricted: true },
         { id: 'quotes',    label: 'Presupuestos',        icon: Calculator,    group: 'documents', badge: activeQuotesCount },
