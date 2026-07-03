@@ -3,7 +3,7 @@ import {
   Cloud, ArrowRight, CheckCircle2, Menu, X, Star, Sparkles,
   MessageCircle, ShieldCheck, Zap, Calculator, Users, Box, 
   Stethoscope, FlaskConical, BarChart3, ChevronRight, Play,
-  Globe, Heart, MousePointer2, Mail, Clock
+  Globe, Heart, MousePointer2, Mail, Clock, Activity
 } from 'lucide-react';
 
 export default function LandingPage({ onLoginClick }) {
