@@ -104,8 +104,12 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                             <button
                                 onClick={async () => {
                                     const { getSecureUrl } = await import('../../utils/securityFixes');
-                                    const url = await getSecureUrl('patient-images', job.file_url);
+                                    // Intentamos primero en el nuevo bucket privado, luego en el legacy
+                                    let url = await getSecureUrl('lab-work-files', job.file_url);
+                                    if (!url) url = await getSecureUrl('patient-images', job.file_url);
+                                    
                                     if (url) window.open(url, '_blank');
+                                    else alert('No se pudo generar el acceso seguro al archivo. Por favor, contacte a soporte.');
                                 }}
                                 className="inline-flex items-center gap-2 text-sm text-[#5B6651] font-bold hover:underline"
                             >

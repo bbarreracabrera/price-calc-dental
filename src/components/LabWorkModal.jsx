@@ -44,7 +44,7 @@ export default function LabWorkModal({
 
             // 2. Subir a bucket (privado por defecto en RLS)
             const { error: uploadError } = await supabase.storage
-                .from('patient-images') 
+                .from('lab-work-files') 
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
