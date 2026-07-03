@@ -464,10 +464,11 @@ export default function LandingPage({ onLoginClick }) {
           
           <div className="space-y-6">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#312923]">Plataforma</h4>
-            <ul className="space-y-4 text-sm font-bold text-[#6B615A]">
-              <li><button onClick={() => scrollToSection('features')} className="hover:text-[#312923] transition-colors">Funciones</button></li>
-              <li><button onClick={() => scrollToSection('pricing')} className="hover:text-[#312923] transition-colors">Precios</button></li>
-              <li><button onClick={() => scrollToSection('comparativa')} className="hover:text-[#312923] transition-colors">Comparativa</button></li>
+            <ul className="space-y-4 text-sm font-bold text-[#6B615A] text-left">
+              <li><button onClick={() => scrollToSection('features')} className="hover:text-[#312923] transition-colors text-left w-full">Funciones</button></li>
+              <li><button onClick={() => scrollToSection('pricing')} className="hover:text-[#312923] transition-colors text-left w-full">Precios</button></li>
+              <li><button onClick={() => scrollToSection('comparativa')} className="hover:text-[#312923] transition-colors text-left w-full">Comparativa</button></li>
+              <li><button onClick={() => scrollToSection('faq')} className="hover:text-[#312923] transition-colors text-left w-full">FAQ</button></li>
             </ul>
           </div>
 
