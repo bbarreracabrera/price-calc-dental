@@ -272,32 +272,28 @@ export default function PatientWorkspace({
                                             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl transition-all group ${
                                                 isActive
                                                     ? 'bg-[#312923] text-white shadow-md'
-                                                    : 'bg-white hover:bg-[#FDFBF7] text-[#6B615A] border border-transparent hover:border-[#DFD2C4]/50'
+                                                    : 'bg-white hover:bg-[#FDFBF7] text-[#6B615A] border border-transparent hover:border-[#DFD2C4]/40'
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                <tab.icon size={14} className={isActive ? 'text-white shrink-0' : 'text-[#9A8F84] group-hover:text-[#5B6651] shrink-0'} />
-                                                <span className={`text-[11px] font-bold tracking-tight truncate ${isActive ? 'text-white' : 'text-[#312923]'}`}>
-                                                    {tab.label}
-                                                </span>
+                                            <div className="flex items-center gap-3">
+                                                <tab.icon size={15} className={isActive ? 'text-white' : 'text-[#9A8F84] group-hover:text-[#5B6651]'} />
+                                                <span className={`text-[11px] font-black tracking-tight ${isActive ? 'text-white' : 'text-[#312923]'}`}>{tab.label}</span>
                                             </div>
                                             {tab.badge > 0 && (
-                                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black shrink-0 ${
-                                                    isActive ? 'bg-white/20 text-white' : 'bg-[#CBAAA2]/20 text-[#CBAAA2]'
-                                                }`}>
+                                                <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-black ${isActive ? 'bg-white/20 text-white' : 'bg-[#CBAAA2]/20 text-[#8B5E57]'}`}>
                                                     {tab.badge}
                                                 </span>
                                             )}
-                                            {isActive && <ChevronRight size={12} className="text-white/40 ml-auto shrink-0" />}
                                         </button>
                                     );
                                 })}
+                                <div className="h-4"></div>
                             </div>
                         );
                     })}
 
-                    {/* Atajo de Voz - Destacado: siempre pegado al fondo */}
-                    <div className={`mt-auto rounded-3xl border-2 transition-all overflow-hidden shrink-0 mx-3 ${
+                    {/* Widget de Asistente de Voz (Sticky bottom en sidebar) */}
+                    <div className={`mt-auto mx-3 mb-3 rounded-[1.5rem] border transition-all ${
                         isListening
                             ? 'border-red-400 bg-red-50 shadow-lg shadow-red-100'
                             : 'border-[#5B6651]/30 bg-gradient-to-br from-[#5B6651]/5 to-[#5B6651]/10'
@@ -357,7 +353,12 @@ export default function PatientWorkspace({
 
                     {/* RENDERIZADO DINÁMICO */}
                     <div className="animate-in fade-in duration-200">
-                        {patientTab === 'personal'  && <PatientPersonalTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} />}
+                        {patientTab === 'personal'  && (
+                            <PatientPersonalTab 
+                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} 
+                                notify={notify} sendWhatsApp={sendWhatsApp} config={config}
+                            />
+                        )}
                         {patientTab === 'anamnesis' && (
                             <PatientAnamnesisTab
                                 p={p}
@@ -378,6 +379,8 @@ export default function PatientWorkspace({
                                 odontogramMode={odontogramMode} setOdontogramMode={setOdontogramMode}
                                 odontogramType={odontogramType} setOdontogramType={setOdontogramType}
                                 setToothModalData={setToothModalData} setModal={setModal}
+                                userRole={userRole} catalog={catalog} setQuoteItems={setQuoteItems}
+                                notify={notify} setActiveTab={setActiveTab} sessionData={sessionData} setSessionData={setSessionData}
                             />
                         )}
                         {patientTab === 'perio' && (
@@ -434,7 +437,7 @@ export default function PatientWorkspace({
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate}
                                 consentText={consentText} setConsentText={setConsentText}
-                                notify={notify} session={session}
+                                notify={notify} session={session} modal={modal} setModal={setModal} handleGeneratePDF={handleGeneratePDF}
                             />
                         )}
                         {patientTab === 'images' && (
@@ -442,7 +445,7 @@ export default function PatientWorkspace({
                                 p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
                                 activeFolder={activeFolder} setActiveFolder={setActiveFolder}
                                 uploading={uploading} handleImageUpload={handleImageUpload}
-                                setSelectedImg={setSelectedImg} notify={notify}
+                                setSelectedImg={setSelectedImg} notify={notify} config={config}
                             />
                         )}
                     </div>

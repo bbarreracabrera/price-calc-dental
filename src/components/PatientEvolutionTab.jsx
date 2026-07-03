@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck, ListTodo, CheckCircle2, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, X, Tag } from 'lucide-react';
+import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck, ListTodo, CheckCircle2, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, X, Tag, Save } from 'lucide-react';
 import { Button } from './UIComponents';
 import { supabase } from '../supabase';
-import { getVaultItem, setVaultItem, removeVaultItem } from '../utils/cryptoVault';
 
 // Importar los nuevos componentes de seguimiento
 import OrthodonticsTrackingTab from './OrthodonticsTrackingTab';
@@ -178,16 +177,19 @@ export default function PatientEvolutionTab({
     const evolutionInputRef = useRef(null);
 
     useEffect(() => {
-        fetchTemplates();
+        if (session?.user?.email) {
+            fetchTemplates();
+        }
     }, [session]);
 
     useEffect(() => {
-        if (evolutionInputRef.current) {
+        if (newEvolution && evolutionInputRef.current) {
             evolutionInputRef.current.focus();
         }
     }, [newEvolution]);
 
     const fetchTemplates = async () => {
+        if (!session?.user?.email) return;
         const { data, error } = await supabase
             .from("evolution_templates")
             .select("*")
@@ -202,9 +204,15 @@ export default function PatientEvolutionTab({
             return;
         }
 
-        const updatedPatient = { ...p };
+        const updatedPatient = JSON.parse(JSON.stringify(p));
         if (!updatedPatient.clinical) updatedPatient.clinical = {};
-        if (!updatedPatient.clinical.evolutions) updatedPatient.clinical.evolutions = [];
+        
+        // Corregimos la discrepancia: usamos 'evolutions' consistentemente
+        if (!updatedPatient.clinical.evolutions) {
+            // Si existía bajo el nombre 'evolution' (singular), lo migramos
+            updatedPatient.clinical.evolutions = updatedPatient.clinical.evolution || [];
+        }
+        delete updatedPatient.clinical.evolution;
 
         updatedPatient.clinical.evolutions.unshift({
             id: Date.now(),
@@ -214,7 +222,7 @@ export default function PatientEvolutionTab({
             locked: false,
         });
 
-        await savePatientData(updatedPatient);
+        await savePatientData(selectedPatientId, updatedPatient);
         setNewEvolution('');
         notify("Evolución guardada exitosamente.", "success");
     };
@@ -226,11 +234,16 @@ export default function PatientEvolutionTab({
     };
 
     const toggleLockEvolution = async (evolutionId) => {
-        const updatedPatient = { ...p };
-        const evolutionIndex = updatedPatient.clinical.evolutions.findIndex(e => e.id === evolutionId);
+        const updatedPatient = JSON.parse(JSON.stringify(p));
+        const evolutions = updatedPatient.clinical?.evolutions || updatedPatient.clinical?.evolution || [];
+        const evolutionIndex = evolutions.findIndex(e => e.id === evolutionId);
+        
         if (evolutionIndex > -1) {
-            updatedPatient.clinical.evolutions[evolutionIndex].locked = !updatedPatient.clinical.evolutions[evolutionIndex].locked;
-            await savePatientData(updatedPatient);
+            evolutions[evolutionIndex].locked = !evolutions[evolutionIndex].locked;
+            updatedPatient.clinical.evolutions = evolutions;
+            delete updatedPatient.clinical.evolution;
+            
+            await savePatientData(selectedPatientId, updatedPatient);
             notify("Estado de evolución actualizado.", "success");
         }
     };
@@ -238,9 +251,12 @@ export default function PatientEvolutionTab({
     const deleteEvolution = async (evolutionId) => {
         if (!window.confirm("¿Estás seguro de que quieres eliminar esta evolución? Esta acción es irreversible.")) return;
 
-        const updatedPatient = { ...p };
-        updatedPatient.clinical.evolutions = updatedPatient.clinical.evolutions.filter(e => e.id !== evolutionId);
-        await savePatientData(updatedPatient);
+        const updatedPatient = JSON.parse(JSON.stringify(p));
+        const evolutions = updatedPatient.clinical?.evolutions || updatedPatient.clinical?.evolution || [];
+        updatedPatient.clinical.evolutions = evolutions.filter(e => e.id !== evolutionId);
+        delete updatedPatient.clinical.evolution;
+
+        await savePatientData(selectedPatientId, updatedPatient);
         notify("Evolución eliminada.", "success");
     };
 
@@ -258,6 +274,8 @@ export default function PatientEvolutionTab({
     if (patientTab === 'endodontics') {
         return <EndodonticsTrackingTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} session={session} />;
     }
+
+    const evolutionsList = p.clinical?.evolutions || p.clinical?.evolution || [];
 
     return (
         <div className="space-y-6">
@@ -303,7 +321,7 @@ export default function PatientEvolutionTab({
                         <div className="flex flex-wrap gap-2 mb-4">
                             <button
                                 onClick={() => setActiveTemplateCategory('all')}
-                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === 'all' ? 'bg-[#5B6651] text-white' : 'bg-white text-[#6B615A] hover:bg-[#F5EFE8]'}`}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === 'all' ? 'bg-[#5B6651] text-white' : 'bg-white text-[#6B615A] hover:bg-[#FDFBF7]'}`}
                             >
                                 Todas
                             </button>
@@ -311,7 +329,7 @@ export default function PatientEvolutionTab({
                                 <button
                                     key={cat.id}
                                     onClick={() => setActiveTemplateCategory(cat.id)}
-                                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === cat.id ? 'bg-[#5B6651] text-white' : 'bg-white text-[#6B615A] hover:bg-[#F5EFE8]'}`}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === cat.id ? 'bg-[#5B6651] text-white' : 'bg-white text-[#6B615A] hover:bg-[#FDFBF7]'}`}
                                 >
                                     {cat.label}
                                 </button>
@@ -325,7 +343,7 @@ export default function PatientEvolutionTab({
                                     <div
                                         key={template.id}
                                         onClick={() => applyTemplate(template.content)}
-                                        className="p-3 bg-white border border-[#DFD2C4]/60 rounded-xl cursor-pointer hover:bg-[#F5EFE8] transition-colors shadow-sm"
+                                        className="p-3 bg-white border border-[#DFD2C4]/60 rounded-xl cursor-pointer hover:bg-[#FDFBF7] transition-colors shadow-sm"
                                     >
                                         <p className="font-bold text-[#312923] text-sm">{template.title}</p>
                                         <p className="text-xs text-[#9A8F84] mt-1 truncate">{template.content}</p>
@@ -340,12 +358,12 @@ export default function PatientEvolutionTab({
 
             {/* Historial de evoluciones */}
             <div className="space-y-4">
-                {p.clinical?.evolutions?.length === 0 ? (
+                {evolutionsList.length === 0 ? (
                     <div className="text-center py-10 text-[#9A8F84] border border-dashed border-[#DFD2C4] rounded-2xl bg-[#FDFBF7]/50">
                         <p>No hay evoluciones clínicas registradas para este paciente.</p>
                     </div>
                 ) : (
-                    p.clinical.evolutions.map(evolution => (
+                    evolutionsList.map(evolution => (
                         <div key={evolution.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#DFD2C4]/60">
                             <div className="flex justify-between items-start mb-3">
                                 <div>
@@ -355,7 +373,7 @@ export default function PatientEvolutionTab({
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => toggleLockEvolution(evolution.id)}
-                                        className={`p-2 rounded-lg transition-colors ${evolution.locked ? 'text-[#5B6651] hover:bg-[#F5EFE8]' : 'text-[#CBAAA2] hover:bg-[#F5EFE8]'}`}
+                                        className={`p-2 rounded-lg transition-colors ${evolution.locked ? 'text-[#5B6651] hover:bg-[#FDFBF7]' : 'text-[#CBAAA2] hover:bg-[#FDFBF7]'}`}
                                         title={evolution.locked ? 'Desbloquear evolución' : 'Bloquear evolución'}
                                     >
                                         <FileLock size={16} />
