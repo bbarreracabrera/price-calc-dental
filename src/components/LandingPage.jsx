@@ -10,6 +10,7 @@ import {
 export default function LandingPage({ onLoginClick }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [ctaEmail, setCtaEmail] = useState("");
 
   const contactWhatsApp = "56932745439";
   const contactEmail = "b.barreracabrera.dent@gmail.com";
@@ -24,6 +25,23 @@ export default function LandingPage({ onLoginClick }) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const scrollToSection = (id) => {
+    setMobileMenu(false);
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 100;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const FAQItem = ({ question, answer }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -59,10 +77,10 @@ export default function LandingPage({ onLoginClick }) {
           </div>
 
           <div className="hidden md:flex items-center gap-10">
-            <a href="#features" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Funciones</a>
-            <a href="#comparativa" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Comparativa</a>
-            <a href="#pricing" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Planes</a>
-            <a href="#faq" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">FAQ</a>
+            <button onClick={() => scrollToSection('features')} className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Funciones</button>
+            <button onClick={() => scrollToSection('comparativa')} className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Comparativa</button>
+            <button onClick={() => scrollToSection('pricing')} className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Planes</button>
+            <button onClick={() => scrollToSection('faq')} className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">FAQ</button>
             <button 
               onClick={onLoginClick}
               className="px-8 py-3 bg-[#312923] text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-[#312923]/10 flex items-center gap-2"
@@ -79,10 +97,10 @@ export default function LandingPage({ onLoginClick }) {
         {/* Mobile Menu */}
         {mobileMenu && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-[#DFD2C4] p-6 space-y-4 shadow-xl animate-in slide-in-from-top duration-300">
-            <a href="#features" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">Funciones</a>
-            <a href="#comparativa" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">Comparativa</a>
-            <a href="#pricing" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">Planes</a>
-            <a href="#faq" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">FAQ</a>
+            <button onClick={() => scrollToSection('features')} className="w-full text-left text-xs font-black uppercase tracking-widest text-[#6B615A]">Funciones</button>
+            <button onClick={() => scrollToSection('comparativa')} className="w-full text-left text-xs font-black uppercase tracking-widest text-[#6B615A]">Comparativa</button>
+            <button onClick={() => scrollToSection('pricing')} className="w-full text-left text-xs font-black uppercase tracking-widest text-[#6B615A]">Planes</button>
+            <button onClick={() => scrollToSection('faq')} className="w-full text-left text-xs font-black uppercase tracking-widest text-[#6B615A]">FAQ</button>
             <button onClick={onLoginClick} className="w-full py-4 bg-[#312923] text-white rounded-xl font-black text-xs uppercase tracking-widest">Iniciar Sesión</button>
           </div>
         )}
@@ -157,7 +175,7 @@ export default function LandingPage({ onLoginClick }) {
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Dashboard</p>
                       <p className="text-lg font-black">Lunes 30 — 3 citas hoy</p>
                     </div>
-                    <div className="px-4 py-2 bg-[#5B6651] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#5B6651]/20">+ Nuevo paciente</div>
+                    <button onClick={onLoginClick} className="px-4 py-2 bg-[#5B6651] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#5B6651]/20 hover:scale-105 transition-transform">+ Nuevo paciente</button>
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     {[
@@ -378,6 +396,49 @@ export default function LandingPage({ onLoginClick }) {
         </div>
       </section>
 
+      {/* Final CTA Section */}
+      <section id="cta" className="py-32 px-6 bg-[#312923] relative overflow-hidden">
+        <div className="absolute bottom-[-10%] left-[-5%] opacity-[0.03] pointer-events-none -rotate-12">
+          <svg width="600" height="600" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M100 10C70 10 45 35 45 65c0 20 8 38 20 50L55 210h90l-10-95c12-12 20-30 20-50 0-30-25-55-55-55z" fill="white"/>
+          </svg>
+        </div>
+
+        <div className="max-w-4xl mx-auto text-center space-y-12 relative z-10">
+          <h2 className="text-4xl md:text-7xl font-black tracking-tighter text-white leading-tight">
+            Tu primer paciente ya llegó.<br/>
+            <span className="text-[#CBAAA2]">Tu consultorio también debería estar listo.</span>
+          </h2>
+          
+          <div className="bg-white/5 border border-white/10 rounded-[3rem] p-10 md:p-16 backdrop-blur-md">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                onLoginClick();
+              }}
+              className="flex flex-col md:flex-row gap-4 mb-8"
+            >
+              <input 
+                type="email" 
+                value={ctaEmail}
+                onChange={(e) => setCtaEmail(e.target.value)}
+                placeholder="tucorreo@gmail.com" 
+                className="flex-1 bg-white text-[#312923] placeholder-[#9A8F84] rounded-2xl px-8 py-6 text-sm font-bold border-0 outline-none focus:ring-2 focus:ring-[#5B6651]" 
+                required
+              />
+              <button type="submit" className="px-12 py-6 bg-[#5B6651] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#4a5442] transition-all shadow-2xl shadow-[#5B6651]/20 flex items-center justify-center gap-3 whitespace-nowrap">
+                Crear cuenta gratis <ArrowRight size={18} />
+              </button>
+            </form>
+            <div className="flex flex-wrap justify-center gap-8 text-[10px] font-black uppercase tracking-widest text-white/40">
+              <span className="flex items-center gap-2"><Shield size={14}/> Datos Encriptados</span>
+              <span className="flex items-center gap-2"><Zap size={14}/> Sin Contrato</span>
+              <span className="flex items-center gap-2"><Heart size={14}/> Hecho en Chile</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-white border-t border-[#DFD2C4] py-24 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
@@ -404,9 +465,9 @@ export default function LandingPage({ onLoginClick }) {
           <div className="space-y-6">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#312923]">Plataforma</h4>
             <ul className="space-y-4 text-sm font-bold text-[#6B615A]">
-              <li><a href="#features" className="hover:text-[#312923] transition-colors">Funciones</a></li>
-              <li><a href="#pricing" className="hover:text-[#312923] transition-colors">Precios</a></li>
-              <li><a href="#comparativa" className="hover:text-[#312923] transition-colors">Comparativa</a></li>
+              <li><button onClick={() => scrollToSection('features')} className="hover:text-[#312923] transition-colors">Funciones</button></li>
+              <li><button onClick={() => scrollToSection('pricing')} className="hover:text-[#312923] transition-colors">Precios</button></li>
+              <li><button onClick={() => scrollToSection('comparativa')} className="hover:text-[#312923] transition-colors">Comparativa</button></li>
             </ul>
           </div>
 
