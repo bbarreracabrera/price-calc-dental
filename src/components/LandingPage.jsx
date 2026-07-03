@@ -3,7 +3,8 @@ import {
   Cloud, ArrowRight, CheckCircle2, Menu, X, Star, Sparkles,
   MessageCircle, ShieldCheck, Zap, Calculator, Users, Box, 
   Stethoscope, FlaskConical, BarChart3, ChevronRight, Play,
-  Globe, Heart, MousePointer2, Mail, Clock, Activity
+  Globe, Heart, MousePointer2, Mail, Clock, Activity, Shield,
+  FileText, Smartphone, HelpCircle, ChevronDown
 } from 'lucide-react';
 
 export default function LandingPage({ onLoginClick }) {
@@ -24,18 +25,30 @@ export default function LandingPage({ onLoginClick }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Paleta de colores ShiningCloud:
-  // Primary: #312923 (Negro carbón)
-  // Accent: #5B6651 (Verde musgo)
-  // Soft: #CBAAA2 (Rosa arcilla)
-  // Background: #FDFBF7 (Crema)
+  const FAQItem = ({ question, answer }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+      <div className="bg-white border border-[#DFD2C4] rounded-2xl overflow-hidden transition-all duration-300">
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full px-6 py-5 flex items-center justify-between text-left group"
+        >
+          <span className="font-bold text-[#312923] text-sm md:text-base">{question}</span>
+          <ChevronDown className={`text-[#9A8F84] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} size={20} />
+        </button>
+        {isOpen && (
+          <div className="px-6 pb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <p className="text-[#6B615A] text-sm leading-relaxed">{answer}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans selection:bg-[#CBAAA2] selection:text-white overflow-x-hidden">
       
-      {/* ═══════════════════════════════════════════
-           NAVBAR
-      ══════════════════════════════════════════════ */}
+      {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#FDFBF7]/90 backdrop-blur-xl border-b border-[#DFD2C4]/50 py-4 shadow-sm' : 'bg-transparent py-8'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
@@ -47,8 +60,9 @@ export default function LandingPage({ onLoginClick }) {
 
           <div className="hidden md:flex items-center gap-10">
             <a href="#features" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Funciones</a>
-            <a href="#como-funciona" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Cómo funciona</a>
+            <a href="#comparativa" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Comparativa</a>
             <a href="#pricing" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">Planes</a>
+            <a href="#faq" className="text-[10px] font-black uppercase tracking-widest text-[#6B615A] hover:text-[#312923] transition-colors">FAQ</a>
             <button 
               onClick={onLoginClick}
               className="px-8 py-3 bg-[#312923] text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-[#312923]/10 flex items-center gap-2"
@@ -66,18 +80,16 @@ export default function LandingPage({ onLoginClick }) {
         {mobileMenu && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-[#DFD2C4] p-6 space-y-4 shadow-xl animate-in slide-in-from-top duration-300">
             <a href="#features" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">Funciones</a>
-            <a href="#como-funciona" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">Cómo funciona</a>
+            <a href="#comparativa" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">Comparativa</a>
             <a href="#pricing" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">Planes</a>
+            <a href="#faq" onClick={() => setMobileMenu(false)} className="block text-xs font-black uppercase tracking-widest text-[#6B615A]">FAQ</a>
             <button onClick={onLoginClick} className="w-full py-4 bg-[#312923] text-white rounded-xl font-black text-xs uppercase tracking-widest">Iniciar Sesión</button>
           </div>
         )}
       </nav>
 
-      {/* ═══════════════════════════════════════════
-           HERO SECTION
-      ══════════════════════════════════════════════ */}
+      {/* Hero Section */}
       <section className="relative pt-48 pb-24 px-6 overflow-hidden">
-        {/* Diente decorativo de fondo */}
         <div className="absolute top-[-10%] right-[-5%] opacity-[0.03] pointer-events-none rotate-12">
           <svg width="600" height="600" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M100 10C70 10 45 35 45 65c0 20 8 38 20 50L55 210h90l-10-95c12-12 20-30 20-50 0-30-25-55-55-55z" fill="#312923"/>
@@ -130,7 +142,7 @@ export default function LandingPage({ onLoginClick }) {
               </div>
             </div>
 
-            {/* Mockup del producto */}
+            {/* Hero Mockup */}
             <div className="relative fade-up delay-2 hidden lg:block">
               <div className="bg-white rounded-[2.5rem] shadow-2xl border border-[#DFD2C4] overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-700">
                 <div className="bg-[#312923] px-6 py-4 flex items-center gap-2">
@@ -159,24 +171,6 @@ export default function LandingPage({ onLoginClick }) {
                       </div>
                     ))}
                   </div>
-                  <div className="bg-white rounded-2xl border border-[#DFD2C4]/50 overflow-hidden shadow-sm">
-                    <div className="px-6 py-4 border-b border-[#DFD2C4]/50 bg-[#FDFBF7]/50 flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest">Agenda hoy</span>
-                      <ChevronRight size={14} className="text-[#9A8F84]" />
-                    </div>
-                    {[1, 2].map(i => (
-                      <div key={i} className="px-6 py-4 flex items-center gap-4 border-b border-[#DFD2C4]/20 last:border-0">
-                        <div className={`w-2 h-2 rounded-full ${i === 1 ? 'bg-[#5B6651]' : 'bg-amber-400'}`} />
-                        <div className="flex-1">
-                          <p className="text-xs font-black">{i === 1 ? 'María Jiménez' : 'Carlos Rojas'}</p>
-                          <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{i === 1 ? '09:00 · Endodoncia' : '11:30 · Control'}</p>
-                        </div>
-                        <span className={`text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-widest ${i === 1 ? 'bg-[#5B6651]/10 text-[#5B6651]' : 'bg-amber-50 text-amber-600'}`}>
-                          {i === 1 ? 'Confirmada' : 'Pendiente'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>
@@ -184,9 +178,7 @@ export default function LandingPage({ onLoginClick }) {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-           FEATURES BENTO
-      ══════════════════════════════════════════════ */}
+      {/* Features Grid */}
       <section id="features" className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-20 space-y-4">
           <div className="inline-block px-4 py-1.5 bg-[#CBAAA2]/10 text-[#CBAAA2] rounded-full text-[10px] font-black uppercase tracking-[0.3em]">Potencia Clínica</div>
@@ -218,8 +210,8 @@ export default function LandingPage({ onLoginClick }) {
           <div className="md:col-span-2 bg-white border border-[#DFD2C4] rounded-[3.5rem] p-12 flex flex-col justify-between group hover:border-[#5B6651]/30 transition-all shadow-sm">
             <div className="flex justify-between items-start">
               <div className="space-y-4">
-                <h3 className="text-3xl font-black tracking-tight text-[#312923]">Odontograma 3D</h3>
-                <p className="text-[#6B615A] font-medium text-base max-w-xs">Visualización interactiva y presupuestos que se generan con un clic.</p>
+                <h3 className="text-3xl font-black tracking-tight text-[#312923]">Odontograma Interactiva</h3>
+                <p className="text-[#6B615A] font-medium text-base max-w-xs">Visualización interactiva de 32 piezas y presupuestos que se generan con un clic.</p>
               </div>
               <div className="w-14 h-14 bg-[#5B6651]/10 text-[#5B6651] rounded-2xl flex items-center justify-center">
                 <Activity size={28} />
@@ -263,9 +255,47 @@ export default function LandingPage({ onLoginClick }) {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-           PRICING SECTION
-      ══════════════════════════════════════════════ */}
+      {/* Comparativa Section */}
+      <section id="comparativa" className="py-32 bg-white">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-[#312923]">ShiningCloud vs <span className="text-[#CBAAA2]">Lo Tradicional.</span></h2>
+            <p className="text-[#9A8F84] font-medium text-lg">¿Por qué los recién egresados nos eligen por sobre los gigantes?</p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#DFD2C4]">
+                  <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Característica</th>
+                  <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-[#5B6651]">ShiningCloud</th>
+                  <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Otros Softwares</th>
+                  <th className="py-6 px-4 text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Papel / Excel</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#DFD2C4]/30">
+                {[
+                  { f: 'Costo mensual', sc: '$10.000', ot: '$45.000+', pe: '$0' },
+                  { f: 'Ficha Clínica Legal', sc: '✓', ot: '✓', pe: '⚠️' },
+                  { f: 'Facturación SII', sc: '✓', ot: 'Extra $', pe: 'Manual' },
+                  { f: 'Optimización Móvil', sc: '100%', ot: 'Pobre', pe: 'Nula' },
+                  { f: 'Soporte WhatsApp', sc: 'Directo', ot: 'Ticket', pe: 'N/A' },
+                  { f: 'Contrato Mínimo', sc: 'No', ot: '12 meses', pe: 'No' },
+                ].map((row, i) => (
+                  <tr key={i} className="hover:bg-[#FDFBF7] transition-colors">
+                    <td className="py-5 px-4 text-sm font-bold text-[#312923]">{row.f}</td>
+                    <td className="py-5 px-4 text-sm font-black text-[#5B6651]">{row.sc}</td>
+                    <td className="py-5 px-4 text-sm font-medium text-[#6B615A]">{row.ot}</td>
+                    <td className="py-5 px-4 text-sm font-medium text-[#9A8F84]">{row.pe}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
       <section id="pricing" className="py-32 px-6 relative">
         <div className="max-w-5xl mx-auto bg-[#312923] rounded-[4rem] p-12 md:p-24 text-white text-center space-y-12 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
@@ -274,7 +304,7 @@ export default function LandingPage({ onLoginClick }) {
 
           <div className="space-y-6 relative z-10">
             <div className="inline-flex items-center gap-2 px-6 py-2 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.5em] text-[#CBAAA2]">
-              Lanzamiento 2026
+              Oferta Especial 2026
             </div>
             <h2 className="text-5xl md:text-8xl font-black tracking-tighter">Un solo precio. <br/> Sin límites.</h2>
           </div>
@@ -303,7 +333,7 @@ export default function LandingPage({ onLoginClick }) {
               onClick={onLoginClick}
               className="w-full py-8 bg-white text-[#312923] rounded-[2.5rem] font-black text-xs uppercase tracking-[0.5em] hover:bg-[#FDFBF7] transition-all shadow-xl hover:scale-[1.02]"
             >
-              Comenzar ahora
+              Comenzar prueba 14 días
             </button>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#9A8F84]">
               Sin tarjeta de crédito · Cancela cuando quieras
@@ -312,9 +342,43 @@ export default function LandingPage({ onLoginClick }) {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-           FOOTER
-      ══════════════════════════════════════════════ */}
+      {/* FAQ Section */}
+      <section id="faq" className="py-32 px-6 max-w-4xl mx-auto">
+        <div className="text-center mb-16 space-y-4">
+          <div className="inline-block px-4 py-1.5 bg-[#5B6651]/10 text-[#5B6651] rounded-full text-[10px] font-black uppercase tracking-[0.3em]">Centro de Ayuda</div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-[#312923]">Preguntas <span className="text-[#CBAAA2]">Frecuentes.</span></h2>
+          <p className="text-[#9A8F84] font-medium text-lg">Todo lo que necesitas saber antes de empezar.</p>
+        </div>
+
+        <div className="space-y-4">
+          <FAQItem 
+            question="¿Necesito saber de tecnología para usarlo?" 
+            answer="No. Si puedes usar WhatsApp y Google Maps, puedes usar ShiningCloud. El onboarding completo te toma menos de 30 minutos, y nuestro equipo de soporte en español está disponible para acompañarte en los primeros pasos."
+          />
+          <FAQItem 
+            question="¿Mis datos están seguros?" 
+            answer="Sí. Todo está encriptado en tránsito y en reposo, alojado en servidores de AWS con certificaciones de seguridad de clase enterprise. Puedes exportar toda tu información en cualquier momento en formatos estándar (CSV, PDF)."
+          />
+          <FAQItem 
+            question="¿La facturación SII es de verdad o necesito otra app?" 
+            answer="Es integración real a través de OpenFactura/Haulmer. Emites boleta electrónica y factura afecta/exenta directamente desde ShiningCloud, sin abrir otra pestaña ni iniciar sesión en el portal del SII."
+          />
+          <FAQItem 
+            question="¿Puedo migrar mis pacientes desde papel o Excel?" 
+            answer="Sí. Si tienes un Excel con nombre, RUT y teléfono, lo importas en menos de 5 minutos. Para fichas en papel, puedes digitalizarlas paciente por paciente con la guía de onboarding que te entregamos."
+          />
+          <FAQItem 
+            question="¿Qué pasa si cancelo?" 
+            answer="Cancelas en cualquier momento, sin penalidades. Antes de que se cobre el siguiente ciclo. Recibes exportación completa de todos tus datos: pacientes, fichas clínicas, presupuestos y registros de facturación."
+          />
+          <FAQItem 
+            question="¿Por qué es tan accesible comparado con otros softwares?" 
+            answer="Porque no construimos un software para clínicas de 10 dentistas con sucursales y gerente. Estamos enfocados exclusivamente en el odontólogo que está empezando, y eso nos permite ser eficientes."
+          />
+        </div>
+      </section>
+
+      {/* Footer */}
       <footer className="bg-white border-t border-[#DFD2C4] py-24 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
           <div className="md:col-span-2 space-y-8">
@@ -342,7 +406,7 @@ export default function LandingPage({ onLoginClick }) {
             <ul className="space-y-4 text-sm font-bold text-[#6B615A]">
               <li><a href="#features" className="hover:text-[#312923] transition-colors">Funciones</a></li>
               <li><a href="#pricing" className="hover:text-[#312923] transition-colors">Precios</a></li>
-              <li><a href="#" className="hover:text-[#312923] transition-colors">Laboratorios</a></li>
+              <li><a href="#comparativa" className="hover:text-[#312923] transition-colors">Comparativa</a></li>
             </ul>
           </div>
 
@@ -359,7 +423,7 @@ export default function LandingPage({ onLoginClick }) {
         <div className="max-w-7xl mx-auto mt-24 pt-8 border-t border-[#DFD2C4]/50 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">© 2026 ShiningCloud Dental. Todos los derechos reservados.</p>
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#5B6651]">
-            <ShieldCheck size={14} /> Servidores Encriptados en Chile
+            <ShieldCheck size={14} /> Servidores Encriptados en Chile 🇨🇱
           </div>
         </div>
       </footer>
