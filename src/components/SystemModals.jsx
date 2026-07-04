@@ -27,18 +27,40 @@ export const PrivateImage = ({ img, onClick }) => {
 
     if (!signedUrl) return <div className="w-full h-full flex items-center justify-center bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/40"><Loader className="animate-spin text-[#9A8F84]" size={20}/></div>;
 
-    const isPdf = signedUrl.toLowerCase().includes('.pdf');
+    const lowerUrl = signedUrl.toLowerCase();
+    const isPdf = lowerUrl.includes('.pdf');
+    const isImage = lowerUrl.match(/\.(jpg|jpeg|png|webp|gif|bmp)$/) || lowerUrl.includes('image/');
+    const isDicom = lowerUrl.includes('.dcm') || lowerUrl.includes('.dicom');
+    const isStl = lowerUrl.includes('.stl');
+    const isZip = lowerUrl.includes('.zip') || lowerUrl.includes('.rar');
 
-    if (isPdf) {
+    if (isPdf || isDicom || isStl || isZip || !isImage) {
+        const getIcon = () => {
+            if (isPdf) return <FileText size={32} className="text-red-400"/>;
+            if (isDicom) return <ShieldCheck size={32} className="text-blue-400"/>;
+            if (isStl) return <Sparkles size={32} className="text-emerald-400"/>;
+            if (isZip) return <Cloud size={32} className="text-amber-400"/>;
+            return <FileText size={32} className="text-stone-400"/>;
+        };
+
+        const getLabel = () => {
+            if (isPdf) return 'Documento PDF';
+            if (isDicom) return 'Radiografía DICOM';
+            if (isStl) return 'Modelo 3D STL';
+            if (isZip) return 'Archivo Comprimido';
+            return 'Archivo adjunto';
+        };
+
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-[#FDFBF7] hover:bg-white border border-[#DFD2C4]/40 transition-colors rounded-xl" onClick={() => window.open(signedUrl, '_blank')}>
-                <FileText size={32} className="mb-2 text-[#CBAAA2]"/>
-                <span className="text-[10px] font-bold px-2 text-center text-[#9A8F84] uppercase tracking-widest break-all">Ver PDF</span>
+            <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-[#FDFBF7] hover:bg-white border border-[#DFD2C4]/40 transition-colors rounded-xl p-4 text-center" onClick={() => window.open(signedUrl, '_blank')}>
+                {getIcon()}
+                <span className="text-[10px] font-black mt-2 text-[#312923] uppercase tracking-widest">{getLabel()}</span>
+                <span className="text-[8px] font-bold mt-1 text-[#9A8F84] uppercase tracking-tighter opacity-60">Click para descargar/ver</span>
             </div>
         );
     }
 
-    return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick(signedUrl)} alt="Ficha" />;
+    return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick ? onClick(signedUrl) : window.open(signedUrl, '_blank')} alt="Ficha" />;
 };
 
 // --- PESTAÑA DE TÉRMINOS Y CONDICIONES ---

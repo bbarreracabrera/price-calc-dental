@@ -4,8 +4,9 @@ const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
     const MAX_PATIENT_SIZE = 10 * 1024 * 1024; // 10MB
     const MAX_LAB_SIZE = 50 * 1024 * 1024; // 50MB para archivos de lab
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    const ALLOWED_PATIENT_TYPES = [...ALLOWED_IMAGE_TYPES, 'application/pdf'];
-    const ALLOWED_LAB_TYPES = ['model/stl', 'application/zip', 'application/x-rar-compressed', 'application/dicom', 'image/jpeg', 'image/png', 'application/pdf']; // Añadir tipos de archivo de laboratorio
+    // Permitir cualquier tipo de archivo para pacientes, pero mantener límites de seguridad para el visor
+    const ALLOWED_PATIENT_TYPES = ['*']; 
+    const ALLOWED_LAB_TYPES = ['*'];
 
 // Valida los primeros bytes reales del archivo contra su tipo MIME declarado.
 // Previene upload de SVG maliciosos o archivos políglotos disfrazados de imagen.
@@ -134,14 +135,19 @@ export const uploadPatientImage = async (file, context, fileType = 'clinical') =
         return;
     }
     const currentAllowedTypes = fileType === 'lab' ? ALLOWED_LAB_TYPES : ALLOWED_PATIENT_TYPES;
-    if (!currentAllowedTypes.includes(file.type)) {
+    if (currentAllowedTypes[0] !== '*' && !currentAllowedTypes.includes(file.type)) {
         notify(`Tipo de archivo no permitido para ${fileType === 'lab' ? 'Laboratorio' : 'Ficha Clínica'}`);
         return;
     }
-    const magicValid = await validateMagicBytes(file);
-    if (!magicValid) {
-        notify('El archivo no es válido o está corrupto');
-        return;
+    
+    // Solo validamos magic bytes para imágenes conocidas para prevenir SVG maliciosos, 
+    // pero permitimos otros archivos sin validación estricta
+    if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        const magicValid = await validateMagicBytes(file);
+        if (!magicValid) {
+            notify('El archivo no es una imagen válida o está corrupto');
+            return;
+        }
     }
 
     setUploading(true);
@@ -167,16 +173,21 @@ export const uploadPatientImage = async (file, context, fileType = 'clinical') =
             fileUrl = publicUrlData.publicUrl;
         }
 
-        const updatedFiles = [...(p.files || []), {
+        // Mantenemos consistencia guardando en 'images' y 'files' para que aparezcan en todas las vistas
+        const newFileEntry = {
             id: Date.now(),
             path: fileName,
-            url: fileUrl, // Guardar la URL pública o la ruta según el tipo
-            date: new Date().toLocaleDateString('es-CL'),
+            url: fileUrl,
+            name: file.name,
+            date: new Date().toISOString(),
             folder: activeFolder,
-            type: fileType, // Añadir el tipo de archivo
-        }];
+            type: fileType,
+        };
 
-        await savePatientData(selectedPatientId, { ...p, files: updatedFiles });
+        const updatedFiles = [...(p.files || []), newFileEntry];
+        const updatedImages = [...(p.images || []), newFileEntry];
+
+        await savePatientData(selectedPatientId, { ...p, files: updatedFiles, images: updatedImages });
         notify(`Archivo guardado en ${activeFolder}`);
         logAction('UPLOAD_FILE', { fileName, folder: activeFolder, fileType }, selectedPatientId);
     } catch (err) {
