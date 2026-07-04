@@ -151,11 +151,11 @@ export default function InventoryView({
                         <Box size={14} className="text-[#A3968B]"/>
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Logística y Materiales</p>
                     </div>
-                    <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Inventario Clínico</h2>
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#312923] tracking-tighter">Inventario Clínico</h2>
                 </div>
                 <button 
                     onClick={()=>{setNewItem({name:'', stock:0, min:5, unit:'u', id:null, batches: []}); setModal('addItem');}}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
+                    className="flex items-center gap-2 px-5 py-3 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 w-full sm:w-auto justify-center"
                 >
                     <Plus size={16}/> Registrar Insumo / Compra
                 </button>
@@ -174,7 +174,7 @@ export default function InventoryView({
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] px-2 py-1 rounded-md border border-[#DFD2C4]/50">Listo para escanear</span>
             </div>
 
-            <div className="flex gap-2 mt-4 shrink-0">
+            <div className="flex flex-wrap gap-2 mt-2 shrink-0">
                 <button 
                     onClick={() => setActiveFilter('all')}
                     className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeFilter === 'all' ? 'bg-[#312923] text-white' : 'bg-[#FDFBF7] text-[#9A8F84] border border-[#DFD2C4]/50 hover:bg-[#DFD2C4]/30'}`}
@@ -214,7 +214,7 @@ export default function InventoryView({
                         <p className="text-xs font-medium text-[#9A8F84] mt-2">Intenta con otra palabra clave o vuelve a escanear.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {displayInventory.map(item => { 
                             const totalStock = item.batches ? item.batches.reduce((sum, b) => sum + b.qty, 0) : (item.stock || 0);
                             const isLow = totalStock <= (item.min || 5); 

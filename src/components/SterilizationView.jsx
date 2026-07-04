@@ -195,7 +195,7 @@ export default function SterilizationView({
                         <ShieldCheck size={14} className="text-[#5B6651]"/>
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Bioseguridad</p>
                     </div>
-                    <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Central de Esterilización</h2>
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#312923] tracking-tighter">Central de Esterilización</h2>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function SterilizationView({
 
             {/* --- CONTENIDO SEGÚN PESTAÑA --- */}
             {activeTab === 'kanban' ? (
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar pr-2 pb-4">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
                     {/* COLUMNA 1: ÁREA SUCIA */}
                     <div className="flex flex-col bg-[#FDFBF7]/50 rounded-[2rem] border border-[#DFD2C4]/50 p-4">
                         <div className="flex items-center justify-between mb-4 px-2">
