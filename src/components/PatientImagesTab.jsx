@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
     Upload, Trash2, Loader, Image as ImageIcon, FileText, Camera, 
     FolderOpen, Sun, Contrast, RotateCw, ZoomIn, ZoomOut, Ruler, X, Settings2, RefreshCcw,
-    Zap, HardDrive, Share2
+    Zap, HardDrive, Share2, Clock, ChevronLeft, ChevronRight, GitBranch, CalendarDays,
+    ArrowLeftRight, CheckCircle2
 } from 'lucide-react';
 import { PrivateImage } from './SystemModals';
 import { supabase } from '../supabase';
@@ -31,6 +32,14 @@ export default function PatientImagesTab({
     const [isSyncing, setIsSyncing] = useState(false);
     const imageContainerRef = useRef(null);
 
+    // --- ESTADOS DE LA LÍNEA DE TIEMPO ---
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'timeline'
+    const [compareMode, setCompareMode] = useState(false);
+    const [compareImages, setCompareImages] = useState([null, null]); // [before, after]
+    const [compareStep, setCompareStep] = useState(0); // 0=seleccionar antes, 1=seleccionar después
+    const [selectedTimelineMonth, setSelectedTimelineMonth] = useState(null);
+    const timelineRef = useRef(null);
+
     // Sincronizar el ratio si cambia la configuración global
     useEffect(() => {
         if (config?.radiologyRatio) setCalibrationRatio(config.radiologyRatio);
@@ -49,17 +58,67 @@ export default function PatientImagesTab({
         48,47,46,45,44,43,42,41, 38,37,36,35,34,33,32,31
     ];
 
+    // --- LÓGICA DE LÍNEA DE TIEMPO ---
+    // Agrupa las imágenes de la carpeta activa por mes/año
+    const getTimelineGroups = () => {
+        const sorted = [...currentImages].sort((a, b) => {
+            const dateA = new Date(a.date || a.created_at || 0);
+            const dateB = new Date(b.date || b.created_at || 0);
+            return dateB - dateA; // más reciente primero
+        });
+
+        const groups = {};
+        sorted.forEach(img => {
+            const date = new Date(img.date || img.created_at || Date.now());
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const label = date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+            if (!groups[key]) groups[key] = { key, label, images: [], date };
+            groups[key].images.push(img);
+        });
+
+        return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
+    };
+
+    const timelineGroups = getTimelineGroups();
+
+    // --- MODO COMPARACIÓN ---
+    const handleCompareSelect = (img) => {
+        if (!compareMode) return;
+        const newCompare = [...compareImages];
+        newCompare[compareStep] = img;
+        setCompareImages(newCompare);
+        if (compareStep === 0) {
+            setCompareStep(1);
+            notify('Ahora selecciona la imagen "Después" para comparar');
+        } else {
+            setCompareStep(0);
+            notify('¡Comparación lista! Abre el visor para ver las dos imágenes.');
+        }
+    };
+
+    const isSelectedForCompare = (img) => compareImages.some(c => c?.id === img.id);
+    const getCompareLabel = (img) => {
+        if (compareImages[0]?.id === img.id) return 'ANTES';
+        if (compareImages[1]?.id === img.id) return 'DESPUÉS';
+        return null;
+    };
+
+    const resetCompare = () => {
+        setCompareMode(false);
+        setCompareImages([null, null]);
+        setCompareStep(0);
+    };
+
     // --- SIMULACIÓN DE SINCRONIZACIÓN RADIOGRÁFICA ---
     const handleSyncRadiology = async () => {
         setIsSyncing(true);
         notify("Buscando nuevas capturas en el software radiográfico...", "info");
         
-        // Simulamos un retraso de red/procesamiento
         await new Promise(resolve => setTimeout(resolve, 2500));
         
         const mockNewImage = {
             id: `rad_sync_${Date.now()}`,
-            url: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800', // Imagen de ejemplo de radiografía
+            url: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800',
             name: `RX_SINC_${new Date().toLocaleDateString().replace(/\//g, '')}.jpg`,
             date: new Date().toISOString(),
             folder: 'Radiografías',
@@ -144,11 +203,82 @@ export default function PatientImagesTab({
         notify("Imagen eliminada");
     };
 
+    // --- COMPONENTE TARJETA DE IMAGEN (reutilizable) ---
+    const ImageCard = ({ img, showCompareOverlay = false }) => {
+        const compareLabel = getCompareLabel(img);
+        const isSelected = isSelectedForCompare(img);
+        return (
+            <div 
+                key={img.id} 
+                className={`group relative bg-white rounded-3xl border overflow-hidden shadow-sm transition-all
+                    ${compareMode ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
+                    ${isSelected ? 'border-emerald-500 shadow-emerald-200 shadow-lg ring-2 ring-emerald-400' : 'border-[#DFD2C4]/60 hover:shadow-xl'}
+                `}
+                onClick={() => compareMode ? handleCompareSelect(img) : setViewerImg(img)}
+            >
+                <div className="aspect-square bg-[#0a0a0a] flex items-center justify-center overflow-hidden relative">
+                    <PrivateImage img={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    
+                    {/* Badge de sincronización */}
+                    {img.is_sync && (
+                        <div className="absolute top-2 left-2 bg-emerald-500 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg">
+                            <RefreshCcw size={10}/> Sincronizado
+                        </div>
+                    )}
+
+                    {/* Overlay de comparación */}
+                    {compareMode && isSelected && compareLabel && (
+                        <div className={`absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]`}>
+                            <span className={`px-4 py-2 rounded-xl text-white font-black text-sm uppercase tracking-widest shadow-xl
+                                ${compareLabel === 'ANTES' ? 'bg-blue-600' : 'bg-emerald-600'}
+                            `}>
+                                <CheckCircle2 size={14} className="inline mr-1 mb-0.5"/> {compareLabel}
+                            </span>
+                        </div>
+                    )}
+                    {compareMode && !isSelected && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                            <span className="text-white font-black text-[10px] uppercase tracking-widest bg-black/50 px-3 py-1.5 rounded-lg">
+                                {compareStep === 0 ? 'Seleccionar como ANTES' : 'Seleccionar como DESPUÉS'}
+                            </span>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="p-3">
+                    <div className="flex items-center justify-between gap-2">
+                        <select 
+                            value={img.tooth || ''} 
+                            onChange={(e) => { e.stopPropagation(); handleToothChange(img.id, e.target.value); }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[10px] font-black bg-[#FDFBF7] border border-[#DFD2C4]/40 rounded-lg px-2 py-1 outline-none text-[#5B6651]"
+                        >
+                            <option value="">Pieza...</option>
+                            {adultTeeth.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteImage(img.id); }} 
+                            className="p-2 text-[#DFD2C4] hover:text-red-500 transition-colors"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
+                    <p className="text-[9px] font-bold text-[#9A8F84] mt-2 truncate px-1">{img.name || 'Sin nombre'}</p>
+                    {img.date && (
+                        <p className="text-[8px] text-[#9A8F84]/60 mt-0.5 px-1">
+                            {new Date(img.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in h-full flex flex-col max-w-6xl mx-auto pb-10">
             
             {/* --- VISOR RADIOLÓGICO MODAL --- */}
-            {viewerImg && (
+            {viewerImg && !compareImages[0] && !compareImages[1] && (
                 <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col md:flex-row animate-in fade-in duration-200">
                     <div className="w-full md:w-72 bg-[#1a1a1a] border-b md:border-b-0 md:border-r border-white/10 p-6 flex flex-col gap-6 shadow-2xl z-10 shrink-0 overflow-y-auto">
                         <div className="flex justify-between items-center">
@@ -219,6 +349,65 @@ export default function PatientImagesTab({
                 </div>
             )}
 
+            {/* --- MODAL COMPARADOR ANTES / DESPUÉS --- */}
+            {compareImages[0] && compareImages[1] && (
+                <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between px-6 py-4 bg-[#1a1a1a] border-b border-white/10">
+                        <div className="flex items-center gap-3">
+                            <ArrowLeftRight size={18} className="text-emerald-400"/>
+                            <h3 className="text-white font-black uppercase tracking-widest text-sm">Comparador Clínico</h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span className="text-white/40 text-[10px] uppercase tracking-widest">
+                                {compareImages[0].date ? new Date(compareImages[0].date).toLocaleDateString('es-CL') : 'Sin fecha'} 
+                                {' → '}
+                                {compareImages[1].date ? new Date(compareImages[1].date).toLocaleDateString('es-CL') : 'Sin fecha'}
+                            </span>
+                            <button onClick={resetCompare} className="text-white/50 hover:text-red-500 transition-colors p-2 bg-white/5 rounded-xl">
+                                <X size={18}/>
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex-1 grid grid-cols-2 gap-0.5 bg-black/50 overflow-hidden">
+                        {/* Panel ANTES */}
+                        <div className="relative flex flex-col bg-[#0a0a0a]">
+                            <div className="absolute top-4 left-4 z-10 bg-blue-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                ANTES
+                            </div>
+                            <div className="absolute top-4 right-4 z-10 text-white/40 text-[9px] font-bold">
+                                {compareImages[0].date ? new Date(compareImages[0].date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                            </div>
+                            <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+                                <PrivateImage img={compareImages[0]} className="max-w-full max-h-full object-contain" />
+                            </div>
+                            <div className="p-3 text-center">
+                                <p className="text-white/40 text-[9px] truncate">{compareImages[0].name || 'Sin nombre'}</p>
+                            </div>
+                        </div>
+                        {/* Panel DESPUÉS */}
+                        <div className="relative flex flex-col bg-[#0a0a0a]">
+                            <div className="absolute top-4 left-4 z-10 bg-emerald-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                DESPUÉS
+                            </div>
+                            <div className="absolute top-4 right-4 z-10 text-white/40 text-[9px] font-bold">
+                                {compareImages[1].date ? new Date(compareImages[1].date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                            </div>
+                            <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+                                <PrivateImage img={compareImages[1]} className="max-w-full max-h-full object-contain" />
+                            </div>
+                            <div className="p-3 text-center">
+                                <p className="text-white/40 text-[9px] truncate">{compareImages[1].name || 'Sin nombre'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Línea divisoria central */}
+                    <div className="absolute inset-y-[60px] left-1/2 w-0.5 bg-white/20 pointer-events-none"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-md rounded-full p-2 pointer-events-none">
+                        <ArrowLeftRight size={16} className="text-white/60"/>
+                    </div>
+                </div>
+            )}
+
             {/* --- ENCABEZADO --- */}
             <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 border-b border-[#DFD2C4]/50 pb-6">
                 <div>
@@ -229,7 +418,35 @@ export default function PatientImagesTab({
                     <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-2 ml-1">Historial Radiográfico y Fotográfico</p>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Toggle Vista Grilla / Línea de Tiempo */}
+                    <div className="flex bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-2xl p-1 gap-1">
+                        <button
+                            onClick={() => { setViewMode('grid'); resetCompare(); }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'grid' ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#9A8F84] hover:text-[#5B6651]'}`}
+                        >
+                            <ImageIcon size={14}/> Grilla
+                        </button>
+                        <button
+                            onClick={() => { setViewMode('timeline'); resetCompare(); }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'timeline' ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#9A8F84] hover:text-[#5B6651]'}`}
+                        >
+                            <Clock size={14}/> Línea de Tiempo
+                        </button>
+                    </div>
+
+                    {/* Botón Comparar */}
+                    <button
+                        onClick={() => { compareMode ? resetCompare() : setCompareMode(true); setViewMode('grid'); }}
+                        className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md border
+                            ${compareMode ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200' : 'bg-[#FDFBF7] text-[#9A8F84] border-[#DFD2C4]/60 hover:bg-white hover:text-[#5B6651]'}`}
+                    >
+                        <ArrowLeftRight size={16}/>
+                        {compareMode ? (
+                            compareStep === 0 ? 'Selecciona ANTES' : 'Selecciona DESPUÉS'
+                        ) : 'Comparar'}
+                    </button>
+
                     <button 
                         onClick={handleSyncRadiology}
                         disabled={isSyncing}
@@ -240,6 +457,22 @@ export default function PatientImagesTab({
                     </button>
                 </div>
             </div>
+
+            {/* Banner de instrucción de comparación */}
+            {compareMode && (
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3 flex items-center gap-3 animate-in slide-in-from-top-2">
+                    <ArrowLeftRight size={18} className="text-blue-600 shrink-0"/>
+                    <div>
+                        <p className="text-blue-800 font-black text-[11px] uppercase tracking-widest">
+                            {compareStep === 0 ? 'Paso 1: Selecciona la imagen "ANTES"' : 'Paso 2: Selecciona la imagen "DESPUÉS"'}
+                        </p>
+                        <p className="text-blue-600 text-[10px] mt-0.5">Haz clic en las imágenes para seleccionarlas. Se abrirá el comparador automáticamente.</p>
+                    </div>
+                    <button onClick={resetCompare} className="ml-auto text-blue-400 hover:text-blue-700 transition-colors">
+                        <X size={16}/>
+                    </button>
+                </div>
+            )}
 
             {/* --- TABS DE CARPETAS --- */}
             <div className="flex overflow-x-auto gap-3 pb-2 hide-scrollbar">
@@ -259,82 +492,139 @@ export default function PatientImagesTab({
                 })}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
-                {/* --- ÁREA DE CARGA --- */}
-                <div className="lg:col-span-1">
-                    <div className="relative group w-full h-48 lg:h-64 border-2 border-dashed border-[#DFD2C4] hover:border-[#5B6651] bg-[#FDFBF7] hover:bg-[#5B6651]/5 rounded-[2rem] flex flex-col items-center justify-center transition-all cursor-pointer">
-                        <input 
-                            type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" accept="image/*,application/pdf" 
-                            onChange={(e) => { if (e.target.files[0]) handleImageUpload(e.target.files[0]); e.target.value = ''; }} 
-                        />
-                        {uploading ? (
-                            <div className="flex flex-col items-center gap-3">
-                                <Loader size={32} className="animate-spin text-[#5B6651]" />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Subiendo...</p>
+            {/* ===== VISTA GRILLA ===== */}
+            {viewMode === 'grid' && (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
+                    {/* --- ÁREA DE CARGA --- */}
+                    <div className="lg:col-span-1">
+                        <div className="relative group w-full h-48 lg:h-64 border-2 border-dashed border-[#DFD2C4] hover:border-[#5B6651] bg-[#FDFBF7] hover:bg-[#5B6651]/5 rounded-[2rem] flex flex-col items-center justify-center transition-all cursor-pointer">
+                            <input 
+                                type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" accept="image/*,application/pdf" 
+                                onChange={(e) => { if (e.target.files[0]) handleImageUpload(e.target.files[0]); e.target.value = ''; }} 
+                            />
+                            {uploading ? (
+                                <div className="flex flex-col items-center gap-3">
+                                    <Loader size={32} className="animate-spin text-[#5B6651]" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Subiendo...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-[#DFD2C4]/40 group-hover:scale-110 transition-transform">
+                                        <Upload size={24} className="text-[#9A8F84] group-hover:text-[#5B6651]" />
+                                    </div>
+                                    <p className="text-[11px] font-black text-[#312923] uppercase tracking-widest mt-4">Subir Archivo</p>
+                                    <p className="text-[9px] font-bold text-[#9A8F84] mt-1">Arrastra o haz clic</p>
+                                </>
+                            )}
+                        </div>
+                        
+                        {/* Atajo de Sincronización Automática (Tip) */}
+                        <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Zap size={14} className="text-emerald-600"/>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Tip de Flujo</p>
+                            </div>
+                            <p className="text-[10px] font-medium text-emerald-700 leading-relaxed">
+                                Puedes configurar una <b>Carpeta Compartida</b> para que las radiografías de tu software externo aparezcan aquí automáticamente.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* --- GRILLA DE IMÁGENES --- */}
+                    <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {currentImages.length === 0 ? (
+                            <div className="col-span-full h-64 flex flex-col items-center justify-center text-[#9A8F84] bg-[#FDFBF7]/50 rounded-[2rem] border border-[#DFD2C4]/40">
+                                <ImageIcon size={48} className="opacity-10 mb-4" />
+                                <p className="text-xs font-bold uppercase tracking-widest opacity-40">No hay archivos en esta carpeta</p>
                             </div>
                         ) : (
-                            <>
-                                <div className="p-4 bg-white rounded-2xl shadow-sm border border-[#DFD2C4]/40 group-hover:scale-110 transition-transform">
-                                    <Upload size={24} className="text-[#9A8F84] group-hover:text-[#5B6651]" />
-                                </div>
-                                <p className="text-[11px] font-black text-[#312923] uppercase tracking-widest mt-4">Subir Archivo</p>
-                                <p className="text-[9px] font-bold text-[#9A8F84] mt-1">Arrastra o haz clic</p>
-                            </>
+                            currentImages.map(img => <ImageCard key={img.id} img={img} />)
                         )}
                     </div>
-                    
-                    {/* Atajo de Sincronización Automática (Tip) */}
-                    <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Zap size={14} className="text-emerald-600"/>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Tip de Flujo</p>
-                        </div>
-                        <p className="text-[10px] font-medium text-emerald-700 leading-relaxed">
-                            Puedes configurar una <b>Carpeta Compartida</b> para que las radiografías de tu software externo aparezcan aquí automáticamente.
-                        </p>
-                    </div>
                 </div>
+            )}
 
-                {/* --- GRILLA DE IMÁGENES --- */}
-                <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+            {/* ===== VISTA LÍNEA DE TIEMPO ===== */}
+            {viewMode === 'timeline' && (
+                <div className="flex-1 flex flex-col gap-0" ref={timelineRef}>
                     {currentImages.length === 0 ? (
-                        <div className="col-span-full h-64 flex flex-col items-center justify-center text-[#9A8F84] bg-[#FDFBF7]/50 rounded-[2rem] border border-[#DFD2C4]/40">
-                            <ImageIcon size={48} className="opacity-10 mb-4" />
-                            <p className="text-xs font-bold uppercase tracking-widest opacity-40">No hay archivos en esta carpeta</p>
+                        <div className="h-64 flex flex-col items-center justify-center text-[#9A8F84] bg-[#FDFBF7]/50 rounded-[2rem] border border-[#DFD2C4]/40">
+                            <Clock size={48} className="opacity-10 mb-4" />
+                            <p className="text-xs font-bold uppercase tracking-widest opacity-40">No hay archivos para mostrar en la línea de tiempo</p>
                         </div>
                     ) : (
-                        currentImages.map(img => (
-                            <div key={img.id} className="group relative bg-white rounded-3xl border border-[#DFD2C4]/60 overflow-hidden shadow-sm hover:shadow-xl transition-all">
-                                <div className="aspect-square bg-[#0a0a0a] flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => setViewerImg(img)}>
-                                    <PrivateImage img={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                    {img.is_sync && (
-                                        <div className="absolute top-2 left-2 bg-emerald-500 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg">
-                                            <RefreshCcw size={10}/> Sincronizado
+                        <div className="relative">
+                            {/* Línea vertical de tiempo */}
+                            <div className="absolute left-[28px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#5B6651] via-[#DFD2C4] to-transparent z-0"></div>
+
+                            <div className="space-y-10">
+                                {timelineGroups.map((group, groupIdx) => (
+                                    <div key={group.key} className="relative">
+                                        {/* Nodo del mes en la línea de tiempo */}
+                                        <div className="flex items-center gap-5 mb-5">
+                                            <div className="relative z-10 w-14 h-14 rounded-2xl bg-[#5B6651] text-white flex flex-col items-center justify-center shadow-lg shadow-[#5B6651]/20 shrink-0">
+                                                <CalendarDays size={16} className="text-[#DFD2C4] mb-0.5"/>
+                                                <span className="text-[8px] font-black uppercase tracking-widest leading-none text-center px-1">
+                                                    {group.label.split(' ')[0].substring(0, 3)}
+                                                </span>
+                                                <span className="text-[9px] font-black text-white/80">
+                                                    {group.label.split(' ').slice(-1)[0]}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-[#312923] font-black text-base capitalize">{group.label}</h3>
+                                                <p className="text-[#9A8F84] text-[10px] font-bold uppercase tracking-widest">
+                                                    {group.images.length} {group.images.length === 1 ? 'archivo' : 'archivos'}
+                                                    {groupIdx === 0 && <span className="ml-2 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Más reciente</span>}
+                                                </p>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                                
-                                <div className="p-3">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <select 
-                                            value={img.tooth || ''} 
-                                            onChange={(e) => handleToothChange(img.id, e.target.value)}
-                                            className="text-[10px] font-black bg-[#FDFBF7] border border-[#DFD2C4]/40 rounded-lg px-2 py-1 outline-none text-[#5B6651]"
-                                        >
-                                            <option value="">Pieza...</option>
-                                            {adultTeeth.map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                        <button onClick={() => handleDeleteImage(img.id)} className="p-2 text-[#DFD2C4] hover:text-red-500 transition-colors">
-                                            <Trash2 size={14} />
-                                        </button>
+
+                                        {/* Grilla de imágenes del mes */}
+                                        <div className="ml-[74px] grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {group.images.map(img => (
+                                                <ImageCard key={img.id} img={img} />
+                                            ))}
+                                        </div>
+
+                                        {/* Separador entre grupos (excepto el último) */}
+                                        {groupIdx < timelineGroups.length - 1 && (
+                                            <div className="ml-[74px] mt-8 flex items-center gap-4">
+                                                <div className="flex-1 h-px bg-[#DFD2C4]/40"></div>
+                                                <span className="text-[9px] font-bold text-[#9A8F84]/50 uppercase tracking-widest whitespace-nowrap">
+                                                    {(() => {
+                                                        const curr = new Date(group.date);
+                                                        const next = new Date(timelineGroups[groupIdx + 1].date);
+                                                        const diffMonths = (curr.getFullYear() - next.getFullYear()) * 12 + (curr.getMonth() - next.getMonth());
+                                                        return diffMonths > 0 ? `${diffMonths} ${diffMonths === 1 ? 'mes' : 'meses'} antes` : '';
+                                                    })()}
+                                                </span>
+                                                <div className="flex-1 h-px bg-[#DFD2C4]/40"></div>
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="text-[9px] font-bold text-[#9A8F84] mt-2 truncate px-1">{img.name || 'Sin nombre'}</p>
+                                ))}
+                            </div>
+
+                            {/* Fin de la línea de tiempo */}
+                            <div className="flex items-center gap-4 mt-10 ml-0">
+                                <div className="relative z-10 w-14 h-14 rounded-2xl bg-[#DFD2C4]/30 border-2 border-dashed border-[#DFD2C4] flex items-center justify-center shrink-0">
+                                    <GitBranch size={18} className="text-[#9A8F84]/50"/>
+                                </div>
+                                <div>
+                                    <p className="text-[#9A8F84]/60 text-[10px] font-bold uppercase tracking-widest">Inicio del historial</p>
+                                    <p className="text-[#9A8F84]/40 text-[9px]">
+                                        {currentImages.length > 0 && (() => {
+                                            const oldest = [...currentImages].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))[0];
+                                            return oldest.date ? `Primera imagen: ${new Date(oldest.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}` : '';
+                                        })()}
+                                    </p>
                                 </div>
                             </div>
-                        ))
+                        </div>
                     )}
                 </div>
-            </div>
+            )}
         </div>
     );
 }
