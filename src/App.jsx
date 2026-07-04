@@ -53,6 +53,7 @@ import ResetPasswordPage from './components/ResetPasswordPage';
 import WelcomeTour from './components/WelcomeTour';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import LandingPRA from './components/public/LandingPRA';
+import LandingLaboratorios from './components/LandingLaboratorios';
 import LandingCariogram from './components/public/LandingCariogram';
 import ImportPatientsModal from './components/ImportPatientsModal';
 
@@ -796,6 +797,10 @@ const saveToOfflineVault = async (table, id, data) => {
 
   if (window.location.pathname === '/privacidad') {
     return <PrivacyPolicy />;
+  }
+
+  if (window.location.pathname === '/laboratorios') {
+    return <LandingLaboratorios onLoginClick={() => setShowLogin(true)} />;
   }
 
   if (!session && linkError) {
