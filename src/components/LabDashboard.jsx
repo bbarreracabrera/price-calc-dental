@@ -5,6 +5,7 @@ import { useLabData } from '../hooks/useLabData';
 import MyPricingTab from './lab/MyPricingTab';
 import MyClinicsTab from './lab/MyClinicsTab';
 import JobDetailModal from './lab/JobDetailModal';
+import LabSubscriptionBanner from './lab/LabSubscriptionBanner';
 
 export default function LabDashboard({ config, supabase, notify, session, clinicOwner }) {
     const [activeTab, setActiveTab] = useState('kanban');
@@ -75,8 +76,13 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
         { id: 'despachado', title: 'Despachado',             icon: Truck,        color: 'border-[#CBAAA2]/30 bg-[#CBAAA2]/10', textColor: 'text-[#CBAAA2]',  nextStatus: null,         btnText: null },
     ];
 
+    const labEmail = session?.user?.email;
+
     return (
         <div className="space-y-6 animate-in fade-in h-full flex flex-col pb-10">
+
+            {/* BANNER SUSCRIPCIÓN LAB PRO */}
+            <LabSubscriptionBanner supabase={supabase} labEmail={labEmail} />
 
             {/* ENCABEZADO */}
             <div className="bg-white border border-[#DFD2C4]/50 rounded-[2rem] p-6 shadow-sm shrink-0">
