@@ -69,8 +69,13 @@ const normalize = (str) =>
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[\.\-\s]/g, '');
 
-export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email...", adminEmail, onQueryChange }) => {
-    const [query, setQuery] = useState('');
+export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email...", adminEmail, onQueryChange, initialValue = '' }) => {
+    const [query, setQuery] = useState(initialValue);
+
+    useEffect(() => {
+        if (initialValue) setQuery(initialValue);
+    }, [initialValue]);
+
     const [showResults, setShowResults] = useState(false);
     const [dbResults, setDbResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -180,25 +185,35 @@ export const AuthScreen = () => {
    
     const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
     const urlParams = new URLSearchParams(window.location.search);
-    const vieneDePago = urlParams.get('pago') === 'exitoso';
-    const [isSignUp, setIsSignUp] = useState(vieneDePago);
+    const [isSignUp, setIsSignUp] = useState(false); // No permitir registro directo por URL
   
     const handleAuth = async (e) => { 
         e.preventDefault(); 
         setLoading(true); 
         setMsg(''); 
         try { 
-            if (isSignUp) { 
-                const { error } = await supabase.auth.signUp({ email, password }); 
-                if (error) throw error; 
-                setMsg('¡Clínica creada! Iniciando sesión...'); 
+            if (isSignUp) {
+                // Verificar suscripción activa antes de permitir el registro
+                const { data: sub, error: subError } = await supabase
+                    .from('saas_subscriptions')
+                    .select('status')
+                    .eq('clinic_email', email)
+                    .eq('status', 'active')
+                    .maybeSingle();
+
+                if (subError || !sub) {
+                    throw new Error('Debes tener una suscripción activa para registrar tu clínica. Por favor, completa el pago primero.');
+                }
+
+                const { error } = await supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                setMsg('¡Clínica creada! Iniciando sesión...');
                 const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
                 if (signInError) throw signInError;
-                window.history.replaceState({}, document.title, window.location.pathname);
-            } else { 
-                const { error } = await supabase.auth.signInWithPassword({ email, password }); 
-                if (error) throw error; 
-            } 
+            } else {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+            }
         } catch (error) { 
             setMsg(error.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error.message); 
         } finally { 
@@ -276,20 +291,18 @@ export const AuthScreen = () => {
                             </div>
                         </div>
 
-                        {vieneDePago ? (
+                        {isSignUp ? (
                             <>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-3">Comienza tu viaje.</h2>
-                                <p className="text-[#5B6651] text-xs font-bold bg-[#5B6651]/10 px-4 py-2 rounded-full border border-[#5B6651]/20 inline-block">
-                                    ¡Suscripción confirmada! 💳
-                                </p>
+                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-3">Registra tu Clínica</h2>
+                                <p className="text-[#9A8F84] text-sm font-medium mb-8">Completa tus datos para activar tu espacio de trabajo seguro.</p>
                             </>
                         ) : (
                             <>
                                 <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-2">
-                                    {isSignUp ? 'Crear Clínica' : 'Bienvenido de vuelta.'}
+                                    Bienvenido de vuelta.
                                 </h2>
                                 <p className="text-[#6B615A] font-medium">
-                                    {isSignUp ? 'Registra tu clínica en el sistema.' : 'Ingresa tus credenciales para acceder.'}
+                                    Ingresa tus credenciales para acceder.
                                 </p>
                             </>
                         )}

@@ -604,7 +604,13 @@ const saveToOfflineVault = async (table, id, data) => {
       [financialRecords]
   );
   const totalCollected = useMemo(
-      () => incomeRecords.reduce((acc, rec) => { const s = (rec.payments || []).reduce((a, p) => a + Number(p.amount), 0); return acc + (s > 0 ? s : (Number(rec.paid) || 0)); }, 0),
+      () => incomeRecords.reduce((acc, rec) => {
+          // Sumar pagos registrados en el arreglo 'payments'
+          const paymentSum = (rec.payments || []).reduce((a, p) => a + (Number(p.amount) || 0), 0);
+          // Si no hay arreglo de pagos, usar el campo 'paid' (legacy)
+          const legacyPaid = (!rec.payments || rec.payments.length === 0) ? (Number(rec.paid) || 0) : 0;
+          return acc + paymentSum + legacyPaid;
+      }, 0),
       [incomeRecords]
   );
   const totalExpenses = useMemo(

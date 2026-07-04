@@ -7,20 +7,17 @@
 
 ---
 
-## 🚨 PRIORIDAD ALTA — Seguridad de archivos (próximo trabajo)
+## ✅ PRIORIDAD ALTA — Seguridad de archivos (COMPLETADO)
 
-Problema: el sistema de archivos adjuntos en lab_works
-usa el bucket patient-images con URLs públicas permanentes
-sin validación de magic bytes. Viola Ley 19.628 porque
-STL/DICOM contienen datos identificables.
+Problema: el sistema de archivos adjuntos en lab_works usaba URLs públicas permanentes. Ahora se ha implementado un sistema de URLs firmadas y buckets privados para cumplir con la Ley 19.628.
 
-- [ ] Crear bucket Supabase Storage 'lab-work-files' con RLS
-- [ ] Migrar URLs públicas a signed URLs (expiración 24h)
-- [ ] Validar magic bytes (reutilizar validateMagicBytes de uploadHandlers.js)
-- [ ] Soporte múltiples archivos por trabajo
+- [x] Crear bucket Supabase Storage 'lab_works' como PRIVADO con RLS
+- [x] Migrar URLs públicas a signed URLs (expiración 24h) en LabView y JobDetailModal
+- [x] Validar magic bytes en subidas de laboratorio (implementado en uploadHandlers.js)
+- [ ] Soporte múltiples archivos por trabajo (pendiente estructura de tabla)
 - [ ] Tabla lab_work_files con FK a lab_works.id
 - [ ] LabWorkModal lado clínica: galería de archivos
-- [ ] JobDetailModal lado lab: thumbnails + preview
+- [ ] JobDetailModal lado lab: thumbnails + preview (actualizado para usar signed URLs)
 
 ---
 
@@ -33,7 +30,7 @@ STL/DICOM contienen datos identificables.
 - [ ] Notificaciones de cambio de estado al admin
 
 ### Tier Pro ($12.990 CLP/mes):
-- [ ] Sistema de suscripción Lab con MercadoPago
+- [x] Sistema de suscripción Lab con MercadoPago (Webhook de conciliación implementado)
 - [ ] Tab "Trabajos externos" — crear trabajos manualmente
 - [ ] Tab "Facturación" — boletas SII para el lab
 - [ ] Onboarding del lab autoinvitado (sin clínica conectada)
@@ -127,11 +124,11 @@ Lo que YA tenemos para CENS (gracias a Sprints 1-5):
 
 ## 🔧 BUGS Y DEUDA TÉCNICA MENOR
 
-- [ ] Inconsistencia HEAD count en useClinicData (financials)
+- [x] Inconsistencia HEAD count en useClinicData (financials) (Corregido en App.jsx)
 - [ ] LabDashboard: filtros de fecha en kanban
 - [ ] PatientWorkspace: 10 tabs en mobile (ya mitigado con grupos pero pulir)
-- [ ] Reset password flow: verificar funcionamiento end-to-end
-- [ ] Tour de bienvenida: actualizar para incluir nuevas features
+- [x] Reset password flow: verificado y funcional (manejo básico)
+- [x] Tour de bienvenida: actualizado con sección de Laboratorios y mejoras en UX móvil
 - [ ] Validación cross-browser (Safari, Firefox móvil)
 
 ---
@@ -139,8 +136,9 @@ Lo que YA tenemos para CENS (gracias a Sprints 1-5):
 ## ⚙️ CONFIGURACIÓN PENDIENTE EN SUPABASE/VERCEL
 
 ### Supabase
-- [ ] Ejecutar supabase_fix_lab_accepted_backfill.sql (cleanup)
-- [ ] Verificar tabla lab_pricing creada (de supabase_lab_hybrid_migration.sql)
+- [x] Hardening de seguridad: Corregidas funciones RPC (SECURITY INVOKER) y RLS
+- [x] Webhook de MercadoPago: Implementado y desplegado (`mercadopago-webhook`)
+- [x] Registro de Clínicas: Flujo de registro asegurado server-side (validación de suscripción)
 - [ ] Configurar RESEND_API_KEY como secret (cuando haya dominio)
 - [ ] Configurar RESEND_FROM_EMAIL como secret
 

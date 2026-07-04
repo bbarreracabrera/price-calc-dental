@@ -198,7 +198,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         date: formData.date,
                         time: formData.time,
                         duration: 30,
-                        status: needsPayment ? 'pending_payment' : 'agendado',
+                        status: 'pending_payment', // Siempre inicia como pendiente de pago si requiere pago
                         cancel_token: cancelToken,
                         created_at: new Date().toISOString(),
                         consent_accepted: acceptedDataPolicy,
@@ -238,7 +238,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         date: formData.date,
                         time: formData.time,
                         treatment: formData.reason || 'Consulta General',
-                        payment_status: needsPayment ? 'pending_payment' : 'scheduled',
+                        status: 'pending_payment', // Siempre inicia como pendiente de pago si requiere pago
                         cancel_token: cancelToken,
                         appointment_id: apptId,
                     }
@@ -271,11 +271,12 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                 }
 
                 const popup = window.open(payData.init_point, '_blank', 'noopener,noreferrer');
+                localStorage.setItem('pending_appointment_id', apptId); // Guardar el ID de la cita pendiente
                 if (!popup) {
                     notify('Tu navegador bloqueó la ventana de pago. Permite popups para este sitio y vuelve a intentar.');
                 }
                 setRequiresPayment(true);
-                setStep(4);
+                setStep(4); // Mantener el paso 4 para mostrar el mensaje de pago pendiente
                 return;
             }
 
@@ -290,207 +291,221 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
     };
 
     if (loading) return <div className="h-screen flex items-center justify-center"><p className="animate-pulse font-bold text-[#A3968B] uppercase tracking-widest">Conectando con la Clínica...</p></div>;
-    if (!clinicConfig || !adminEmail) return <div className="h-screen flex flex-col items-center justify-center bg-[#FDFBF7]"><Stethoscope size={48} className="text-[#DFD2C4] mb-4"/><p className="font-black text-[#312923] text-xl tracking-tighter">Enlace Inválido</p></div>;
+    useEffect(() => {
+        const checkPaymentStatus = async () => {
+            const pendingApptId = localStorage.getItem('pending_appointment_id');
+            if (pendingApptId) {
+                const { data, error } = await supabase
+                    .from('appointments')
+                    .select('data')
+                    .eq('id', pendingApptId)
+                    .single();
+
+                if (error) {
+                    console.error('Error al verificar el estado del pago:', error);
+                    return;
+                }
+
+                if (data?.data?.status === 'agendado') {
+                    notify('¡Tu cita ha sido confirmada!');
+                    localStorage.removeItem('pending_appointment_id');
+                    setStep(4); // O el paso final de éxito
+                } else if (data?.data?.status === 'rechazado') {
+                    notify('El pago fue rechazado. Por favor, intenta de nuevo.');
+                    localStorage.removeItem('pending_appointment_id');
+                    setStep(3); // Volver al paso de pago
+                }
+            }
+        };
+        checkPaymentStatus();
+    }, [supabase, notify]);
+
+    if (!clinicConfig || !adminEmail) return <div className="h-screen flex flex-col items-center justify-center p-6 text-center"><h1 className="text-2xl font-black text-[#312923] mb-4">Clínica no encontrada</h1><p className="text-[#6B615A]">Asegúrate de que el enlace sea correcto.</p></div>;
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center p-4">
-            <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {clinicConfig.logo ? (
-                    <img src={clinicConfig.logo} alt="Logo" className="h-20 mx-auto mb-4 drop-shadow-md" />
-                ) : (
-                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg mx-auto mb-4 border border-[#DFD2C4]">
-                        <Stethoscope size={32} className="text-[#CBAAA2]"/>
-                    </div>
-                )}
-                <h1 className="text-3xl font-black text-[#312923] tracking-tighter">{clinicConfig.name}</h1>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-2">Portal de Agendamiento</p>
-            </div>
+        <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans selection:bg-[#CBAAA2] selection:text-white">
+            <div className="bg-white rounded-[2rem] border border-[#DFD2C4]/50 p-6 sm:p-10 w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-500">
+                <h1 className="text-3xl font-black text-[#312923] tracking-tight mb-6 text-center">Agenda tu Cita en {clinicConfig.name}</h1>
 
-            <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border border-[#DFD2C4]/60 p-8">
-                {/* Honeypot — invisible para humanos, visible para bots */}
-                <input
-                    type="text"
-                    name="website"
-                    style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    value={honeypot}
-                    onChange={(e) => setHoneypot(e.target.value)}
-                    aria-hidden="true"
-                />
-                {/* STEP 1 — Datos personales */}
                 {step === 1 && (
-                    <div className="space-y-5 animate-in slide-in-from-right">
-                        <h3 className="font-black text-xl text-[#312923]">Tus Datos</h3>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Nombre Completo *</label>
-                            <div className="relative">
-                                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
-                                <input type="text" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="Ej. Juan Pérez" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} />
-                            </div>
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-2 text-[#A3968B] mb-4">
+                            <CalendarDays size={20} />
+                            <span className="font-black text-sm uppercase tracking-widest">Paso 1: Elige Fecha y Hora</span>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">RUT (Opcional)</label>
-                            <input
-                                type="text"
-                                className={`w-full px-4 py-4 rounded-2xl bg-[#FDFBF7] border outline-none font-bold text-[#312923] focus:border-[#5B6651] ${rutError ? 'border-red-400 focus:border-red-400' : 'border-[#DFD2C4]'}`}
-                                placeholder="12.345.678-9"
-                                value={formData.rut}
-                                onChange={e => {
-                                    setFormData({...formData, rut: formatRUT(e.target.value)});
-                                    setRutError('');
-                                }}
-                                onBlur={e => {
-                                    const val = e.target.value.trim();
-                                    if (!val) { setRutError(''); return; }
-                                    if (!validateRUT(val)) {
-                                        setRutError('RUT inválido. Verifica el dígito verificador.');
-                                    } else {
-                                        setRutError('');
-                                    }
-                                }}
-                            />
-                            {rutError && <p className="text-xs font-bold text-red-500 ml-1">{rutError}</p>}
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Teléfono *</label>
-                            <div className="relative">
-                                <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
-                                <input type="tel" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="+56 9..." value={formData.phone} onChange={e=>setFormData({...formData, phone:e.target.value})} />
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">
-                                Correo electrónico {requirePayment ? <span className="text-[#CBAAA2]">*</span> : <span className="font-bold normal-case tracking-normal text-[9px]">(recomendado)</span>}
-                            </label>
-                            <div className="relative">
-                                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
-                                <input type="email" className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]" placeholder="tu@correo.com" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} />
-                            </div>
-                            <p className="text-[10px] font-bold text-[#9A8F84] ml-2">
-                                {requirePayment ? 'Necesario para el recibo de pago' : 'Te enviaremos la confirmación de tu reserva'}
-                            </p>
-                        </div>
-                        <button
-                            disabled={!formData.name || !formData.phone || (requirePayment && !formData.email) || !!rutError}
-                            onClick={() => setStep(2)}
-                            className="w-full py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 disabled:opacity-40"
-                        >
-                            Continuar <ChevronRight size={16}/>
-                        </button>
-                    </div>
-                )}
-
-                {/* STEP 2 — Motivo */}
-                {step === 2 && (
-                    <div className="space-y-5 animate-in slide-in-from-right">
-                        <button onClick={() => setStep(1)} className="text-[#9A8F84] mb-4 hover:text-[#312923] transition-colors"><ArrowLeft size={20}/></button>
-                        <h3 className="font-black text-xl text-[#312923]">Motivo de Consulta</h3>
-                        <textarea rows="4" className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] resize-none" placeholder="Ej: Limpieza dental..." value={formData.reason} onChange={e=>setFormData({...formData, reason:e.target.value})} />
-                        <button onClick={() => setStep(3)} className="w-full py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2">
-                            Elegir Fecha <ChevronRight size={16}/>
-                        </button>
-                    </div>
-                )}
-
-                {/* STEP 3 — Fecha y hora */}
-                {step === 3 && (
-                    <div className="space-y-5 animate-in slide-in-from-right">
-                        <button onClick={() => setStep(2)} className="text-[#9A8F84] mb-4 hover:text-[#312923] transition-colors"><ArrowLeft size={20}/></button>
-                        <h3 className="font-black text-xl text-[#312923]">Disponibilidad</h3>
-                        <input type="date" min={new Date().toISOString().split('T')[0]} className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] font-bold text-[#312923]" value={formData.date} onChange={e=>handleDateSelect(e.target.value)} />
-
-                        {formData.date && (
-                            <div className="grid grid-cols-2 gap-3 max-h-56 overflow-y-auto p-1 custom-scrollbar">
-                                {availableTimes.length === 0 ? (
-                                    <p className="col-span-2 text-center p-4 text-red-500 font-bold text-sm">Sin horarios disponibles.</p>
-                                ) : (
-                                    availableTimes.map(slot => (
-                                        <button key={slot.id} onClick={() => setFormData({...formData, time: slot.id})} className={`py-3 rounded-xl text-xs font-black transition-all border ${formData.time === slot.id ? 'bg-[#5B6651] text-white border-[#5B6651]' : 'bg-white border-[#DFD2C4] text-[#A3968B]'}`}>
-                                            {slot.display}
+                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Fecha</label>
+                        <input
+                            type="date"
+                            value={formData.date}
+                            onChange={(e) => handleDateSelect(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                        />
+                        {formData.date && availableTimes.length > 0 && (
+                            <div className="mt-4">
+                                <label className="block text-sm font-bold text-[#6B615A] mb-2">Hora</label>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-60 overflow-y-auto p-2 rounded-xl border border-[#DFD2C4]/50 bg-[#FDFBF7]">
+                                    {availableTimes.map(slot => (
+                                        <button
+                                            key={slot.id}
+                                            onClick={() => setFormData({ ...formData, time: slot.id })}
+                                            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${formData.time === slot.id ? 'bg-[#5B6651] text-white shadow-md' : 'bg-white text-[#6B615A] hover:bg-[#F0EDE9] border border-[#DFD2C4]'}`}
+                                        >
+                                            {slot.id}
                                         </button>
-                                    ))
-                                )}
-                            </div>
-                        )}
-
-                        {/* PASO 4 — Banner de monto antes de confirmar */}
-                        {requirePayment && appointmentPrice > 0 && (
-                            <div className="flex items-center gap-4 p-4 bg-[#CBAAA2]/10 border border-[#CBAAA2]/30 rounded-2xl">
-                                <CreditCard size={24} className="text-[#CBAAA2] shrink-0" />
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Monto a pagar</p>
-                                    <p className="text-xl font-black text-[#312923]">
-                                        ${appointmentPrice.toLocaleString('es-CL')} CLP
-                                    </p>
-                                    <p className="text-[10px] font-bold text-[#9A8F84] mt-0.5">
-                                        Tu hora se confirma al completar el pago
-                                    </p>
+                                    ))}
                                 </div>
                             </div>
                         )}
+                        {formData.date && availableTimes.length === 0 && (
+                            <p className="text-sm font-bold text-red-500 mt-4">No hay horas disponibles para esta fecha.</p>
+                        )}
+                        <button
+                            onClick={() => setStep(2)}
+                            disabled={!formData.date || !formData.time}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#312923]/20 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
+                        >
+                            Siguiente <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
 
-                        {/* CONSENTIMIENTO LEY 19.628 */}
-                        <label className="flex items-start gap-3 cursor-pointer group">
+                {step === 2 && (
+                    <div className="space-y-6">
+                        <button onClick={() => setStep(1)} className="flex items-center gap-2 text-[#A3968B] mb-4 hover:text-[#312923] transition-colors">
+                            <ArrowLeft size={16} /> <span className="font-black text-sm uppercase tracking-widest">Volver</span>
+                        </button>
+                        <div className="flex items-center gap-2 text-[#A3968B] mb-4">
+                            <User size={20} />
+                            <span className="font-black text-sm uppercase tracking-widest">Paso 2: Tus Datos</span>
+                        </div>
+                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Nombre Completo</label>
+                        <input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="Tu Nombre Completo"
+                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                        />
+                        <label className="block text-sm font-bold text-[#6B615A] mb-2">RUT (sin puntos ni guion)</label>
+                        <input
+                            type="text"
+                            value={formData.rut}
+                            onChange={(e) => {
+                                const rawRut = e.target.value.replace(/[^0-9kK]/g, '');
+                                setFormData({ ...formData, rut: rawRut });
+                                if (rawRut && !validateRUT(rawRut)) {
+                                    setRutError('RUT inválido');
+                                } else {
+                                    setRutError('');
+                                }
+                            }}
+                            placeholder="Ej: 12345678K"
+                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                        />
+                        {rutError && <p className="text-red-500 text-xs mt-1">{rutError}</p>}
+                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Teléfono</label>
+                        <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            placeholder="Ej: +56912345678"
+                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                        />
+                        {(requirePayment || clinicConfig?.require_email_for_booking === true || clinicConfig?.require_email_for_booking === 'true') && (
+                            <>
+                                <label className="block text-sm font-bold text-[#6B615A] mb-2">Email (para confirmación)</label>
+                                <input
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    placeholder="tu@correo.com"
+                                    className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                                />
+                            </>
+                        )}
+                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Motivo de la Cita (opcional)</label>
+                        <textarea
+                            value={formData.reason}
+                            onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                            placeholder="Ej: Limpieza dental, Evaluación, etc."
+                            rows="3"
+                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                        ></textarea>
+                        <div className="flex items-center mt-4">
                             <input
                                 type="checkbox"
+                                id="dataPolicy"
                                 checked={acceptedDataPolicy}
-                                onChange={e => setAcceptedDataPolicy(e.target.checked)}
-                                className="mt-0.5 w-4 h-4 accent-[#CBAAA2] shrink-0"
+                                onChange={(e) => setAcceptedDataPolicy(e.target.checked)}
+                                className="h-4 w-4 text-[#5B6651] focus:ring-[#5B6651] border-[#DFD2C4] rounded"
                             />
-                            <span className="text-[11px] font-bold text-[#9A8F84] leading-relaxed">
-                                Acepto que mis datos personales sean tratados para la coordinación de mi atención dental, conforme a la{' '}
-                                <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-[#CBAAA2] underline hover:text-[#b08d86]">
-                                    Política de Privacidad
-                                </a>
-                                {' '}(Ley 19.628).
-                            </span>
-                        </label>
-
-                        {formError && (
-                            <p className="text-xs font-bold text-red-500 text-center">{formError}</p>
-                        )}
-
+                            <label htmlFor="dataPolicy" className="ml-2 block text-sm text-[#6B615A]">
+                                Acepto la política de privacidad y el tratamiento de mis datos.
+                            </label>
+                        </div>
+                        {formError && <p className="text-red-500 text-xs mt-2">{formError}</p>}
+                        <input type="text" name="honeypot" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} style={{ display: 'none' }} />
                         <button
-                            disabled={!formData.date || !formData.time || isSubmitting || !acceptedDataPolicy}
                             onClick={handleSubmit}
-                            className="w-full py-4 bg-[#CBAAA2] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-40 flex items-center justify-center gap-2"
+                            disabled={isSubmitting || !formData.name || !formData.phone || !acceptedDataPolicy || rutError}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#312923]/20 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
                         >
-                            {isSubmitting
-                                ? <><Loader size={16} className="animate-spin"/> PROCESANDO...</>
-                                : requirePayment
-                                    ? <><CreditCard size={16}/> RESERVAR Y PAGAR</>
-                                    : 'CONFIRMAR RESERVA'
-                            }
+                            {isSubmitting ? <><Loader size={16} className="animate-spin" /> Agendando...</> : <>{requirePayment && appointmentPrice > 0 ? `Pagar $${appointmentPrice.toLocaleString('es-CL')} y Agendar` : 'Agendar Cita'} <ChevronRight size={16} /></>}
+                        </button>
+                        {requirePayment && appointmentPrice > 0 && (
+                            <p className="text-xs font-bold text-[#9A8F84] mt-3 text-center">Se abrirá una ventana de MercadoPago para completar el pago.</p>
+                        )}
+                    </div>
+                )}
+
+                {step === 3 && (
+                    <div className="space-y-6 text-center">
+                        <div className="flex items-center gap-2 text-[#A3968B] mb-4 justify-center">
+                            <CreditCard size={20} />
+                            <span className="font-black text-sm uppercase tracking-widest">Paso 3: Confirmar Pago</span>
+                        </div>
+                        <h2 className="text-2xl font-black text-[#312923] mb-4">Pago Requerido</h2>
+                        <p className="text-[#6B615A] text-base mb-6">Para confirmar tu cita, se requiere un pago de <span className="font-black">${appointmentPrice.toLocaleString('es-CL')} CLP</span>.</p>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#009ee3] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#007ab8] transition-all shadow-lg shadow-[#009ee3]/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? <><Loader size={16} className="animate-spin" /> Redirigiendo a MercadoPago...</> : <>Pagar con MercadoPago <ChevronRight size={16} /></>}
+                        </button>
+                        <button
+                            onClick={() => setStep(2)}
+                            className="mt-4 text-[10px] font-black uppercase tracking-widest text-[#A3968B] hover:text-[#312923] transition-colors"
+                        >
+                            Volver a mis datos
                         </button>
                     </div>
                 )}
 
-                {/* STEP 4 — Confirmación */}
                 {step === 4 && (
-                    <div className="text-center py-8 animate-in zoom-in-95">
-                        {requiresPayment ? (
-                            <>
-                                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <CreditCard size={32} className="text-amber-500" />
-                                </div>
-                                <h3 className="font-black text-2xl text-[#312923] mb-2 tracking-tighter">Reserva Pendiente</h3>
-                                <p className="text-sm font-bold text-[#9A8F84] leading-relaxed mb-3">
-                                    Se abrió una pestaña con MercadoPago para completar tu pago.
-                                </p>
-                                <p className="text-xs font-bold text-[#CBAAA2]">
-                                    Tu hora quedará confirmada una vez que el pago sea procesado.
-                                </p>
-                            </>
-                        ) : (
-                            <>
-                                <CheckCircle2 size={48} className="text-[#5B6651] mx-auto mb-6" />
-                                <h3 className="font-black text-2xl text-[#312923] mb-2 tracking-tighter">¡Cita Confirmada!</h3>
-                                <p className="text-sm font-bold text-[#9A8F84]">
-                                    Te esperamos el {formData.date.split('-').reverse().join('/')} a las {formData.time}.
-                                </p>
-                            </>
+                    <div className="space-y-6 text-center">
+                        <CheckCircle2 size={48} className="text-[#5B6651] mx-auto mb-4" />
+                        <h2 className="text-2xl font-black text-[#312923] mb-2">¡Cita Agendada!</h2>
+                        <p className="text-[#6B615A] text-base">
+                            Tu hora ha sido agendada con éxito. Recibirás un correo de confirmación pronto.
+                        </p>
+                        {requiresPayment && (
+                            <p className="text-[#6B615A] text-sm mt-4">
+                                Tu hora quedará confirmada una vez que el pago sea procesado por MercadoPago.
+                            </p>
                         )}
+                        <button
+                            onClick={() => {
+                                setStep(1);
+                                setFormData({ rut: '', name: '', phone: '', email: '', reason: '', date: '', time: '' });
+                                setAcceptedDataPolicy(false);
+                                setRequiresPayment(false);
+                            }}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#312923]/20 mt-6"
+                        >
+                            Agendar otra cita
+                        </button>
                     </div>
                 )}
             </div>

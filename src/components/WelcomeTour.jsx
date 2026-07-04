@@ -41,6 +41,12 @@ export default function WelcomeTour({ run, onComplete, setActiveTab, setMobileMe
             placement: 'auto',
         },
         {
+            target: '[data-tour="lab"]',
+            title: 'Laboratorio',
+            content: 'Gestiona trabajos con laboratorios externos, envía archivos STL/DICOM y haz seguimiento de prótesis.',
+            placement: 'auto',
+        },
+        {
             target: '[data-tour="settings"]',
             title: 'Ajustes',
             content: 'Configura tu clínica: horarios, MercadoPago, equipo, laboratorios.',
@@ -63,7 +69,8 @@ export default function WelcomeTour({ run, onComplete, setActiveTab, setMobileMe
                 2: 'agenda',
                 3: 'ficha',
                 4: 'catalog',
-                5: 'settings',
+                5: 'lab',
+                6: 'settings',
             };
             const nextIndex = index + (action === ACTIONS.PREV ? -1 : 1);
             if (tabsByStep[nextIndex] !== undefined) {
@@ -73,6 +80,8 @@ export default function WelcomeTour({ run, onComplete, setActiveTab, setMobileMe
 
         if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
             if (onComplete) onComplete();
+            // Cerrar menú móvil al terminar si está abierto
+            if (setMobileMenuOpen) setMobileMenuOpen(false);
         }
     };
 

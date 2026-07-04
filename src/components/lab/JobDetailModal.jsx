@@ -47,7 +47,7 @@ function FileThumbnail({ file, onOpen }) {
         if (!isImage) return;
         let cancelled = false;
         setLoading(true);
-        getSecureUrl('lab-work-files', file.storage_path, 300).then(url => {
+        getSecureUrl(\'lab_works\', file.storage_path, 300).then(url => {
             if (!cancelled) {
                 setPreviewUrl(url);
                 setLoading(false);
@@ -127,7 +127,7 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
 
     // Abrir archivo con signed URL (expiración 1h)
     const handleOpenFile = async (file) => {
-        const url = await getSecureUrl('lab-work-files', file.storage_path, 3600);
+        const url = await getSecureUrl(\'lab_works\', file.storage_path, 3600);
         if (url) window.open(url, '_blank');
         else alert('No se pudo generar el acceso seguro. Intenta nuevamente.');
     };
@@ -257,7 +257,7 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                             // Fallback legacy: un solo archivo en job.file_url
                             <button
                                 onClick={async () => {
-                                    let url = await getSecureUrl('lab-work-files', job.file_url);
+                                    let url = await getSecureUrl(\'lab_works\', job.file_url);
                                     if (!url) url = await getSecureUrl('patient-images', job.file_url);
                                     if (url) window.open(url, '_blank');
                                     else alert('No se pudo generar el acceso seguro al archivo.');

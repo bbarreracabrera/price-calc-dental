@@ -18,6 +18,15 @@ export default function QuoteView({
     catalog, patientRecords, sessionData, setSessionData, getPatient, savePatientData,
     saveToSupabase, notify, generatePDF, setActiveTab, adminEmail
 }) {
+    // Sincronizar el buscador con sessionData al montar o cambiar
+    const [patientSearch, setPatientSearch] = useState(sessionData.patientName || '');
+    
+    useEffect(() => {
+        if (sessionData.patientName) {
+            setPatientSearch(sessionData.patientName);
+        }
+    }, [sessionData.patientId, sessionData.patientName]);
+
     const { confirm } = useDialog();
     const currentPhase = newQuoteItem.phase || 'Fase Correctiva (Operatoria/Endo/Cirugía)';
 
@@ -165,13 +174,21 @@ export default function QuoteView({
 
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block">1. Seleccionar Paciente</label>
-                        <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." adminEmail={adminEmail} onSelect={(p) => {
-                            if (p.id === 'new') {
-                                setNewPatModal({ open: true, name: p.name || '', rut: '', phone: '' });
-                            } else {
-                                setSessionData({...sessionData, patientName: p.personal?.legalName || p.name, patientId: p.id});
-                            }
-                        }} />
+                        <PatientSelect 
+                            theme={themeMode} 
+                            patients={patientRecords} 
+                            placeholder="Buscar o Crear Paciente..." 
+                            adminEmail={adminEmail} 
+                            initialValue={patientSearch}
+                            onSelect={(p) => {
+                                if (p.id === 'new') {
+                                    setNewPatModal({ open: true, name: p.name || '', rut: '', phone: '' });
+                                } else {
+                                    setSessionData({...sessionData, patientName: p.personal?.legalName || p.name, patientId: p.id});
+                                    setPatientSearch(p.personal?.legalName || p.name);
+                                }
+                            }} 
+                        />
                     </div>
 
                     <div className="animate-in fade-in space-y-5 pt-6 border-t border-[#DFD2C4]/40">

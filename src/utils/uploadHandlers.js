@@ -1,9 +1,11 @@
 import { supabase } from '../supabase';
 
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_PATIENT_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_PATIENT_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_LAB_SIZE = 50 * 1024 * 1024; // 50MB para archivos de lab
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const ALLOWED_PATIENT_TYPES = [...ALLOWED_IMAGE_TYPES, 'application/pdf'];
+    const ALLOWED_PATIENT_TYPES = [...ALLOWED_IMAGE_TYPES, 'application/pdf'];
+    const ALLOWED_LAB_TYPES = ['model/stl', 'application/zip', 'application/x-rar-compressed', 'application/dicom', 'image/jpeg', 'image/png', 'application/pdf']; // Añadir tipos de archivo de laboratorio
 
 // Valida los primeros bytes reales del archivo contra su tipo MIME declarado.
 // Previene upload de SVG maliciosos o archivos políglotos disfrazados de imagen.
@@ -115,7 +117,7 @@ export const uploadLogo = async (e, context) => {
 };
 
 // 2. FUNCIÓN PARA SUBIR IMÁGENES/ARCHIVOS DE PACIENTES
-export const uploadPatientImage = async (file, context) => {
+export const uploadPatientImage = async (file, context, fileType = 'clinical') => {
     const {
         selectedPatientId, setUploading, getPatient,
         activeFolder, savePatientData, notify, logAction,
@@ -126,12 +128,14 @@ export const uploadPatientImage = async (file, context) => {
         return;
     }
 
-    if (file.size > MAX_PATIENT_SIZE) {
-        notify('El archivo es demasiado grande (máximo 10MB)');
+    const currentMaxSize = fileType === 'lab' ? MAX_LAB_SIZE : MAX_PATIENT_SIZE;
+    if (file.size > currentMaxSize) {
+        notify(`El archivo es demasiado grande (máximo ${currentMaxSize / (1024 * 1024)}MB)`);
         return;
     }
-    if (!ALLOWED_PATIENT_TYPES.includes(file.type)) {
-        notify('Solo se permiten imágenes (JPG, PNG, WEBP, GIF) o PDF');
+    const currentAllowedTypes = fileType === 'lab' ? ALLOWED_LAB_TYPES : ALLOWED_PATIENT_TYPES;
+    if (!currentAllowedTypes.includes(file.type)) {
+        notify(`Tipo de archivo no permitido para ${fileType === 'lab' ? 'Laboratorio' : 'Ficha Clínica'}`);
         return;
     }
     const magicValid = await validateMagicBytes(file);
@@ -145,23 +149,36 @@ export const uploadPatientImage = async (file, context) => {
 
     try {
         const fileName = `${selectedPatientId}_${Date.now()}.${file.name.split('.').pop()}`;
+        const bucketName = fileType === 'lab' ? 'lab_works' : 'patient-images';
         const { error: uploadError } = await supabase.storage
-            .from('patient-images')
+            .from(bucketName)
             .upload(fileName, file);
         if (uploadError) throw uploadError;
 
         const p = getPatient(selectedPatientId);
-        const updatedImages = [...(p.images || []), {
+        let fileUrl = fileName;
+        if (fileType === 'lab') {
+            // Para archivos de laboratorio, no guardamos la URL pública directamente, sino la ruta
+            // La URL segura se generará al momento de la visualización
+            fileUrl = fileName;
+        } else {
+            // Para imágenes clínicas, seguimos usando la URL pública si el bucket es público
+            const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+            fileUrl = publicUrlData.publicUrl;
+        }
+
+        const updatedFiles = [...(p.files || []), {
             id: Date.now(),
             path: fileName,
-            url: fileName,
+            url: fileUrl, // Guardar la URL pública o la ruta según el tipo
             date: new Date().toLocaleDateString('es-CL'),
             folder: activeFolder,
+            type: fileType, // Añadir el tipo de archivo
         }];
 
-        await savePatientData(selectedPatientId, { ...p, images: updatedImages });
+        await savePatientData(selectedPatientId, { ...p, files: updatedFiles });
         notify(`Archivo guardado en ${activeFolder}`);
-        logAction('UPLOAD_IMAGE', { fileName, folder: activeFolder }, selectedPatientId);
+        logAction('UPLOAD_FILE', { fileName, folder: activeFolder, fileType }, selectedPatientId);
     } catch (err) {
         notify(`Error al subir: ${err.message}`);
     } finally {

@@ -109,7 +109,7 @@ export default function LabView({
                                             </span>
                                         )}
                                         {work.file_url && (
-                                            <SecureFileLink bucket="patient-images" filePath={work.file_url} fileName={work.file_name} />
+                                            <SecureFileLink bucket={work.file_type === 'lab' ? 'lab_works' : 'patient-images'} filePath={work.file_url} fileName={work.file_name} />
                                         )}
                                     </div>
                                 )}
@@ -199,7 +199,7 @@ export default function LabView({
                                             <p className="font-bold text-[#312923] truncate text-sm" title={work.workType}>{work.workType}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 {work.tooth && <span className="inline-block text-[9px] bg-[#CBAAA2]/10 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black border border-[#CBAAA2]/20">Pieza {work.tooth}</span>}
-                                                {work.file_url && <SecureFileLink bucket="patient-images" filePath={work.file_url} fileName={work.file_name} />}
+                                                {work.file_url && <SecureFileLink bucket={work.file_type === 'lab' ? 'lab_works' : 'patient-images'} filePath={work.file_url} fileName={work.file_name} />}
                                             </div>
                                         </div>
                                         <div className="col-span-2">

@@ -99,11 +99,12 @@ export default function PatientWorkspace({
             icon: Calculator,
             color: 'bg-[#CBAAA2]/20 text-[#8B5E57] hover:bg-[#CBAAA2]/40 border border-[#CBAAA2]/30',
             action: () => {
+                // Sincronizar sessionData para que QuoteView lo reconozca
                 if (setSessionData) {
                     setSessionData(prev => ({
                         ...prev,
                         patientId: selectedPatientId,
-                        patientName: p.personal?.legalName || 'Paciente'
+                        patientName: p.personal?.legalName || p.name || 'Paciente'
                     }));
                 }
                 setActiveTab('quote');
