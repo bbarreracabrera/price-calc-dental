@@ -17,12 +17,20 @@ export const getSecureUrl = async (bucket, path, expires = 3600) => {
         return path;
     }
 
-    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expires);
-    if (error) {
-        console.error(`Error generando URL firmada para ${bucket}/${path}:`, error);
+    try {
+        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expires);
+        
+        if (error) {
+            console.error(`Error generando URL firmada para ${bucket}/${path}:`, error);
+            // Si el error es 520 o similar, podríamos intentar devolver la URL pública como fallback si el bucket lo permite
+            // o simplemente fallar con gracia
+            return null;
+        }
+        return data.signedUrl;
+    } catch (err) {
+        console.error(`Fallo crítico en createSignedUrl para ${path}:`, err);
         return null;
     }
-    return data.signedUrl;
 };
 
 /**
