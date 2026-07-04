@@ -1,13 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
     Upload, Trash2, Loader, Image as ImageIcon, FileText, Camera, 
     FolderOpen, Sun, Contrast, RotateCw, ZoomIn, ZoomOut, Ruler, X, Settings2, RefreshCcw,
     Zap, HardDrive, Share2, Clock, ChevronLeft, ChevronRight, GitBranch, CalendarDays,
-    ArrowLeftRight, CheckCircle2
+    ArrowLeftRight, CheckCircle2, AlertCircle, CheckCircle
 } from 'lucide-react';
 import { PrivateImage } from './SystemModals';
 import { supabase } from '../supabase';
 import { useDialog } from './DialogProvider';
+import { DENTAL_SENSORS, calculateSensorRatio } from '../utils/sensorData';
 
 export default function PatientImagesTab({
     getPatient, selectedPatientId, savePatientData,
@@ -28,8 +29,9 @@ export default function PatientImagesTab({
     // --- ESTADOS DE LA REGLA ENDO ---
     const [isMeasuring, setIsMeasuring] = useState(false);
     const [measurePoints, setMeasurePoints] = useState([]);
-    const [calibrationRatio, setCalibrationRatio] = useState(config?.radiologyRatio || null); 
+    const [calibrationRatio, setCalibrationRatio] = useState(null); 
     const [isSyncing, setIsSyncing] = useState(false);
+    const [autoCalibrationStatus, setAutoCalibrationStatus] = useState('pending'); // 'pending' | 'active' | 'manual'
     const imageContainerRef = useRef(null);
 
     // --- ESTADOS DE LA LÍNEA DE TIEMPO ---
@@ -42,8 +44,27 @@ export default function PatientImagesTab({
 
     // Sincronizar el ratio si cambia la configuración global
     useEffect(() => {
-        if (config?.radiologyRatio) setCalibrationRatio(config.radiologyRatio);
-    }, [config]);
+        // Primero intentar calibración automática por sensor
+        if (config?.sensorModel && viewerImg) {
+            const sensor = DENTAL_SENSORS.find(s => s.id === config.sensorModel);
+            if (sensor && viewerImg.width && viewerImg.height) {
+                const autoRatio = calculateSensorRatio(sensor, viewerImg.width, viewerImg.height);
+                if (autoRatio) {
+                    setCalibrationRatio(autoRatio);
+                    setAutoCalibrationStatus('active');
+                    return;
+                }
+            }
+        }
+        // Si no hay sensor configurado, usar la calibración manual guardada
+        if (config?.radiologyRatio) {
+            setCalibrationRatio(config.radiologyRatio);
+            setAutoCalibrationStatus('manual');
+        } else {
+            setCalibrationRatio(null);
+            setAutoCalibrationStatus('pending');
+        }
+    }, [config, viewerImg]);
 
     const folderTabs = [
         { id: 'Radiografías', icon: ImageIcon },
@@ -174,6 +195,17 @@ export default function PatientImagesTab({
         return "Sin Calibrar";
     };
 
+    const getCalibrationStatusLabel = () => {
+        if (autoCalibrationStatus === 'active') {
+            const sensor = DENTAL_SENSORS.find(s => s.id === config?.sensorModel);
+            return `Calibrado Automáticamente (${sensor?.name || 'Sensor'})`;
+        }
+        if (autoCalibrationStatus === 'manual') {
+            return 'Calibración Manual';
+        }
+        return 'Sin Calibración';
+    };
+
     const handleCalibration = async () => {
         if (measurePoints.length < 2) {
             notify("Primero traza una línea sobre una referencia conocida (ej. una lima o corona).");
@@ -194,6 +226,21 @@ export default function PatientImagesTab({
                 notify("📏 Calibración guardada para todas las futuras radiografías.");
             }
         }
+    };
+
+    // Componente auxiliar para cargar dimensiones de imagen
+    const ImageDimensionLoader = ({ img, onLoad }) => {
+        useEffect(() => {
+            const imgEl = new Image();
+            imgEl.onload = () => onLoad({ ...img, width: imgEl.width, height: imgEl.height });
+            imgEl.src = img.url;
+        }, [img, onLoad]);
+        return null;
+    };
+
+    // Actualizar las dimensiones de la imagen del visor cuando se carga
+    const handleViewerImageLoad = (imgWithDimensions) => {
+        setViewerImg(imgWithDimensions);
     };
 
     const handleDeleteImage = async (imgId) => {
@@ -276,9 +323,11 @@ export default function PatientImagesTab({
 
     return (
         <div className="space-y-6 animate-in fade-in h-full flex flex-col max-w-6xl mx-auto pb-10">
+            {/* Loader invisible para obtener dimensiones de imagen */}
+            {viewerImg && <ImageDimensionLoader img={viewerImg} onLoad={handleViewerImageLoad} />}
             
             {/* --- VISOR RADIOLÓGICO MODAL --- */}
-            {viewerImg && !compareImages[0] && !compareImages[1] && (
+            {viewerImg && viewerImg.width && !compareImages[0] && !compareImages[1] && (
                 <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col md:flex-row animate-in fade-in duration-200">
                     <div className="w-full md:w-72 bg-[#1a1a1a] border-b md:border-b-0 md:border-r border-white/10 p-6 flex flex-col gap-6 shadow-2xl z-10 shrink-0 overflow-y-auto">
                         <div className="flex justify-between items-center">
@@ -310,14 +359,32 @@ export default function PatientImagesTab({
                         <div className="h-px w-full bg-white/10"></div>
                         <div className="space-y-3">
                             <button onClick={() => { setIsMeasuring(!isMeasuring); setMeasurePoints([]); }} className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isMeasuring ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20' : 'bg-transparent text-white/70 border-white/20 hover:bg-white/10'}`}>
-                                <Ruler size={16}/> {isMeasuring ? 'Cerrar Regla' : 'Medir Conductos'}
+                                <Ruler size={16}/> {isMeasuring ? 'Cerrar Regla' : 'Medir en mm'}
                             </button>
+                            {!isMeasuring && autoCalibrationStatus === 'active' && (
+                                <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl text-center">
+                                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                                        <CheckCircle size={12} className="text-emerald-400"/>
+                                        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Calibración Automática Activa</p>
+                                    </div>
+                                    <p className="text-[8px] text-emerald-600/80">{DENTAL_SENSORS.find(s => s.id === config?.sensorModel)?.name}</p>
+                                </div>
+                            )}
                             {isMeasuring && (
                                 <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-center animate-in zoom-in-95">
-                                    <p className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">Medida Clínica</p>
+                                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                                        {autoCalibrationStatus === 'active' ? (
+                                            <CheckCircle size={12} className="text-emerald-400"/>
+                                        ) : autoCalibrationStatus === 'manual' ? (
+                                            <CheckCircle2 size={12} className="text-amber-400"/>
+                                        ) : (
+                                            <AlertCircle size={12} className="text-red-400"/>
+                                        )}
+                                        <p className="text-[8px] font-bold text-amber-500/80 uppercase tracking-widest">{getCalibrationStatusLabel()}</p>
+                                    </div>
                                     <p className="text-3xl font-black text-amber-400">{calculateDistance()}</p>
                                     <button onClick={handleCalibration} className="mt-4 flex items-center justify-center gap-1 w-full text-[8px] font-black text-white/40 hover:text-white uppercase tracking-tighter border-t border-white/5 pt-3 transition-colors">
-                                        <RefreshCcw size={10}/> Recalibrar Sensor
+                                        <RefreshCcw size={10}/> {autoCalibrationStatus === 'active' ? 'Usar Calibración Manual' : 'Recalibrar Sensor'}
                                     </button>
                                 </div>
                             )}

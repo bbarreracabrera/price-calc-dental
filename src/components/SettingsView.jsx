@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail, MessageCircle, CreditCard } from 'lucide-react';
+import { Camera, Shield, Plus, Trash2, Settings, UserPlus, Save, Building2, FileSignature, Percent, Clock, CalendarDays, Link, Copy, FlaskConical, Phone, Mail, MessageCircle, CreditCard, Zap, Ruler } from 'lucide-react';
 import { Card } from './UIComponents';
 import { formatRUT } from '../constants';
 import { supabase } from '../supabase';
 import { useDialog } from './DialogProvider';
+import { DENTAL_SENSORS } from '../utils/sensorData';
 
 export default function SettingsView({
     themeMode, t, config, setConfigLocal, logoInputRef, handleLogoUpload,
@@ -17,6 +18,11 @@ export default function SettingsView({
     const [colorPickerOpenFor, setColorPickerOpenFor] = useState(null);
 
     const TEAM_COLORS = ['#5B6651', '#A3968B', '#CBAAA2', '#D9A86C', '#7A8B7F', '#B89B85', '#9B7E7A', '#6B7B6E'];
+
+    const updateConfig = (updates) => {
+        const newConfig = { ...config, ...updates };
+        setConfigLocal(newConfig);
+    };
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -171,12 +177,6 @@ export default function SettingsView({
 
     const MP_CLIENT_ID = import.meta.env.VITE_MP_CLIENT_ID;
     const MP_REDIRECT_URI = import.meta.env.VITE_MP_REDIRECT_URI;
-
-    const updateConfig = async (partial) => {
-        const updated = { ...config, ...partial };
-        setConfigLocal(updated);
-        await saveToSupabase('settings', 'general', updated);
-    };
 
     const handleConnectMP = () => {
         const authUrl = `https://auth.mercadopago.cl/authorization?client_id=${MP_CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(MP_REDIRECT_URI)}`;
@@ -659,6 +659,53 @@ export default function SettingsView({
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </Card>
+
+                        {/* --- CONFIGURACIÓN DE RADIOLOGÍA --- */}
+                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
+                            <div className="flex items-center gap-2 mb-6 pb-4 border-b border-[#DFD2C4]/50">
+                                <Ruler size={16} className="text-[#A3968B]"/>
+                                <h3 className="font-black text-xl text-[#312923] tracking-tight">Medición Radiográfica</h3>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex gap-3">
+                                    <Zap size={18} className="text-emerald-600 shrink-0 mt-0.5"/>
+                                    <div>
+                                        <p className="font-black text-emerald-900 text-sm mb-1">Medición automática en milímetros</p>
+                                        <p className="text-xs font-bold text-emerald-800 leading-relaxed">Selecciona el modelo de sensor radiográfico que usa tu clínica. La regla del visor calculará automáticamente las medidas en mm sin necesidad de calibración manual.</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className={labelClass}>Modelo de Sensor Intraoral</label>
+                                    <select 
+                                        value={config.sensorModel || ''} 
+                                        onChange={(e) => setConfigLocal({...config, sensorModel: e.target.value})}
+                                        className={inputClass}
+                                    >
+                                        <option value="">-- Selecciona tu sensor --</option>
+                                        {DENTAL_SENSORS.map(sensor => (
+                                            <option key={sensor.id} value={sensor.id}>
+                                                {sensor.name} ({sensor.activeWidth}x{sensor.activeHeight}mm)
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[9px] font-bold text-[#9A8F84] mt-2 ml-1">Si no encuentras tu modelo exacto, selecciona el tamaño genérico más cercano.</p>
+                                </div>
+
+                                {config.sensorModel && (
+                                    <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-4">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-2">Sensor Configurado</p>
+                                        <p className="font-bold text-[#312923]">
+                                            {DENTAL_SENSORS.find(s => s.id === config.sensorModel)?.name}
+                                        </p>
+                                        <p className="text-[10px] text-[#9A8F84] mt-1">
+                                            Área activa: {DENTAL_SENSORS.find(s => s.id === config.sensorModel)?.activeWidth}mm × {DENTAL_SENSORS.find(s => s.id === config.sensorModel)?.activeHeight}mm
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </Card>
 
