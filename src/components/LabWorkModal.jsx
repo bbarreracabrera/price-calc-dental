@@ -145,14 +145,12 @@ export default function LabWorkModal({
         // 2. Registrar cada archivo en lab_work_files (tabla de auditoría y multi-archivo)
         if (uploadedFiles.length > 0) {
             const fileRecords = uploadedFiles.map(f => ({
-                id: `lwf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
                 lab_work_id: labId,
-                original_name: f.name,
-                storage_path: f.path,
+                file_name: f.name,
+                file_path: f.path,
                 file_size: f.size,
-                mime_type: f.mimeType || 'application/octet-stream',
-                created_by: autor,
-                upload_source: 'clinic',
+                content_type: f.mimeType || 'application/octet-stream',
+                created_by: autor
             }));
             const { error: filesError } = await supabase.from('lab_work_files').insert(fileRecords);
             if (filesError) console.error('Error registrando archivos:', filesError);
