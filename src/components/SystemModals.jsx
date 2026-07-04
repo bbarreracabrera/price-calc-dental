@@ -6,7 +6,7 @@ import { InputField, Button, Card } from './UIComponents';
 import LegalText from './LegalText';
 
 // --- COMPONENTE DE SEGURIDAD: URLS FIRMADAS PARA BUCKET PRIVADO ---
-export const PrivateImage = ({ img, onClick }) => {
+export const PrivateImage = ({ img, onClick, className }) => {
     const [signedUrl, setSignedUrl] = useState(null);
 
     useEffect(() => {
@@ -27,12 +27,19 @@ export const PrivateImage = ({ img, onClick }) => {
 
     if (!signedUrl) return <div className="w-full h-full flex items-center justify-center bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/40"><Loader className="animate-spin text-[#9A8F84]" size={20}/></div>;
 
-    const lowerUrl = signedUrl.toLowerCase();
-    const isPdf = lowerUrl.includes('.pdf');
-    const isImage = lowerUrl.match(/\.(jpg|jpeg|png|webp|gif|bmp)$/) || lowerUrl.includes('image/');
-    const isDicom = lowerUrl.includes('.dcm') || lowerUrl.includes('.dicom');
-    const isStl = lowerUrl.includes('.stl');
-    const isZip = lowerUrl.includes('.zip') || lowerUrl.includes('.rar');
+    // Detectar tipo basado en la extensión del path original o la URL antes de los parámetros
+    const getExtension = (path) => {
+        if (!path) return '';
+        const base = path.split('?')[0];
+        return base.split('.').pop().toLowerCase();
+    };
+
+    const ext = getExtension(img.path || img.url || signedUrl);
+    const isPdf = ext === 'pdf';
+    const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext) || signedUrl.includes('image/');
+    const isDicom = ['dcm', 'dicom'].includes(ext);
+    const isStl = ext === 'stl';
+    const isZip = ['zip', 'rar'].includes(ext);
 
     if (isPdf || isDicom || isStl || isZip || !isImage) {
         const getIcon = () => {
@@ -60,7 +67,14 @@ export const PrivateImage = ({ img, onClick }) => {
         );
     }
 
-    return <img src={signedUrl} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => onClick ? onClick(signedUrl) : window.open(signedUrl, '_blank')} alt="Ficha" />;
+    return (
+        <img 
+            src={signedUrl} 
+            className={`w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform ${className || ''}`} 
+            onClick={() => onClick ? onClick(img) : window.open(signedUrl, '_blank')} 
+            alt="Ficha" 
+        />
+    );
 };
 
 // --- PESTAÑA DE TÉRMINOS Y CONDICIONES ---

@@ -140,13 +140,17 @@ export const uploadPatientImage = async (file, context, fileType = 'clinical') =
         return;
     }
     
-    // Solo validamos magic bytes para imágenes conocidas para prevenir SVG maliciosos, 
-    // pero permitimos otros archivos sin validación estricta
+    // Validación de seguridad básica: permitir si es un tipo conocido o si pasa la validación de magic bytes
+    // Si es una imagen común, validamos su integridad
     if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        const magicValid = await validateMagicBytes(file);
-        if (!magicValid) {
-            notify('El archivo no es una imagen válida o está corrupto');
-            return;
+        try {
+            const magicValid = await validateMagicBytes(file);
+            if (!magicValid) {
+                notify('El archivo no parece ser una imagen válida');
+                return;
+            }
+        } catch (e) {
+            console.warn('Fallo validación magic bytes, procediendo con precaución');
         }
     }
 

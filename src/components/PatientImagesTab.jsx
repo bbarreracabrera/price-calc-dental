@@ -261,10 +261,13 @@ export default function PatientImagesTab({
                     ${compareMode ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
                     ${isSelected ? 'border-emerald-500 shadow-emerald-200 shadow-lg ring-2 ring-emerald-400' : 'border-[#DFD2C4]/60 hover:shadow-xl'}
                 `}
-                onClick={() => compareMode ? handleCompareSelect(img) : setViewerImg(img)}
             >
-                <div className="aspect-square bg-[#0a0a0a] flex items-center justify-center overflow-hidden relative">
-                    <PrivateImage img={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="aspect-square bg-[#0a0a0a] flex items-center justify-center overflow-hidden relative">
+                        <PrivateImage 
+                            img={img} 
+                            onClick={(image) => compareMode ? handleCompareSelect(image) : setViewerImg(image)}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                        />
                     
                     {/* Badge de sincronización */}
                     {img.is_sync && (
@@ -566,7 +569,7 @@ export default function PatientImagesTab({
                     <div className="lg:col-span-1">
                         <div className="relative group w-full h-48 lg:h-64 border-2 border-dashed border-[#DFD2C4] hover:border-[#5B6651] bg-[#FDFBF7] hover:bg-[#5B6651]/5 rounded-[2rem] flex flex-col items-center justify-center transition-all cursor-pointer">
                             <input 
-                                type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" accept="image/*,application/pdf" 
+                                type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full" 
                                 onChange={(e) => { if (e.target.files[0]) handleImageUpload(e.target.files[0]); e.target.value = ''; }} 
                             />
                             {uploading ? (
