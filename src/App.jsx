@@ -16,6 +16,7 @@ import {
 import { Card, Button, InputField } from './components/UIComponents';
 import { PatientSelect, AuthScreen, TermsScreen } from './components/SystemModals';
 import LandingPage from "./components/LandingPage";
+import { useRealtimeNotifications } from './hooks/useRealtimeNotifications';
 import DashboardView from './components/DashboardView';
 import Sidebar from './components/Sidebar';
 import PublicBooking from './components/PublicBooking';
@@ -96,6 +97,9 @@ export default function App() {
   const [team, setTeam] = useState([]); 
   const [userRole, setUserRole] = useState('admin');
   const [clinicOwner, setClinicOwner] = useState('');
+
+  // === NOTIFICACIONES REALTIME ===
+  const { notifications: rtNotifs, unreadCount: rtUnread, markAllRead: rtMarkAll, markRead: rtMarkOne, clearAll: rtClear } = useRealtimeNotifications(supabase, session, clinicOwner);
 
   // === LA LLAVE MAESTRA — verificada server-side vía Edge Function ===
   const [isMasterAdmin, setIsMasterAdmin] = useState(false);
@@ -886,6 +890,11 @@ const saveToOfflineVault = async (table, id, data) => {
           isWorkspaceActive={isWorkspaceActive}
           todayApptCount={todaysAppointments.length}
           isMasterAdmin={isMasterAdmin}
+          notifications={rtNotifs}
+          unreadCount={rtUnread}
+          onMarkAllRead={rtMarkAll}
+          onMarkRead={rtMarkOne}
+          onClearAll={rtClear}
       />
 
       <main className={`flex-1 p-3 sm:p-4 md:p-6 lg:p-8 min-h-[calc(100vh-80px)] md:min-h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>

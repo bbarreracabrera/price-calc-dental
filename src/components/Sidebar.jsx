@@ -4,11 +4,13 @@ import {
     Wallet, Calculator, Stethoscope, Library, FlaskConical, Box, Settings, Shield, ShieldCheck,
     Globe, HelpCircle
 } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 export default function Sidebar({
     mobileMenuOpen, setMobileMenuOpen, config, session, userRole,
     activeTab, setActiveTab, setSelectedPatientId, supabase,
-    isWorkspaceActive, todayApptCount = 0, isMasterAdmin = false
+    isWorkspaceActive, todayApptCount = 0, isMasterAdmin = false,
+    notifications = [], unreadCount = 0, onMarkAllRead, onMarkRead, onClearAll
 }) {
     const [showShortcuts, setShowShortcuts] = useState(false);
     const getMenuItems = () => {
@@ -71,6 +73,15 @@ export default function Sidebar({
                             {userRole === 'admin' ? 'Administrador' : userRole === 'dentist' ? 'Dentista' : 'Asistente'}
                         </p>
                     </div>
+                    {!isWorkspaceActive && (
+                        <NotificationBell
+                            notifications={notifications}
+                            unreadCount={unreadCount}
+                            onMarkAllRead={onMarkAllRead}
+                            onMarkRead={onMarkRead}
+                            onClearAll={onClearAll}
+                        />
+                    )}
                 </div>
             </div>
 
