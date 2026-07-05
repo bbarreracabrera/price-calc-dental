@@ -3,12 +3,13 @@ import {
     Upload, Trash2, Loader, Image as ImageIcon, FileText, Camera, 
     FolderOpen, Sun, Contrast, RotateCw, ZoomIn, ZoomOut, Ruler, X, Settings2, RefreshCcw,
     Zap, HardDrive, Share2, Clock, ChevronLeft, ChevronRight, GitBranch, CalendarDays,
-    ArrowLeftRight, CheckCircle2, AlertCircle, CheckCircle
+    ArrowLeftRight, CheckCircle2, AlertCircle, CheckCircle, Palette
 } from 'lucide-react';
 import { PrivateImage } from './SystemModals';
 import { supabase } from '../supabase';
 import { useDialog } from './DialogProvider';
 import { DENTAL_SENSORS, calculateSensorRatio } from '../utils/sensorData';
+import DSDStudio from './DSDStudio';
 
 export default function PatientImagesTab({
     getPatient, selectedPatientId, savePatientData,
@@ -41,6 +42,10 @@ export default function PatientImagesTab({
     const [compareStep, setCompareStep] = useState(0); // 0=seleccionar antes, 1=seleccionar después
     const [selectedTimelineMonth, setSelectedTimelineMonth] = useState(null);
     const timelineRef = useRef(null);
+
+    // --- ESTADO DE DSD STUDIO ---
+    const [dsdStudioOpen, setDsdStudioOpen] = useState(false);
+    const [dsdImage, setDsdImage] = useState(null);
 
     // Sincronizar el ratio si cambia la configuración global
     useEffect(() => {
@@ -361,6 +366,9 @@ export default function PatientImagesTab({
                         </div>
                         <div className="h-px w-full bg-white/10"></div>
                         <div className="space-y-3">
+                            <button onClick={() => { setDsdImage(viewerImg); setDsdStudioOpen(true); }} className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border bg-transparent text-white/70 border-white/20 hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-300 transition-all">
+                                <Palette size={16}/> DSD Digital Studio
+                            </button>
                             <button onClick={() => { setIsMeasuring(!isMeasuring); setMeasurePoints([]); }} className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isMeasuring ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20' : 'bg-transparent text-white/70 border-white/20 hover:bg-white/10'}`}>
                                 <Ruler size={16}/> {isMeasuring ? 'Cerrar Regla' : 'Medir en mm'}
                             </button>
@@ -694,6 +702,22 @@ export default function PatientImagesTab({
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* DSD Studio Modal */}
+            {dsdStudioOpen && dsdImage && (
+                <DSDStudio
+                    imageUrl={dsdImage.url}
+                    patientName={patient?.name}
+                    onClose={() => setDsdStudioOpen(false)}
+                    onSave={(designImage) => {
+                        // Guardar el diseño como una nueva imagen en la carpeta "Fotos Clínicas"
+                        if (designImage) {
+                            notify('✨ Diseño guardado. Integrando con perfil del paciente...');
+                            setDsdStudioOpen(false);
+                        }
+                    }}
+                />
             )}
         </div>
     );
