@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     X, Crop, RotateCw, Sun, Contrast, Eye, EyeOff, Download, Save,
-    Maximize2, Grid3x3, Minus, Plus, Move, Zap, Palette
+    Maximize2, Grid3x3, Minus, Plus, Move, Zap, Palette, Settings
 } from 'lucide-react';
+import {
+    calculateREDProportion, calculateGoldenProportion, calculateChuProportion,
+    calculateToothBoxes, calculateSmileCurve, generateProportionReport
+} from '../utils/dsdProportions';
 
 /**
  * DSD Studio - Digital Smile Design Editor
@@ -32,6 +36,13 @@ export default function DSDStudio({ imageUrl, onClose, onSave, patientName }) {
     const [overlayOpacity, setOverlayOpacity] = useState(0.5);
     const [midlinePosition, setMidlinePosition] = useState(0.5); // 0-1 (izq a der)
     const [smileCurveIntensity, setSmileCurveIntensity] = useState(0.5); // 0-1 (plana a curva)
+    
+    // --- ESTADOS DE PROPORCIONES ---
+    const [proportionTheory, setProportionTheory] = useState('RED'); // RED | GOLDEN | CHU | PDI
+    const [referenceWidth, setReferenceWidth] = useState(8); // mm (ancho de referencia)
+    const [pixelPerMM, setPixelPerMM] = useState(10); // píxeles por mm
+    const [teethBoxes, setTeethBoxes] = useState([]);
+    const [showProportionPanel, setShowProportionPanel] = useState(false);
     
     // --- REFERENCIAS ---
     const canvasRef = useRef(null);
@@ -188,28 +199,32 @@ export default function DSDStudio({ imageUrl, onClose, onSave, patientName }) {
     };
 
     const drawTeethBoxes = (ctx, w, h) => {
-        const teethY = h * 0.55;
-        const teethHeight = h * 0.25;
-        const midlineX = w * midlinePosition;
+        // Calcular cajas dentales usando el motor de proporciones
+        const boxes = calculateToothBoxes({
+            imageWidth: w,
+            imageHeight: h,
+            midlineX: w * midlinePosition,
+            toothStartY: h * 0.55,
+            toothHeight: h * 0.25,
+            proportionTheory,
+            referenceWidth,
+            pixelPerMM
+        });
         
-        // 6 dientes por lado (simplificado)
-        const teethPerSide = 6;
-        const toothWidth = (w * 0.35) / teethPerSide;
+        setTeethBoxes(boxes);
         
         ctx.strokeStyle = '#00CCFF';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = '#00CCFF';
         
-        // Dientes izquierdos
-        for (let i = 0; i < teethPerSide; i++) {
-            const x = midlineX - (i + 1) * toothWidth;
-            ctx.strokeRect(x, teethY, toothWidth - 2, teethHeight);
-        }
-        
-        // Dientes derechos
-        for (let i = 0; i < teethPerSide; i++) {
-            const x = midlineX + i * toothWidth;
-            ctx.strokeRect(x, teethY, toothWidth - 2, teethHeight);
-        }
+        boxes.forEach((box, index) => {
+            // Dibujar caja
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
+            
+            // Dibujar número del diente (FDI)
+            ctx.fillText(box.id, box.x + 5, box.y + 15);
+        });
     };
 
     const drawProportionGrid = (ctx, w, h) => {
@@ -252,6 +267,13 @@ export default function DSDStudio({ imageUrl, onClose, onSave, patientName }) {
         link.href = canvasRef.current.toDataURL('image/png');
         link.download = `DSD-${patientName || 'design'}-${Date.now()}.png`;
         link.click();
+    };
+
+    const handleProportionChange = (theory) => {
+        setProportionTheory(theory);
+        if (imageLoaded && imageRef.current) {
+            drawCanvas(imageRef.current);
+        }
     };
 
     const toggleOverlay = (overlayName) => {
