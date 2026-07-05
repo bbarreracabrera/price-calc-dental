@@ -46,6 +46,21 @@ export default function QuoteView({
     const [newPatModal, setNewPatModal] = useState({ open: false, name: '', rut: '', phone: '' });
     const [savedSuccess, setSavedSuccess] = useState(false);
 
+    // --- EFECTO DE AUTO-SELECCIÓN ---
+    // Cuando el componente se monta, si sessionData tiene un patientId pero QuoteView no lo está reflejando,
+    // nos aseguramos de que el estado local sea coherente.
+    useEffect(() => {
+        if (sessionData.patientId && patientRecords[sessionData.patientId]) {
+            const p = patientRecords[sessionData.patientId];
+            if (sessionData.patientName !== (p.personal?.legalName || p.name)) {
+                setSessionData(prev => ({
+                    ...prev,
+                    patientName: p.personal?.legalName || p.name
+                }));
+            }
+        }
+    }, [sessionData.patientId, patientRecords]);
+
     useEffect(() => {
         const handleClick = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -179,6 +194,7 @@ export default function QuoteView({
                             patients={patientRecords} 
                             placeholder="Buscar o Crear Paciente..." 
                             adminEmail={adminEmail} 
+                            selectedId={sessionData.patientId}
                             initialValue={patientSearch}
                             onSelect={(p) => {
                                 if (p.id === 'new') {
@@ -273,10 +289,11 @@ export default function QuoteView({
                                                                         key={item.id}
                                                                         type="button"
                                                                         onMouseDown={e => { e.preventDefault(); handleSelectCatalogItem(item); }}
-                                                                        className={`w-full text-left px-4 py-3 flex justify-between items-center transition-colors ${globalIdx === dropdownHighlight ? 'bg-[#5B6651]/10' : 'hover:bg-[#FDFBF7]'}`}
+                                                                        onMouseEnter={() => setDropdownHighlight(globalIdx)}
+                                                                        className={`w-full text-left px-4 py-3 flex items-center justify-between transition-colors ${dropdownHighlight === globalIdx ? 'bg-[#5B6651]/10' : 'hover:bg-[#FDFBF7]'}`}
                                                                     >
-                                                                        <span className="font-bold text-sm text-[#312923]">{item.name}</span>
-                                                                        <span className="text-xs font-black text-[#5B6651] ml-3 shrink-0">${item.price?.toLocaleString()}</span>
+                                                                        <span className="text-sm font-bold text-[#312923]">{item.name}</span>
+                                                                        <span className="text-xs font-black text-[#5B6651]">${Number(item.price).toLocaleString()}</span>
                                                                     </button>
                                                                 );
                                                             })}
@@ -287,230 +304,183 @@ export default function QuoteView({
                                         </div>
                                     )}
                                 </div>
-                                <div className="md:col-span-2">
-                                    <input
-                                        className="w-full outline-none font-bold text-sm p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-[#312923] focus:border-[#5B6651] transition-all"
-                                        placeholder="Pieza (Opcional)"
-                                        value={newQuoteItem.tooth || ''}
-                                        onChange={e=>setNewQuoteItem({...newQuoteItem, tooth:e.target.value, phase: currentPhase})}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <div className="relative flex-1">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-[#A3968B]">$</span>
+                                <div className="md:col-span-1">
                                     <input
                                         type="number"
-                                        className="w-full outline-none font-black text-lg pl-8 p-3.5 rounded-2xl border border-[#DFD2C4] bg-white text-[#5B6651] focus:border-[#5B6651] transition-all shadow-inner"
-                                        placeholder="Valor"
-                                        value={newQuoteItem.price || ''}
-                                        onChange={e=>setNewQuoteItem({...newQuoteItem, price:e.target.value, phase: currentPhase})}
+                                        className="w-full outline-none font-black text-sm p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-[#5B6651] focus:border-[#5B6651] transition-all"
+                                        placeholder="$"
+                                        value={newQuoteItem.price}
+                                        onChange={e => setNewQuoteItem({...newQuoteItem, price: e.target.value})}
                                     />
                                 </div>
                                 <button
-                                    onClick={()=>{
-                                        if(newQuoteItem.name && newQuoteItem.price) {
-                                            setQuoteItems([
-                                                ...quoteItems,
-                                                {
-                                                    id: Date.now(),
-                                                    name: newQuoteItem.name,
-                                                    tooth: newQuoteItem.tooth,
-                                                    price: Number(newQuoteItem.price),
-                                                    phase: currentPhase,
-                                                    status: 'pending'
-                                                }
-                                            ]);
-                                            setNewQuoteItem({name:'', price:'', tooth:'', phase: currentPhase});
-                                            setActiveCategory(null);
+                                    onClick={() => {
+                                        if (!newQuoteItem.name || !newQuoteItem.price) {
+                                            notify('Completa el nombre y precio', 'error');
+                                            return;
                                         }
+                                        setQuoteItems([...quoteItems, { ...newQuoteItem, id: Date.now(), phase: currentPhase }]);
+                                        setNewQuoteItem({ name: '', price: '', tooth: '', phase: currentPhase });
                                     }}
-                                    className="px-6 py-3.5 bg-[#312923] text-white rounded-2xl hover:bg-[#1a1512] transition-all flex items-center justify-center gap-2 shadow-md text-[11px] font-black uppercase tracking-widest whitespace-nowrap"
+                                    className="md:col-span-1 bg-[#312923] text-white rounded-2xl p-4 hover:bg-[#5B6651] transition-all shadow-lg flex items-center justify-center"
                                 >
-                                    <Plus size={16}/> Agregar al plan
+                                    <Plus size={20} />
                                 </button>
                             </div>
-                        </div>
+                    </div>
                 </Card>
 
-                {/* PANEL DERECHO */}
-                <div className="lg:col-span-5 space-y-6">
-                    <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-[#FDFBF7] p-8 shadow-sm flex flex-col h-full min-h-[500px]">
-                        <h3 className="font-black text-xl text-[#312923] mb-6 border-b border-[#DFD2C4]/50 pb-4">Detalle por Fases</h3>
+                {/* PANEL DERECHO: VISTA PREVIA DEL PLAN */}
+                <div className="lg:col-span-5 flex flex-col gap-6">
+                    <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-[#FDFBF7] p-8 shadow-inner flex-1">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-xl font-black text-[#312923] tracking-tight">Vista Previa</h3>
+                            <div className="bg-white px-4 py-2 rounded-xl border border-[#DFD2C4] shadow-sm">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] mb-0.5 text-center">Inversión Total</p>
+                                <p className="text-xl font-black text-[#5B6651] leading-none">
+                                    ${quoteItems.reduce((acc, item) => acc + Number(item.price || 0), 0).toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
 
-                        <div className="flex-1 space-y-6 max-h-[400px] overflow-y-auto custom-scrollbar pr-2 mb-6">
-                            {quoteItems.length === 0 ? (
-                                <div className="text-center py-16 opacity-40">
-                                    <Layers className="mx-auto mb-3 text-[#9A8F84]" size={32} />
-                                    <p className="text-xs font-bold text-[#9A8F84] uppercase tracking-widest">Plan de Tratamiento Vacío</p>
-                                </div>
-                            ) : (
-                                Object.entries(groupedItems).map(([phaseName, items]) => (
-                                    <div key={phaseName} className="space-y-3 animate-in fade-in">
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-px bg-[#DFD2C4]/50 flex-1"></div>
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#5B6651] bg-[#5B6651]/10 px-3 py-1 rounded-full border border-[#5B6651]/20">
-                                                {phaseName}
-                                            </span>
-                                            <div className="h-px bg-[#DFD2C4]/50 flex-1"></div>
+                        {quoteItems.length === 0 ? (
+                            <div className="h-64 flex flex-col items-center justify-center text-[#9A8F84] opacity-40">
+                                <Calculator size={48} className="mb-4" />
+                                <p className="text-xs font-black uppercase tracking-widest">Plan Vacío</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-8 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
+                                {Object.entries(groupedItems).map(([phase, items]) => (
+                                    <div key={phase} className="space-y-3">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#CBAAA2] border-b border-[#CBAAA2]/30 pb-1">{phase}</h4>
+                                        <div className="space-y-2">
+                                            {items.map(item => (
+                                                <div key={item.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#DFD2C4]/40 group hover:border-[#CBAAA2] transition-all">
+                                                    <div className="flex-1 min-w-0 pr-4">
+                                                        <p className="text-sm font-bold text-[#312923] truncate">{item.name}</p>
+                                                        {item.tooth && <span className="text-[9px] font-black text-[#9A8F84] uppercase">Pieza: {item.tooth}</span>}
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-sm font-black text-[#5B6651]">${Number(item.price).toLocaleString()}</span>
+                                                        <button
+                                                            onClick={() => setQuoteItems(quoteItems.filter(i => i.id !== item.id))}
+                                                            className="p-2 text-[#DFD2C4] hover:text-red-500 transition-colors"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                        {items.map((item) => (
-                                            <div key={item.id} className="flex justify-between items-center bg-white p-4 rounded-2xl border border-[#DFD2C4]/40 shadow-sm group">
-                                                <div className="flex-1 pr-2">
-                                                    <span className="font-bold text-sm text-[#312923] block leading-tight">{item.name}</span>
-                                                    {item.tooth && <span className="inline-block mt-1 text-[9px] bg-[#CBAAA2]/10 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black border border-[#CBAAA2]/20">Pieza {item.tooth}</span>}
-                                                </div>
-                                                <div className="flex items-center gap-3 border-l border-[#DFD2C4]/40 pl-3">
-                                                    <span className="font-black text-[#5B6651] whitespace-nowrap">${item.price.toLocaleString()}</span>
-                                                    <button onClick={()=>setQuoteItems(quoteItems.filter(i=>i.id !== item.id))} className="text-[#DFD2C4] hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
-                                                </div>
-                                            </div>
-                                        ))}
                                     </div>
-                                ))
-                            )}
-                        </div>
-
-                        <div className="pt-6 border-t border-[#DFD2C4]/60 mt-auto">
-                            <div className="flex justify-between items-end mb-6">
-                                <span className="text-[10px] font-black opacity-60 uppercase tracking-widest text-[#9A8F84]">Costo Total Planificado</span>
-                                <h3 className="text-4xl font-black text-[#312923] tracking-tighter">${quoteItems.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</h3>
+                                ))}
                             </div>
-
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    disabled={quoteItems.length === 0 || !sessionData.patientId}
-                                    onClick={async () => {
-                                        if (!sessionData.patientId) {
-                                            notify("Debes seleccionar un paciente antes de guardar el plan");
-                                            return;
-                                        }
-                                        if (quoteItems.length === 0) {
-                                            notify("Agrega al menos un tratamiento al plan");
-                                            return;
-                                        }
-
-                                        const total = quoteItems.reduce((acc, item) => acc + item.price, 0);
-                                        const id = Date.now().toString();
-                                        const detalle = `Plan de Tratamiento: ${quoteItems.length} procedimientos planificados`;
-
-                                        await saveToSupabase('financials', id, {
-                                            id, total: total, paid: 0, payments: [], patientName: sessionData.patientName,
-                                            date: getLocalDate(), type: 'income', description: detalle,
-                                            patientId: sessionData.patientId
-                                        });
-
-                                        const p = getPatient(sessionData.patientId);
-                                        const newClinicalQuote = {
-                                            id: id,
-                                            date: getLocalDate(),
-                                            total: total,
-                                            status: 'en_proceso',
-                                            items: quoteItems
-                                        };
-
-                                        const updatedQuotesList = [newClinicalQuote, ...(p.clinical?.quotes || [])];
-
-                                        savePatientData(sessionData.patientId, {
-                                            ...p,
-                                            clinical: { ...p.clinical, quotes: updatedQuotesList }
-                                        });
-
-                                        notify("Plan de Tratamiento guardado y enviado a Caja");
-                                        setQuoteItems([]);
-                                        setSavedSuccess(true);
-                                    }}
-                                    className={`py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                        quoteItems.length === 0 || !sessionData.patientId
-                                        ? 'bg-[#DFD2C4]/30 text-[#9A8F84] cursor-not-allowed'
-                                        : 'bg-[#5B6651] text-white hover:bg-[#4a5442] shadow-lg shadow-[#5B6651]/20 hover:-translate-y-0.5'
-                                    }`}
-                                >
-                                    <CheckCircle size={18}/>
-                                    {!sessionData.patientId && quoteItems.length > 0
-                                        ? 'SELECCIONA UN PACIENTE'
-                                        : 'GUARDAR PLAN Y COBRAR'}
-                                </button>
-
-                                <button
-                                    disabled={quoteItems.length === 0 || !sessionData.patientId}
-                                    onClick={() => generatePDF('quote', quoteItems)}
-                                    className={`py-4 rounded-2xl border font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                        quoteItems.length === 0 || !sessionData.patientId
-                                        ? 'border-[#DFD2C4]/50 text-[#9A8F84] cursor-not-allowed bg-white/50'
-                                        : 'border-[#DFD2C4] bg-white text-[#312923] hover:bg-[#FDFBF7]'
-                                    }`}
-                                >
-                                    <Printer size={18}/> IMPRIMIR PLAN PDF
-                                </button>
-                            </div>
-                        </div>
+                        )}
                     </Card>
+
+                    {quoteItems.length > 0 && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => generatePDF('quote', {
+                                    items: quoteItems,
+                                    patientName: sessionData.patientName || 'Paciente',
+                                    total: quoteItems.reduce((acc, item) => acc + Number(item.price || 0), 0)
+                                })}
+                                className="flex items-center justify-center gap-2 py-4 bg-white border border-[#DFD2C4] text-[#312923] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#FDFBF7] transition-all shadow-sm"
+                            >
+                                <Printer size={18} /> Imprimir
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (!sessionData.patientId) { notify('Selecciona un paciente', 'error'); return; }
+                                    const p = getPatient(sessionData.patientId);
+                                    const newQuote = {
+                                        id: Date.now(),
+                                        date: getLocalDate(),
+                                        items: quoteItems,
+                                        total: quoteItems.reduce((acc, item) => acc + Number(item.price || 0), 0),
+                                        status: 'en_proceso'
+                                    };
+                                    const updatedPatient = {
+                                        ...p,
+                                        clinical: {
+                                            ...p.clinical,
+                                            quotes: [newQuote, ...(p.clinical?.quotes || [])]
+                                        }
+                                    };
+                                    await savePatientData(sessionData.patientId, updatedPatient);
+                                    setSavedSuccess(true);
+                                    notify('Plan guardado en la ficha del paciente');
+                                }}
+                                className="flex items-center justify-center gap-2 py-4 bg-[#5B6651] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#4a5442] transition-all shadow-lg shadow-[#5B6651]/20"
+                            >
+                                <CheckCircle size={18} /> Guardar Plan
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Modal: Nuevo Paciente */}
+            {/* Modal Nuevo Paciente */}
             {newPatModal.open && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl border border-[#DFD2C4]/60 p-8 w-full max-w-sm animate-in zoom-in-95">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-black text-xl text-[#312923]">Nuevo Paciente</h3>
-                            <button onClick={() => setNewPatModal({ open: false, name: '', rut: '', phone: '' })} className="text-[#9A8F84] hover:text-[#312923] transition-colors">
-                                <X size={20}/>
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Nombre Completo *</label>
-                                <div className="relative">
-                                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]"/>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md border border-[#DFD2C4]/60 animate-in fade-in zoom-in-95">
+                        <div className="p-8 space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-[#5B6651]/10 text-[#5B6651] rounded-2xl"><User size={24}/></div>
+                                <div>
+                                    <h3 className="text-xl font-black text-[#312923]">Nuevo Paciente</h3>
+                                    <p className="text-xs font-bold text-[#9A8F84] uppercase tracking-widest">Creación Rápida</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Nombre Completo</label>
                                     <input
-                                        autoFocus
                                         type="text"
-                                        className="w-full pl-10 pr-4 py-3.5 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]"
-                                        placeholder="Ej. Juan Pérez"
+                                        className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold outline-none focus:border-[#5B6651] transition-all"
                                         value={newPatModal.name}
-                                        onChange={e => setNewPatModal({ ...newPatModal, name: e.target.value })}
-                                        onKeyDown={e => { if (e.key === 'Enter') handleCreateNewPatient(); }}
+                                        onChange={e => setNewPatModal({...newPatModal, name: e.target.value})}
                                     />
                                 </div>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">RUT (Opcional)</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-3.5 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]"
-                                    placeholder="12.345.678-9"
-                                    value={newPatModal.rut}
-                                    onChange={e => setNewPatModal({ ...newPatModal, rut: formatRUT(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Teléfono (Opcional)</label>
-                                <div className="relative">
-                                    <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]"/>
-                                    <input
-                                        type="tel"
-                                        className="w-full pl-10 pr-4 py-3.5 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651]"
-                                        placeholder="+56 9..."
-                                        value={newPatModal.phone}
-                                        onChange={e => setNewPatModal({ ...newPatModal, phone: e.target.value })}
-                                    />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">RUT (Opcional)</label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold outline-none focus:border-[#5B6651] transition-all"
+                                            value={newPatModal.rut}
+                                            onChange={e => setNewPatModal({...newPatModal, rut: formatRUT(e.target.value)})}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Teléfono</label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold outline-none focus:border-[#5B6651] transition-all"
+                                            value={newPatModal.phone}
+                                            onChange={e => setNewPatModal({...newPatModal, phone: e.target.value})}
+                                        />
+                                    </div>
                                 </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => setNewPatModal({ open: false, name: '', rut: '', phone: '' })}
+                                    className="flex-1 py-4 text-[#9A8F84] font-black text-[11px] uppercase tracking-widest hover:bg-[#FDFBF7] rounded-2xl transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleCreateNewPatient}
+                                    className="flex-1 py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#5B6651] transition-all shadow-lg"
+                                >
+                                    Crear Paciente
+                                </button>
                             </div>
                         </div>
-                        <button
-                            disabled={!newPatModal.name.trim()}
-                            onClick={handleCreateNewPatient}
-                            className={`mt-6 w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all ${
-                                !newPatModal.name.trim()
-                                ? 'bg-[#DFD2C4]/30 text-[#9A8F84] cursor-not-allowed'
-                                : 'bg-[#312923] text-white hover:bg-[#1a1512]'
-                            }`}
-                        >
-                            Crear Paciente
-                        </button>
                     </div>
                 </div>
             )}
