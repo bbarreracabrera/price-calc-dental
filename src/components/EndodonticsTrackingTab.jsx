@@ -19,7 +19,7 @@ export default function EndodonticsTrackingTab({
     const fetchEndoRecords = async () => {
         setLoading(true);
         const { data, error } = await supabase
-            .from('endodontics_tracking')
+            .from('endodontics_records')
             .select('*')
             .eq('patient_id', selectedPatientId)
             .order('created_at', { ascending: false });
@@ -54,13 +54,13 @@ export default function EndodonticsTrackingTab({
         let error = null;
         if (record.id) {
             const { error: updateError } = await supabase
-                .from('endodontics_tracking')
+                .from('endodontics_records')
                 .update(record)
                 .eq('id', record.id);
             error = updateError;
         } else {
             const { error: insertError } = await supabase
-                .from('endodontics_tracking')
+                .from('endodontics_records')
                 .insert([record]);
             error = insertError;
         }
@@ -81,7 +81,7 @@ export default function EndodonticsTrackingTab({
         if (!window.confirm('¿Estás seguro de que quieres eliminar este registro?')) return;
         setLoading(true);
         const { error } = await supabase
-            .from('endodontics_tracking')
+            .from('endodontics_records')
             .delete()
             .eq('id', id);
 

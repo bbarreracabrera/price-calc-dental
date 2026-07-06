@@ -28,14 +28,11 @@ export default function FinanceCenter({
     const [showProfitability, setShowProfitability] = useState(false);
     const [boletaModal, setBoletaModal] = useState({ open: false, payment: null, patient: null });
 
-    // La DB ya filtró por rango — usamos todos los registros recibidos
+    // Unificamos con los totales calculados en App.jsx para evitar desincronización (Head Count)
+    const filteredCollected = totalCollected;
+    const filteredExpenses = totalExpenses;
+    const filteredProfit = netProfit;
     const filteredPayments = incomeRecords.flatMap(r => r.payments || []);
-    const legacyCollected = incomeRecords
-        .filter(r => r.paid && !r.payments)
-        .reduce((s, r) => s + Number(r.paid), 0);
-    const filteredCollected = filteredPayments.reduce((s, p) => s + p.amount, 0) + legacyCollected;
-    const filteredExpenses = expenseRecords.reduce((s, ex) => s + Number(ex.amount), 0);
-    const filteredProfit = filteredCollected - filteredExpenses;
 
     const handlePresetChange = (e) => {
         const preset = FINANCE_PRESETS.find(p => p.key === e.target.value);

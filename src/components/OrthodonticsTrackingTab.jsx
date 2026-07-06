@@ -19,7 +19,7 @@ export default function OrthodonticsTrackingTab({
     const fetchOrthoRecords = async () => {
         setLoading(true);
         const { data, error } = await supabase
-            .from('orthodontics_tracking')
+            .from('orthodontics_records')
             .select('*')
             .eq('patient_id', selectedPatientId)
             .order('created_at', { ascending: false });
@@ -51,13 +51,13 @@ export default function OrthodonticsTrackingTab({
         let error = null;
         if (record.id) {
             const { error: updateError } = await supabase
-                .from('orthodontics_tracking')
+                .from('orthodontics_records')
                 .update(record)
                 .eq('id', record.id);
             error = updateError;
         } else {
             const { error: insertError } = await supabase
-                .from('orthodontics_tracking')
+                .from('orthodontics_records')
                 .insert([record]);
             error = insertError;
         }
@@ -78,7 +78,7 @@ export default function OrthodonticsTrackingTab({
         if (!window.confirm('¿Estás seguro de que quieres eliminar este registro?')) return;
         setLoading(true);
         const { error } = await supabase
-            .from('orthodontics_tracking')
+            .from('orthodontics_records')
             .delete()
             .eq('id', id);
 

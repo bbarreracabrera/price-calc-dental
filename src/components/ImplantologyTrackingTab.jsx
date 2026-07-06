@@ -19,7 +19,7 @@ export default function ImplantologyTrackingTab({
     const fetchImplantRecords = async () => {
         setLoading(true);
         const { data, error } = await supabase
-            .from('implantology_tracking')
+            .from('implantology_records')
             .select('*')
             .eq('patient_id', selectedPatientId)
             .order('created_at', { ascending: false });
@@ -56,13 +56,13 @@ export default function ImplantologyTrackingTab({
         let error = null;
         if (record.id) {
             const { error: updateError } = await supabase
-                .from('implantology_tracking')
+                .from('implantology_records')
                 .update(record)
                 .eq('id', record.id);
             error = updateError;
         } else {
             const { error: insertError } = await supabase
-                .from('implantology_tracking')
+                .from('implantology_records')
                 .insert([record]);
             error = insertError;
         }
@@ -83,7 +83,7 @@ export default function ImplantologyTrackingTab({
         if (!window.confirm('¿Estás seguro de que quieres eliminar este registro?')) return;
         setLoading(true);
         const { error } = await supabase
-            .from('implantology_tracking')
+            .from('implantology_records')
             .delete()
             .eq('id', id);
 

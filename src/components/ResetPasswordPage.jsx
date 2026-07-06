@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { CheckCircle } from 'lucide-react';
 
-export default function ResetPasswordPage({ onComplete }) {
+export default function ResetPasswordPage({ onComplete, linkError }) {
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(linkError ? (linkError.isExpired ? 'El enlace ha expirado.' : 'El enlace no es válido.') : '');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,10 +46,29 @@ export default function ResetPasswordPage({ onComplete }) {
             <div className="bg-white rounded-3xl border border-[#DFD2C4]/60 p-8 w-full max-w-md shadow-xl">
                 <h1 className="text-2xl font-black text-[#312923] tracking-tighter mb-1">Nueva contraseña</h1>
                 <p className="text-sm font-bold text-[#9A8F84] mb-6">
-                    Ingresa tu nueva contraseña para acceder a tu cuenta.
+                    {linkError ? 'Hubo un problema con tu solicitud.' : 'Ingresa tu nueva contraseña para acceder a tu cuenta.'}
                 </p>
 
-                {success ? (
+                {linkError ? (
+                    <div className="space-y-6">
+                        <div className="bg-red-50 border border-red-100 rounded-2xl p-5 text-center">
+                            <p className="text-sm font-bold text-red-600 mb-1">
+                                {linkError.isExpired ? 'Enlace Expirado' : 'Enlace Inválido'}
+                            </p>
+                            <p className="text-xs text-red-500/80 leading-relaxed">
+                                {linkError.isExpired 
+                                    ? 'Por seguridad, los enlaces de recuperación expiran después de una hora.' 
+                                    : 'Este enlace ya no es válido o ya fue utilizado.'}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => window.location.href = '/'}
+                            className="w-full py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-[#312923]/20"
+                        >
+                            Volver al inicio
+                        </button>
+                    </div>
+                ) : success ? (
                     <div className="flex items-center gap-3 bg-[#5B6651]/10 border border-[#5B6651]/20 rounded-2xl p-4">
                         <CheckCircle size={20} className="text-[#5B6651] shrink-0" />
                         <div>
