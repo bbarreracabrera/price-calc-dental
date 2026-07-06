@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     X, Crop, RotateCw, Sun, Contrast, Eye, EyeOff, Download, Save,
-    Maximize2, Grid3x3, Minus, Plus, Move, Zap, Palette, Settings
+    Maximize2, Grid3x3, Minus, Plus, Move, Zap, Palette, Settings, Presentation
 } from 'lucide-react';
 import {
     calculateREDProportion, calculateGoldenProportion, calculateChuProportion,
     calculateToothBoxes, calculateSmileCurve, generateProportionReport
 } from '../utils/dsdProportions';
+import { getAllSmileStyles } from '../utils/smileStyles';
+import DSDPresentationMode from './DSDPresentationMode';
 
 /**
  * DSD Studio - Digital Smile Design Editor
@@ -43,6 +45,11 @@ export default function DSDStudio({ imageUrl, onClose, onSave, patientName }) {
     const [pixelPerMM, setPixelPerMM] = useState(10); // píxeles por mm
     const [teethBoxes, setTeethBoxes] = useState([]);
     const [showProportionPanel, setShowProportionPanel] = useState(false);
+    
+    // --- ESTADOS DE VISAGISMO Y PRESENTACIÓN ---
+    const [selectedSmileStyle, setSelectedSmileStyle] = useState('oval');
+    const [presentationMode, setPresentationMode] = useState(false);
+    const [presentationImage, setPresentationImage] = useState(null);
     
     // --- REFERENCIAS ---
     const canvasRef = useRef(null);
@@ -276,6 +283,22 @@ export default function DSDStudio({ imageUrl, onClose, onSave, patientName }) {
         }
     };
 
+    const handlePresentationMode = () => {
+        if (canvasRef.current) {
+            setPresentationImage(canvasRef.current.toDataURL('image/png'));
+            setPresentationMode(true);
+        }
+    };
+
+    const handleDownloadPresentation = (styleId) => {
+        if (canvasRef.current) {
+            const link = document.createElement('a');
+            link.href = canvasRef.current.toDataURL('image/png');
+            link.download = `DSD-${patientName || 'design'}-${styleId}-${Date.now()}.png`;
+            link.click();
+        }
+    };
+
     const toggleOverlay = (overlayName) => {
         setActiveOverlays(prev => ({
             ...prev,
@@ -482,6 +505,12 @@ export default function DSDStudio({ imageUrl, onClose, onSave, patientName }) {
                     {/* Action Buttons */}
                     <div className="space-y-2 pt-2">
                         <button
+                            onClick={handlePresentationMode}
+                            className="w-full p-3 bg-purple-600 hover:bg-purple-700 text-white rounded font-bold flex items-center justify-center gap-2 transition"
+                        >
+                            <Presentation size={18} /> Modo Presentación
+                        </button>
+                        <button
                             onClick={() => onSave && onSave(canvasRef.current?.toDataURL('image/png'))}
                             className="w-full p-3 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold flex items-center justify-center gap-2 transition"
                         >
@@ -490,6 +519,17 @@ export default function DSDStudio({ imageUrl, onClose, onSave, patientName }) {
                     </div>
                 </div>
             </div>
+
+            {/* Presentation Mode Modal */}
+            {presentationMode && presentationImage && (
+                <DSDPresentationMode
+                    canvasImage={presentationImage}
+                    patientName={patientName}
+                    selectedStyle={selectedSmileStyle}
+                    onClose={() => setPresentationMode(false)}
+                    onDownload={handleDownloadPresentation}
+                />
+            )}
         </div>
     );
 }
