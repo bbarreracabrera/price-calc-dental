@@ -214,6 +214,14 @@ export default function App() {
   // Verifica estado master admin server-side al iniciar sesión
   useEffect(() => {
       if (!session) { setIsMasterAdmin(false); return; }
+      
+      // Respaldo local por si la Edge Function falla o el secreto no está cargado
+      const MASTER_EMAIL = 'b.barreracabrera.dent@gmail.com';
+      if (session.user.email === MASTER_EMAIL) {
+          setIsMasterAdmin(true);
+          return;
+      }
+
       supabase.functions.invoke('verify-master')
           .then(({ data }) => setIsMasterAdmin(data?.is_master === true))
           .catch(() => setIsMasterAdmin(false));
