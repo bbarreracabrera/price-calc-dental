@@ -640,6 +640,14 @@ const saveToOfflineVault = async (table, id, data) => {
     setModal('appt');
   }, [selectedPatientId, getPatient]);
 
+  const handleOrderCreate = useCallback(async (newOrder) => {
+    if (!newOrder) return;
+    const updatedOrders = [...supplyOrders, newOrder];
+    setSupplyOrders(updatedOrders);
+    await saveToSupabase('supply_orders', newOrder.id, newOrder);
+    notify('Orden de insumos registrada');
+  }, [supplyOrders, saveToSupabase, notify]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
