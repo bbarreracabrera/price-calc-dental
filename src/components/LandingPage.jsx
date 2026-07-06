@@ -450,7 +450,7 @@ export default function LandingPage({ onLoginClick }) {
               <div className="mb-6">
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#A3968B] mb-2">Pro</p>
                 <div className="flex items-end gap-1">
-                  <span className="text-4xl md:text-5xl font-black">$29.990</span>
+                  <span className="text-4xl md:text-5xl font-black">$10.000</span>
                   <span className="text-[#A3968B] font-bold mb-1">/mes</span>
                 </div>
                 <p className="text-sm text-[#A3968B] mt-2">Todo lo que necesitas para crecer.</p>

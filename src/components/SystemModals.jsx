@@ -221,7 +221,8 @@ export const AuthScreen = () => {
    
     const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
     const urlParams = new URLSearchParams(window.location.search);
-    const [isSignUp, setIsSignUp] = useState(false); // No permitir registro directo por URL
+    const vieneDePago = urlParams.get('pago') === 'exitoso';
+    const [isSignUp, setIsSignUp] = useState(vieneDePago);
   
     const handleAuth = async (e) => { 
         e.preventDefault(); 
