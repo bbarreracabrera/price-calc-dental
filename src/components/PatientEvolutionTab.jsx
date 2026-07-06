@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, FileLock, PenTool, Clock, User, ShieldCheck, ListTodo, CheckCircle2, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, X, Tag, Save } from 'lucide-react';
 import { Button } from './UIComponents';
 import { supabase } from '../supabase';
+import { useDialog } from './DialogProvider';
 
 // Importar los nuevos componentes de seguimiento
 import OrthodonticsTrackingTab from './OrthodonticsTrackingTab';
@@ -248,8 +249,11 @@ export default function PatientEvolutionTab({
         }
     };
 
+    const { confirm } = useDialog();
+
     const deleteEvolution = async (evolutionId) => {
-        if (!window.confirm("¿Estás seguro de que quieres eliminar esta evolución? Esta acción es irreversible.")) return;
+        const ok = await confirm("¿Estás seguro de que quieres eliminar esta evolución? Esta acción es irreversible.");
+        if (!ok) return;
 
         const updatedPatient = JSON.parse(JSON.stringify(p));
         const evolutions = updatedPatient.clinical?.evolutions || updatedPatient.clinical?.evolution || [];
@@ -263,17 +267,6 @@ export default function PatientEvolutionTab({
     const filteredTemplates = activeTemplateCategory === 'all'
         ? templates
         : templates.filter(t => t.category === activeTemplateCategory);
-
-    // Renderizado condicional de las pestañas de especialidades
-    if (patientTab === 'orthodontics') {
-        return <OrthodonticsTrackingTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} session={session} />;
-    }
-    if (patientTab === 'implantology') {
-        return <ImplantologyTrackingTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} session={session} />;
-    }
-    if (patientTab === 'endodontics') {
-        return <EndodonticsTrackingTab p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} notify={notify} session={session} />;
-    }
 
     const evolutionsList = p.clinical?.evolutions || p.clinical?.evolution || [];
 

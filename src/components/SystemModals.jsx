@@ -105,12 +105,20 @@ const normalize = (str) =>
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[\.\-\s]/g, '');
 
-export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email...", adminEmail, onQueryChange, initialValue = '' }) => {
+export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar por nombre, RUT, teléfono o email...", adminEmail, onQueryChange, initialValue = '', selectedId }) => {
     const [query, setQuery] = useState(initialValue);
 
     useEffect(() => {
         if (initialValue) setQuery(initialValue);
     }, [initialValue]);
+
+    // Sincronizar query con el paciente seleccionado si existe
+    useEffect(() => {
+        if (selectedId && patients[selectedId]) {
+            const p = patients[selectedId];
+            setQuery(p.personal?.legalName || p.name || '');
+        }
+    }, [selectedId, patients]);
 
     const [showResults, setShowResults] = useState(false);
     const [dbResults, setDbResults] = useState([]);
@@ -124,24 +132,30 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
 
         const delayDebounceFn = setTimeout(async () => {
             setIsSearching(true);
-            let q = supabase
-                .from('patients')
-                .select('id, data');
-            if (adminEmail) q = q.eq('admin_email', adminEmail);
-            const { data } = await q
-                .or([
-                    `data->personal->>legalName.ilike.%${query}%`,
-                    `data->personal->>rut.ilike.%${query}%`,
-                    `data->personal->>phone.ilike.%${query}%`,
-                    `data->personal->>email.ilike.%${query}%`,
-                ].join(','))
-                .limit(10);
+            try {
+                let q = supabase
+                    .from('patients')
+                    .select('id, data');
+                if (adminEmail) q = q.eq('admin_email', adminEmail);
+                const { data, error } = await q
+                    .or([
+                        `data->personal->>legalName.ilike.%${query}%`,
+                        `data->personal->>rut.ilike.%${query}%`,
+                        `data->personal->>phone.ilike.%${query}%`,
+                        `data->personal->>email.ilike.%${query}%`,
+                    ].join(','))
+                    .limit(10);
 
-            if (data) {
-                const formatted = data.map(r => ({ ...r.data, id: r.id }));
-                setDbResults(formatted);
+                if (error) throw error;
+                if (data) {
+                    const formatted = data.map(r => ({ ...r.data, id: r.id }));
+                    setDbResults(formatted);
+                }
+            } catch (err) {
+                console.error('Error searching patients:', err);
+            } finally {
+                setIsSearching(false);
             }
-            setIsSearching(false);
         }, 500);
 
         return () => clearTimeout(delayDebounceFn);

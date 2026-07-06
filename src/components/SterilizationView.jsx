@@ -62,6 +62,10 @@ export default function SterilizationView({
             notify('Error al guardar item en el inventario.', 'error');
         } else {
             notify('Item guardado exitosamente.', 'success');
+            // Sincronizar con la tabla general de esterilización si es necesario
+            if (saveToSupabase) {
+                await saveToSupabase('sterilization_inventory', item.id || Date.now().toString(), itemData);
+            }
             setShowNewItemModal(false);
             setEditingItem(null);
             fetchInventory();

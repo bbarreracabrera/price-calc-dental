@@ -127,7 +127,7 @@ export default function PatientWorkspace({
             label: 'Agendar Cita',
             icon: Calendar,
             color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200',
-            action: () => setModal('appointment')
+            action: () => setModal('appt')
         },
         {
             id: 'call',
@@ -447,6 +447,7 @@ export default function PatientWorkspace({
                                 activeFolder={activeFolder} setActiveFolder={setActiveFolder}
                                 uploading={uploading} handleImageUpload={handleImageUpload}
                                 setSelectedImg={setSelectedImg} notify={notify} config={config}
+                                saveToSupabase={savePatientData}
                             />
                         )}
                     </div>
