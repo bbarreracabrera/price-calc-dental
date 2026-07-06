@@ -4,11 +4,11 @@
 
 /* 
   Optimización de Densidad Visual:
-  Reducimos la escala global para que la app no se sienta "abultada" 
-  y se aproveche mejor el espacio en pantalla.
+  La reducción de escala se aplica SOLO dentro del contenedor de la app
+  (.app-zoom-container) para no afectar la landing page pública.
 */
 :root {
-  font-size: 14px; /* Bajamos de 16px predeterminado */
+  font-size: 16px; /* Mantenemos el default para la landing */
 }
 
 html {
@@ -23,21 +23,23 @@ body {
 }
 
 /* 
-  En lugar de zoom, usamos una escala de fuente base menor 
-  para lograr la densidad visual sin romper el layout.
+  Reducción de densidad visual aplicada SOLO a la app interna.
+  La landing page NO usa .app-zoom-container, por lo que queda libre.
 */
 .app-zoom-container {
   font-size: 0.875rem; /* Equivalente a ~14px */
 }
 
-/* Ajustes de espaciado para compensar la reducción */
-.card, .p-6, .p-8 {
+/* Ajustes de espaciado SOLO dentro de la app interna */
+.app-zoom-container .card,
+.app-zoom-container .p-6,
+.app-zoom-container .p-8 {
   padding-top: 1.25rem !important;
   padding-bottom: 1.25rem !important;
 }
 
-h1 { font-size: 1.875rem !important; }
-h2 { font-size: 1.5rem !important; }
+.app-zoom-container h1 { font-size: 1.875rem !important; }
+.app-zoom-container h2 { font-size: 1.5rem !important; }
 
 @media print {
     body * { visibility: hidden; }
