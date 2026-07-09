@@ -20,21 +20,28 @@ export function useVoiceAssistant(props) {
             setIsListening(false); setVoiceStatus('');
         } else {
             const recognition = new SpeechRecognition();
-            recognition.lang = 'es-CL'; recognition.continuous = true; recognition.interimResults = false;
+            recognition.lang = 'es-CL'; 
+            recognition.continuous = true; 
+            recognition.interimResults = false;
+            // Aumentar la sensibilidad y evitar que se corte por silencios cortos
+            recognition.maxAlternatives = 1;
             
             recognition.onstart = () => { 
                 setIsListening(true); 
-                setVoiceStatus(latestProps.current.patientTab === 'perio' ? 'Dicta (ej: "Diente 18, tres dos tres, no sangra distal")...' : 'Dicta Odonto (ej: "Diente 14 caries, avanza")...'); 
+                setVoiceStatus(latestProps.current.patientTab === 'perio' ? 'Dicta (ej: "Diente 18, tres dos tres, sangra distal")...' : 'Dicta Odonto (ej: "Diente 14 caries, avanza")...'); 
             };
 
             recognition.onresult = (event) => {
                 let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) if (event.results[i].isFinal) transcript += event.results[i][0].transcript; 
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) transcript += event.results[i][0].transcript; 
+                }
                 
                 if (transcript) {
                     const text = transcript.toLowerCase();
                     latestProps.current.notify(`IA Escuchó: "${text}"`);
 
+                    // 1. Identificar Diente
                     const toothMatch = text.match(/\b([1-4][1-8]|[5-8][1-5])\b/); 
                     let targetToothId = latestProps.current.toothModalData?.id; 
                     
@@ -51,17 +58,27 @@ export function useVoiceAssistant(props) {
                         const p = getPatient(selectedPatientId);
 
                         // ==========================================
-                        // MODO PERIODONTOGRAMA
+                        // MODO PERIODONTOGRAMA (UPGRADED)
                         // ==========================================
                         if (patientTab === 'perio') {
                             let cleanText = text.replace(/diente\s?\d\s?\d/g, '').replace(/\b([1-4][1-8]|[5-8][1-5])\b/g, '');
-                            cleanText = cleanText.replace(/uno/g, '1').replace(/dos/g, '2').replace(/tres/g, '3').replace(/cuatro/g, '4').replace(/cinco/g, '5').replace(/seis/g, '6').replace(/siete/g, '7').replace(/ocho/g, '8').replace(/nueve/g, '9').replace(/cero/g, '0').replace(/menos /g, '-');
+                            
+                            // Normalización de números extendida
+                            const numMap = {
+                                'uno': '1', 'dos': '2', 'tres': '3', 'cuatro': '4', 'cinco': '5', 
+                                'seis': '6', 'siete': '7', 'ocho': '8', 'nueve': '9', 'cero': '0',
+                                'diez': '10', 'once': '11', 'doce': '12', 'trece': '13', 'catorce': '14', 'quince': '15',
+                                'menos ': '-', 'grado ': ''
+                            };
+                            Object.keys(numMap).forEach(key => {
+                                cleanText = cleanText.replace(new RegExp(key, 'g'), numMap[key]);
+                            });
                             
                             const existingPerio = p.clinical.perio?.[currentToothId] || {};
                             let newData = { 
                                 ...existingPerio, 
-                                pd_v: existingPerio.pd_v || ['','',''], pd_l: existingPerio.pd_l || ['','',''], 
-                                mg_v: existingPerio.mg_v || ['','',''], mg_l: existingPerio.mg_l || ['','',''], 
+                                pd_v: [...(existingPerio.pd_v || ['','',''])], pd_l: [...(existingPerio.pd_l || ['','',''])], 
+                                mg_v: [...(existingPerio.mg_v || ['','',''])], mg_l: [...(existingPerio.mg_l || ['','',''])], 
                                 bop_v: [...(existingPerio.bop_v || [false,false,false])], bop_l: [...(existingPerio.bop_l || [false,false,false])], 
                                 pus_v: [...(existingPerio.pus_v || [false,false,false])], pus_l: [...(existingPerio.pus_l || [false,false,false])], 
                                 mobility: existingPerio.mobility || 0, furcation: existingPerio.furcation || 0 
@@ -69,7 +86,6 @@ export function useVoiceAssistant(props) {
                             
                             const face = (cleanText.includes('palatino') || cleanText.includes('lingual')) ? 'l' : 'v'; 
 
-                            // --- Comando "Sano" o "Limpiar" para resetear el diente entero ---
                             if (cleanText.includes('sano') || cleanText.includes('limpiar')) {
                                 newData[`pd_${face}`] = ['','',''];
                                 newData[`mg_${face}`] = ['','',''];
@@ -78,56 +94,59 @@ export function useVoiceAssistant(props) {
                                 newData.mobility = 0;
                                 newData.furcation = 0;
                             } else {
-                                // --- NUEVA LÓGICA DE MODO RÁFAGA Y PROCESAMIENTO POR SITIO ---
-                            const sites = ['distal', 'centro', 'medio', 'mesial'];
-                            const isV = face === 'v';
-                            
-                            // 1. Detectar ráfaga de números (ej: "3 2 3")
-                            const allNumbers = cleanText.match(/-?\d/g) || [];
-                            
-                            if (allNumbers.length >= 3 && !cleanText.includes('margen')) {
-                                // Ráfaga de Profundidad de Sondaje
-                                newData[`pd_${face}`] = [parseInt(allNumbers[0]), parseInt(allNumbers[1]), parseInt(allNumbers[2])];
-                                notify(`📏 Ráfaga: ${allNumbers[0]}-${allNumbers[1]}-${allNumbers[2]} en cara ${isV?'Vestibular':(parseInt(currentToothId)>30?'Lingual':'Palatina')}`);
-                            } else {
-                                // Procesamiento individual por sitio
-                                sites.forEach((site, idx) => {
-                                    if (cleanText.includes(site)) {
-                                        const actualIdx = site === 'distal' ? 0 : (site === 'mesial' ? 2 : 1);
-                                        
-                                        // Buscar número inmediatamente después o antes de la palabra del sitio
-                                        const siteNumbers = cleanText.split(site)[1]?.match(/-?\d/);
-                                        if (siteNumbers) {
-                                            if (cleanText.includes('margen')) {
-                                                newData[`mg_${face}`][actualIdx] = parseInt(siteNumbers[0]);
-                                            } else {
-                                                newData[`pd_${face}`][actualIdx] = parseInt(siteNumbers[0]);
+                                const sites = ['distal', 'centro', 'medio', 'mesial'];
+                                const allNumbers = cleanText.match(/-?\d+/g) || [];
+                                
+                                // 1. Ráfaga de 3 números (Profundidad de Sondaje)
+                                if (allNumbers.length >= 3 && !cleanText.includes('margen') && !cleanText.includes('movilidad') && !cleanText.includes('furca')) {
+                                    newData[`pd_${face}`] = [allNumbers[0], allNumbers[1], allNumbers[2]];
+                                    notify(`📏 Ráfaga PD: ${allNumbers[0]}-${allNumbers[1]}-${allNumbers[2]}`);
+                                } 
+                                // 2. Ráfaga de 3 números con "Margen"
+                                else if (allNumbers.length >= 3 && cleanText.includes('margen')) {
+                                    newData[`mg_${face}`] = [allNumbers[0], allNumbers[1], allNumbers[2]];
+                                    notify(`📏 Ráfaga Margen: ${allNumbers[0]}-${allNumbers[1]}-${allNumbers[2]}`);
+                                }
+                                else {
+                                    // Procesamiento por palabras clave
+                                    sites.forEach((site) => {
+                                        if (cleanText.includes(site)) {
+                                            const actualIdx = site === 'distal' ? 0 : (site === 'mesial' ? 2 : 1);
+                                            
+                                            // Extraer número asociado al sitio
+                                            const parts = cleanText.split(site);
+                                            const nextPart = parts[1] || '';
+                                            const siteNumMatch = nextPart.match(/-?\d+/);
+                                            
+                                            if (siteNumMatch) {
+                                                const val = siteNumMatch[0];
+                                                if (cleanText.includes('margen')) newData[`mg_${face}`][actualIdx] = val;
+                                                else newData[`pd_${face}`][actualIdx] = val;
+                                            }
+
+                                            // Sangrado / Pus
+                                            if (cleanText.includes('sangra') || cleanText.includes('sangrado') || cleanText.includes('punto rojo') || cleanText.includes('positivo')) {
+                                                newData[`bop_${face}`][actualIdx] = !cleanText.includes('no');
+                                            }
+                                            if (cleanText.includes('pus') || cleanText.includes('supura') || cleanText.includes('exudado')) {
+                                                newData[`pus_${face}`][actualIdx] = !cleanText.includes('no');
                                             }
                                         }
+                                    });
 
-                                        // Sangrado y Pus por sitio específico
-                                        if (cleanText.includes('sangra') || cleanText.includes('sangrado')) {
-                                            newData[`bop_${face}`][actualIdx] = !cleanText.includes('no');
-                                        }
-                                        if (cleanText.includes('pus') || cleanText.includes('supura')) {
-                                            newData[`pus_${face}`][actualIdx] = !cleanText.includes('no');
-                                        }
+                                    // Movilidad mejorada
+                                    const movKeywords = ['movilidad', 'mueve', 'grado'];
+                                    if (movKeywords.some(k => cleanText.includes(k)) && !cleanText.includes('furca')) {
+                                        const movMatch = cleanText.match(/(?:movilidad|mueve|grado)\s?(\d+)/);
+                                        if (movMatch) newData.mobility = parseInt(movMatch[1]);
                                     }
-                                });
 
-                                // Si solo hay números sin sitio, y no es ráfaga, aplicamos al "centro" por defecto
-                                if (allNumbers.length === 1 && !sites.some(s => cleanText.includes(s))) {
-                                    if (cleanText.includes('margen')) newData[`mg_${face}`][1] = parseInt(allNumbers[0]);
-                                    else newData[`pd_${face}`][1] = parseInt(allNumbers[0]);
+                                    // Furca mejorada
+                                    if (cleanText.includes('furca') || cleanText.includes('entrada')) {
+                                        const furcMatch = cleanText.match(/(?:furca|entrada|grado)\s?(\d+)/);
+                                        if (furcMatch) newData.furcation = parseInt(furcMatch[1]);
+                                    }
                                 }
-                            }
-                            
-                            // Movilidad y Furca (Globales del diente)
-                            const movMatch = cleanText.match(/movilidad\s?(\d)/);
-                            if (movMatch) newData.mobility = parseInt(movMatch[1]);
-
-                            const furcMatch = cleanText.match(/furca\s?(\d)/);
-                            if (furcMatch) newData.furcation = parseInt(furcMatch[1]);
                             }
 
                             setPerioData(newData);
@@ -136,18 +155,19 @@ export function useVoiceAssistant(props) {
                             const updatedPerio = { ...p.clinical.perio, [currentToothId]: newData };
                             savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: updatedPerio } });
 
-                            if (text.includes('avanza') || text.includes('siguiente')) {
+                            // Lógica de avance mejorada
+                            if (text.includes('avanza') || text.includes('siguiente') || text.includes('pasamos')) {
                                 const PERIO_ORDER = [ '18','17','16','15','14','13','12','11', '21','22','23','24','25','26','27','28', '38','37','36','35','34','33','32','31', '41','42','43','44','45','46','47','48' ];
                                 const currIdx = PERIO_ORDER.indexOf(currentToothId.toString());
                                 if (currIdx >= 0 && currIdx < PERIO_ORDER.length - 1) {
                                     setTimeout(() => {
                                         if (setSelectedToothId) setSelectedToothId(PERIO_ORDER[currIdx + 1]);
-                                        notify(`✔️ Guardado. Avanzando a pieza ${PERIO_ORDER[currIdx + 1]}`);
+                                        notify(`✔️ Guardado. Siguiente: Pieza ${PERIO_ORDER[currIdx + 1]}`);
                                     }, 400); 
                                 }
-                            } else if (text.includes('listo') || text.includes('cierra')) {
+                            } else if (text.includes('listo') || text.includes('termina') || text.includes('cerrar')) {
                                 if (setSelectedToothId) setSelectedToothId(null);
-                                notify("✔️ Periodontograma Guardado");
+                                notify("✔️ Periodontograma finalizado");
                             }
                         } 
                         // ==========================================
@@ -184,8 +204,28 @@ export function useVoiceAssistant(props) {
                     }, toothMatch ? 800 : 0);
                 }
             };
-            recognition.onerror = (e) => { setIsListening(false); setVoiceStatus(''); };
-            recognition.onend = () => { setIsListening(false); setVoiceStatus(''); };
+
+            // REINICIO AUTOMÁTICO PARA EVITAR QUE SE DESACTIVE RÁPIDO
+            recognition.onerror = (e) => { 
+                console.error("Speech Error:", e.error);
+                if (e.error === 'no-speech' && isListening) {
+                    // Silencio detectado, no hacer nada, el navegador suele seguir escuchando si continuous=true
+                } else {
+                    setIsListening(false); 
+                    setVoiceStatus(''); 
+                }
+            };
+            
+            recognition.onend = () => { 
+                // Si el usuario no lo detuvo manualmente, intentamos reiniciar
+                if (isListening) {
+                    try { recognition.start(); } catch(e) {}
+                } else {
+                    setIsListening(false); 
+                    setVoiceStatus(''); 
+                }
+            };
+
             recognitionRef.current = recognition;
             try { recognition.start(); } catch (e) { console.error(e); }
         }
@@ -193,13 +233,12 @@ export function useVoiceAssistant(props) {
 
     const startPerioDictation = () => {};
 
-    // Detener escucha al cambiar de pestaña
     useEffect(() => {
         if (recognitionRef.current && isListening) {
             recognitionRef.current.stop();
             setIsListening(false);
         }
-    }, [patientTab, activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [patientTab, activeTab]); 
 
     useEffect(() => {
         return () => {

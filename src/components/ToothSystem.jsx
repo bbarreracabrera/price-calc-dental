@@ -14,8 +14,8 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
     const getDiagnosticColor = (f) => {
         if (f === 'caries') return '#ef4444'; 
         if (f === 'filled') return '#60a5fa'; 
-        if (f === 'sealant') return '#10b981'; // Verde para sellantes
-        if (f === 'veneer') return '#fde047';  // Amarillo pastel para carillas
+        if (f === 'sealant') return '#10b981'; 
+        if (f === 'veneer') return '#fde047';  
         return 'transparent';
     };
 
@@ -58,7 +58,6 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
 
     return (
         <div className="relative flex flex-col items-center" style={{ width: size, height: size + 20 }}>
-            {/* TORNILLO DE IMPLANTE (Si aplica, se dibuja arriba o abajo dependiendo del cuadrante) */}
             {isImplant && (
                 <svg viewBox="0 0 100 40" className={`absolute w-full h-8 ${num < 30 ? '-top-6' : '-bottom-6 rotate-180'} pointer-events-none drop-shadow-md z-0`}>
                     <path d="M 35,5 L 65,5 L 60,35 L 40,35 Z" fill="#9ca3af" stroke="#4b5563" strokeWidth="2"/>
@@ -69,7 +68,6 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
             )}
 
             <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm overflow-visible z-10 relative">
-                {/* Caras del Diente */}
                 {!isMissing && (
                     <>
                         <Face id="v" points="0,0 100,0 75,25 25,25" />
@@ -80,17 +78,14 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
                     </>
                 )}
 
-                {/* ENDODONCIA (Línea roja central) */}
                 {isEndo && !isMissing && (
                     <line x1="50" y1="20" x2="50" y2="80" stroke="#dc2626" strokeWidth="8" strokeLinecap="round" className="pointer-events-none drop-shadow-sm" />
                 )}
 
-                {/* CORONA */}
                 {isCrown && interactive && !isMissing && (
                     <circle cx="50" cy="50" r="42" fill="none" stroke="#eab308" strokeWidth="6" className="pointer-events-none" strokeDasharray="4 2" />
                 )}
                 
-                {/* --- MOVIMIENTOS DENTARIOS --- */}
                 {(statusArr.includes('extrusion') || statusArr.includes('extruded')) && (
                     <path d="M50,85 L50,15 M30,35 L50,15 L70,35" stroke="#06b6d4" strokeWidth="10" fill="none" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none drop-shadow-md" />
                 )}
@@ -110,7 +105,6 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
                     </g>
                 )}
 
-                {/* EXTRACCIÓN INDICADA (Cruz Roja) */}
                 {isExtracting && !isMissing && (
                     <g className="pointer-events-none drop-shadow-md">
                         <line x1="20" y1="80" x2="80" y2="20" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" />
@@ -119,7 +113,6 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
                 )}
             </svg>
             
-            {/* AUSENTE (Giant X) */}
             {isMissing && <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none text-[#9A8F84] font-black text-5xl opacity-80 z-20" style={{ height: size }}>X</div>}
             
             {interactive && <span className={`text-[11px] font-black mt-1 z-20 relative ${isMissing ? 'text-[#9A8F84] opacity-50' : 'text-[#312923]'}`}>{number}</span>}
@@ -149,7 +142,8 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
             );
         }
 
-        const getY = (val) => 30 + ((parseInt(val) || 0) * 5); 
+        // Factor de escala para que se vea mejor (0-10mm)
+        const getY = (val) => 25 + ((parseFloat(val) || 0) * 5.5); 
         
         const num = parseInt(number);
         const isLeftQuad = (num >= 21 && num <= 28) || (num >= 31 && num <= 38) || (num >= 61 && num <= 65) || (num >= 71 && num <= 75); 
@@ -159,19 +153,25 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
 
         let mgL, mgC, mgR, pdL, pdC, pdR;
 
+        // Invertimos Distal/Mesial según el cuadrante para que la vista sea anatómica
         if (isLeftQuad) {
             mgL = getY(mgArray[2]); mgC = getY(mgArray[1]); mgR = getY(mgArray[0]);
-            pdL = getY((parseInt(mgArray[2]) || 0) + (parseInt(pdArray[2]) || 0));
-            pdC = getY((parseInt(mgArray[1]) || 0) + (parseInt(pdArray[1]) || 0));
-            pdR = getY((parseInt(mgArray[0]) || 0) + (parseInt(pdArray[0]) || 0));
+            pdL = getY((parseFloat(mgArray[2]) || 0) + (parseFloat(pdArray[2]) || 0));
+            pdC = getY((parseFloat(mgArray[1]) || 0) + (parseFloat(pdArray[1]) || 0));
+            pdR = getY((parseFloat(mgArray[0]) || 0) + (parseFloat(pdArray[0]) || 0));
         } else {
             mgL = getY(mgArray[0]); mgC = getY(mgArray[1]); mgR = getY(mgArray[2]);
-            pdL = getY((parseInt(mgArray[0]) || 0) + (parseInt(pdArray[0]) || 0));
-            pdC = getY((parseInt(mgArray[1]) || 0) + (parseInt(pdArray[1]) || 0));
-            pdR = getY((parseInt(mgArray[2]) || 0) + (parseInt(pdArray[2]) || 0));
+            pdL = getY((parseFloat(mgArray[0]) || 0) + (parseFloat(pdArray[0]) || 0));
+            pdC = getY((parseFloat(mgArray[1]) || 0) + (parseFloat(pdArray[1]) || 0));
+            pdR = getY((parseFloat(mgArray[2]) || 0) + (parseFloat(pdArray[2]) || 0));
         }
 
         const hasData = pdArray.some(val => val !== '') || mgArray.some(val => val !== '');
+
+        // Generar Splines (Curvas Bezier) para una visualización más orgánica
+        const mgPath = `M 0,${mgL} Q 50,${mgC - 2} 100,${mgR}`;
+        const pdPath = `M 0,${pdL} Q 50,${pdC - 2} 100,${pdR}`;
+        const fillPath = `M 0,${mgL} Q 50,${mgC - 2} 100,${mgR} L 100,${pdR} Q 50,${pdC - 2} 0,${pdL} Z`;
 
         return (
             <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group hover:scale-110 transition-transform relative p-0.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 w-[44px]">
@@ -187,15 +187,33 @@ export const Tooth = ({ number, status, onClick, theme, isPerioMode, perioData, 
                     {perioFace === 'v' ? 'V' : (number < 30 ? 'P' : 'L')}
                 </span>
 
-                <svg viewBox="0 0 100 80" className="w-full h-12 drop-shadow-sm mt-2 overflow-visible">
+                <svg viewBox="0 0 100 85" className="w-full h-14 drop-shadow-sm mt-2 overflow-visible">
+                    {/* Silueta anatómica del diente */}
                     <path d="M 15,25 Q 50,-5 85,25 L 80,75 Q 50,90 20,75 Z" fill={'#e5e7eb'} fillOpacity={0.6} />
-                    <line x1="0" y1="30" x2="100" y2="30" stroke="white" strokeWidth="2" strokeDasharray="4" opacity="0.3" />
+                    
+                    {/* Líneas de referencia (cada 2mm) */}
+                    {[30, 41, 52, 63, 74].map(y => (
+                        <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="white" strokeWidth="1" strokeDasharray="2" opacity="0.4" />
+                    ))}
                     
                     {hasData && (
                         <>
-                            <polygon points={`0,${mgL} 50,${mgC} 100,${mgR} 100,${pdR} 50,${pdC} 0,${pdL}`} fill="#ef4444" fillOpacity="0.4" />
-                            <polyline points={`0,${mgL} 50,${mgC} 100,${mgR}`} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                            <polyline points={`0,${pdL} 50,${pdC} 100,${pdR}`} fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                            {/* Relleno de la bolsa/recesión */}
+                            <path d={fillPath} fill="#ef4444" fillOpacity="0.25" />
+                            
+                            {/* Línea de Margen Gingival (Azul) */}
+                            <path d={mgPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            
+                            {/* Línea de Profundidad de Sondaje (Roja) */}
+                            <path d={pdPath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            
+                            {/* Puntos de datos */}
+                            {[ [0,mgL], [50,mgC], [100,mgR] ].map(([x,y],i) => (
+                                <circle key={`mgp-${i}`} cx={x} cy={y} r="2" fill="#3b82f6" />
+                            ))}
+                            {[ [0,pdL], [50,pdC], [100,pdR] ].map(([x,y],i) => (
+                                <circle key={`pdp-${i}`} cx={x} cy={y} r="2" fill="#ef4444" />
+                            ))}
                         </>
                     )}
                 </svg>
