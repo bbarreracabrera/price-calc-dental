@@ -106,11 +106,36 @@ export const ToothSVG = ({ number, faces, status, mode, treatment, size = 42, in
                     <line x1="50" y1="20" x2="50" y2="100" stroke="#dc2626" strokeWidth="6" strokeLinecap="round" />
                 )}
 
+                {/* Corona (Visualización interactiva) */}
+                {isCrown && interactive && !isMissing && (
+                    <circle cx="50" cy="65" r="42" fill="none" stroke="#eab308" strokeWidth="6" strokeDasharray="4 2" className="pointer-events-none" />
+                )}
+
+                {/* Movimientos y Anomalías */}
+                {(statusArr.includes('extrusion') || statusArr.includes('extruded')) && (
+                    <path d="M50,95 L50,25 M30,45 L50,25 L70,45" stroke="#06b6d4" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                )}
+                {(statusArr.includes('intrusion') || statusArr.includes('intruded')) && (
+                    <path d="M50,25 L50,95 M30,75 L50,95 L70,75" stroke="#06b6d4" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                )}
+                {statusArr.includes('mesioversion') && (
+                    <path d={isRightQuadrant ? "M80,90 Q50,120 20,90 M40,75 L20,90 L35,105" : "M20,90 Q50,120 80,90 M60,75 L80,90 L65,105"} stroke="#a855f7" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                )}
+                {statusArr.includes('distoversion') && (
+                    <path d={isRightQuadrant ? "M20,90 Q50,120 80,90 M60,75 L80,90 L65,105" : "M80,90 Q50,120 20,90 M40,75 L20,90 L35,105"} stroke="#a855f7" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                )}
+                {statusArr.includes('diastema') && (
+                    <g stroke="#9A8F84" strokeWidth="4" strokeLinecap="round">
+                        <line x1="-10" y1="40" x2="-10" y2="90" />
+                        <line x1="-20" y1="40" x2="-20" y2="90" />
+                    </g>
+                )}
+
                 {/* Extracción indicada */}
                 {isExtracting && !isMissing && (
                     <g stroke="#ef4444" strokeWidth="8">
-                        <line x1="10" y1="10" x2="90" y2="110" />
-                        <line x1="90" y1="10" x2="10" y2="110" />
+                        <line x1="10" y1="30" x2="90" y2="100" />
+                        <line x1="90" y1="30" x2="10" y2="100" />
                     </g>
                 )}
             </svg>
