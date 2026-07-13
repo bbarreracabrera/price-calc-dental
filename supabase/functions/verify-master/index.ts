@@ -22,10 +22,11 @@ Deno.serve(async (req) => {
         );
 
         const { data: { user }, error } = await supabase.auth.getUser();
-        if (error || !user?.email) return DENY;
+        if (error || !user) return DENY;
 
-        const masterEmail = Deno.env.get('MASTER_EMAIL') ?? '';
-        const is_master = masterEmail.length > 0 && user.email === masterEmail;
+        // Verificamos si tiene el flag is_master en app_metadata
+        // Este campo solo puede ser editado por un administrador (vía SQL o Dashboard)
+        const is_master = user.app_metadata?.is_master === true;
 
         return new Response(
             JSON.stringify({ is_master }),
