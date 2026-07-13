@@ -193,15 +193,15 @@ export default function PatientWorkspace({
                     >
                         <ArrowLeft size={12} /> VOLVER
                     </button>
-                    <div className="flex items-center gap-2">
-                        {activeAlerts.length > 0 && (
-                            <div className="bg-red-50 border border-red-200 px-2 lg:px-3 py-1 lg:py-1.5 rounded-xl flex items-center gap-2">
-                                <AlertTriangle size={13} className="text-red-500 shrink-0" />
-                                <span className="text-[9px] lg:text-[10px] font-black text-red-600 uppercase tracking-tight">
-                                    {activeAlerts[0]}{activeAlerts.length > 1 ? ` +${activeAlerts.length - 1}` : ''}
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        {activeAlerts.length > 0 && activeAlerts.map((alert, idx) => (
+                            <div key={idx} className="bg-red-600 border border-red-700 px-2 lg:px-3 py-1 lg:py-1.5 rounded-xl flex items-center gap-2 shadow-sm animate-pulse">
+                                <AlertTriangle size={13} className="text-white shrink-0" />
+                                <span className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-tight">
+                                    {alert}
                                 </span>
                             </div>
-                        )}
+                        ))}
                         <button 
                             onClick={() => setSidebarOpen(!sidebarOpen)}
                             className="lg:hidden p-2 hover:bg-[#DFD2C4]/30 rounded-lg transition-colors"
