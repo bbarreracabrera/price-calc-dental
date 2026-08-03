@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader, Search, Cloud, Lock, Mail, ArrowRight, FileText, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
+import { Loader, Search, Cloud, Lock, Mail, ArrowRight, FileText, ShieldCheck, Sparkles, AlertCircle, Check, X } from 'lucide-react';
 import { supabase } from '../supabase';
 import { THEMES } from '../constants';
 import { InputField, Button, Card } from './UIComponents';
@@ -232,6 +232,8 @@ export const AuthScreen = () => {
     const [password, setPassword] = useState(''); 
     const [loading, setLoading] = useState(false); 
     const [msg, setMsg] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
    
     const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=f46b2675174844d09cb9f59000fadd5d";
     const urlParams = new URLSearchParams(window.location.search);
@@ -240,6 +242,12 @@ export const AuthScreen = () => {
   
     const handleAuth = async (e) => { 
         e.preventDefault(); 
+
+        if (isSignUp && !acceptedTerms) {
+            setMsg('Debes aceptar los Términos y Condiciones para crear tu clínica.');
+            return;
+        }
+
         setLoading(true); 
         setMsg(''); 
         try { 
@@ -371,7 +379,7 @@ export const AuthScreen = () => {
                     <form onSubmit={handleAuth} className="space-y-5">
                         
                         {msg && (
-                            <div className={`p-4 rounded-xl text-xs font-bold text-center border ${msg.includes('Error') || msg.includes('incorrectos') ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                            <div className={`p-4 rounded-xl text-xs font-bold text-center border ${msg.includes('Error') || msg.includes('incorrectos') || msg.includes('Debes') ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
                                 {msg}
                             </div>
                         )}
@@ -418,10 +426,35 @@ export const AuthScreen = () => {
                             </div>
                         </div>
 
+                        {/* --- CASILLA DE TÉRMINOS Y CONDICIONES (solo al registrar) --- */}
+                        {isSignUp && (
+                            <div className="flex items-start gap-3 pt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setAcceptedTerms(!acceptedTerms)}
+                                    aria-pressed={acceptedTerms}
+                                    className={`mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all ${acceptedTerms ? 'bg-[#5B6651] border-[#5B6651]' : 'bg-white border-[#DFD2C4] hover:border-[#5B6651]/50'}`}
+                                >
+                                    {acceptedTerms && <Check size={12} className="text-white" strokeWidth={3.5} />}
+                                </button>
+                                <p className="text-xs font-medium text-[#6B615A] leading-relaxed">
+                                    He leído y acepto los{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTerms(true)}
+                                        className="font-black text-[#5B6651] underline decoration-[#5B6651]/30 underline-offset-2 hover:text-[#312923] transition-colors"
+                                    >
+                                        Términos y Condiciones
+                                    </button>
+                                    {' '}del servicio.
+                                </p>
+                            </div>
+                        )}
+
                         <button 
                             type="submit" 
-                            disabled={loading}
-                            className="w-full py-4 mt-4 bg-[#312923] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#312923]/20 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5"
+                            disabled={loading || (isSignUp && !acceptedTerms)}
+                            className="w-full py-4 mt-4 bg-[#312923] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#312923]/20 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
                         >
                             {loading ? (
                                 <span className="animate-pulse flex items-center gap-2"><Loader size={16} className="animate-spin"/> Procesando...</span>
@@ -455,6 +488,25 @@ export const AuthScreen = () => {
 
                 </div>
             </div>
+
+            {/* --- MODAL DE TÉRMINOS Y CONDICIONES --- */}
+            {showTerms && (
+                <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowTerms(false)}>
+                    <div className="bg-white rounded-[2rem] shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 md:p-8 relative custom-scrollbar" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setShowTerms(false)} className="absolute top-5 right-5 p-1.5 text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] rounded-xl transition-colors">
+                            <X size={20} />
+                        </button>
+                        <h2 className="text-xl font-black text-[#312923] tracking-tight mb-6 pr-8">Términos y Condiciones</h2>
+                        <LegalText />
+                        <button
+                            onClick={() => { setAcceptedTerms(true); setShowTerms(false); }}
+                            className="w-full mt-8 py-4 bg-[#312923] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all"
+                        >
+                            Entendido, acepto los términos
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

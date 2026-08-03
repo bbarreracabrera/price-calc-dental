@@ -219,20 +219,50 @@ export const SimpleLineChart = ({ data }) => {
 import { Paperclip } from 'lucide-react';
 import { getSecureUrl } from '../utils/securityFixes';
 
+// bucket: nombre EXACTO del bucket de Supabase Storage (no de una tabla de BD).
+// Actualmente el único bucket real usado para adjuntos de laboratorio es
+// 'lab-work-files' (ver LabWorkModal.jsx, donde se sube el archivo) — no
+// 'lab_works', que es el nombre de la tabla en la base de datos.
 export const SecureFileLink = ({ bucket, filePath, fileName }) => {
+    const [status, setStatus] = useState('loading'); // 'loading' | 'ready' | 'error'
     const [secureUrl, setSecureUrl] = useState(null);
 
     useEffect(() => {
+        let cancelled = false;
         const fetchSecureLink = async () => {
-            if (filePath) {
-                const url = await getSecureUrl(bucket, filePath);
+            if (!filePath) { setStatus('error'); return; }
+            setStatus('loading');
+            const url = await getSecureUrl(bucket, filePath);
+            if (cancelled) return;
+            if (url) {
                 setSecureUrl(url);
+                setStatus('ready');
+            } else {
+                setStatus('error');
             }
         };
         fetchSecureLink();
+        return () => { cancelled = true; };
     }, [bucket, filePath]);
 
-    if (!secureUrl) return null; // O un spinner de carga
+    if (status === 'loading') {
+        return (
+            <span className="inline-flex items-center gap-1 text-[9px] bg-[#FDFBF7] text-[#9A8F84] px-2 py-0.5 rounded-full font-black border border-[#DFD2C4] animate-pulse">
+                <Paperclip size={10}/> Cargando...
+            </span>
+        );
+    }
+
+    if (status === 'error') {
+        return (
+            <span
+                className="inline-flex items-center gap-1 text-[9px] bg-red-50 text-red-500 px-2 py-0.5 rounded-full font-black border border-red-200"
+                title="El archivo no está disponible en el almacenamiento"
+            >
+                <Paperclip size={10}/> Archivo no disponible
+            </span>
+        );
+    }
 
     return (
         <a 

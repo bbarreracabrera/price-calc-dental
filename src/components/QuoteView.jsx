@@ -319,7 +319,7 @@ export default function QuoteView({
                                             notify('Completa el nombre y precio', 'error');
                                             return;
                                         }
-                                        setQuoteItems([...quoteItems, { ...newQuoteItem, id: Date.now(), phase: currentPhase }]);
+                                        setQuoteItems([...quoteItems, { ...newQuoteItem, id: Date.now().toString(), phase: currentPhase }]);
                                         setNewQuoteItem({ name: '', price: '', tooth: '', phase: currentPhase });
                                     }}
                                     className="md:col-span-1 bg-[#312923] text-white rounded-2xl p-4 hover:bg-[#5B6651] transition-all shadow-lg flex items-center justify-center"
@@ -395,7 +395,7 @@ export default function QuoteView({
                                     if (!sessionData.patientId) { notify('Selecciona un paciente', 'error'); return; }
                                     const p = getPatient(sessionData.patientId);
                                     const newQuote = {
-                                        id: Date.now(),
+                                        id: Date.now().toString(),
                                         date: getLocalDate(),
                                         items: quoteItems,
                                         total: quoteItems.reduce((acc, item) => acc + Number(item.price || 0), 0),

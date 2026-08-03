@@ -169,6 +169,20 @@ export default function App() {
 
   useEffect(() => { document.title = "ShiningCloud | Dental"; }, []);
 
+  // Densidad visual: aplicamos el zoom reducido en <html> (no en un div
+  // anidado) para que las unidades `vh` se recalculen de forma consistente
+  // en toda la app — igual que el zoom manual del navegador. Solo se activa
+  // con sesión iniciada, para no afectar la landing page pública.
+  useEffect(() => {
+      const root = document.documentElement;
+      if (session) {
+          root.classList.add('app-zoomed');
+      } else {
+          root.classList.remove('app-zoomed');
+      }
+      return () => { root.classList.remove('app-zoomed'); };
+  }, [session]);
+
   useEffect(() => {
       const hash = window.location.hash;
       if (!hash.includes('error=access_denied')) return;
@@ -879,7 +893,7 @@ const saveToOfflineVault = async (table, id, data) => {
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
 
   return (
-    <div className={`min-h-screen flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans ${session ? 'app-zoom-container' : ''}`}>
+    <div className="h-full flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans overflow-hidden">
       <Toaster position="bottom-center" reverseOrder={false} />
       
       {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-[#2A2421]/30 backdrop-blur-sm md:hidden" onClick={()=>setMobileMenuOpen(false)}></div>}
@@ -908,7 +922,7 @@ const saveToOfflineVault = async (table, id, data) => {
             setQuoteMode, lowStockItems, pendingLabWorks, expirationAlerts, incomeRecords,
             financeTab, financialRecords, setFinancialRecords, expenseRecords, totalDebt,
             patientRecords, saveToSupabase, sendWhatsApp, getPatientPhone, onOpenAbonoModal: (record, pending) => { setSelectedFinancialRecord(record); setPaymentInput({amount: pending > 0 ? pending : '', method:'Efectivo', date: getLocalDate(), receiptNumber: ''}); setModal('abono'); },
-            session, team, clinicOwner, isLoadingFinancials, hasOlderData, dateRange, setDateRange,
+            session, team, setTeam, clinicOwner, isLoadingFinancials, hasOlderData, dateRange, setDateRange,
             catalog, setCatalog, setNewCatalogItem, inventory, setInventory, filteredInventory,
             inventorySearch, setInventorySearch, setNewItem, labWorks, setLabWorks, setNewLabWork,
             setConfigLocal, logoInputRef, handleLogoUpload: handleLogoUploadWrapper, newMember, setNewMember,

@@ -21,6 +21,7 @@ const PatientWorkspace = lazy(() => import('./PatientWorkspace'));
 const SterilizationView = lazy(() => import('./SterilizationView'));
 const SupplyView       = lazy(() => import('./SupplyView'));
 const HelpView         = lazy(() => import('./HelpView'));
+const LegalText        = lazy(() => import('./LegalText'));
 
 export default function MainViewManager(props) {
     const {
@@ -30,7 +31,7 @@ export default function MainViewManager(props) {
         setQuoteMode, lowStockItems, pendingLabWorks, expirationAlerts, incomeRecords,
         financeTab, financialRecords, setFinancialRecords, expenseRecords, totalDebt,
         patientRecords, saveToSupabase, sendWhatsApp, getPatientPhone, onOpenAbonoModal,
-        session, team, clinicOwner, isLoadingFinancials, hasOlderData, dateRange, setDateRange,
+        session, team, setTeam, clinicOwner, isLoadingFinancials, hasOlderData, dateRange, setDateRange,
         catalog, setCatalog, setNewCatalogItem, inventory, setInventory, filteredInventory,
         inventorySearch, setInventorySearch, setNewItem, labWorks, setLabWorks, setNewLabWork,
         setConfigLocal, logoInputRef, handleLogoUpload, newMember, setNewMember,
@@ -50,7 +51,7 @@ export default function MainViewManager(props) {
     } = props;
 
     return (
-        <main className={`flex-1 p-3 sm:p-4 md:p-6 lg:p-8 min-h-[calc(100vh-80px)] md:min-h-screen overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
+        <main className={`flex-1 flex flex-col p-3 sm:p-4 md:p-6 lg:p-8 min-h-0 overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
             <div className="md:hidden flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-stone-100">
                 <button onClick={() => setMobileMenuOpen(true)} className={`p-2 rounded-xl bg-[#FDFBF7] text-[#5C544D]`}><Menu /></button>
                 <span className="font-black text-lg tracking-tight">ShiningCloud <span className="text-[#A3968B]">Dental</span></span>
@@ -60,7 +61,7 @@ export default function MainViewManager(props) {
             <Suspense fallback={<LoadingScreen />}>
                 {activeTab === 'master_panel' && (
                     isMasterAdmin ? (
-                        <MasterPanel supabase={supabase} notify={notify} />
+                        <MasterPanel supabase={supabase} notify={notify} session={session} />
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full py-24 px-6 text-center">
                             <Shield size={48} className="text-[#A3968B] mb-4 opacity-60" />
@@ -79,6 +80,7 @@ export default function MainViewManager(props) {
                 {activeTab === 'lab' && <LabView themeMode={themeMode} t={t} labWorks={labWorks} setLabWorks={setLabWorks} setNewLabWork={setNewLabWork} setModal={setModal} notify={notify} team={team} sendWhatsApp={sendWhatsApp} config={config} />}
                 {activeTab === 'settings' && <SettingsView themeMode={themeMode} t={t} config={config} setConfigLocal={setConfigLocal} logoInputRef={logoInputRef} handleLogoUpload={handleLogoUpload} userRole={userRole} saveToSupabase={saveToSupabase} notify={notify} team={team} setTeam={setTeam} newMember={newMember} setNewMember={setNewMember} session={session} />}
                 {activeTab === 'help' && <HelpView />}
+                {activeTab === 'terms' && <LegalText />}
                 {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <QuoteView themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems} newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog} patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData} getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase} notify={notify} generatePDF={handleGeneratePDF} setActiveTab={setActiveTab} adminEmail={clinicOwner} />}
                 {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} onGoToPatient={(patientId) => { setSelectedPatientId(patientId); setActiveTab('ficha'); }} />}
                 {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} adminEmail={clinicOwner} />}

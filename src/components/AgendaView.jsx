@@ -6,7 +6,7 @@ import { AppointmentCardSkeleton } from './SkeletonLoaders';
 export default function AgendaView({ appointments, onOpenModal, team, isLoading = false, onGoToPatient }) {
     if (isLoading) {
         return (
-            <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in pb-4">
+            <div className="flex flex-col h-full min-h-0 animate-in fade-in pb-4">
                 <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 mb-4 border-b border-[#DFD2C4]/50 shrink-0">
                     <div className="h-20 w-80 bg-[#DFD2C4]/20 animate-pulse rounded-2xl"></div>
                     <div className="h-12 w-48 bg-[#DFD2C4]/20 animate-pulse rounded-xl"></div>
@@ -32,6 +32,13 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
     const dayNames = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
     const dentists = (team || []).filter(m => m.role === 'admin' || m.role === 'dentist');
     const hours = Array.from({ length: 12 }, (_, i) => 8 + i);
+
+    // Filas de horario con altura MÍNIMA de 72px, pero que crecen (1fr) para
+    // repartirse el espacio sobrante del contenedor en vez de dejarlo vacío.
+    // Antes cada fila tenía una altura fija (h-[72px]), así que en pantallas
+    // más "altas" en términos de CSS (como pasa al reducir el zoom) sobraba
+    // un hueco enorme debajo de la última hora, dentro del mismo recuadro.
+    const hourRowsTemplate = 'auto repeat(12, minmax(72px, 1fr))';
 
     const getDentistColor = (dentistEmail) => {
         const member = (team || []).find(m => m.email === dentistEmail);
@@ -60,7 +67,7 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
     });
 
     return (
-        <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in pb-4">
+        <div className="flex flex-col h-full min-h-0 animate-in fade-in pb-4">
 
             {/* --- ENCABEZADO --- */}
             <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 mb-4 border-b border-[#DFD2C4]/50 shrink-0">
@@ -165,8 +172,9 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
 
             {/* --- VISTA SEMANA --- */}
             {viewMode === 'week' && (
-                <div className="flex-1 overflow-auto rounded-[2rem] border border-[#DFD2C4]/60 bg-white shadow-xl custom-scrollbar relative" style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.05)' }}>
-                    <div className="grid grid-cols-8 min-w-[900px]">
+                <div className="flex-1 overflow-hidden rounded-[2rem] border border-[#DFD2C4]/60 bg-white shadow-xl relative" style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.05)' }}>
+                <div className="h-full overflow-auto custom-scrollbar">
+                    <div className="grid grid-cols-8 min-w-[900px] h-full" style={{ gridTemplateRows: hourRowsTemplate }}>
 
                         <div className="p-2 border-b border-r border-[#DFD2C4]/40 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-center rounded-tl-[2rem]">
                             <span className="text-[9px] font-black text-[#9A8F84] uppercase tracking-widest">Hora</span>
@@ -196,7 +204,7 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
 
                         {Array.from({length: 12}, (_, i) => 8 + i).map(h => (
                             <React.Fragment key={h}>
-                                <div className="border-r border-b border-[#DFD2C4]/40 text-[11px] font-black text-[#A3968B] text-center h-[72px] flex items-start justify-center pt-2 bg-[#FDFBF7]">
+                                <div className="border-r border-b border-[#DFD2C4]/40 text-[11px] font-black text-[#A3968B] text-center flex items-start justify-center pt-2 bg-[#FDFBF7]">
                                     {h}:00
                                 </div>
 
@@ -210,7 +218,7 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
                                     return (
                                         <div
                                             key={d+h}
-                                            className={`border-b border-r border-[#DFD2C4]/30 relative group h-[72px] transition-colors cursor-pointer ${isTodayCell ? 'bg-[#5B6651]/[0.03] hover:bg-[#5B6651]/[0.07]' : 'hover:bg-[#FDFBF7]'}`}
+                                            className={`border-b border-r border-[#DFD2C4]/30 relative group transition-colors cursor-pointer ${isTodayCell ? 'bg-[#5B6651]/[0.03] hover:bg-[#5B6651]/[0.07]' : 'hover:bg-[#FDFBF7]'}`}
                                             onClick={() => onOpenModal({name: '', treatment: '', date: dateStr, time: `${h.toString().padStart(2, '0')}:00`, duration: 60, status: 'agendado', id: null})}
                                         >
                                             {hourAppts.map((appt, index) => {
@@ -267,19 +275,21 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
                         ))}
                     </div>
                 </div>
+                </div>
             )}
 
             {/* --- VISTA DÍA: COLUMNAS POR PROFESIONAL --- */}
             {viewMode === 'day' && (
-                <div className="flex-1 overflow-auto rounded-[2rem] border border-[#DFD2C4]/60 bg-white shadow-xl custom-scrollbar" style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.05)' }}>
+                <div className="flex-1 overflow-hidden rounded-[2rem] border border-[#DFD2C4]/60 bg-white shadow-xl" style={{ boxShadow: '0 10px 40px -10px rgba(0,0,0,0.05)' }}>
+                <div className="h-full overflow-auto custom-scrollbar">
                     {dentists.length === 0 ? (
                         <div className="flex items-center justify-center h-full text-[#9A8F84] font-bold text-sm p-12 text-center">
                             No hay profesionales configurados. Agrega dentistas en Configuración → Equipo.
                         </div>
                     ) : (
                         <div
-                            className="grid min-w-[500px]"
-                            style={{ gridTemplateColumns: `60px repeat(${dentists.length}, 1fr)` }}
+                            className="grid min-w-[500px] h-full"
+                            style={{ gridTemplateColumns: `60px repeat(${dentists.length}, 1fr)`, gridTemplateRows: hourRowsTemplate }}
                         >
                             {/* Header */}
                             <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-r border-[#DFD2C4]/40 p-2 rounded-tl-[2rem]" />
@@ -304,7 +314,7 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
                             {/* Filas de horas */}
                             {hours.map(hour => (
                                 <React.Fragment key={hour}>
-                                    <div className="border-b border-r border-[#DFD2C4]/40 text-[11px] font-black text-[#A3968B] text-right pr-2 pt-2 h-[72px] bg-[#FDFBF7]">
+                                    <div className="border-b border-r border-[#DFD2C4]/40 text-[11px] font-black text-[#A3968B] text-right pr-2 pt-2 bg-[#FDFBF7]">
                                         {hour}:00
                                     </div>
                                     {dentists.map(d => {
@@ -315,7 +325,7 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
                                         return (
                                             <div
                                                 key={`${d.email}-${hour}`}
-                                                className="border-b border-r border-[#DFD2C4]/30 relative h-[72px] group cursor-pointer hover:bg-[#FDFBF7] transition-colors"
+                                                className="border-b border-r border-[#DFD2C4]/30 relative group cursor-pointer hover:bg-[#FDFBF7] transition-colors"
                                                 onClick={() => onOpenModal({
                                                     name: '', treatment: '',
                                                     date: selectedDayStr,
@@ -376,6 +386,7 @@ export default function AgendaView({ appointments, onOpenModal, team, isLoading 
                             </button>
                         </div>
                     )}
+                </div>
                 </div>
             )}
         </div>

@@ -22,24 +22,44 @@ body {
   overflow-x: hidden;
 }
 
-/* 
-  Reducción de densidad visual aplicada SOLO a la app interna.
-  La landing page NO usa .app-zoom-container, por lo que queda libre.
+/*
+  Reducción de densidad visual aplicada SOLO a la app interna, usando la
+  propiedad CSS `zoom` — es el mismo mecanismo que usa el navegador cuando
+  ajustas el zoom manualmente a 75%, así que escala TODO de forma fiel
+  (tipografía, paddings, iconos, bordes, sombras) sin ir parchando clase
+  por clase como antes (ese enfoque con font-size + overrides puntuales no
+  funcionaba porque Tailwind usa `rem`, que siempre se calcula contra la
+  raíz del documento, no contra este contenedor).
+
+  En pantallas angostas (celulares) dejamos la escala normal: la app ya
+  tiene su propio diseño responsive para móvil, y reducir aún más el zoom
+  ahí encogería los botones/textos por debajo de un tamaño cómodo para tocar.
 */
-.app-zoom-container {
-  font-size: 0.875rem; /* Equivalente a ~14px */
+/*
+  Reducción de densidad visual aplicada SOLO a la app interna (no a la
+  landing pública), usando la propiedad CSS `zoom` — el mismo mecanismo que
+  usa el navegador cuando ajustas el zoom manualmente.
+
+  IMPORTANTE: esta regla va en <html>, no en un <div> intermedio. Si el zoom
+  se aplica en un div anidado, las unidades `vh` de sus descendientes siguen
+  midiendo el alto REAL de la ventana (no lo ven "encogido"), así que un
+  layout tipo `h-[calc(100vh-100px)]` termina dibujándose más chico de lo
+  que realmente ocupa, dejando espacio en blanco sin cubrir debajo. Aplicado
+  en <html>, el zoom se comporta exactamente como el zoom manual del
+  navegador: `vh` se recalcula de forma consistente en toda la app.
+
+  La clase se agrega/quita en tiempo de ejecución (ver App.jsx) según haya
+  sesión iniciada, para no afectar la landing page pública.
+*/
+html.app-zoomed {
+  zoom: 1;
 }
 
-/* Ajustes de espaciado SOLO dentro de la app interna */
-.app-zoom-container .card,
-.app-zoom-container .p-6,
-.app-zoom-container .p-8 {
-  padding-top: 1.25rem !important;
-  padding-bottom: 1.25rem !important;
+@media (min-width: 768px) {
+  html.app-zoomed {
+    zoom: 0.75;
+  }
 }
-
-.app-zoom-container h1 { font-size: 1.875rem !important; }
-.app-zoom-container h2 { font-size: 1.5rem !important; }
 
 @media print {
     body * { visibility: hidden; }

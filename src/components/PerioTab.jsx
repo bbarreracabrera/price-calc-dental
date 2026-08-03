@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from './UIComponents';
-import { Tooth, HygieneCell } from './ToothSystem';
+import { Tooth, HygieneCell, getDetailedAnatomy } from './ToothSystem';
 import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED } from '../constants';
 import { Save, History } from 'lucide-react';
 
@@ -16,29 +16,47 @@ export default function PerioTab({
         const widthPerTooth = 45; // Ancho fijo para alineación perfecta
         const totalWidth = teethArray.length * widthPerTooth;
 
-        // Generar puntos para las líneas continuas
-        const pointsMG = [];
-        const pointsPD = [];
+        // Generar puntos para las líneas continuas.
+        // Guardamos objetos {x, yMG, yPD, pd} en vez de strings sueltos para poder
+        // además anotar marcadores de profundidad anómala sobre cada punto.
+        const points = [];
 
         teethArray.forEach((n, i) => {
             const data = p.clinical.perio?.[n] || {};
             const mg = data[`mg_${face}`] || [0, 0, 0];
             const pd = data[`pd_${face}`] || [0, 0, 0];
+            const { isUpper } = getDetailedAnatomy(n);
             
             // 3 puntos por diente (Distal, Centro, Mesial)
-            // Y: Base 35px + valor * factor (5.5 para visibilidad)
+            // Y: Base 35px. Convención clínica de esta app: la recesión / pérdida de
+            // margen se anota en NEGATIVO (ej: -3). Igual que la profundidad de
+            // sondaje, la dirección visual depende del arco: en piezas SUPERIORES
+            // la recesión sube (menos y); en piezas INFERIORES la recesión baja
+            // (más y), porque la raíz —y por tanto la dirección de "hacia el hueso"—
+            // queda hacia arriba en superiores y hacia abajo en inferiores.
+            // La profundidad de sondaje (siempre positiva) se dibuja desde el margen
+            // hacia la raíz, con la misma lógica: sube en superiores, baja en inferiores.
             [0, 1, 2].forEach(idx => {
                 const x = (i * widthPerTooth) + (idx * (widthPerTooth / 2));
-                const yMG = 35 + (parseFloat(mg[idx]) || 0) * 5.5;
-                const yPD = yMG + (parseFloat(pd[idx]) || 0) * 5.5;
-                pointsMG.push(`${x},${yMG}`);
-                pointsPD.push(`${x},${yPD}`);
+                const mgVal = parseFloat(mg[idx]) || 0;
+                const pdVal = parseFloat(pd[idx]) || 0;
+                const yMG = isUpper ? 35 + mgVal * 5.5 : 35 - mgVal * 5.5;
+                const yPD = isUpper ? yMG - pdVal * 5.5 : yMG + pdVal * 5.5;
+                points.push({ x, yMG, yPD, pd: pdVal });
             });
         });
 
-        const pathMG = `M ${pointsMG.join(' L ')}`;
-        const pathPD = `M ${pointsPD.join(' L ')}`;
-        const pathFill = `M ${pointsMG[0]} L ${pointsMG.join(' L ')} L ${[...pointsPD].reverse().join(' L ')} Z`;
+        const pathMG = `M ${points.map(pt => `${pt.x},${pt.yMG}`).join(' L ')}`;
+        const pathPD = `M ${points.map(pt => `${pt.x},${pt.yPD}`).join(' L ')}`;
+        const pathFill = `M ${points.map(pt => `${pt.x},${pt.yMG}`).join(' L ')} L ${[...points].reverse().map(pt => `${pt.x},${pt.yPD}`).join(' L ')} Z`;
+
+        // Umbral clínico (el mismo que ya usa el modal individual para pintar en rojo
+        // el input de "Prof."): ≥4mm = bolsa moderada, ≥6mm = bolsa severa.
+        const getAnomaly = (pdVal) => {
+            if (pdVal >= 6) return { r: 4.5, fill: '#dc2626' };
+            if (pdVal >= 4) return { r: 3.5, fill: '#f59e0b' };
+            return null;
+        };
 
         return (
             <div className="relative" style={{ width: totalWidth }}>
@@ -81,6 +99,18 @@ export default function PerioTab({
                     <path d={pathMG} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     {/* Profundidad de Sondaje (Roja) */}
                     <path d={pathPD} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                    {/* Marcadores de profundidad anómala (≥4mm ámbar, ≥6mm rojo) */}
+                    {points.map((pt, idx) => {
+                        const anomaly = getAnomaly(pt.pd);
+                        if (!anomaly) return null;
+                        return (
+                            <g key={`anomaly-${idx}`}>
+                                <circle cx={pt.x} cy={pt.yPD} r={anomaly.r + 2.5} fill={anomaly.fill} fillOpacity="0.25" />
+                                <circle cx={pt.x} cy={pt.yPD} r={anomaly.r} fill={anomaly.fill} stroke="#FFFFFF" strokeWidth="1.5" />
+                            </g>
+                        );
+                    })}
                 </svg>
             </div>
         );
@@ -275,7 +305,7 @@ export default function PerioTab({
                                         <div className="w-8 h-8 bg-[#FDFBF7] rounded-lg flex items-center justify-center border border-[#DFD2C4]/50 text-[#5B6651]">
                                             <History size={16}/>
                                         </div>
-                                        <span className="text-[10px] font-black text-[#312923] uppercase tracking-widest">{new Date(snap.date).toLocaleDateString()}</span>
+                                        <span className="text-[10px] font-black text-[#312923] uppercase tracking-widest">{snap.date}</span>
                                     </div>
                                     <span className="text-[9px] font-bold px-2 py-1 bg-green-50 text-green-600 rounded-md border border-green-100">BOP: {snap.stats?.bop}%</span>
                                 </div>

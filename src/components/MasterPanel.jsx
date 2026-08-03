@@ -10,7 +10,7 @@ import {
 import { Card } from './UIComponents';
 
 // ─── CONFIGURACIÓN DE ADMINISTRADOR ──────────────────────────────────────────
-const ADMIN_EMAIL = 'bbarreracabrera@gmail.com'; // Tu email como dueño de ShiningCloud Supply
+const ADMIN_EMAIL = 'b.barreracabrera.dent@gmail.com'; // Tu email como dueño de ShiningCloud Supply
 
 // ─── PLANES DE SUSCRIPCIÓN ────────────────────────────────────────────────────
 const PLANS = [
@@ -53,11 +53,15 @@ export default function MasterPanel({ supabase, notify, session }) {
     const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [showProviderModal, setShowProviderModal] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState('');
-    const [providerList, setProviderList] = useState([
-        { id: 1, name: 'Tienda Dental Centro', phone: '+56912345678', email: 'ventas@dentalcentro.cl' },
-        { id: 2, name: 'Insumos Odontológicos Premium', phone: '+56987654321', email: 'pedidos@insumodental.cl' },
-        { id: 3, name: 'Distribuidora Dental Sur', phone: '+56911223344', email: 'admin@dentalsur.cl' },
-    ]);
+    const [providerList, setProviderList] = useState([]);
+    const [showProviderFormModal, setShowProviderFormModal] = useState(false);
+    const [editingProvider, setEditingProvider] = useState(null);
+    const [cityFilter, setCityFilter] = useState('');
+    const [clinicPhones, setClinicPhones] = useState({});
+    const [selectedSub, setSelectedSub] = useState(null);
+    const [showSubDetail, setShowSubDetail] = useState(false);
+    const [subPayments, setSubPayments] = useState([]);
+    const [loadingSubPayments, setLoadingSubPayments] = useState(false);
 
     const isAdmin = session?.user?.email === ADMIN_EMAIL;
 
@@ -65,6 +69,30 @@ export default function MasterPanel({ supabase, notify, session }) {
         if (isAdmin) fetchDashboardData();
         else setLoading(false);
     }, [session]);
+
+    const fetchSubPayments = async (clinicEmail) => {
+        setLoadingSubPayments(true);
+        try {
+            const { data, error } = await supabase
+                .from('saas_subscription_payments')
+                .select('*')
+                .eq('clinic_email', clinicEmail)
+                .order('paid_at', { ascending: false });
+            if (error && error.code !== '42P01') throw error;
+            setSubPayments(data || []);
+        } catch (err) {
+            console.error('Error fetching subscription payments:', err);
+            setSubPayments([]);
+        } finally {
+            setLoadingSubPayments(false);
+        }
+    };
+
+    useEffect(() => {
+        if (showSubDetail && selectedSub?.clinic_email) {
+            fetchSubPayments(selectedSub.clinic_email);
+        }
+    }, [showSubDetail, selectedSub]);
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -85,8 +113,31 @@ export default function MasterPanel({ supabase, notify, session }) {
 
             if (subsError && subsError.code !== '42P01') throw subsError;
 
+            // Obtener proveedores en convenio (guardado permanente)
+            const { data: providers, error: providersError } = await supabase
+                .from('supply_providers')
+                .select('*')
+                .order('city', { ascending: true, nullsFirst: false });
+
+            if (providersError && providersError.code !== '42P01') throw providersError;
+
             setSupplyOrders(orders || []);
             setSaasSubscriptions(subs || []);
+            setProviderList(providers || []);
+
+            // Teléfono comercial de cada clínica suscrita, para el detalle de suscriptor
+            const emails = [...new Set((subs || []).map(s => s.clinic_email).filter(Boolean))];
+            if (emails.length > 0) {
+                const { data: settingsRows } = await supabase
+                    .from('settings')
+                    .select('admin_email, phone_comercial, data')
+                    .in('admin_email', emails);
+                const phoneMap = {};
+                (settingsRows || []).forEach(row => {
+                    phoneMap[row.admin_email] = row.phone_comercial || row.data?.phone || '';
+                });
+                setClinicPhones(phoneMap);
+            }
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
             notify('Error al cargar los datos del panel.');
@@ -123,6 +174,7 @@ export default function MasterPanel({ supabase, notify, session }) {
     };
 
     const sendToProvider = (order, provider) => {
+        if (!provider.phone) { notify('Este proveedor no tiene teléfono registrado.'); return; }
         const message = `Nuevo pedido de suministros:\n\nClínica: ${order.admin_email}\nID Orden: ${order.id}\nMonto: $${Number(order.total_amount).toLocaleString('es-CL')}\nProducto: ${order.order_details?.item_name}\nCantidad: ${order.order_details?.quantity}\n\nPor favor confirmar disponibilidad y envío.`;
         
         const whatsappUrl = `https://wa.me/${provider.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
@@ -132,6 +184,63 @@ export default function MasterPanel({ supabase, notify, session }) {
 
     const getClinicInfo = (adminEmail) => {
         return saasSubscriptions.find(s => s.clinic_email === adminEmail);
+    };
+
+    // ─── CRUD DE PROVEEDORES (guardado permanente en Supabase) ──────────────
+    const handleSaveProvider = async (provider) => {
+        try {
+            const payload = {
+                name: provider.name,
+                phone: provider.phone,
+                email: provider.email,
+                city: provider.city,
+            };
+            if (provider.id) {
+                const { error } = await supabase.from('supply_providers').update(payload).eq('id', provider.id);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from('supply_providers').insert([payload]);
+                if (error) throw error;
+            }
+            notify(provider.id ? 'Proveedor actualizado.' : 'Proveedor agregado.');
+            setShowProviderFormModal(false);
+            setEditingProvider(null);
+            fetchDashboardData();
+        } catch (err) {
+            console.error('Error saving provider:', err);
+            notify('Error al guardar el proveedor.');
+        }
+    };
+
+    const handleDeleteProvider = async (id) => {
+        try {
+            const { error } = await supabase.from('supply_providers').delete().eq('id', id);
+            if (error) throw error;
+            notify('Proveedor eliminado.');
+            fetchDashboardData();
+        } catch (err) {
+            console.error('Error deleting provider:', err);
+            notify('Error al eliminar el proveedor.');
+        }
+    };
+
+    const providerCities = [...new Set(providerList.map(p => p.city).filter(Boolean))].sort();
+    const filteredProviders = cityFilter ? providerList.filter(p => p.city === cityFilter) : providerList;
+
+    // ─── DETALLE DE SUSCRIPTOR: tiempo como cliente ──────────────────────────
+    const getTenure = (createdAt) => {
+        if (!createdAt) return '—';
+        const start = new Date(createdAt);
+        const now = new Date();
+        const totalMonths = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+        if (totalMonths < 1) {
+            const days = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
+            return `${days} día${days !== 1 ? 's' : ''}`;
+        }
+        const years = Math.floor(totalMonths / 12);
+        const months = totalMonths % 12;
+        if (years > 0) return `${years} año${years !== 1 ? 's' : ''}${months > 0 ? ` y ${months} mes${months !== 1 ? 'es' : ''}` : ''}`;
+        return `${totalMonths} mes${totalMonths !== 1 ? 'es' : ''}`;
     };
 
     const metrics = {
@@ -287,12 +396,12 @@ export default function MasterPanel({ supabase, notify, session }) {
                         ) : (
                             <div className="space-y-3">
                                 {saasSubscriptions.map((sub, i) => (
-                                    <Card key={i} className="p-4 bg-white border border-[#DFD2C4]/60">
+                                    <Card key={i} className="p-4 bg-white border border-[#DFD2C4]/60 hover:border-[#A3968B] transition-all cursor-pointer" onClick={() => { setSelectedSub(sub); setShowSubDetail(true); }}>
                                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
                                             <div className="flex-1">
                                                 <p className="font-black text-[#312923]">{sub.clinic_name}</p>
                                                 <p className="text-xs font-bold text-[#9A8F84]">{sub.clinic_email}</p>
-                                                <p className="text-[10px] font-bold text-[#9A8F84] mt-1">Plan: {sub.plan} • ${Number(sub.monthly_fee).toLocaleString('es-CL')}/mes</p>
+                                                <p className="text-[10px] font-bold text-[#9A8F84] mt-1">Plan: {sub.plan_type || '—'} • ${Number(sub.monthly_fee).toLocaleString('es-CL')}/mes</p>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${
@@ -312,29 +421,75 @@ export default function MasterPanel({ supabase, notify, session }) {
                 {/* PROVEEDORES */}
                 {activeTab === 'providers' && (
                     <div className="space-y-4">
-                        <h3 className="font-black text-xl text-[#312923]">Proveedores Convenio</h3>
-                        <div className="space-y-3">
-                            {providerList.map(provider => (
-                                <Card key={provider.id} className="p-4 bg-white border border-[#DFD2C4]/60">
-                                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
-                                        <div className="flex-1">
-                                            <p className="font-black text-[#312923]">{provider.name}</p>
-                                            <div className="flex flex-col gap-1 mt-2">
-                                                <a href={`tel:${provider.phone}`} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
-                                                    <Phone size={12} /> {provider.phone}
-                                                </a>
-                                                <a href={`mailto:${provider.email}`} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
-                                                    <Mail size={12} /> {provider.email}
-                                                </a>
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                            <h3 className="font-black text-xl text-[#312923]">Proveedores Convenio</h3>
+                            <div className="flex items-center gap-2">
+                                {providerCities.length > 0 && (
+                                    <select
+                                        value={cityFilter}
+                                        onChange={e => setCityFilter(e.target.value)}
+                                        className="px-3 py-2 rounded-xl border border-[#DFD2C4] bg-white text-[11px] font-bold text-[#312923] outline-none"
+                                    >
+                                        <option value="">Todas las ciudades</option>
+                                        {providerCities.map(city => <option key={city} value={city}>{city}</option>)}
+                                    </select>
+                                )}
+                                <button
+                                    onClick={() => { setEditingProvider({ name: '', phone: '', email: '', city: '' }); setShowProviderFormModal(true); }}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-[#312923] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black transition-all"
+                                >
+                                    <Plus size={14} /> Nuevo Proveedor
+                                </button>
+                            </div>
+                        </div>
+                        {filteredProviders.length === 0 ? (
+                            <Card className="p-12 text-center bg-white border border-[#DFD2C4]/60">
+                                <Truck size={36} className="mx-auto mb-3 text-[#9A8F84] opacity-30" />
+                                <p className="font-bold text-[#9A8F84]">{cityFilter ? `No hay proveedores en ${cityFilter}` : 'No hay proveedores registrados aún'}</p>
+                            </Card>
+                        ) : (
+                            <div className="space-y-3">
+                                {filteredProviders.map(provider => (
+                                    <Card key={provider.id} className="p-4 bg-white border border-[#DFD2C4]/60">
+                                        <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-black text-[#312923]">{provider.name}</p>
+                                                    {provider.city && (
+                                                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20">{provider.city}</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col gap-1 mt-2">
+                                                    {provider.phone && (
+                                                        <a href={`tel:${provider.phone}`} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+                                                            <Phone size={12} /> {provider.phone}
+                                                        </a>
+                                                    )}
+                                                    {provider.email && (
+                                                        <a href={`mailto:${provider.email}`} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+                                                            <Mail size={12} /> {provider.email}
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {provider.phone && (
+                                                    <button onClick={() => window.open(`https://wa.me/${provider.phone.replace(/[^0-9]/g, '')}`, '_blank')} className="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-600 transition-all">
+                                                        WhatsApp
+                                                    </button>
+                                                )}
+                                                <button onClick={() => { setEditingProvider(provider); setShowProviderFormModal(true); }} className="p-2 bg-[#5B6651]/10 text-[#5B6651] rounded-lg hover:bg-[#5B6651]/20 transition-all" title="Editar">
+                                                    <Building2 size={14} />
+                                                </button>
+                                                <button onClick={() => handleDeleteProvider(provider.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-all" title="Eliminar">
+                                                    ✕
+                                                </button>
                                             </div>
                                         </div>
-                                        <button onClick={() => window.open(`https://wa.me/${provider.phone.replace(/[^0-9]/g, '')}`, '_blank')} className="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-600 transition-all">
-                                            WhatsApp
-                                        </button>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -425,6 +580,152 @@ export default function MasterPanel({ supabase, notify, session }) {
                         <button onClick={() => setShowProviderModal(false)} className="w-full px-4 py-2 bg-[#DFD2C4]/30 text-[#312923] text-[10px] font-black uppercase rounded-lg hover:bg-[#DFD2C4]/50 transition-all">
                             Cancelar
                         </button>
+                    </Card>
+                </div>
+            )}
+
+            {/* MODAL DE DETALLE DE SUSCRIPTOR */}
+            {showSubDetail && selectedSub && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <Card className="w-full max-w-lg p-6 bg-white rounded-2xl">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="font-black text-xl text-[#312923]">{selectedSub.clinic_name}</h3>
+                                <p className="text-xs font-bold text-[#9A8F84]">{selectedSub.clinic_email}</p>
+                            </div>
+                            <button onClick={() => setShowSubDetail(false)} className="text-[#9A8F84] hover:text-[#312923]">✕</button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Plan</p>
+                                <p className="font-bold text-[#312923]">{selectedSub.plan_type || '—'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Estado</p>
+                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border inline-block ${selectedSub.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
+                                    {selectedSub.status === 'active' ? 'Activa' : 'Trial'}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Valor Mensual</p>
+                                <p className="font-black text-lg text-[#312923]">${Number(selectedSub.monthly_fee || 0).toLocaleString('es-CL')}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Próximo Cobro</p>
+                                <p className="font-bold text-[#312923]">{selectedSub.next_billing_date ? new Date(selectedSub.next_billing_date).toLocaleDateString('es-CL') : '—'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Suscrito desde</p>
+                                <p className="font-bold text-[#312923]">{selectedSub.created_at ? new Date(selectedSub.created_at).toLocaleDateString('es-CL') : '—'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Tiempo como Cliente</p>
+                                <p className="font-bold text-[#312923]">{getTenure(selectedSub.created_at)}</p>
+                            </div>
+                            <div className="col-span-2">
+                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Contacto</p>
+                                {clinicPhones[selectedSub.clinic_email] ? (
+                                    <a href={`tel:${clinicPhones[selectedSub.clinic_email]}`} className="font-bold text-blue-600 hover:underline">{clinicPhones[selectedSub.clinic_email]}</a>
+                                ) : (
+                                    <p className="font-bold text-[#9A8F84] text-sm">No registrado</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mb-4">
+                            <p className="text-[10px] font-black uppercase text-[#9A8F84] mb-2">Historial de Pagos</p>
+                            {loadingSubPayments ? (
+                                <p className="text-xs font-bold text-[#9A8F84]">Cargando...</p>
+                            ) : subPayments.length === 0 ? (
+                                <div className="bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl p-3">
+                                    <p className="text-[10px] font-bold text-[#9A8F84] leading-relaxed">
+                                        Aún no hay cobros recurrentes registrados para esta clínica. En cuanto Mercado Pago confirme el primer pago de la suscripción, aparecerá aquí automáticamente.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                                    {subPayments.map(p => (
+                                        <div key={p.id} className="flex items-center justify-between bg-[#FDFBF7] border border-[#DFD2C4]/50 rounded-xl px-3 py-2">
+                                            <div>
+                                                <p className="text-xs font-bold text-[#312923]">{p.paid_at ? new Date(p.paid_at).toLocaleDateString('es-CL') : '—'}</p>
+                                                <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-500 border-red-200'}`}>
+                                                    {p.status === 'approved' ? 'Aprobado' : (p.status || '—')}
+                                                </span>
+                                            </div>
+                                            <p className="font-black text-[#312923] text-sm">${Number(p.amount || 0).toLocaleString('es-CL')}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <button onClick={() => setShowSubDetail(false)} className="w-full px-4 py-2 bg-[#DFD2C4]/30 text-[#312923] text-[10px] font-black uppercase rounded-lg hover:bg-[#DFD2C4]/50 transition-all">
+                            Cerrar
+                        </button>
+                    </Card>
+                </div>
+            )}
+
+            {/* MODAL DE FORMULARIO DE PROVEEDOR (AGREGAR / EDITAR) */}
+            {showProviderFormModal && editingProvider && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <Card className="w-full max-w-md p-6 bg-white rounded-2xl">
+                        <h3 className="font-black text-xl text-[#312923] mb-4">{editingProvider.id ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h3>
+                        <div className="space-y-3 mb-6">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Nombre</label>
+                                <input
+                                    type="text"
+                                    value={editingProvider.name}
+                                    onChange={e => setEditingProvider({ ...editingProvider, name: e.target.value })}
+                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    placeholder="Ej: Tienda Dental Centro"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Ciudad</label>
+                                <input
+                                    type="text"
+                                    value={editingProvider.city || ''}
+                                    onChange={e => setEditingProvider({ ...editingProvider, city: e.target.value })}
+                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    placeholder="Ej: Valdivia"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Teléfono</label>
+                                <input
+                                    type="text"
+                                    value={editingProvider.phone || ''}
+                                    onChange={e => setEditingProvider({ ...editingProvider, phone: e.target.value })}
+                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    placeholder="+56912345678"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Correo</label>
+                                <input
+                                    type="email"
+                                    value={editingProvider.email || ''}
+                                    onChange={e => setEditingProvider({ ...editingProvider, email: e.target.value })}
+                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    placeholder="ventas@proveedor.cl"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={() => { setShowProviderFormModal(false); setEditingProvider(null); }} className="flex-1 px-4 py-2.5 bg-[#DFD2C4]/30 text-[#312923] text-[10px] font-black uppercase rounded-lg hover:bg-[#DFD2C4]/50 transition-all">
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => handleSaveProvider(editingProvider)}
+                                disabled={!editingProvider.name?.trim()}
+                                className="flex-1 px-4 py-2.5 bg-[#312923] text-white text-[10px] font-black uppercase rounded-lg hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Guardar
+                            </button>
+                        </div>
                     </Card>
                 </div>
             )}

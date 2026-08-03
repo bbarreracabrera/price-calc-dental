@@ -41,6 +41,11 @@ export default function NetworkMonitor() {
         };
     }, []);
 
+    // Tablas con columnas propias (no genéricas id/data/admin_email jsonb).
+    // Para estas, el payload real está en item.data y se debe esparcir tal cual
+    // sobre sus propias columnas — nunca envolverlo en un campo "data".
+    const REAL_SCHEMA_TABLES = new Set(['clinical_evolutions', 'sterilization_inventory']);
+
     // El motor que vacía la bóveda cifrada
     const syncOfflineData = async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -62,7 +67,7 @@ export default function NetworkMonitor() {
                 if (item.table === 'clinic_config') {
                     const { mp_access_token, mp_refresh_token, mp_user_id, mp_public_key, mp_connected_at, appointment_price, require_payment_at_booking, ...safeData } = item.data || {};
                     payload = { id: item.id, ...safeData };
-                } else if (item.table === 'clinical_evolutions') {
+                } else if (REAL_SCHEMA_TABLES.has(item.table)) {
                     payload = { id: item.id, ...item.data };
                 } else {
                     payload.data = item.data;

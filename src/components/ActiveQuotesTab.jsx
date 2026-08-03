@@ -39,6 +39,11 @@ export default function ActiveQuotesTab({ getPatient, selectedPatientId }) {
             <div className="grid gap-6">
                 {activeQuotes.map(quote => {
                     let completedCount = 0;
+
+                    // El id puede venir como number (ej. Date.now() desde el cotizador rápido)
+                    // o como string (ej. desde otro flujo de creación) — normalizamos siempre
+                    // a string antes de usar métodos de string como .substring().
+                    const quoteIdStr = String(quote.id ?? '');
                     
                     // MAGIA: Cruzamos los ítems del presupuesto con el estado real del odontograma
                     const processedItems = (quote.items || []).map(item => {
@@ -73,10 +78,10 @@ export default function ActiveQuotesTab({ getPatient, selectedPatientId }) {
                                     <span className="text-[10px] font-black uppercase tracking-widest text-[#5B6651] bg-[#5B6651]/10 px-3 py-1 rounded-lg border border-[#5B6651]/20">
                                         {quote.date}
                                     </span>
-                                    <h3 className="text-lg font-black text-[#312923] mt-2 tracking-tight">Presupuesto #{quote.id.substring(quote.id.length - 4)}</h3>
+                                    <h3 className="text-lg font-black text-[#312923] mt-2 tracking-tight">Presupuesto #{quoteIdStr.slice(-4)}</h3>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-black text-[#312923]">${quote.total.toLocaleString()}</p>
+                                    <p className="text-2xl font-black text-[#312923]">${Number(quote.total || 0).toLocaleString()}</p>
                                     <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">Total</p>
                                 </div>
                             </div>
@@ -95,7 +100,7 @@ export default function ActiveQuotesTab({ getPatient, selectedPatientId }) {
                                                 {item.tooth && <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Pieza {item.tooth}</p>}
                                             </div>
                                         </div>
-                                        <span className="text-xs font-bold text-[#6B615A]">${item.price.toLocaleString()}</span>
+                                        <span className="text-xs font-bold text-[#6B615A]">${Number(item.price || 0).toLocaleString()}</span>
                                     </div>
                                 ))}
                             </div>

@@ -173,7 +173,7 @@ export default function ToothModal({
                             {toothModalData.mode === 'hallazgos' ? (
                                 <div className="space-y-6 animate-in fade-in">
                                     <div className={`flex flex-col items-center py-8 rounded-[2rem] border border-[#DFD2C4]/50 bg-[#FDFBF7] shadow-sm`}>
-                                        <ToothSVG number={toothModalData.id} faces={toothModalData.faces} status={toothModalData.status} size={100} interactive={true} activeFace={toothModalData.activeFace || 'o'} onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})} />
+                                        <ToothSVG number={toothModalData.id} faces={toothModalData.faces} status={toothModalData.status} size={140} interactive={true} activeFace={toothModalData.activeFace || 'o'} onFaceClick={(face) => setToothModalData({...toothModalData, activeFace: face})} showNumber={false} />
                                         <div className="mt-6 bg-white px-6 py-2 rounded-full border border-[#DFD2C4] shadow-sm">
                                             <p className="text-[10px] font-black text-[#9A8F84] uppercase tracking-[0.2em]">Cara: <span className="text-[#5B6651] ml-2">{toothModalData.activeFace === 'v' ? 'Vestibular' : toothModalData.activeFace === 'l' ? 'Lingual/Palatino' : toothModalData.activeFace === 'm' ? 'Mesial' : toothModalData.activeFace === 'd' ? 'Distal' : 'Oclusal'}</span></p>
                                         </div>

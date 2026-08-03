@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button } from './UIComponents';
-import { Tooth } from './ToothSystem';
+import { ToothSVG } from './ToothSystem';
 import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED, getLocalDate } from '../constants';
 import { useDialog } from './DialogProvider';
 import { 
@@ -160,6 +160,22 @@ export default function OdontogramTab({
 
     const hideScrollStyles = { msOverflowStyle: 'none', scrollbarWidth: 'none', WebkitScrollbarDisplay: 'none' };
 
+    // --- CASILLA INDIVIDUAL DEL ODONTOGRAMA (recuadro rellenable, sin diente dibujado) ---
+    const OdontogramCell = ({ n, edgeLabelTop, edgeLabelBottom }) => (
+        <div className={`flex flex-col items-center group transition-transform relative pt-4 pb-4 ${!viewingSnapshotId ? 'cursor-pointer hover:scale-105' : ''}`}>
+            <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">{edgeLabelTop}</span>
+            <ToothSVG
+                number={n}
+                faces={activeTeethData[n]?.faces}
+                status={activeTeethData[n]?.status}
+                size={42}
+                interactive={!viewingSnapshotId}
+                onFaceClick={(face) => handleToothClick(n, face)}
+            />
+            <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">{edgeLabelBottom}</span>
+        </div>
+    );
+
     return (
         <div className="flex flex-col gap-5 animate-in fade-in pb-10 relative">
             
@@ -238,11 +254,7 @@ export default function OdontogramTab({
                     {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
                         <div className="flex gap-1 md:gap-2 flex-nowrap justify-center w-max mx-auto">
                             {TEETH_UPPER.map(n => (
-                                <div key={n} className={`flex flex-col items-center group transition-transform relative pt-4 pb-4 ${!viewingSnapshotId ? 'cursor-pointer hover:scale-105' : ''}`}>
-                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
-                                    <Tooth number={n} mode={odontogramMode} status={activeTeethData[n]?.status} data={{...activeTeethData[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
-                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">P</span>
-                                </div>
+                                <OdontogramCell key={n} n={n} edgeLabelTop="V" edgeLabelBottom="P" />
                             ))}
                         </div>
                     )}
@@ -251,11 +263,7 @@ export default function OdontogramTab({
                     {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
                         <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-6 rounded-[2.5rem] border border-[#CBAAA2]/20 w-max mx-auto">
                             {TEETH_UPPER_PED.map(n => (
-                                <div key={n} className={`flex flex-col items-center group transition-transform relative pt-4 pb-4 ${!viewingSnapshotId ? 'cursor-pointer hover:scale-105' : ''}`}>
-                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
-                                    <Tooth number={n} mode={odontogramMode} status={activeTeethData[n]?.status} data={{...activeTeethData[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
-                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">P</span>
-                                </div>
+                                <OdontogramCell key={n} n={n} edgeLabelTop="V" edgeLabelBottom="P" />
                             ))}
                         </div>
                     )}
@@ -266,11 +274,7 @@ export default function OdontogramTab({
                     {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
                         <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-6 rounded-[2.5rem] border border-[#CBAAA2]/20 w-max mx-auto">
                             {TEETH_LOWER_PED.map(n => (
-                                <div key={n} className={`flex flex-col items-center group transition-transform relative pt-4 pb-4 ${!viewingSnapshotId ? 'cursor-pointer hover:scale-105' : ''}`}>
-                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">L</span>
-                                    <Tooth number={n} mode={odontogramMode} status={activeTeethData[n]?.status} data={{...activeTeethData[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
-                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
-                                </div>
+                                <OdontogramCell key={n} n={n} edgeLabelTop="L" edgeLabelBottom="V" />
                             ))}
                         </div>
                     )}
@@ -279,11 +283,7 @@ export default function OdontogramTab({
                     {(odontogramType === 'adulto' || odontogramType === 'mixto') && (
                         <div className="flex gap-1 md:gap-2 flex-nowrap justify-center w-max mx-auto">
                             {TEETH_LOWER.map(n => (
-                                <div key={n} className={`flex flex-col items-center group transition-transform relative pt-4 pb-4 ${!viewingSnapshotId ? 'cursor-pointer hover:scale-105' : ''}`}>
-                                    <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">L</span>
-                                    <Tooth number={n} mode={odontogramMode} status={activeTeethData[n]?.status} data={{...activeTeethData[n], onFaceClick: (face) => handleToothClick(n, face)}} onClick={() => handleToothClick(n, 'o')} theme={themeMode} />
-                                    <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">V</span>
-                                </div>
+                                <OdontogramCell key={n} n={n} edgeLabelTop="L" edgeLabelBottom="V" />
                             ))}
                         </div>
                     )}

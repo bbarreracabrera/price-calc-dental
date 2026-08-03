@@ -4,7 +4,7 @@ import {
   MessageCircle, ShieldCheck, Zap, Calculator, Users, Box, 
   Stethoscope, FlaskConical, BarChart3, ChevronRight, Play,
   Globe, Heart, MousePointer2, Mail, Clock, Activity, Shield,
-  FileText, Smartphone, HelpCircle, ChevronDown
+  FileText, Smartphone, HelpCircle, ChevronDown, Minus, Check
 } from 'lucide-react';
 
 export default function LandingPage({ onLoginClick }) {
@@ -64,6 +64,32 @@ export default function LandingPage({ onLoginClick }) {
         )}
       </div>
     );
+  };
+
+  // Icono de diente: la marca ya usa esta silueta como motivo de fondo en el
+  // hero. La reutilizamos como firma visual consistente en la tabla comparativa.
+  const ToothMark = ({ className = '', size = 20 }) => (
+    <svg viewBox="0 0 200 220" width={size} height={size} className={className} fill="currentColor">
+      <path d="M100 10C70 10 45 35 45 65c0 20 8 38 20 50L55 210h90l-10-95c12-12 20-30 20-50 0-30-25-55-55-55z" />
+    </svg>
+  );
+
+  const comparativaRows = [
+    { label: 'Ficha clínica que cumple Ley 20.584', notebook: false, generic: 'partial', sc: true },
+    { label: 'Odontograma digital por pieza', notebook: false, generic: true, sc: true },
+    { label: 'Recordatorios automáticos de citas', notebook: false, generic: 'partial', sc: true },
+    { label: 'Facturación SII integrada', notebook: false, generic: false, sc: true },
+    { label: 'Acceso simultáneo desde varios dispositivos', notebook: false, generic: true, sc: true },
+    { label: 'Soporte en español, por WhatsApp', notebook: '—', generic: false, sc: true },
+    { label: 'Sin contrato de permanencia', notebook: true, generic: false, sc: true },
+    { label: 'Costo mensual', notebook: '$0*', generic: '$35.000+', sc: '$15.000' },
+  ];
+
+  const ComparCell = ({ value }) => {
+    if (value === true) return <Check className="text-[#5B6651] mx-auto" size={18} strokeWidth={3} />;
+    if (value === false) return <Minus className="text-[#DFD2C4] mx-auto" size={18} strokeWidth={3} />;
+    if (value === 'partial') return <span className="text-[10px] font-black uppercase tracking-widest text-[#CBAAA2]">A veces</span>;
+    return <span className="text-xs md:text-sm font-black text-[#312923]">{value}</span>;
   };
 
   return (
@@ -155,11 +181,9 @@ export default function LandingPage({ onLoginClick }) {
 
       {/* Hero Section */}
       <section className="relative pt-28 md:pt-44 pb-16 md:pb-24 px-4 md:px-6 overflow-hidden">
-        {/* Decoración de fondo */}
-        <div className="absolute top-0 right-0 w-72 h-72 md:w-[500px] md:h-[500px] opacity-[0.03] pointer-events-none rotate-12 translate-x-1/4 -translate-y-1/4">
-          <svg viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-            <path d="M100 10C70 10 45 35 45 65c0 20 8 38 20 50L55 210h90l-10-95c12-12 20-30 20-50 0-30-25-55-55-55z" fill="#312923"/>
-          </svg>
+        {/* Firma visual: silueta de diente, ahora protagonista y no solo decoración de esquina */}
+        <div className="absolute top-10 right-0 w-64 h-64 md:w-[440px] md:h-[440px] opacity-[0.05] pointer-events-none translate-x-1/4">
+          <ToothMark className="w-full h-full text-[#312923]" size="100%" />
         </div>
 
         <div className="max-w-7xl mx-auto">
@@ -320,19 +344,60 @@ export default function LandingPage({ onLoginClick }) {
         </div>
       </section>
 
+      {/* Comparativa Section — antes el nav apuntaba acá y no había nada */}
+      <section id="comparativa" className="py-20 md:py-32 px-4 md:px-6 max-w-5xl mx-auto">
+        <div className="text-center mb-12 md:mb-16 space-y-4">
+          <div className="inline-block px-4 py-1.5 bg-[#5B6651]/10 text-[#5B6651] rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">La Comparación Honesta</div>
+          <h2 className="text-3xl md:text-6xl font-black tracking-tighter text-[#312923]">Cuaderno, otro software, <br className="hidden md:block"/> o <span className="text-[#5B6651]">ShiningCloud.</span></h2>
+          <p className="text-[#9A8F84] font-medium text-lg md:text-xl max-w-2xl mx-auto">Lo que de verdad cambia cuando dejas el papel — y lo que otros softwares dentales todavía no resuelven.</p>
+        </div>
+
+        <div className="bg-white border border-[#DFD2C4] rounded-[2rem] md:rounded-[3rem] shadow-sm overflow-hidden">
+          {/* Encabezado de columnas */}
+          <div className="grid grid-cols-4 border-b border-[#DFD2C4]/60">
+            <div className="p-4 md:p-6"></div>
+            <div className="p-3 md:p-6 text-center border-l border-[#DFD2C4]/40">
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Cuaderno</p>
+              <p className="text-[9px] md:text-[10px] font-bold text-[#9A8F84]/70">/ Excel</p>
+            </div>
+            <div className="p-3 md:p-6 text-center border-l border-[#DFD2C4]/40">
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Otro</p>
+              <p className="text-[9px] md:text-[10px] font-bold text-[#9A8F84]/70">software</p>
+            </div>
+            <div className="p-3 md:p-6 text-center border-l border-[#DFD2C4]/40 bg-[#5B6651]/5 flex flex-col items-center justify-center gap-1">
+              <ToothMark className="text-[#5B6651]" size={16} />
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#5B6651]">ShiningCloud</p>
+            </div>
+          </div>
+
+          {/* Filas */}
+          {comparativaRows.map((row, i) => (
+            <div key={i} className={`grid grid-cols-4 items-center ${i !== comparativaRows.length - 1 ? 'border-b border-[#DFD2C4]/40' : ''}`}>
+              <div className="p-3 md:p-6">
+                <p className="text-[11px] md:text-sm font-bold text-[#312923] leading-tight">{row.label}</p>
+              </div>
+              <div className="p-3 md:p-6 text-center border-l border-[#DFD2C4]/40"><ComparCell value={row.notebook} /></div>
+              <div className="p-3 md:p-6 text-center border-l border-[#DFD2C4]/40"><ComparCell value={row.generic} /></div>
+              <div className="p-3 md:p-6 text-center border-l border-[#DFD2C4]/40 bg-[#5B6651]/5"><ComparCell value={row.sc} /></div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] font-bold text-[#9A8F84] mt-4 text-center">*Un cuaderno es gratis en dinero, pero cuesta horas administrativas, citas perdidas y riesgo de incumplir la Ley 20.584.</p>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-20 md:py-32 px-4 md:px-6 bg-[#312923] text-white overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16 md:mb-24 space-y-4">
-            <div className="inline-block px-4 py-1.5 bg-white/10 text-[#DFD2C4] rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md">Transparencia Total</div>
+            <div className="inline-block px-4 py-1.5 bg-white/10 text-[#DFD2C4] rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md">Precio de Lanzamiento</div>
             <h2 className="text-4xl md:text-7xl font-black tracking-tighter">Un solo plan. <br className="md:hidden"/> <span className="text-[#DFD2C4]">Todo incluido.</span></h2>
           </div>
 
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-16 text-[#312923] shadow-2xl relative group overflow-hidden">
-              <div className="absolute top-0 right-0 bg-[#5B6651] text-white px-8 py-2 font-black text-[10px] uppercase tracking-widest rounded-bl-3xl">Más Popular</div>
+              <div className="absolute top-0 right-0 bg-[#5B6651] text-white px-8 py-2 font-black text-[10px] uppercase tracking-widest rounded-bl-3xl">Fundadores</div>
               
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                 <div>
@@ -342,7 +407,7 @@ export default function LandingPage({ onLoginClick }) {
                 <div className="text-left md:text-right">
                   <div className="flex items-baseline gap-1 md:justify-end">
                     <span className="text-2xl md:text-3xl font-bold">$</span>
-                    <span className="text-5xl md:text-7xl font-black tracking-tighter">24.990</span>
+                    <span className="text-5xl md:text-7xl font-black tracking-tighter">15.000</span>
                   </div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Pesos Chilenos / Mes</p>
                 </div>
@@ -368,7 +433,7 @@ export default function LandingPage({ onLoginClick }) {
                 Comenzar ahora gratis <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
               </button>
               
-              <p className="text-center mt-6 text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">Paga con Webpay o MercadoPago. Sin contratos de permanencia.</p>
+              <p className="text-center mt-6 text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">Precio fijo para las primeras clínicas fundadoras. Paga con Webpay o MercadoPago. Sin contratos de permanencia.</p>
             </div>
           </div>
         </div>
