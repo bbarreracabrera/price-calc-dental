@@ -10,6 +10,22 @@ export function useVoiceAssistant(props) {
     const [isPerioVoiceActive, setIsPerioVoiceActive] = useState(false);
     const [voiceFeedback, setVoiceFeedback] = useState('');
     const recognitionRef = useRef(null);
+    // FIX #5: persiste la cara activa (v/l) ENTRE frases dictadas por separado.
+    // Antes, "defaultFace" se recalculaba desde cero en cada evento de
+    // reconocimiento, así que decir "palatino" en una frase y "distal tres" en
+    // la siguiente frase perdía el contexto y volvía a asumir vestibular.
+    const activeFaceRef = useRef('v');
+    const activeToothRef = useRef(null);
+    // FIX #6 (importante): recognition.onend/onerror quedaban cerrados sobre el
+    // valor de "isListening" del render en que arrancó toggleVoice — ese valor
+    // nunca se actualizaba, así que la condición "if (isListening)" adentro de
+    // esos callbacks era SIEMPRE false. Resultado: cada vez que Chrome cerraba
+    // la sesión de reconocimiento solo (algo que pasa seguido, sobre todo tras
+    // unos segundos de silencio entre comandos, con o sin error 'no-speech'),
+    // el código nunca la reiniciaba y el micrófono quedaba apagado sin avisar.
+    // Se reemplaza por un ref que sí refleja el estado actual en todo momento.
+    const isListeningRef = useRef(false);
+    useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
 
     const toggleVoice = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -18,6 +34,8 @@ export function useVoiceAssistant(props) {
         if (isListening) {
             recognitionRef.current?.stop();
             setIsListening(false); setVoiceStatus('');
+            activeFaceRef.current = 'v';
+            activeToothRef.current = null;
         } else {
             const recognition = new SpeechRecognition();
             recognition.lang = 'es-CL';
@@ -63,6 +81,8 @@ export function useVoiceAssistant(props) {
                             let cleanText = text.replace(/diente\s?\d\s?\d/g, '').replace(/\b([1-4][1-8]|[5-8][1-5])\b/g, '');
 
                             // Normalización de números extendida
+                            // FIX #4 (menor): límites de palabra para evitar reemplazos parciales
+                            // dentro de otras palabras a futuro (no afecta el vocabulario actual).
                             const numMap = {
                                 'uno': '1', 'dos': '2', 'tres': '3', 'cuatro': '4', 'cinco': '5',
                                 'seis': '6', 'siete': '7', 'ocho': '8', 'nueve': '9', 'cero': '0',
@@ -70,7 +90,12 @@ export function useVoiceAssistant(props) {
                                 'menos ': '-', 'grado ': ''
                             };
                             Object.keys(numMap).forEach(key => {
-                                cleanText = cleanText.replace(new RegExp(key, 'g'), numMap[key]);
+                                const trimmed = key.trim();
+                                const hasTrailingSpace = key.endsWith(' ');
+                                const pattern = hasTrailingSpace
+                                    ? new RegExp(`\\b${trimmed}\\s`, 'g')
+                                    : new RegExp(`\\b${trimmed}\\b`, 'g');
+                                cleanText = cleanText.replace(pattern, hasTrailingSpace ? numMap[key] : numMap[key]);
                             });
 
                             const existingPerio = p.clinical.perio?.[currentToothId] || {};
@@ -83,7 +108,43 @@ export function useVoiceAssistant(props) {
                                 mobility: existingPerio.mobility || 0, furcation: existingPerio.furcation || 0
                             };
 
-                            const defaultFace = (cleanText.includes('palatino') || cleanText.includes('lingual')) ? 'l' : 'v';
+                            // Listas de keywords compartidas (usadas tanto para el aviso de
+                            // cambio de cara como para el parser de cláusulas más abajo).
+                            const SITE_IDX = { distal: 0, centro: 1, medio: 1, mesial: 2 };
+                            const SITE_KEYWORDS = Object.keys(SITE_IDX);
+                            const BLEED_KEYWORDS = ['sangra', 'sangrado', 'hemorragia', 'punto rojo', 'positivo', 'sangrante'];
+                            const PUS_KEYWORDS = ['pus', 'supura', 'supuracion', 'supuración', 'exudado', 'absceso'];
+                            const MARGIN_KEYWORDS = ['margen', 'recesion', 'recesión', 'encia', 'encía'];
+
+                            // FIX #5: si cambiaste de pieza desde la última frase, la cara
+                            // vuelve a vestibular por defecto (evita arrastrar "palatino"
+                            // del diente anterior al nuevo diente sin querer).
+                            if (activeToothRef.current !== currentToothId.toString()) {
+                                activeFaceRef.current = 'v';
+                                activeToothRef.current = currentToothId.toString();
+                            }
+
+                            // Si esta frase menciona la cara explícitamente, actualiza el
+                            // contexto persistente; si no, se usa la última cara dicha.
+                            if (cleanText.includes('palatino') || cleanText.includes('lingual')) {
+                                activeFaceRef.current = 'l';
+                            } else if (cleanText.includes('vestibular') || cleanText.includes('bucal')) {
+                                activeFaceRef.current = 'v';
+                            }
+                            const defaultFace = activeFaceRef.current;
+
+                            // Frase que SOLO cambia de cara (sin sitios/números/hallazgos) →
+                            // confirma el cambio con feedback, aunque no haya nada que guardar.
+                            const onlyFaceMention = (cleanText.includes('palatino') || cleanText.includes('lingual') || cleanText.includes('vestibular') || cleanText.includes('bucal'))
+                                && !/\d/.test(cleanText)
+                                && !SITE_KEYWORDS.some(k => cleanText.includes(k))
+                                && !cleanText.includes('sano') && !cleanText.includes('limpiar')
+                                && !BLEED_KEYWORDS.some(k => cleanText.includes(k))
+                                && !PUS_KEYWORDS.some(k => cleanText.includes(k))
+                                && !cleanText.includes('movilidad') && !cleanText.includes('mueve') && !cleanText.includes('furca') && !cleanText.includes('entrada');
+                            if (onlyFaceMention) {
+                                notify(`↔️ Cara activa: ${defaultFace === 'l' ? 'Palatino/Lingual' : 'Vestibular'}`);
+                            }
 
                             if (cleanText.includes('sano') || cleanText.includes('limpiar')) {
                                 newData[`pd_${defaultFace}`] = ['', '', ''];
@@ -95,24 +156,33 @@ export function useVoiceAssistant(props) {
                             } else {
                                 // ==========================================================
                                 // PARSER POR CLÁUSULAS
-                                // Divide el dictado en fragmentos ("y" / "," / ";" / ".") y
-                                // procesa cada uno por separado, para que cada hallazgo
-                                // (sangrado, pus, profundidad, margen) se ate exactamente al
-                                // sitio dictado junto a él — sin contaminar los demás sitios
-                                // mencionados en la misma frase.
+                                // FIX #1: además de partir por coma/"y"/";"/".", se parte
+                                // ANTES de cada palabra clave de sitio o hallazgo (lookahead),
+                                // porque el reconocimiento de voz casi nunca entrega comas ni
+                                // puntos reales cuando el usuario solo hace una pausa breve.
+                                // Sin esto, una frase dictada de corrido como
+                                // "distal tres sangra centro dos mesial tres sin sangrado"
+                                // llegaba como UNA sola cláusula y "sangra"/"sin" se aplicaban
+                                // a los 3 sitios en vez de solo al suyo.
                                 // ==========================================================
-                                const SITE_IDX = { distal: 0, centro: 1, medio: 1, mesial: 2 };
-                                const SITE_KEYWORDS = Object.keys(SITE_IDX);
-                                const BLEED_KEYWORDS = ['sangra', 'sangrado', 'hemorragia', 'punto rojo', 'positivo', 'sangrante'];
-                                const PUS_KEYWORDS = ['pus', 'supura', 'supuracion', 'supuración', 'exudado', 'absceso'];
-                                const MARGIN_KEYWORDS = ['margen', 'recesion', 'recesión', 'encia', 'encía'];
+                                const CLAUSE_SPLIT = /,| y |;|\.|(?=\bdistal\b)|(?=\bcentro\b)|(?=\bmedio\b)|(?=\bmesial\b)|(?=\bmovilidad\b)|(?=\bmueve\b)|(?=\bfurca\b)|(?=\bentrada\b)/;
+                                const clauses = cleanText.split(CLAUSE_SPLIT).map(c => c.trim()).filter(Boolean);
 
-                                const clauses = cleanText.split(/,| y |;|\./).map(c => c.trim()).filter(Boolean);
+                                // FIX #2: "modo margen" se hereda dentro de la misma frase.
+                                // Ej: "margen distal dos, centro uno, mesial dos" — una vez que
+                                // aparece "margen" en la primera cláusula, las siguientes
+
+                                // cláusulas (centro, mesial) sin la palabra "margen" también
+                                // se guardan como margen, no como PD. Se reinicia en cada
+                                // dictado nuevo (declarada dentro de onresult).
+                                let carryMargin = false;
 
                                 clauses.forEach(clause => {
                                     const numbers = clause.match(/-?\d+/g) || [];
                                     const negated = / no |^no |sin /.test(` ${clause} `);
-                                    const isMargin = MARGIN_KEYWORDS.some(k => clause.includes(k));
+                                    const hasMarginKeyword = MARGIN_KEYWORDS.some(k => clause.includes(k));
+                                    if (hasMarginKeyword) carryMargin = true;
+                                    const isMargin = hasMarginKeyword || carryMargin;
                                     const isMobility = clause.includes('movilidad') || clause.includes('mueve');
                                     const isFurca = clause.includes('furca') || clause.includes('entrada');
                                     const isBleed = BLEED_KEYWORDS.some(k => clause.includes(k));
@@ -177,16 +247,32 @@ export function useVoiceAssistant(props) {
                             savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, perio: updatedPerio } });
 
                             if (text.includes('avanza') || text.includes('siguiente') || text.includes('pasamos')) {
+                                // FIX #3: PERIO_ORDER original solo cubría dientes permanentes.
+                                // Si se dictaba "avanza" en una pieza temporal (51-55/61-65/
+                                // 71-75/81-85), currIdx daba -1 y el comando se ignoraba en
+                                // silencio. Se agrega PERIO_ORDER_PED y se elige la lista según
+                                // a qué grupo pertenece la pieza activa.
                                 const PERIO_ORDER = ['18', '17', '16', '15', '14', '13', '12', '11', '21', '22', '23', '24', '25', '26', '27', '28', '38', '37', '36', '35', '34', '33', '32', '31', '41', '42', '43', '44', '45', '46', '47', '48'];
-                                const currIdx = PERIO_ORDER.indexOf(currentToothId.toString());
-                                if (currIdx >= 0 && currIdx < PERIO_ORDER.length - 1) {
-                                    setTimeout(() => {
-                                        if (setSelectedToothId) setSelectedToothId(PERIO_ORDER[currIdx + 1]);
-                                        notify(`✔️ Guardado. Siguiente: Pieza ${PERIO_ORDER[currIdx + 1]}`);
-                                    }, 400);
+                                const PERIO_ORDER_PED = ['55', '54', '53', '52', '51', '61', '62', '63', '64', '65', '75', '74', '73', '72', '71', '81', '82', '83', '84', '85'];
+
+                                const toothStr = currentToothId.toString();
+                                const orderList = PERIO_ORDER.includes(toothStr)
+                                    ? PERIO_ORDER
+                                    : (PERIO_ORDER_PED.includes(toothStr) ? PERIO_ORDER_PED : null);
+
+                                if (orderList) {
+                                    const currIdx = orderList.indexOf(toothStr);
+                                    if (currIdx >= 0 && currIdx < orderList.length - 1) {
+                                        setTimeout(() => {
+                                            if (setSelectedToothId) setSelectedToothId(orderList[currIdx + 1]);
+                                            notify(`✔️ Guardado. Siguiente: Pieza ${orderList[currIdx + 1]}`);
+                                        }, 400);
+                                    }
                                 }
                             } else if (text.includes('listo') || text.includes('termina') || text.includes('cerrar')) {
                                 if (setSelectedToothId) setSelectedToothId(null);
+                                activeFaceRef.current = 'v';
+                                activeToothRef.current = null;
                                 notify("✔️ Periodontograma finalizado");
                             }
                         }
@@ -227,8 +313,9 @@ export function useVoiceAssistant(props) {
 
             recognition.onerror = (e) => {
                 console.error("Speech Error:", e.error);
-                if (e.error === 'no-speech' && isListening) {
-                    // Silencio detectado, no hacer nada
+                if (e.error === 'no-speech' && isListeningRef.current) {
+                    // Silencio detectado, no hacer nada (recognition.onend se
+                    // encargará de reiniciar el reconocimiento automáticamente)
                 } else {
                     setIsListening(false);
                     setVoiceStatus('');
@@ -236,7 +323,7 @@ export function useVoiceAssistant(props) {
             };
 
             recognition.onend = () => {
-                if (isListening) {
+                if (isListeningRef.current) {
                     try { recognition.start(); } catch (e) {}
                 } else {
                     setIsListening(false);
