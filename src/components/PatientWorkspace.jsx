@@ -4,7 +4,8 @@ import {
     FileBarChart, FileText, FileSignature, ImageIcon,
     Mic, Sparkles, Calculator, Heart, Stethoscope,
     FolderOpen, ChevronRight, Plus, MessageCircle, Calendar,
-    Zap, ClipboardList, Phone, Menu, X, GitBranch, HardDrive, Microscope, FastForward
+    Zap, ClipboardList, Phone, Menu, X, GitBranch, HardDrive, Microscope, FastForward,
+    Volume2, VolumeX
 } from 'lucide-react';
 
 // --- IMPORTACIÓN DE PESTAÑAS ---
@@ -31,7 +32,7 @@ export default function PatientWorkspace({
     activeFormType, setActiveFormType, viewingForm, setViewingForm,
     odontogramMode, setOdontogramMode, odontogramType, setOdontogramType,
     toothModalData, setToothModalData, catalog, sessionData, setSessionData,
-    isListening, voiceStatus, toggleVoice,
+    isListening, voiceStatus, toggleVoice, voiceConfirmationEnabled, toggleVoiceConfirmation,
     newEvolution, setNewEvolution, activeFolder, setActiveFolder, uploading,
     consentTemplate, setConsentTemplate, consentText, setConsentText, modal,
     getPatient, savePatientData, setPatientRecords, setModal, setQuoteItems,
@@ -95,7 +96,7 @@ export default function PatientWorkspace({
         },
         {
             id: 'quote',
-            label: 'Cotización Rápida',
+            label: 'Planificación',
             icon: Calculator,
             color: 'bg-[#CBAAA2]/20 text-[#8B5E57] hover:bg-[#CBAAA2]/40 border border-[#CBAAA2]/30',
             action: () => {
@@ -323,6 +324,28 @@ export default function PatientWorkspace({
                                 </p>
                             </div>
                         </button>
+                        {/* Switch de confirmación hablada — lee en voz alta lo que se
+                            guardó en cada dictado (útil en periodontograma). Apagado
+                            por defecto; funciona independiente de isListening. */}
+                        <div className="px-3 pb-2">
+                            <button
+                                onClick={toggleVoiceConfirmation}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
+                                    voiceConfirmationEnabled
+                                        ? 'bg-[#5B6651]/10 border-[#5B6651]/30 text-[#5B6651]'
+                                        : 'bg-white border-[#DFD2C4] text-[#9A8F84] hover:border-[#5B6651]/30'
+                                }`}
+                                title="Lee en voz alta lo que se guardó en cada dictado"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    {voiceConfirmationEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
+                                    Confirmación hablada
+                                </span>
+                                <span className={`w-7 h-4 rounded-full relative transition-colors shrink-0 ${voiceConfirmationEnabled ? 'bg-[#5B6651]' : 'bg-[#DFD2C4]'}`}>
+                                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${voiceConfirmationEnabled ? 'left-[14px]' : 'left-0.5'}`} />
+                                </span>
+                            </button>
+                        </div>
                         {voiceStatus && (
                             <div className="px-3 pb-3">
                                 <p className="text-[9px] font-black text-[#5B6651] bg-white rounded-xl px-3 py-2 text-center border border-[#5B6651]/20 truncate">

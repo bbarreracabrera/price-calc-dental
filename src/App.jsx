@@ -576,7 +576,7 @@ const saveToOfflineVault = async (table, id, data) => {
       }
   };
   
-  const { isListening, voiceStatus, isPerioVoiceActive, voiceFeedback, toggleVoice, startPerioDictation } = useVoiceAssistant({ notify, setToothModalData, setPerioData, goToAdjacentTooth, setSelectedToothId, odontogramType, getPatient, selectedPatientId, savePatientData, patientTab, activeTab, toothModalData });
+  const { isListening, voiceStatus, isPerioVoiceActive, voiceFeedback, toggleVoice, startPerioDictation, voiceConfirmationEnabled, toggleVoiceConfirmation } = useVoiceAssistant({ notify, setToothModalData, setPerioData, goToAdjacentTooth, setSelectedToothId, odontogramType, getPatient, selectedPatientId, savePatientData, patientTab, activeTab, toothModalData });
 
   const handleLogoUploadWrapper = useCallback((e) => uploadLogo(e, { setUploading, notify, clinicOwner, session, config, setConfigLocal, saveToSupabase }), [clinicOwner, session, config]);
   const handleImageUploadWrapper = useCallback((file) => {
@@ -935,7 +935,8 @@ const saveToOfflineVault = async (table, id, data) => {
             patientsLoading, selectedPatientId, patientTab, setPatientTab, activeFormType,
             setActiveFormType, viewingForm, setViewingForm, odontogramMode, setOdontogramMode,
             odontogramType, setOdontogramType, toothModalData, setToothModalData, isListening,
-            voiceStatus, toggleVoice, newEvolution, setNewEvolution, activeFolder, setActiveFolder,
+            voiceStatus, toggleVoice, voiceConfirmationEnabled, toggleVoiceConfirmation,
+            newEvolution, setNewEvolution, activeFolder, setActiveFolder,
             uploading, consentTemplate, setConsentTemplate, consentText, setConsentText, modal,
             setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
             handleImageUpload: handleImageUploadWrapper, setSelectedImg, setMobileMenuOpen, isWorkspaceActive

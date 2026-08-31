@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
 import { Card } from './UIComponents';
-import { Tooth, HygieneCell, getDetailedAnatomy } from './ToothSystem';
+import { HygieneCell } from './ToothSystem';
 import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED } from '../constants';
-import { Save, History } from 'lucide-react';
+import { Save, History, Download } from 'lucide-react';
+import { generatePerioPDF } from './perioPdfExport';
+import { PerioArchGrid } from './PerioChart';
+
+// ============================================================================
+// ORDEN DE FILAS POR TABLA (tomado directo de las capturas de referencia,
+// quitando "Pronóstico individual" y "Anchura de encía" — sin campo de datos
+// por ahora, layout visual solamente).
+// ============================================================================
+// SUPERIOR: tabla de arriba = Vestibular (completa), tabla de abajo = Palatino (simple)
+const SUPERIOR_TOP = ['implante', 'movilidad', 'furca', 'sangrado', 'supuracion', 'mg', 'pd'];
+const SUPERIOR_BOTTOM = ['pd', 'mg', 'sangrado', 'supuracion', 'furca', 'nota'];
+// INFERIOR: tabla de arriba = Lingual (simple), tabla de abajo = Vestibular (completa)
+const INFERIOR_TOP = ['nota', 'furca', 'sangrado', 'supuracion', 'mg', 'pd'];
+const INFERIOR_BOTTOM = ['pd', 'mg', 'sangrado', 'supuracion', 'furca', 'movilidad', 'implante'];
 
 export default function PerioTab({
     themeMode, getPatient, selectedPatientId, savePatientData,
@@ -11,126 +25,33 @@ export default function PerioTab({
     const [perioDentition, setPerioDentition] = useState('adulto');
     const p = getPatient(selectedPatientId);
 
-    // --- MOTOR DE TRAZADO CONTINUO (PRESERVA TODA LA LÓGICA) ---
-    const renderPerioRow = (teethArray, face) => {
-        const widthPerTooth = 45; // Ancho fijo para alineación perfecta
-        const totalWidth = teethArray.length * widthPerTooth;
-
-        // Generar puntos para las líneas continuas.
-        // Guardamos objetos {x, yMG, yPD, pd} en vez de strings sueltos para poder
-        // además anotar marcadores de profundidad anómala sobre cada punto.
-        const points = [];
-
-        teethArray.forEach((n, i) => {
-            const data = p.clinical.perio?.[n] || {};
-            const mg = data[`mg_${face}`] || [0, 0, 0];
-            const pd = data[`pd_${face}`] || [0, 0, 0];
-            const { isUpper } = getDetailedAnatomy(n);
-            
-            // 3 puntos por diente (Distal, Centro, Mesial)
-            // Y: Base 35px. Convención clínica de esta app: la recesión / pérdida de
-            // margen se anota en NEGATIVO (ej: -3). Igual que la profundidad de
-            // sondaje, la dirección visual depende del arco: en piezas SUPERIORES
-            // la recesión sube (menos y); en piezas INFERIORES la recesión baja
-            // (más y), porque la raíz —y por tanto la dirección de "hacia el hueso"—
-            // queda hacia arriba en superiores y hacia abajo en inferiores.
-            // La profundidad de sondaje (siempre positiva) se dibuja desde el margen
-            // hacia la raíz, con la misma lógica: sube en superiores, baja en inferiores.
-            [0, 1, 2].forEach(idx => {
-                const x = (i * widthPerTooth) + (idx * (widthPerTooth / 2));
-                const mgVal = parseFloat(mg[idx]) || 0;
-                const pdVal = parseFloat(pd[idx]) || 0;
-                const yMG = isUpper ? 35 + mgVal * 5.5 : 35 - mgVal * 5.5;
-                const yPD = isUpper ? yMG - pdVal * 5.5 : yMG + pdVal * 5.5;
-                points.push({ x, yMG, yPD, pd: pdVal });
-            });
+    const openToothModal = (n) => {
+        const existingPerio = p.clinical.perio?.[n] || {};
+        setToothModalData({
+            id: n, mode: 'perio', ...p.clinical.teeth[n],
+            faces: p.clinical.teeth[n]?.faces || { v: null, l: null, m: null, d: null, o: null },
+            treatment: p.clinical.teeth[n]?.treatment || { name: '', status: 'planned' },
+            perio: existingPerio
         });
-
-        const pathMG = `M ${points.map(pt => `${pt.x},${pt.yMG}`).join(' L ')}`;
-        const pathPD = `M ${points.map(pt => `${pt.x},${pt.yPD}`).join(' L ')}`;
-        const pathFill = `M ${points.map(pt => `${pt.x},${pt.yMG}`).join(' L ')} L ${[...points].reverse().map(pt => `${pt.x},${pt.yPD}`).join(' L ')} Z`;
-
-        // Umbral clínico (el mismo que ya usa el modal individual para pintar en rojo
-        // el input de "Prof."): ≥4mm = bolsa moderada, ≥6mm = bolsa severa.
-        const getAnomaly = (pdVal) => {
-            if (pdVal >= 6) return { r: 4.5, fill: '#dc2626' };
-            if (pdVal >= 4) return { r: 3.5, fill: '#f59e0b' };
-            return null;
-        };
-
-        return (
-            <div className="relative" style={{ width: totalWidth }}>
-                {/* Capa de Dientes (Sin Gaps) */}
-                <div className="flex gap-0">
-                    {teethArray.map(n => (
-                        <Tooth 
-                            key={`${face}-${n}`} 
-                            number={n} 
-                            isPerioMode={true} 
-                            perioFace={face} 
-                            perioData={p.clinical.perio?.[n]} 
-                            status={p.clinical.teeth[n]?.status} 
-                            onClick={() => {
-                                const existingPerio = p.clinical.perio?.[n] || {}; 
-                                setToothModalData({
-                                    id: n, mode: 'perio', ...p.clinical.teeth[n],
-                                    faces: p.clinical.teeth[n]?.faces || { v: null, l: null, m: null, d: null, o: null },
-                                    treatment: p.clinical.teeth[n]?.treatment || { name: '', status: 'planned' },
-                                    perio: existingPerio
-                                }); 
-                                setPerioData(existingPerio); 
-                                setModal('tooth'); 
-                            }}
-                            theme={themeMode}
-                        />
-                    ))}
-                </div>
-
-                {/* Capa de Líneas (SVG Superpuesto) */}
-                <svg className="absolute inset-0 pointer-events-none overflow-visible z-20" style={{ width: totalWidth, height: '100%' }}>
-                    {/* Rejilla de milimetraje profesional */}
-                    {[35, 46, 57, 68, 79, 90].map(y => (
-                        <line key={y} x1="0" y1={y} x2={totalWidth} y2={y} stroke="#DFD2C4" strokeWidth="0.5" strokeDasharray="2" opacity="0.5" />
-                    ))}
-                    
-                    {/* Relleno de bolsa */}
-                    <path d={pathFill} fill="#ef4444" fillOpacity="0.15" />
-                    {/* Margen Gingival (Azul) */}
-                    <path d={pathMG} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    {/* Profundidad de Sondaje (Roja) */}
-                    <path d={pathPD} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-                    {/* Marcadores de profundidad anómala (≥4mm ámbar, ≥6mm rojo) */}
-                    {points.map((pt, idx) => {
-                        const anomaly = getAnomaly(pt.pd);
-                        if (!anomaly) return null;
-                        return (
-                            <g key={`anomaly-${idx}`}>
-                                <circle cx={pt.x} cy={pt.yPD} r={anomaly.r + 2.5} fill={anomaly.fill} fillOpacity="0.25" />
-                                <circle cx={pt.x} cy={pt.yPD} r={anomaly.r} fill={anomaly.fill} stroke="#FFFFFF" strokeWidth="1.5" />
-                            </g>
-                        );
-                    })}
-                </svg>
-            </div>
-        );
+        setPerioData(existingPerio);
+        setModal('tooth');
     };
 
     const renderHygieneRow = (teethArray) => (
         <div className="flex gap-1.5 lg:gap-2 justify-center w-full" style={{ flexWrap: 'nowrap' }}>
-            {teethArray.map(t => { 
+            {teethArray.map(t => {
                 const st = p.clinical.teeth[t]?.status;
                 const isMissing = Array.isArray(st) ? st.includes('missing') : st === 'missing';
-                if(isMissing) return null; 
-                return ( 
-                    <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]} 
-                        onChange={(face) => { 
-                            const current = p.clinical.hygiene?.[t] || {}; 
-                            const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } }; 
-                            savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } }); 
-                        }} 
-                    /> 
-                ); 
+                if (isMissing) return null;
+                return (
+                    <HygieneCell key={t} tooth={t} data={p.clinical.hygiene?.[t]}
+                        onChange={(face) => {
+                            const current = p.clinical.hygiene?.[t] || {};
+                            const newData = { ...p.clinical.hygiene, [t]: { ...current, [face]: !current[face] } };
+                            savePatientData(selectedPatientId, { ...p, clinical: { ...p.clinical, hygiene: newData } });
+                        }}
+                    />
+                );
             })}
         </div>
     );
@@ -139,7 +60,7 @@ export default function PerioTab({
 
     return (
         <div className="space-y-6 animate-in fade-in pb-10">
-            {/* --- CABECERA Y SELECTORES (RESTAURADO) --- */}
+            {/* --- CABECERA Y SELECTORES --- */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#FDFBF7] p-5 rounded-[2rem] border border-[#DFD2C4]/50 shadow-sm relative z-10">
                 <div>
                     <h2 className="text-2xl font-black text-[#312923] tracking-tight">Periodontograma Clínico</h2>
@@ -152,12 +73,26 @@ export default function PerioTab({
                         ))}
                     </div>
                     <button onClick={savePerioSnapshot} className="px-6 py-3.5 bg-[#5B6651] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-[#5B6651]/20 flex items-center gap-2 hover:-translate-y-0.5 transition-all">
-                        <Save size={16}/> Guardar Ficha
+                        <Save size={16} /> Guardar Ficha
+                    </button>
+                    <button
+                        onClick={() => generatePerioPDF({
+                            patient: p,
+                            stats: getPerioStats(),
+                            perioDentition,
+                            teethUpper: TEETH_UPPER,
+                            teethLower: TEETH_LOWER,
+                            teethUpperPed: TEETH_UPPER_PED,
+                            teethLowerPed: TEETH_LOWER_PED,
+                        })}
+                        className="px-6 py-3.5 bg-white text-[#312923] font-black text-[11px] uppercase tracking-widest rounded-2xl border border-[#DFD2C4] shadow-sm flex items-center gap-2 hover:-translate-y-0.5 transition-all"
+                    >
+                        <Download size={16} /> Descargar PDF
                     </button>
                 </div>
             </div>
 
-            {/* --- TARJETAS DE ESTADÍSTICAS (RESTAURADO) --- */}
+            {/* --- TARJETAS DE ESTADÍSTICAS --- */}
             {(() => {
                 const stats = getPerioStats();
                 const bop = stats.bop;
@@ -187,71 +122,56 @@ export default function PerioTab({
                 );
             })()}
 
-            {/* --- PERIODONTOGRAMA (SONDAJE CONTINUO) --- */}
-            <Card className="w-full flex flex-col gap-10 overflow-x-auto p-4 md:p-8 bg-white border-[#DFD2C4]/40 shadow-sm relative no-scrollbar" style={hideScrollStyles}>
-                <div className="flex flex-col gap-12 min-w-max mx-auto">
-                    
-                    {/* SUPERIOR */}
-                    <div className="flex flex-col gap-10 w-full">
-                        {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
-                            <div className="space-y-6 w-full">
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#9A8F84] uppercase text-right tracking-widest">Vestibular</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_UPPER, 'v')}</div>
-                                </div>
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#9A8F84] uppercase text-right tracking-widest">Palatino</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_UPPER, 'l')}</div>
-                                </div>
-                            </div>
-                        )}
-                        {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
-                            <div className="space-y-6 bg-[#CBAAA2]/5 p-6 rounded-[2rem] border border-[#CBAAA2]/20 shadow-inner w-full">
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#CBAAA2] uppercase text-right tracking-widest">Vestibular</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_UPPER_PED, 'v')}</div>
-                                </div>
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#CBAAA2] uppercase text-right tracking-widest">Palatino</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_UPPER_PED, 'l')}</div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+            {/* --- PERIODONTOGRAMA (ESTILO SEPA: TABLAS POR SITIO + DIENTES) --- */}
+            <Card className="w-full flex flex-col gap-6 overflow-x-auto p-4 md:p-6 bg-white border-[#DFD2C4]/40 shadow-sm relative no-scrollbar" style={hideScrollStyles}>
+                <div className="flex flex-col gap-6 w-full">
+                    {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
+                        <div>
+                            <p className="text-center text-[11px] font-black text-[#5B6651] uppercase tracking-[0.2em] mb-3">Superior</p>
+                            <PerioArchGrid
+                                teeth={TEETH_UPPER} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
+                                topFace="v" topRows={SUPERIOR_TOP} topLabel="Vestibular"
+                                bottomFace="l" bottomRows={SUPERIOR_BOTTOM} bottomLabel="Palatino"
+                            />
+                        </div>
+                    )}
+                    {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
+                        <div className="bg-[#CBAAA2]/5 p-6 rounded-[2rem] border border-[#CBAAA2]/20 shadow-inner">
+                            <p className="text-center text-[11px] font-black text-[#CBAAA2] uppercase tracking-[0.2em] mb-3">Superior (temporal)</p>
+                            <PerioArchGrid
+                                teeth={TEETH_UPPER_PED} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
+                                topFace="v" topRows={SUPERIOR_TOP} topLabel="Vestibular"
+                                bottomFace="l" bottomRows={SUPERIOR_BOTTOM} bottomLabel="Palatino"
+                            />
+                        </div>
+                    )}
 
-                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#DFD2C4] to-transparent"></div>
+                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#DFD2C4] to-transparent" />
 
-                    {/* INFERIOR */}
-                    <div className="flex flex-col gap-10 w-full">
-                        {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
-                            <div className="space-y-6 bg-[#CBAAA2]/5 p-6 rounded-[2rem] border border-[#CBAAA2]/20 shadow-inner w-full">
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#CBAAA2] uppercase text-right tracking-widest">Vestibular</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_LOWER_PED, 'v')}</div>
-                                </div>
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#CBAAA2] uppercase text-right tracking-widest">Lingual</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_LOWER_PED, 'l')}</div>
-                                </div>
-                            </div>
-                        )}
-                        {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
-                            <div className="space-y-6 w-full">
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#9A8F84] uppercase text-right tracking-widest">Vestibular</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_LOWER, 'v')}</div>
-                                </div>
-                                <div className="flex items-center gap-4 w-full">
-                                    <span className="w-20 shrink-0 text-[10px] font-black text-[#9A8F84] uppercase text-right tracking-widest">Lingual</span>
-                                    <div className="flex-1">{renderPerioRow(TEETH_LOWER, 'l')}</div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
+                        <div className="bg-[#CBAAA2]/5 p-6 rounded-[2rem] border border-[#CBAAA2]/20 shadow-inner">
+                            <p className="text-center text-[11px] font-black text-[#CBAAA2] uppercase tracking-[0.2em] mb-3">Inferior (temporal)</p>
+                            <PerioArchGrid
+                                teeth={TEETH_LOWER_PED} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
+                                topFace="l" topRows={INFERIOR_TOP} topLabel="Lingual"
+                                bottomFace="v" bottomRows={INFERIOR_BOTTOM} bottomLabel="Vestibular"
+                            />
+                        </div>
+                    )}
+                    {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
+                        <div>
+                            <p className="text-center text-[11px] font-black text-[#5B6651] uppercase tracking-[0.2em] mb-3">Inferior</p>
+                            <PerioArchGrid
+                                teeth={TEETH_LOWER} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
+                                topFace="l" topRows={INFERIOR_TOP} topLabel="Lingual"
+                                bottomFace="v" bottomRows={INFERIOR_BOTTOM} bottomLabel="Vestibular"
+                            />
+                        </div>
+                    )}
                 </div>
             </Card>
 
-            {/* --- ÍNDICE DE O'LEARY (RESTAURADO) --- */}
+            {/* --- ÍNDICE DE O'LEARY --- */}
             <Card className="p-4 md:p-8 bg-white border-[#DFD2C4]/40 shadow-sm relative no-scrollbar overflow-x-auto" style={hideScrollStyles}>
                 <div className="flex justify-between items-end border-b border-[#DFD2C4]/50 pb-4 sticky left-0 min-w-[300px]">
                     <div>
@@ -259,8 +179,8 @@ export default function PerioTab({
                         <p className="text-[10px] text-[#9A8F84] font-bold uppercase tracking-widest mt-1">Control de Higiene</p>
                     </div>
                     <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest bg-[#FDFBF7] px-5 py-2.5 rounded-xl border border-[#DFD2C4]/50 shadow-sm">
-                        <span className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-md animate-pulse shadow-sm"/> Placa</span>
-                        <span className="flex items-center gap-2"><div className="w-3 h-3 bg-white border border-[#DFD2C4] rounded-md"/> Limpio</span>
+                        <span className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-md animate-pulse shadow-sm" /> Placa</span>
+                        <span className="flex items-center gap-2"><div className="w-3 h-3 bg-white border border-[#DFD2C4] rounded-md" /> Limpio</span>
                     </div>
                 </div>
 
@@ -282,16 +202,16 @@ export default function PerioTab({
                 </div>
             </Card>
 
-            {/* --- HISTORIAL PERIO (RESTAURADO) --- */}
+            {/* --- HISTORIAL PERIO --- */}
             <div className="pt-4">
                 <div className="flex items-center gap-3 mb-6 border-b border-[#DFD2C4]/50 pb-4">
-                    <History className="text-[#9A8F84]" size={20}/>
+                    <History className="text-[#9A8F84]" size={20} />
                     <div>
                         <h3 className="font-black text-xl text-[#312923] tracking-tight">Historial Clínico Perio</h3>
                         <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">Evoluciones Guardadas</p>
                     </div>
                 </div>
-                
+
                 {(!p.clinical?.perioHistory || p.clinical.perioHistory.length === 0) ? (
                     <div className="text-center py-12 bg-[#FDFBF7] rounded-[2rem] border border-[#DFD2C4]/40">
                         <p className="text-[#9A8F84] font-bold text-xs uppercase tracking-widest">No hay registros históricos previos</p>
@@ -303,7 +223,7 @@ export default function PerioTab({
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex items-center gap-2">
                                         <div className="w-8 h-8 bg-[#FDFBF7] rounded-lg flex items-center justify-center border border-[#DFD2C4]/50 text-[#5B6651]">
-                                            <History size={16}/>
+                                            <History size={16} />
                                         </div>
                                         <span className="text-[10px] font-black text-[#312923] uppercase tracking-widest">{snap.date}</span>
                                     </div>

@@ -44,7 +44,8 @@ export default function MainViewManager(props) {
         patientsLoading, selectedPatientId, patientTab, setPatientTab, activeFormType,
         setActiveFormType, viewingForm, setViewingForm, odontogramMode, setOdontogramMode,
         odontogramType, setOdontogramType, toothModalData, setToothModalData, isListening,
-        voiceStatus, toggleVoice, newEvolution, setNewEvolution, activeFolder, setActiveFolder,
+        voiceStatus, toggleVoice, voiceConfirmationEnabled, toggleVoiceConfirmation,
+        newEvolution, setNewEvolution, activeFolder, setActiveFolder,
         uploading, consentTemplate, setConsentTemplate, consentText, setConsentText,
         setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
         handleImageUpload, setSelectedImg, setMobileMenuOpen, isWorkspaceActive
@@ -162,6 +163,7 @@ export default function MainViewManager(props) {
                         toothModalData={toothModalData} setToothModalData={setToothModalData}
                         catalog={catalog} sessionData={sessionData} setSessionData={setSessionData}
                         isListening={isListening} voiceStatus={voiceStatus} toggleVoice={toggleVoice}
+                        voiceConfirmationEnabled={voiceConfirmationEnabled} toggleVoiceConfirmation={toggleVoiceConfirmation}
                         newEvolution={newEvolution} setNewEvolution={setNewEvolution}
                         activeFolder={activeFolder} setActiveFolder={setActiveFolder}
                         uploading={uploading} consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate}
