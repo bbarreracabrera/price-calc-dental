@@ -176,6 +176,7 @@ export default function MainViewManager(props) {
                         handleGeneratePDF={handleGeneratePDF} handleImageUpload={handleImageUpload}
                         notify={notify} sendWhatsApp={sendWhatsApp} setSelectedImg={setSelectedImg}
                         config={config}
+                        supabase={supabase} // <-- NUEVA PROP
                     />
                 )}
             </Suspense>

@@ -147,6 +147,9 @@ export function useVoiceAssistant(props) {
                             const BLEED_KEYWORDS = ['sangra', 'sangrado', 'hemorragia', 'punto rojo', 'positivo', 'sangrante'];
                             const PUS_KEYWORDS = ['pus', 'supura', 'supuracion', 'supuración', 'exudado', 'absceso'];
                             const MARGIN_KEYWORDS = ['margen', 'recesion', 'recesión', 'encia', 'encía'];
+                            // *** NUEVO: sinónimos de profundidad de sondaje ***
+                            const PD_KEYWORDS = ['profundidad', 'sondeo', 'sondaje'];
+
                             const confirmations = [];
 
                             // *** DETECCIÓN DE IMPLANTE MEJORADA ***
@@ -188,6 +191,8 @@ export function useVoiceAssistant(props) {
                                 && !cleanText.includes('sano') && !cleanText.includes('limpiar')
                                 && !BLEED_KEYWORDS.some(k => cleanText.includes(k))
                                 && !PUS_KEYWORDS.some(k => cleanText.includes(k))
+                                && !MARGIN_KEYWORDS.some(k => cleanText.includes(k))
+                                && !PD_KEYWORDS.some(k => cleanText.includes(k))
                                 && !cleanText.includes('movilidad') && !cleanText.includes('mueve') && !cleanText.includes('furca') && !cleanText.includes('entrada')
                                 && !cleanText.includes('implante');
                             if (onlyFaceMention) {
@@ -206,7 +211,8 @@ export function useVoiceAssistant(props) {
                                 const CLAUSE_SPLIT = /,| y |;|\.|(?=\bmesial\b)|(?=\bdistal\b)|(?=\bcentro\b)|(?=\bmedio\b)|(?=\bmovilidad\b)|(?=\bmueve\b)|(?=\bfurca\b)|(?=\bentrada\b)/;
                                 const rawClauses = cleanText.split(CLAUSE_SPLIT).map(c => c.trim()).filter(Boolean);
 
-                                const FINDING_WORDS = [...BLEED_KEYWORDS, ...PUS_KEYWORDS, ...MARGIN_KEYWORDS];
+                                // *** NUEVO: incluir PD_KEYWORDS en FINDING_WORDS para fusión ***
+                                const FINDING_WORDS = [...BLEED_KEYWORDS, ...PUS_KEYWORDS, ...MARGIN_KEYWORDS, ...PD_KEYWORDS];
                                 const ADVANCE_KEYWORDS = [...SITE_KEYWORDS, 'movilidad', 'mueve', 'furca', 'entrada'];
                                 const clauses = [];
                                 for (let i = 0; i < rawClauses.length; i++) {
@@ -218,7 +224,10 @@ export function useVoiceAssistant(props) {
                                     const cHasFinding = FINDING_WORDS.some(k => c.includes(k));
                                     const cIsBareNumber = /^-?\d+$/.test(c);
                                     const cIsBareNegation = /(^| )(sin|no)( |$)/.test(c) && !cHasNumber && !cHasSite && !cHasFinding;
-                                    const shouldMerge = nextHasAnchor && ((cHasFinding && !cHasSite && !cHasNumber) || cIsBareNumber || cIsBareNegation);
+                                    // *** CONDICIÓN DE FUSIÓN CORREGIDA ***
+                                    // Fusiona si la cláusula actual no tiene sitio, la siguiente tiene ancla,
+                                    // y la actual tiene hallazgo (incluye profundidad) o es número o negación.
+                                    const shouldMerge = nextHasAnchor && !cHasSite && (cHasFinding || cIsBareNumber || cIsBareNegation);
                                     if (shouldMerge) { clauses.push(`${c} ${next}`); i++; }
                                     else clauses.push(c);
                                 }
@@ -310,7 +319,6 @@ export function useVoiceAssistant(props) {
                                 setToothModalData({ ...toothModalData, perio: newData });
                             }
 
-                            // Guardar periodoncia con el paciente que ya incluye el implante actualizado
                             const updatedPerio = { ...pWithImplant.clinical.perio, [currentToothId]: newData };
                             savePatientData(selectedPatientId, { ...pWithImplant, clinical: { ...pWithImplant.clinical, perio: updatedPerio } });
 
@@ -334,7 +342,6 @@ export function useVoiceAssistant(props) {
                                         activeToothRef.current = nextTooth;
                                         activeFaceRef.current = 'v';
                                         if (setSelectedToothId) setSelectedToothId(nextTooth);
-                                        // Actualizar también id en modal si está abierto
                                         if (setToothModalData && toothModalData) {
                                             setToothModalData(prev => ({ ...prev, id: nextTooth }));
                                         }
@@ -348,7 +355,7 @@ export function useVoiceAssistant(props) {
                                 notify("✔️ Periodontograma finalizado");
                             }
                         } else {
-                            // Modo Odontograma (sin cambios en lo que respecta a este fix)
+                            // Modo Odontograma (sin cambios relevantes)
                             const existingTooth = p.clinical.teeth?.[currentToothId] || { faces: { v: null, l: null, m: null, d: null, o: null }, status: [], notes: '', treatment: { name: '', status: 'planned' } };
                             let newState = { ...existingTooth };
                             if (!newState.faces) newState.faces = { v: null, l: null, m: null, d: null, o: null };

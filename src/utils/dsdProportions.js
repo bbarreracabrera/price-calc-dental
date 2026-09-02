@@ -16,7 +16,7 @@
 export const calculateREDProportion = (intercanineWidth) => {
     // RED Proportion: cada diente tiene una relación específica con el ancho intercanino
     // Fórmula: ancho diente = intercanineWidth * ratio
-    
+
     const ratios = {
         // Dientes superiores (de distal a mesial)
         molar2: 0.33,      // Segundo molar
@@ -27,7 +27,7 @@ export const calculateREDProportion = (intercanineWidth) => {
         lateral: 0.32,     // Lateral
         central: 0.38      // Central
     };
-    
+
     return Object.fromEntries(
         Object.entries(ratios).map(([tooth, ratio]) => [
             tooth,
@@ -45,14 +45,17 @@ export const calculateREDProportion = (intercanineWidth) => {
  */
 export const calculateGoldenProportion = (centralWidth) => {
     const phi = 1.618; // Número de oro
-    
+
     return {
         central: { width: centralWidth },
         lateral: { width: centralWidth / phi },
         canine: { width: (centralWidth / phi) * 0.95 }, // Ligeramente más estrecho que lateral
         premolar1: { width: (centralWidth / phi) * 0.85 },
         premolar2: { width: (centralWidth / phi) * 0.80 },
-        molar1: { width: (centralWidth / phi) * 0.75 }
+        molar1: { width: (centralWidth / phi) * 0.75 },
+        // FIX: faltaba molar2 — sin esta clave, calculateToothBoxes() omitía
+        // silenciosamente los dientes 18/28 cada vez que se usaba la teoría GOLDEN.
+        molar2: { width: (centralWidth / phi) * 0.70 }
     };
 };
 
@@ -68,7 +71,7 @@ export const calculateMondelliGrid = (canineToCanineWidth, imageHeight) => {
     // La rejilla de Mondelli divide el espacio en proporciones específicas
     const toothHeight = imageHeight * 0.25; // Altura aproximada de los dientes
     const gingivalHeight = imageHeight * 0.15; // Altura de la encía visible
-    
+
     return {
         canineToCanineWidth,
         toothHeight,
@@ -93,7 +96,7 @@ export const calculateMondelliGrid = (canineToCanineWidth, imageHeight) => {
  */
 export const calculatePDI = (toothWidth, pdiRatio = 0.78) => {
     const toothHeight = toothWidth / pdiRatio;
-    
+
     return {
         width: toothWidth,
         height: toothHeight,
@@ -125,12 +128,23 @@ export const calculateChuProportion = (upperCentralWidth) => {
         upper: {
             central: { width: upperCentralWidth },
             lateral: { width: upperCentralWidth * 0.85 },
-            canine: { width: upperCentralWidth * 0.88 }
+            canine: { width: upperCentralWidth * 0.88 },
+            // FIX: faltaban premolar1/2 y molar1/2 — sin estas claves,
+            // calculateToothBoxes() solo dibujaba 6 de los 14 dientes (3 por lado)
+            // cada vez que se usaba la teoría CHU (estilo "Rectangular").
+            premolar1: { width: upperCentralWidth * 0.80 },
+            premolar2: { width: upperCentralWidth * 0.75 },
+            molar1: { width: upperCentralWidth * 0.72 },
+            molar2: { width: upperCentralWidth * 0.68 }
         },
         lower: {
             central: { width: upperCentralWidth * 0.75 },
             lateral: { width: upperCentralWidth * 0.80 },
-            canine: { width: upperCentralWidth * 0.82 }
+            canine: { width: upperCentralWidth * 0.82 },
+            premolar1: { width: upperCentralWidth * 0.78 },
+            premolar2: { width: upperCentralWidth * 0.73 },
+            molar1: { width: upperCentralWidth * 0.70 },
+            molar2: { width: upperCentralWidth * 0.66 }
         }
     };
 };
@@ -141,22 +155,27 @@ export const calculateChuProportion = (upperCentralWidth) => {
  * @param {number} imageWidth - Ancho de la imagen en píxeles
  * @param {number} imageHeight - Alto de la imagen en píxeles
  * @param {number} smileCurveIntensity - Intensidad de la curva (0-1)
+ * @param {number} commissuralY - Posición vertical de las comisuras, como
+ *   fracción de la altura (0-1). FIX: antes este parámetro no existía en la
+ *   firma de la función, así que la línea de comisuras que el usuario/asistente
+ *   posicionaba nunca influía en dónde se dibujaba la curva de sonrisa
+ *   (siempre quedaba fija en 65%).
  * @returns {array} Array de puntos {x, y} para dibujar la curva
  */
-export const calculateSmileCurve = (imageWidth, imageHeight, smileCurveIntensity = 0.5) => {
+export const calculateSmileCurve = (imageWidth, imageHeight, smileCurveIntensity = 0.5, commissuralY = 0.65) => {
     const points = [];
-    const curveY = imageHeight * 0.65; // Posición vertical de la curva
+    const curveY = imageHeight * commissuralY; // Posición vertical de la curva (sigue la comisura real)
     const curveAmplitude = imageHeight * 0.15 * smileCurveIntensity;
-    
+
     for (let x = 0; x < imageWidth; x += 10) {
         const normalizedX = x / imageWidth; // 0 a 1
         const curveX = normalizedX * Math.PI; // 0 a PI
         const yOffset = Math.sin(curveX) * curveAmplitude;
         const y = curveY - yOffset;
-        
+
         points.push({ x, y });
     }
-    
+
     return points;
 };
 
@@ -168,9 +187,15 @@ export const calculateSmileCurve = (imageWidth, imageHeight, smileCurveIntensity
  * @param {number} params.imageHeight - Alto de la imagen
  * @param {number} params.midlineX - Posición X de la línea media
  * @param {number} params.toothStartY - Posición Y inicial de los dientes
- * @param {number} params.toothHeight - Altura de los dientes
+ * @param {number} params.toothHeight - Altura de los dientes (usada para RED/GOLDEN/CHU)
  * @param {string} params.proportionTheory - Teoría a usar: 'RED', 'GOLDEN', 'CHU', 'PDI'
  * @param {number} params.referenceWidth - Ancho de referencia en mm
+ * @param {number} params.pixelPerMM - Calibración píxeles/mm
+ * @param {number} [params.pdiRatio=0.78] - Ratio ancho/alto individual, usado
+ *   SOLO cuando proportionTheory === 'PDI'. Antes 'PDI' caía silenciosamente
+ *   en el caso por defecto (RED) porque no existía como case en el switch;
+ *   ahora sí aplica el ratio individual de cada diente para derivar su alto
+ *   a partir de su propio ancho (75-80% ideal según el paper de referencia).
  * @returns {array} Array de cajas dentales con posiciones
  */
 export const calculateToothBoxes = (params) => {
@@ -182,11 +207,12 @@ export const calculateToothBoxes = (params) => {
         toothHeight,
         proportionTheory = 'RED',
         referenceWidth = 8, // mm
-        pixelPerMM = 10 // píxeles por mm
+        pixelPerMM = 10, // píxeles por mm
+        pdiRatio = 0.78
     } = params;
-    
+
     let proportions = {};
-    
+
     switch (proportionTheory) {
         case 'GOLDEN':
             proportions = calculateGoldenProportion(referenceWidth);
@@ -194,12 +220,18 @@ export const calculateToothBoxes = (params) => {
         case 'CHU':
             proportions = calculateChuProportion(referenceWidth).upper;
             break;
+        case 'PDI':
+            // El ancho de arco se sigue apoyando en RED (no hay una teoría de
+            // ancho propia llamada "PDI" en la literatura); lo que cambia es
+            // que el ALTO de cada caja se deriva de su propio ancho más abajo.
+            proportions = calculateREDProportion(referenceWidth * 6);
+            break;
         case 'RED':
         default:
             proportions = calculateREDProportion(referenceWidth * 6); // Aproximadamente 48mm
             break;
     }
-    
+
     const teeth = [
         { id: 18, name: 'Molar 2', side: 'left', proportion: 'molar2' },
         { id: 17, name: 'Molar 1', side: 'left', proportion: 'molar1' },
@@ -216,57 +248,68 @@ export const calculateToothBoxes = (params) => {
         { id: 25, name: 'Molar 1', side: 'right', proportion: 'molar1' },
         { id: 26, name: 'Molar 2', side: 'right', proportion: 'molar2' }
     ];
-    
+
     const boxes = [];
-    let currentX = midlineX;
-    
-    // Dientes derechos (11-16)
-    const rightTeeth = teeth.filter(t => t.side === 'right').reverse();
-    rightTeeth.forEach((tooth, index) => {
+
+    // Calcula ancho y alto de una caja dental según la teoría activa.
+    const computeDims = (tooth) => {
         const proportion = proportions[tooth.proportion];
-        if (!proportion) return;
-        
+        if (!proportion) return null;
+
         const toothWidthMM = proportion.width || referenceWidth * 0.8;
         const toothWidthPx = toothWidthMM * pixelPerMM;
-        
+
+        const boxHeightPx = proportionTheory === 'PDI'
+            ? calculatePDI(toothWidthMM, pdiRatio).height * pixelPerMM
+            : toothHeight;
+
+        return { toothWidthPx, boxHeightPx };
+    };
+
+    // Dientes derechos (11-16...26)
+    let currentX = midlineX;
+    const rightTeeth = teeth.filter(t => t.side === 'right').reverse();
+    rightTeeth.forEach((tooth) => {
+        const dims = computeDims(tooth);
+        if (!dims) return;
+        const { toothWidthPx, boxHeightPx } = dims;
+
         boxes.push({
             id: tooth.id,
             name: tooth.name,
             x: currentX,
             y: toothStartY,
             width: toothWidthPx,
-            height: toothHeight,
+            height: boxHeightPx,
             side: 'right'
         });
-        
+
         currentX += toothWidthPx;
     });
-    
+
     // Reiniciar para dientes izquierdos
     currentX = midlineX;
-    
-    // Dientes izquierdos (17-26)
+
+    // Dientes izquierdos (17-26...18)
     const leftTeeth = teeth.filter(t => t.side === 'left');
     leftTeeth.forEach((tooth) => {
-        const proportion = proportions[tooth.proportion];
-        if (!proportion) return;
-        
-        const toothWidthMM = proportion.width || referenceWidth * 0.8;
-        const toothWidthPx = toothWidthMM * pixelPerMM;
-        
+        const dims = computeDims(tooth);
+        if (!dims) return;
+        const { toothWidthPx, boxHeightPx } = dims;
+
         currentX -= toothWidthPx;
-        
+
         boxes.push({
             id: tooth.id,
             name: tooth.name,
             x: currentX,
             y: toothStartY,
             width: toothWidthPx,
-            height: toothHeight,
+            height: boxHeightPx,
             side: 'left'
         });
     });
-    
+
     return boxes;
 };
 
@@ -275,14 +318,14 @@ export const calculateToothBoxes = (params) => {
  */
 export const generateProportionReport = (params) => {
     const { proportionTheory, referenceWidth } = params;
-    
+
     let report = {
         theory: proportionTheory,
         description: '',
         advantages: [],
         clinical_use: ''
     };
-    
+
     switch (proportionTheory) {
         case 'GOLDEN':
             report.description = 'Proporción Áurea (1.618)';
@@ -321,6 +364,6 @@ export const generateProportionReport = (params) => {
             report.clinical_use = 'Ideal para refinamiento de casos complejos';
             break;
     }
-    
+
     return report;
 };

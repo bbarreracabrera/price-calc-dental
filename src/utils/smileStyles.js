@@ -1,9 +1,13 @@
+// src/utils/smileStyles.js
+
 /**
  * Biblioteca de Estilos de Sonrisa basada en Visagismo
  * Mapeo entre forma dental, psicología y propuesta estética
  * 
  * Basado en la teoría de que la forma de los dientes comunica
  * rasgos de personalidad y permite personalizar la propuesta al paciente
+ * 
+ * Incluye siluetas dentales para dibujo en canvas (coordenadas relativas 0-1)
  */
 
 export const SMILE_STYLES = {
@@ -14,8 +18,7 @@ export const SMILE_STYLES = {
         color: '#8B7355',
         colorHex: '#D4A574',
         description: 'Armonía y Suavidad',
-        
-        // Características visuales
+
         visual: {
             dominantCentrals: true,
             roundedCusps: true,
@@ -23,8 +26,7 @@ export const SMILE_STYLES = {
             smileLineShape: 'round',
             archShape: 'round'
         },
-        
-        // Atributos emocionales
+
         personality: {
             primary: 'Sensible',
             secondary: 'Melancholic',
@@ -37,8 +39,7 @@ export const SMILE_STYLES = {
                 'Reservado'
             ]
         },
-        
-        // Descripción clínica
+
         clinical: {
             centralWidth: 'Ancho',
             lateralWidth: 'Estrecho',
@@ -46,8 +47,7 @@ export const SMILE_STYLES = {
             incisorEdge: 'Redondeado',
             contactPoints: 'Suaves'
         },
-        
-        // Propuesta al paciente
+
         proposal: {
             title: 'Sonrisa Armónica y Elegante',
             description: 'Un diseño que transmite serenidad, equilibrio y sofisticación. Ideal para quienes buscan una sonrisa que refleje calma y elegancia natural.',
@@ -59,15 +59,108 @@ export const SMILE_STYLES = {
             ],
             idealFor: 'Pacientes que valoran la armonía y el equilibrio estético'
         },
-        
-        // Proporciones recomendadas
+
         proportions: {
             theory: 'GOLDEN',
             pdi: 0.78,
             description: 'Proporción Áurea con PDI ideal (78%)'
+        },
+
+        // --- SILUETAS DENTALES (coordenadas relativas 0-1) ---
+        toothShapes: {
+            central: [
+                { x: 0.40, y: 0.00 },
+                { x: 0.45, y: 0.05 },
+                { x: 0.50, y: 0.12 },
+                { x: 0.50, y: 0.30 },
+                { x: 0.48, y: 0.55 },
+                { x: 0.45, y: 0.75 },
+                { x: 0.40, y: 0.85 },
+                { x: 0.35, y: 0.90 },
+                { x: 0.30, y: 0.92 },
+                { x: 0.20, y: 0.94 },
+                { x: 0.15, y: 0.90 },
+                { x: 0.10, y: 0.80 },
+                { x: 0.08, y: 0.70 },
+                { x: 0.10, y: 0.50 },
+                { x: 0.15, y: 0.30 },
+                { x: 0.20, y: 0.15 },
+                { x: 0.25, y: 0.05 },
+                { x: 0.30, y: 0.00 }
+            ],
+            lateral: [
+                { x: 0.35, y: 0.00 },
+                { x: 0.40, y: 0.05 },
+                { x: 0.45, y: 0.12 },
+                { x: 0.45, y: 0.30 },
+                { x: 0.43, y: 0.55 },
+                { x: 0.40, y: 0.75 },
+                { x: 0.35, y: 0.85 },
+                { x: 0.28, y: 0.90 },
+                { x: 0.22, y: 0.92 },
+                { x: 0.18, y: 0.90 },
+                { x: 0.12, y: 0.82 },
+                { x: 0.10, y: 0.70 },
+                { x: 0.12, y: 0.50 },
+                { x: 0.15, y: 0.30 },
+                { x: 0.20, y: 0.15 },
+                { x: 0.25, y: 0.05 },
+                { x: 0.30, y: 0.00 }
+            ],
+            canine: [
+                { x: 0.30, y: 0.00 },
+                { x: 0.35, y: 0.05 },
+                { x: 0.40, y: 0.15 },
+                { x: 0.42, y: 0.30 },
+                { x: 0.40, y: 0.50 },
+                { x: 0.35, y: 0.70 },
+                { x: 0.28, y: 0.85 },
+                { x: 0.20, y: 0.92 },
+                { x: 0.12, y: 0.88 },
+                { x: 0.08, y: 0.75 },
+                { x: 0.10, y: 0.55 },
+                { x: 0.15, y: 0.35 },
+                { x: 0.20, y: 0.20 },
+                { x: 0.25, y: 0.08 },
+                { x: 0.28, y: 0.00 }
+            ],
+            premolar: [
+                { x: 0.30, y: 0.00 },
+                { x: 0.35, y: 0.08 },
+                { x: 0.38, y: 0.20 },
+                { x: 0.38, y: 0.40 },
+                { x: 0.35, y: 0.60 },
+                { x: 0.30, y: 0.75 },
+                { x: 0.22, y: 0.85 },
+                { x: 0.15, y: 0.88 },
+                { x: 0.10, y: 0.82 },
+                { x: 0.08, y: 0.70 },
+                { x: 0.10, y: 0.50 },
+                { x: 0.15, y: 0.30 },
+                { x: 0.20, y: 0.15 },
+                { x: 0.25, y: 0.05 },
+                { x: 0.28, y: 0.00 }
+            ],
+            molar: [
+                { x: 0.35, y: 0.00 },
+                { x: 0.40, y: 0.10 },
+                { x: 0.42, y: 0.25 },
+                { x: 0.42, y: 0.45 },
+                { x: 0.38, y: 0.65 },
+                { x: 0.30, y: 0.80 },
+                { x: 0.22, y: 0.88 },
+                { x: 0.15, y: 0.85 },
+                { x: 0.10, y: 0.75 },
+                { x: 0.08, y: 0.60 },
+                { x: 0.10, y: 0.40 },
+                { x: 0.15, y: 0.25 },
+                { x: 0.22, y: 0.10 },
+                { x: 0.28, y: 0.02 },
+                { x: 0.32, y: 0.00 }
+            ]
         }
     },
-    
+
     TRIANGULAR: {
         id: 'triangular',
         name: 'Triangular',
@@ -75,7 +168,7 @@ export const SMILE_STYLES = {
         color: '#FF6B9D',
         colorHex: '#FF8AB9',
         description: 'Energía y Dinamismo',
-        
+
         visual: {
             ascendantSmileLine: true,
             convergingAxis: true,
@@ -83,7 +176,7 @@ export const SMILE_STYLES = {
             smileLineShape: 'ascending',
             archShape: 'triangular'
         },
-        
+
         personality: {
             primary: 'Dynamic',
             secondary: 'Sanguine',
@@ -96,7 +189,7 @@ export const SMILE_STYLES = {
                 'Expresivo'
             ]
         },
-        
+
         clinical: {
             centralWidth: 'Moderado',
             lateralWidth: 'Estrecho',
@@ -104,7 +197,7 @@ export const SMILE_STYLES = {
             incisorEdge: 'Angulado',
             contactPoints: 'Agudos'
         },
-        
+
         proposal: {
             title: 'Sonrisa Joven y Expresiva',
             description: 'Un diseño dinámico que comunica juventud, energía y vitalidad. Perfecto para quienes desean una sonrisa que refleje su personalidad activa y comunicativa.',
@@ -116,14 +209,103 @@ export const SMILE_STYLES = {
             ],
             idealFor: 'Pacientes jóvenes o con personalidad extrovertida'
         },
-        
+
         proportions: {
             theory: 'RED',
             pdi: 0.75,
             description: 'RED Proportion con PDI moderno (75%)'
+        },
+
+        // --- SILUETAS DENTALES (más angulosas) ---
+        toothShapes: {
+            central: [
+                { x: 0.35, y: 0.00 },
+                { x: 0.40, y: 0.02 },
+                { x: 0.45, y: 0.08 },
+                { x: 0.48, y: 0.20 },
+                { x: 0.50, y: 0.40 },
+                { x: 0.48, y: 0.60 },
+                { x: 0.42, y: 0.80 },
+                { x: 0.35, y: 0.90 },
+                { x: 0.25, y: 0.95 },
+                { x: 0.15, y: 0.95 },
+                { x: 0.08, y: 0.85 },
+                { x: 0.05, y: 0.70 },
+                { x: 0.05, y: 0.50 },
+                { x: 0.08, y: 0.30 },
+                { x: 0.12, y: 0.15 },
+                { x: 0.20, y: 0.05 },
+                { x: 0.28, y: 0.00 }
+            ],
+            lateral: [
+                { x: 0.30, y: 0.00 },
+                { x: 0.35, y: 0.03 },
+                { x: 0.40, y: 0.10 },
+                { x: 0.43, y: 0.25 },
+                { x: 0.42, y: 0.45 },
+                { x: 0.38, y: 0.65 },
+                { x: 0.30, y: 0.80 },
+                { x: 0.22, y: 0.88 },
+                { x: 0.14, y: 0.88 },
+                { x: 0.08, y: 0.78 },
+                { x: 0.05, y: 0.60 },
+                { x: 0.08, y: 0.40 },
+                { x: 0.12, y: 0.25 },
+                { x: 0.18, y: 0.12 },
+                { x: 0.25, y: 0.03 },
+                { x: 0.30, y: 0.00 }
+            ],
+            canine: [
+                { x: 0.25, y: 0.00 },
+                { x: 0.30, y: 0.05 },
+                { x: 0.38, y: 0.18 },
+                { x: 0.42, y: 0.35 },
+                { x: 0.40, y: 0.55 },
+                { x: 0.32, y: 0.75 },
+                { x: 0.22, y: 0.88 },
+                { x: 0.12, y: 0.90 },
+                { x: 0.06, y: 0.78 },
+                { x: 0.08, y: 0.60 },
+                { x: 0.12, y: 0.40 },
+                { x: 0.18, y: 0.22 },
+                { x: 0.22, y: 0.08 },
+                { x: 0.25, y: 0.00 }
+            ],
+            premolar: [
+                { x: 0.25, y: 0.00 },
+                { x: 0.30, y: 0.05 },
+                { x: 0.35, y: 0.15 },
+                { x: 0.38, y: 0.35 },
+                { x: 0.35, y: 0.55 },
+                { x: 0.28, y: 0.70 },
+                { x: 0.18, y: 0.80 },
+                { x: 0.10, y: 0.78 },
+                { x: 0.06, y: 0.65 },
+                { x: 0.08, y: 0.45 },
+                { x: 0.12, y: 0.28 },
+                { x: 0.18, y: 0.15 },
+                { x: 0.22, y: 0.05 },
+                { x: 0.25, y: 0.00 }
+            ],
+            molar: [
+                { x: 0.30, y: 0.00 },
+                { x: 0.35, y: 0.08 },
+                { x: 0.40, y: 0.20 },
+                { x: 0.42, y: 0.40 },
+                { x: 0.38, y: 0.60 },
+                { x: 0.30, y: 0.75 },
+                { x: 0.20, y: 0.82 },
+                { x: 0.12, y: 0.78 },
+                { x: 0.08, y: 0.65 },
+                { x: 0.10, y: 0.45 },
+                { x: 0.15, y: 0.28 },
+                { x: 0.22, y: 0.15 },
+                { x: 0.28, y: 0.05 },
+                { x: 0.30, y: 0.00 }
+            ]
         }
     },
-    
+
     RECTANGULAR: {
         id: 'rectangular',
         name: 'Rectangular',
@@ -131,7 +313,7 @@ export const SMILE_STYLES = {
         color: '#FFD700',
         colorHex: '#FFA500',
         description: 'Fuerza y Determinación',
-        
+
         visual: {
             dominantCentrals: true,
             flatIncisalEdge: true,
@@ -139,7 +321,7 @@ export const SMILE_STYLES = {
             smileLineShape: 'vertical',
             archShape: 'rectangular'
         },
-        
+
         personality: {
             primary: 'Strong',
             secondary: 'Choleric',
@@ -152,7 +334,7 @@ export const SMILE_STYLES = {
                 'Apasionado'
             ]
         },
-        
+
         clinical: {
             centralWidth: 'Muy Ancho',
             lateralWidth: 'Moderado',
@@ -160,7 +342,7 @@ export const SMILE_STYLES = {
             incisorEdge: 'Recto',
             contactPoints: 'Amplios'
         },
-        
+
         proposal: {
             title: 'Sonrisa Fuerte y Segura',
             description: 'Un diseño que comunica poder, confianza y determinación. Ideal para profesionales que desean proyectar autoridad y seguridad.',
@@ -172,14 +354,106 @@ export const SMILE_STYLES = {
             ],
             idealFor: 'Pacientes profesionales o con personalidad fuerte'
         },
-        
+
         proportions: {
             theory: 'CHU',
             pdi: 0.80,
             description: 'Teoría Chu con PDI clásico (80%)'
+        },
+
+        // --- SILUETAS DENTALES (rectas, cuadradas) ---
+        toothShapes: {
+            central: [
+                { x: 0.35, y: 0.00 },
+                { x: 0.45, y: 0.00 },
+                { x: 0.50, y: 0.02 },
+                { x: 0.50, y: 0.15 },
+                { x: 0.48, y: 0.35 },
+                { x: 0.48, y: 0.60 },
+                { x: 0.45, y: 0.80 },
+                { x: 0.42, y: 0.90 },
+                { x: 0.35, y: 0.95 },
+                { x: 0.20, y: 0.95 },
+                { x: 0.12, y: 0.90 },
+                { x: 0.08, y: 0.80 },
+                { x: 0.05, y: 0.60 },
+                { x: 0.05, y: 0.35 },
+                { x: 0.08, y: 0.15 },
+                { x: 0.12, y: 0.05 },
+                { x: 0.20, y: 0.00 },
+                { x: 0.30, y: 0.00 }
+            ],
+            lateral: [
+                { x: 0.30, y: 0.00 },
+                { x: 0.40, y: 0.00 },
+                { x: 0.45, y: 0.03 },
+                { x: 0.45, y: 0.20 },
+                { x: 0.43, y: 0.45 },
+                { x: 0.40, y: 0.70 },
+                { x: 0.35, y: 0.85 },
+                { x: 0.28, y: 0.92 },
+                { x: 0.18, y: 0.92 },
+                { x: 0.10, y: 0.85 },
+                { x: 0.08, y: 0.70 },
+                { x: 0.08, y: 0.45 },
+                { x: 0.10, y: 0.20 },
+                { x: 0.15, y: 0.08 },
+                { x: 0.22, y: 0.02 },
+                { x: 0.28, y: 0.00 }
+            ],
+            canine: [
+                { x: 0.25, y: 0.00 },
+                { x: 0.35, y: 0.00 },
+                { x: 0.40, y: 0.05 },
+                { x: 0.42, y: 0.20 },
+                { x: 0.42, y: 0.50 },
+                { x: 0.38, y: 0.75 },
+                { x: 0.30, y: 0.88 },
+                { x: 0.20, y: 0.92 },
+                { x: 0.12, y: 0.88 },
+                { x: 0.08, y: 0.75 },
+                { x: 0.08, y: 0.50 },
+                { x: 0.10, y: 0.25 },
+                { x: 0.15, y: 0.10 },
+                { x: 0.20, y: 0.02 },
+                { x: 0.25, y: 0.00 }
+            ],
+            premolar: [
+                { x: 0.25, y: 0.00 },
+                { x: 0.32, y: 0.00 },
+                { x: 0.38, y: 0.05 },
+                { x: 0.40, y: 0.20 },
+                { x: 0.40, y: 0.45 },
+                { x: 0.35, y: 0.70 },
+                { x: 0.28, y: 0.85 },
+                { x: 0.18, y: 0.88 },
+                { x: 0.10, y: 0.82 },
+                { x: 0.08, y: 0.65 },
+                { x: 0.08, y: 0.40 },
+                { x: 0.12, y: 0.20 },
+                { x: 0.18, y: 0.08 },
+                { x: 0.22, y: 0.02 },
+                { x: 0.25, y: 0.00 }
+            ],
+            molar: [
+                { x: 0.28, y: 0.00 },
+                { x: 0.35, y: 0.00 },
+                { x: 0.42, y: 0.05 },
+                { x: 0.45, y: 0.20 },
+                { x: 0.45, y: 0.50 },
+                { x: 0.38, y: 0.75 },
+                { x: 0.28, y: 0.85 },
+                { x: 0.18, y: 0.85 },
+                { x: 0.10, y: 0.75 },
+                { x: 0.08, y: 0.55 },
+                { x: 0.10, y: 0.30 },
+                { x: 0.15, y: 0.12 },
+                { x: 0.22, y: 0.05 },
+                { x: 0.25, y: 0.00 }
+            ]
         }
     },
-    
+
     SQUARE: {
         id: 'square',
         name: 'Cuadrado',
@@ -187,7 +461,7 @@ export const SMILE_STYLES = {
         color: '#87CEEB',
         colorHex: '#4A90E2',
         description: 'Calma y Equilibrio',
-        
+
         visual: {
             lackOfDominance: true,
             divergingAxis: true,
@@ -195,7 +469,7 @@ export const SMILE_STYLES = {
             smileLineShape: 'horizontal',
             archShape: 'square'
         },
-        
+
         personality: {
             primary: 'Calm',
             secondary: 'Phlegmatic',
@@ -208,7 +482,7 @@ export const SMILE_STYLES = {
                 'Discreto'
             ]
         },
-        
+
         clinical: {
             centralWidth: 'Moderado',
             lateralWidth: 'Similar',
@@ -216,7 +490,7 @@ export const SMILE_STYLES = {
             incisorEdge: 'Horizontal',
             contactPoints: 'Uniformes'
         },
-        
+
         proposal: {
             title: 'Sonrisa Serena y Equilibrada',
             description: 'Un diseño que transmite paz, estabilidad y equilibrio. Perfecto para quienes buscan una sonrisa que refleje su naturaleza tranquila y reflexiva.',
@@ -228,11 +502,103 @@ export const SMILE_STYLES = {
             ],
             idealFor: 'Pacientes que valoran la paz y el equilibrio'
         },
-        
+
         proportions: {
             theory: 'PDI',
             pdi: 0.82,
             description: 'PDI personalizado (82%) para máxima armonía'
+        },
+
+        // --- SILUETAS DENTALES (cuadradas, uniformes) ---
+        toothShapes: {
+            central: [
+                { x: 0.35, y: 0.00 },
+                { x: 0.45, y: 0.00 },
+                { x: 0.50, y: 0.02 },
+                { x: 0.50, y: 0.20 },
+                { x: 0.48, y: 0.45 },
+                { x: 0.48, y: 0.65 },
+                { x: 0.45, y: 0.82 },
+                { x: 0.40, y: 0.92 },
+                { x: 0.32, y: 0.95 },
+                { x: 0.22, y: 0.95 },
+                { x: 0.15, y: 0.92 },
+                { x: 0.10, y: 0.82 },
+                { x: 0.08, y: 0.65 },
+                { x: 0.08, y: 0.45 },
+                { x: 0.10, y: 0.20 },
+                { x: 0.15, y: 0.08 },
+                { x: 0.22, y: 0.02 },
+                { x: 0.30, y: 0.00 }
+            ],
+            lateral: [
+                { x: 0.30, y: 0.00 },
+                { x: 0.40, y: 0.00 },
+                { x: 0.45, y: 0.03 },
+                { x: 0.45, y: 0.20 },
+                { x: 0.43, y: 0.45 },
+                { x: 0.43, y: 0.65 },
+                { x: 0.38, y: 0.82 },
+                { x: 0.30, y: 0.90 },
+                { x: 0.20, y: 0.92 },
+                { x: 0.12, y: 0.88 },
+                { x: 0.08, y: 0.75 },
+                { x: 0.08, y: 0.50 },
+                { x: 0.10, y: 0.28 },
+                { x: 0.15, y: 0.12 },
+                { x: 0.22, y: 0.05 },
+                { x: 0.28, y: 0.00 }
+            ],
+            canine: [
+                { x: 0.25, y: 0.00 },
+                { x: 0.35, y: 0.00 },
+                { x: 0.40, y: 0.05 },
+                { x: 0.42, y: 0.25 },
+                { x: 0.42, y: 0.50 },
+                { x: 0.38, y: 0.72 },
+                { x: 0.30, y: 0.85 },
+                { x: 0.20, y: 0.88 },
+                { x: 0.12, y: 0.82 },
+                { x: 0.08, y: 0.68 },
+                { x: 0.08, y: 0.45 },
+                { x: 0.10, y: 0.25 },
+                { x: 0.15, y: 0.10 },
+                { x: 0.20, y: 0.02 },
+                { x: 0.25, y: 0.00 }
+            ],
+            premolar: [
+                { x: 0.25, y: 0.00 },
+                { x: 0.32, y: 0.00 },
+                { x: 0.38, y: 0.05 },
+                { x: 0.40, y: 0.25 },
+                { x: 0.40, y: 0.50 },
+                { x: 0.35, y: 0.70 },
+                { x: 0.28, y: 0.82 },
+                { x: 0.18, y: 0.85 },
+                { x: 0.10, y: 0.78 },
+                { x: 0.08, y: 0.60 },
+                { x: 0.08, y: 0.40 },
+                { x: 0.12, y: 0.20 },
+                { x: 0.18, y: 0.08 },
+                { x: 0.22, y: 0.02 },
+                { x: 0.25, y: 0.00 }
+            ],
+            molar: [
+                { x: 0.28, y: 0.00 },
+                { x: 0.35, y: 0.00 },
+                { x: 0.42, y: 0.05 },
+                { x: 0.45, y: 0.25 },
+                { x: 0.45, y: 0.55 },
+                { x: 0.38, y: 0.75 },
+                { x: 0.28, y: 0.85 },
+                { x: 0.18, y: 0.85 },
+                { x: 0.10, y: 0.72 },
+                { x: 0.08, y: 0.50 },
+                { x: 0.10, y: 0.30 },
+                { x: 0.15, y: 0.12 },
+                { x: 0.22, y: 0.05 },
+                { x: 0.25, y: 0.00 }
+            ]
         }
     }
 };
@@ -252,12 +618,24 @@ export const getAllSmileStyles = () => {
 };
 
 /**
+ * Obtiene la silueta de un tipo de diente para un estilo dado
+ * @param {string} styleId - ID del estilo ('oval', 'triangular', etc.)
+ * @param {string} toothType - Tipo de diente ('central', 'lateral', 'canine', 'premolar', 'molar')
+ * @returns {Array|null} - Array de puntos {x, y} o null si no existe
+ */
+export const getToothShape = (styleId, toothType) => {
+    const style = getSmileStyle(styleId);
+    if (!style) return null;
+    return style.toothShapes?.[toothType] || null;
+};
+
+/**
  * Genera una descripción completa del estilo para mostrar al paciente
  */
 export const generateStylePresentation = (styleId) => {
     const style = getSmileStyle(styleId);
     if (!style) return null;
-    
+
     return {
         title: style.proposal.title,
         description: style.proposal.description,
@@ -281,9 +659,9 @@ export const recommendSmileStyle = (params) => {
         profession,       // 'professional', 'creative', 'other'
         preference        // 'conservative', 'modern', 'bold'
     } = params;
-    
+
     let recommendations = [];
-    
+
     // Lógica de recomendación basada en características
     if (personality === 'extrovert' && preference === 'bold') {
         recommendations.push({
@@ -292,7 +670,7 @@ export const recommendSmileStyle = (params) => {
             reason: 'Perfecto para tu personalidad dinámica y expresiva'
         });
     }
-    
+
     if (profession === 'professional' && preference === 'conservative') {
         recommendations.push({
             style: SMILE_STYLES.RECTANGULAR,
@@ -300,7 +678,7 @@ export const recommendSmileStyle = (params) => {
             reason: 'Transmite profesionalismo y autoridad'
         });
     }
-    
+
     if (personality === 'introvert' && preference === 'conservative') {
         recommendations.push({
             style: SMILE_STYLES.OVAL,
@@ -308,7 +686,7 @@ export const recommendSmileStyle = (params) => {
             reason: 'Elegancia y armonía natural'
         });
     }
-    
+
     if (preference === 'modern') {
         recommendations.push({
             style: SMILE_STYLES.TRIANGULAR,
@@ -316,14 +694,14 @@ export const recommendSmileStyle = (params) => {
             reason: 'Aspecto contemporáneo y fresco'
         });
     }
-    
+
     // Siempre incluir el estilo cuadrado como opción equilibrada
     recommendations.push({
         style: SMILE_STYLES.SQUARE,
         score: 75,
         reason: 'Opción equilibrada y versátil'
     });
-    
+
     // Ordenar por puntuación
     return recommendations.sort((a, b) => b.score - a.score);
 };
@@ -340,7 +718,8 @@ export const generateStyleComparison = (styleIds) => {
             color: style.colorHex,
             personality: style.personality.primary,
             traits: style.personality.traits,
-            benefits: style.proposal.benefits
+            benefits: style.proposal.benefits,
+            toothShape: style.toothShapes?.central || null
         };
     });
 };

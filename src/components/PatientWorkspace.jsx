@@ -5,7 +5,7 @@ import {
     Mic, Sparkles, Calculator, Heart, Stethoscope,
     FolderOpen, ChevronRight, Plus, MessageCircle, Calendar,
     Zap, ClipboardList, Phone, Menu, X, GitBranch, HardDrive, Microscope, FastForward,
-    Volume2, VolumeX
+    Volume2, VolumeX, Palette
 } from 'lucide-react';
 
 // --- IMPORTACIÓN DE PESTAÑAS ---
@@ -26,6 +26,9 @@ import OrthodonticsTrackingTab from './OrthodonticsTrackingTab';
 import ImplantologyTrackingTab from './ImplantologyTrackingTab';
 import EndodonticsTrackingTab from './EndodonticsTrackingTab';
 
+// --- NUEVO COMPONENTE DSD ---
+import DSDTab from './DSDTab';
+
 export default function PatientWorkspace({
     selectedPatientId, setSelectedPatientId, patientTab, setPatientTab,
     userRole, themeMode, session, clinicOwner, patientRecords, setActiveTab,
@@ -38,6 +41,7 @@ export default function PatientWorkspace({
     getPatient, savePatientData, setPatientRecords, setModal, setQuoteItems,
     setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
     handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg, config,
+    supabase, // <-- NUEVA PROP
     isLoading = false
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -100,7 +104,6 @@ export default function PatientWorkspace({
             icon: Calculator,
             color: 'bg-[#CBAAA2]/20 text-[#8B5E57] hover:bg-[#CBAAA2]/40 border border-[#CBAAA2]/30',
             action: () => {
-                // Sincronizar sessionData para que QuoteView lo reconozca
                 if (setSessionData) {
                     setSessionData(prev => ({
                         ...prev,
@@ -150,7 +153,7 @@ export default function PatientWorkspace({
         { id: 'data',      label: 'Ficha & Datos', icon: User,        tabs: ['personal', 'anamnesis'] },
         { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope, tabs: ['clinical', 'perio', 'evolution', 'orthodontics', 'implantology', 'endodontics'] },
         { id: 'risk',      label: 'Prevención',    icon: ShieldIcon,  tabs: ['pra', 'cariogram'] },
-        { id: 'documents', label: 'Gestión',       icon: FolderOpen,  tabs: ['quotes', 'consent', 'images'] },
+        { id: 'documents', label: 'Gestión',       icon: FolderOpen,  tabs: ['quotes', 'consent', 'images', 'dsd'] }, // <-- AÑADIDO 'dsd'
     ];
 
     const tabButtons = [
@@ -166,7 +169,8 @@ export default function PatientWorkspace({
         { id: 'cariogram', label: 'Riesgo Caries',       icon: Calculator,    group: 'risk',      restricted: true },
         { id: 'quotes',    label: 'Presupuestos',        icon: Calculator,    group: 'documents', badge: activeQuotesCount },
         { id: 'consent',   label: 'Consentimientos',     icon: FileSignature, group: 'documents', badge: consentsCount },
-        { id: 'images',    label: 'Galería Multimedia',  icon: ImageIcon,     group: 'documents' }
+        { id: 'images',    label: 'Galería Multimedia',  icon: ImageIcon,     group: 'documents' },
+        { id: 'dsd',       label: 'Diseño Sonrisa',      icon: Palette,       group: 'documents' }, // <-- NUEVA PESTAÑA
     ];
 
     const isTabVisible = (tabId) => {
@@ -324,9 +328,7 @@ export default function PatientWorkspace({
                                 </p>
                             </div>
                         </button>
-                        {/* Switch de confirmación hablada — lee en voz alta lo que se
-                            guardó en cada dictado (útil en periodontograma). Apagado
-                            por defecto; funciona independiente de isListening. */}
+                        {/* Switch de confirmación hablada */}
                         <div className="px-3 pb-2">
                             <button
                                 onClick={toggleVoiceConfirmation}
@@ -471,6 +473,21 @@ export default function PatientWorkspace({
                                 uploading={uploading} handleImageUpload={handleImageUpload}
                                 setSelectedImg={setSelectedImg} notify={notify} config={config}
                                 saveToSupabase={savePatientData}
+                            />
+                        )}
+                        {/* --- NUEVA PESTAÑA DSD --- */}
+                        {patientTab === 'dsd' && (
+                            <DSDTab
+                                p={p}
+                                getPatient={getPatient}
+                                selectedPatientId={selectedPatientId}
+                                savePatientData={savePatientData}
+                                notify={notify}
+                                supabase={supabase}
+                                config={config}
+                                handleImageUpload={handleImageUpload}
+                                activeFolder={activeFolder}
+                                setActiveFolder={setActiveFolder}
                             />
                         )}
                     </div>

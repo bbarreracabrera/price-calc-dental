@@ -42,13 +42,12 @@ export default function QuoteView({
     const [dropdownHighlight, setDropdownHighlight] = useState(0);
     const [activeCategory, setActiveCategory] = useState(null);
     const dropdownRef = useRef(null);
+    const searchInputRef = useRef(null); // <--- NUEVO REF PARA EL INPUT DE BÚSQUEDA
 
     const [newPatModal, setNewPatModal] = useState({ open: false, name: '', rut: '', phone: '' });
     const [savedSuccess, setSavedSuccess] = useState(false);
 
     // --- EFECTO DE AUTO-SELECCIÓN ---
-    // Cuando el componente se monta, si sessionData tiene un patientId pero QuoteView no lo está reflejando,
-    // nos aseguramos de que el estado local sea coherente.
     useEffect(() => {
         if (sessionData.patientId && patientRecords[sessionData.patientId]) {
             const p = patientRecords[sessionData.patientId];
@@ -114,6 +113,18 @@ export default function QuoteView({
             setDropdownOpen(false);
             setActiveCategory(null);
         }
+    };
+
+    // --- NUEVA FUNCIÓN PARA AGREGAR ÍTEM (reutilizada por botón y Enter) ---
+    const handleAddItem = () => {
+        if (!newQuoteItem.name || !newQuoteItem.price) {
+            notify('Completa el nombre y precio', 'error');
+            return;
+        }
+        setQuoteItems([...quoteItems, { ...newQuoteItem, id: Date.now().toString(), phase: currentPhase }]);
+        setNewQuoteItem({ name: '', price: '', tooth: '', phase: currentPhase });
+        // Mantener el foco en el input de búsqueda para seguir tipeando
+        searchInputRef.current?.focus();
     };
 
     const handleCreateNewPatient = () => {
@@ -227,6 +238,7 @@ export default function QuoteView({
                             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                                 <div className="md:col-span-3 relative" ref={dropdownRef}>
                                     <input
+                                        ref={searchInputRef} // <--- REF AGREGADO
                                         className="w-full outline-none font-bold text-sm p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-[#312923] focus:border-[#5B6651] transition-all"
                                         placeholder="Busca en tu arancel..."
                                         value={newQuoteItem.name}
@@ -311,17 +323,16 @@ export default function QuoteView({
                                         placeholder="$"
                                         value={newQuoteItem.price}
                                         onChange={e => setNewQuoteItem({...newQuoteItem, price: e.target.value})}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleAddItem(); // <--- ATALO ENTER EN EL CAMPO PRECIO
+                                            }
+                                        }}
                                     />
                                 </div>
                                 <button
-                                    onClick={() => {
-                                        if (!newQuoteItem.name || !newQuoteItem.price) {
-                                            notify('Completa el nombre y precio', 'error');
-                                            return;
-                                        }
-                                        setQuoteItems([...quoteItems, { ...newQuoteItem, id: Date.now().toString(), phase: currentPhase }]);
-                                        setNewQuoteItem({ name: '', price: '', tooth: '', phase: currentPhase });
-                                    }}
+                                    onClick={handleAddItem} // <--- REUTILIZA LA MISMA FUNCIÓN
                                     className="md:col-span-1 bg-[#312923] text-white rounded-2xl p-4 hover:bg-[#5B6651] transition-all shadow-lg flex items-center justify-center"
                                 >
                                     <Plus size={20} />

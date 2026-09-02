@@ -346,16 +346,44 @@ export default function OdontogramTab({
                         <button 
                             onClick={() => {
                                 const teeth = currentTeeth || {};
-                                const newQuoteItems = [];
+                                const proposedItems = [];
                                 [...TEETH_UPPER, ...TEETH_LOWER, ...TEETH_UPPER_PED, ...TEETH_LOWER_PED].forEach(n => {
                                     const tData = teeth[n];
                                     if (tData?.treatment?.name && tData.treatment.status !== 'completed') {
                                         const catalogItem = catalog.find(c => c.name === tData.treatment.name);
-                                        newQuoteItems.push({ id: Date.now() + Math.random(), name: tData.treatment.name, tooth: n.toString(), price: catalogItem ? Number(catalogItem.price) : 0 });
+                                        proposedItems.push({ 
+                                            id: Date.now() + Math.random(), 
+                                            name: tData.treatment.name, 
+                                            tooth: n.toString(), 
+                                            price: catalogItem ? Number(catalogItem.price) : 0 
+                                        });
                                     }
                                 });
-                                if (newQuoteItems.length > 0) { setQuoteItems(newQuoteItems); notify(`Se importaron ${newQuoteItems.length} tratamientos.`); }
-                                setActiveTab('quote'); setSessionData({...sessionData, patientName: patient.personal?.legalName || patient.name, patientId: selectedPatientId});
+
+                                if (proposedItems.length === 0) {
+                                    notify('No hay tratamientos planificados para importar.', 'info');
+                                    return;
+                                }
+
+                                // --- MERGE CON ITEMS EXISTENTES (evita duplicados) ---
+                                let addedItems = [];
+                                setQuoteItems(prev => {
+                                    const existingKeys = new Set(prev.map(i => `${i.tooth}|${i.name}`));
+                                    const toAdd = proposedItems.filter(i => !existingKeys.has(`${i.tooth}|${i.name}`));
+                                    addedItems = toAdd;
+                                    return [...prev, ...toAdd];
+                                });
+
+                                // Notificación con cantidad real agregada
+                                if (addedItems.length > 0) {
+                                    notify(`Se importaron ${addedItems.length} tratamientos al presupuesto.`, 'success');
+                                } else {
+                                    notify('Todos los tratamientos ya están en el presupuesto.', 'info');
+                                }
+
+                                // Cambiar a la vista de presupuesto
+                                setActiveTab('quote');
+                                setSessionData({...sessionData, patientName: patient.personal?.legalName || patient.name, patientId: selectedPatientId});
                             }} 
                             className="flex items-center gap-2 px-6 py-3 bg-[#5B6651] text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-lg shadow-[#5B6651]/20 hover:-translate-y-0.5 transition-all"
                         >

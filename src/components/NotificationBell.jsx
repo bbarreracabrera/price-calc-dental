@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, X, CheckCheck, Trash2, FlaskConical, Calendar, Zap } from 'lucide-react';
+import { Bell, X, CheckCheck, Trash2 } from 'lucide-react';
 
 const TYPE_ICONS = {
     lab_new: '🔬',
@@ -30,27 +30,50 @@ function formatRelativeTime(timestamp) {
 
 export default function NotificationBell({ notifications = [], unreadCount = 0, onMarkAllRead, onMarkRead, onClearAll }) {
     const [isOpen, setIsOpen] = useState(false);
+    const buttonRef = useRef(null);
     const panelRef = useRef(null);
+    const [panelPosition, setPanelPosition] = useState({ top: 0, left: 0 });
 
-    // Cerrar al hacer clic fuera
+    const updatePanelPosition = () => {
+        if (buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setPanelPosition({
+                top: rect.bottom + 8, // mt-2
+                left: rect.left,
+            });
+        }
+    };
+
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if (panelRef.current && !panelRef.current.contains(e.target)) {
+            if (
+                panelRef.current &&
+                !panelRef.current.contains(e.target) &&
+                !buttonRef.current?.contains(e.target)
+            ) {
                 setIsOpen(false);
             }
         };
-        if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+
+        if (isOpen) {
+            updatePanelPosition();
+            document.addEventListener('mousedown', handleClickOutside);
+            const handleResize = () => updatePanelPosition();
+            window.addEventListener('resize', handleResize);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+                window.removeEventListener('resize', handleResize);
+            };
+        }
     }, [isOpen]);
 
-    const handleOpen = () => {
-        setIsOpen(prev => !prev);
-    };
+    const handleOpen = () => setIsOpen(prev => !prev);
 
     return (
-        <div className="relative" ref={panelRef}>
+        <div className="relative">
             {/* Botón campana */}
             <button
+                ref={buttonRef}
                 onClick={handleOpen}
                 className="relative p-2.5 text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] rounded-xl transition-all"
                 title="Notificaciones"
@@ -65,7 +88,16 @@ export default function NotificationBell({ notifications = [], unreadCount = 0, 
 
             {/* Panel de notificaciones */}
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-[#DFD2C4] rounded-[2rem] shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div
+                    ref={panelRef}
+                    className="fixed z-50 bg-white border border-[#DFD2C4] rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                    style={{
+                        top: panelPosition.top,
+                        left: panelPosition.left,
+                        width: 'min(20rem, calc(100vw - 2rem))',
+                        maxWidth: 'calc(100vw - 2rem)',
+                    }}
+                >
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-[#DFD2C4]/50">
                         <div>
