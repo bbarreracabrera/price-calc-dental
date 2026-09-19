@@ -18,7 +18,7 @@ export default function Sidebar({
             { id: 'dashboard', label: 'Inicio', icon: TrendingUp },
             { id: 'agenda', label: 'Agenda', icon: CalendarClock },
             { id: 'ficha', label: 'Pacientes', icon: User },
-            { id: 'recalls', label: 'Retención CRM', icon: Users },
+            { id: 'recalls', label: 'Mantención de pacientes', icon: Users },
         ];
         if (userRole === 'admin' || userRole === 'assistant') { base.push({ id: 'history', label: 'Caja & Gastos', icon: Wallet }); }
         if (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') { base.push({ id: 'quote', label: 'Plan de tratamiento', icon: Calculator }); }

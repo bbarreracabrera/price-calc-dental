@@ -15,7 +15,7 @@ export default function CRMView({
                         <Users size={14} className="text-[#8A7F74]"/>
                         <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Marketing & Retención</p>
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-black text-[#241F1B] tracking-tighter">CRM Pacientes</h2>
+                    <h2 className="text-4xl md:text-5xl font-black text-[#241F1B] tracking-tighter">Mantención</h2>
                     <p className="text-xs font-bold text-[#8A7F74] mt-2">Pacientes inactivos por más de 6 meses sin citas futuras.</p>
                 </div>
 
