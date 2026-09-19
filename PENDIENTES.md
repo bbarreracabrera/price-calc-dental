@@ -186,3 +186,73 @@ Supabase secrets:
 - MASTER_EMAIL=b.barreracabrera.dent@gmail.com
 - (RESEND_API_KEY pendiente)
 - (RESEND_FROM_EMAIL pendiente)
+
+---
+
+## SPRINT 17-09-2026 — CUATRO FRENTES
+
+### Aplicado en Supabase
+- [x] Columna generada `patients.rut_norm` con el RUT normalizado
+- [x] Índice único parcial `patients_rut_unico_por_clinica` sobre (admin_email, rut_norm)
+      — antes NO existía ninguna restricción de RUT en la base
+- [x] Columnas `created_at`, `updated_at` (con trigger) e `import_batch_id`
+- [x] Registro de prueba duplicado archivado con borrado suave
+- Migración versionada en `supabase/migrations/20260917_patients_rut_unico.sql`
+
+### Sistema visual
+- [x] `zoom: 0.75` reemplazado por reducción de la raíz a 12px — misma densidad,
+      sin el reescalado no entero que provocaba el aspecto pixelado
+- [x] Plus Jakarta Sans cargada de verdad (antes no se cargaba ninguna tipografía)
+- [x] Paleta tokenizada en `tailwind.config.js`, todos los pares texto/fondo ≥ 4.5:1
+      — el `#9A8F84` anterior daba 3.06:1 sobre el crema
+- [x] Escala tipográfica en px, espaciado en rem
+- [x] `THEMES` unificado en un solo tema
+- [x] Codemod `scripts/migrar-tokens.mjs`: 79 archivos, 3.879 colores, 661 tamaños
+- [ ] Repasar a ojo las pantallas de más tráfico: los iconos de lucide crecen al
+      quitar el zoom porque su tamaño va en px
+
+### Ficha del paciente
+- [x] De 14 pestañas planas a 5 secciones con sub-pestañas
+- [x] Pestaña Resumen como pantalla de entrada
+- [x] Especialidades visibles solo si el paciente tiene registros
+- [x] `AlertasMedicas` en ficha, lista de pacientes y agenda
+- [x] Panel lateral de evolución sobre cualquier sección
+- [x] Atajos R / O / E / P
+- [x] Barra de secciones inferior en móvil
+- [x] CORREGIDO: PatientWorkspace pasaba `handleGeneratePDF` y PatientConsentTab
+      esperaba `generatePDF` — el botón de PDF del consentimiento estaba muerto
+- [ ] Formulario de anamnesis: conectar los campos de detalle de `CONDICIONES_MEDICAS`
+      y los bloques de `BLOQUES_CONDICIONALES` dentro de PatientAnamnesisTab
+
+### Documentos PDF
+- [x] Módulo `src/pdf/` con membrete, folio, paginación, firmas y auditoría únicos
+- [x] Presupuesto, receta, consentimiento, periodontograma y ficha clínica imprimible
+- [x] Ficha clínica nueva, conforme al Decreto 41/2012 (art. 5, 6 a-d, 7, 10, 11)
+- [x] A4 y Carta como parámetro (`config.paperFormat`, selector en Ajustes)
+- [x] Legible en blanco y negro: cada color lleva además su letra o símbolo
+- [x] CORREGIDO: el presupuesto perdía condiciones y firmas si era largo
+- [x] CORREGIDO: el periodontograma leía `patient.name` y `patient.rut`, campos
+      que no existen — salía siempre sin nombre y sin RUT
+- [x] Periodontograma por hemiarcada con gráfico de sondaje
+- [ ] Faltan: orden de laboratorio, comprobante de abono, certificado de atención
+- [ ] Fuente incrustada en el PDF (hoy Helvetica de jsPDF, WinAnsi: sin signo −)
+
+### Traspaso de pacientes
+- [x] Asistente de 5 pasos: origen, mapeo, validación, conflictos, resumen
+- [x] Perfiles Dentalink / Reservo / AgendaPro / Excel propio / fichas en papel
+- [x] Plantilla XLSX descargable
+- [x] Validación de RUT, fechas (serie de Excel incluida) y teléfono chileno
+- [x] Deduplicación real contra la clínica y dentro del propio archivo
+- [x] Deshacer el lote completo por `import_batch_id`
+- [x] `consentStatus: 'heredado'` en los importados
+- [ ] Ofrecer el traspaso también en el recorrido de bienvenida, no solo en la
+      lista de pacientes
+
+### Normativa verificada (fuentes oficiales, septiembre 2026)
+- Decreto 41/2012 MINSAL: contenido mínimo de la ficha, entrega y conservación
+- Ley 21.719: entra en vigencia el **1 de diciembre de 2026**. Reforma la 19.628,
+  crea la Agencia de Protección de Datos, exige notificar brechas en 72 horas y
+  fiscaliza evidencia operativa (registros de acceso), no políticas escritas
+- Ley 19.799: firma electrónica simple, válida para consentimientos
+- Código Sanitario art. 100-101: receta en papel sigue plenamente válida; el SNRE
+  es voluntario para quien prescribe en esta etapa

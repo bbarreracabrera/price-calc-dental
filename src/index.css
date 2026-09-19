@@ -2,123 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 
-  Optimización de Densidad Visual:
-  La reducción de escala se aplica SOLO dentro del contenedor de la app
-  (.app-zoom-container) para no afectar la landing page pública.
-*/
-:root {
-  font-size: 16px; /* Mantenemos el default para la landing */
-}
+/* ==========================================================================
+   DENSIDAD Y NITIDEZ
+   --------------------------------------------------------------------------
+   Antes esto usaba `zoom: 0.75` sobre <html> para compactar la app. El efecto
+   secundario era grave: `zoom` reescala por un factor no entero, así que los
+   bordes de 1px y las sombras caen entre píxeles físicos y el navegador los
+   promedia. Eso es lo que se veía "pixeleado". Además encogía los tamaños en
+   px (text-[9px] quedaba en 6.75px real) y las medidas en vh se calculaban
+   contra la ventana sin encoger, dejando huecos en blanco abajo.
+
+   El reemplazo correcto: reducir el tamaño de raíz. Tailwind expresa
+   paddings, gaps y radios en rem, así que bajar la raíz a 12px encoge TODA
+   la densidad al mismo 0.75 de antes — la app queda igual de compacta — pero
+   los bordes, las sombras y las imágenes se siguen dibujando a resolución
+   nativa del dispositivo. La nitidez vuelve.
+
+   Y como tailwind.config declara fontSize en px, la tipografía queda fuera de
+   esta reducción: el layout es compacto, el texto es legible.
+   ========================================================================== */
+:root { font-size: 16px; }              /* landing pública: escala normal */
 
 html {
-  background-color: #FDFBF7 !important;
+  background-color: theme('colors.canvas');
   height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* La clase se agrega/quita en App.jsx según haya sesión iniciada. */
+html.app-zoomed { font-size: 16px; }
+@media (min-width: 768px) {
+  html.app-zoomed { font-size: 12px; }
 }
 
 body {
-  background-color: #FDFBF7 !important;
+  margin: 0;
+  background-color: theme('colors.canvas');
+  color: theme('colors.ink');
+  font-family: theme('fontFamily.sans');
   min-height: 100%;
   overflow-x: hidden;
 }
 
-/*
-  Reducción de densidad visual aplicada SOLO a la app interna, usando la
-  propiedad CSS `zoom` — es el mismo mecanismo que usa el navegador cuando
-  ajustas el zoom manualmente a 75%, así que escala TODO de forma fiel
-  (tipografía, paddings, iconos, bordes, sombras) sin ir parchando clase
-  por clase como antes (ese enfoque con font-size + overrides puntuales no
-  funcionaba porque Tailwind usa `rem`, que siempre se calcula contra la
-  raíz del documento, no contra este contenedor).
-
-  En pantallas angostas (celulares) dejamos la escala normal: la app ya
-  tiene su propio diseño responsive para móvil, y reducir aún más el zoom
-  ahí encogería los botones/textos por debajo de un tamaño cómodo para tocar.
-*/
-/*
-  Reducción de densidad visual aplicada SOLO a la app interna (no a la
-  landing pública), usando la propiedad CSS `zoom` — el mismo mecanismo que
-  usa el navegador cuando ajustas el zoom manualmente.
-
-  IMPORTANTE: esta regla va en <html>, no en un <div> intermedio. Si el zoom
-  se aplica en un div anidado, las unidades `vh` de sus descendientes siguen
-  midiendo el alto REAL de la ventana (no lo ven "encogido"), así que un
-  layout tipo `h-[calc(100vh-100px)]` termina dibujándose más chico de lo
-  que realmente ocupa, dejando espacio en blanco sin cubrir debajo. Aplicado
-  en <html>, el zoom se comporta exactamente como el zoom manual del
-  navegador: `vh` se recalcula de forma consistente en toda la app.
-
-  La clase se agrega/quita en tiempo de ejecución (ver App.jsx) según haya
-  sesión iniciada, para no afectar la landing page pública.
-*/
-html.app-zoomed {
-  zoom: 1;
+/* Todo dato clínico o monetario alinea por columna. */
+.tabular,
+input[type="number"],
+td.num, th.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
-@media (min-width: 768px) {
-  html.app-zoomed {
-    zoom: 0.75;
+/* Foco visible y consistente: requisito AA, hoy inexistente en la app. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid theme('colors.accent.DEFAULT');
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Áreas de toque mínimas de 44px en pantallas táctiles. */
+@media (pointer: coarse) {
+  button, a[role="button"], [role="tab"], label[for] {
+    min-height: 44px;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   SCROLLBARS
+   ========================================================================== */
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: theme('colors.line-strong') transparent; }
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: theme('colors.line-strong');
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: theme('colors.faint'); }
+
+.no-scrollbar::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar, .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.glass-effect {
+  background: rgba(255,255,255,.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.55);
+}
+
+/* ==========================================================================
+   IMPRESIÓN DESDE EL NAVEGADOR (calculadoras PRA y Cariograma)
+   Los documentos clínicos se generan con el módulo src/pdf/, no con esto.
+   ========================================================================== */
 @media print {
-    body * { visibility: hidden; }
+  html.app-zoomed { font-size: 16px; }
 
-    .print-area,
-    .print-area * { visibility: visible; }
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; page-break-inside: avoid; }
 
-    .print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        page-break-after: auto;
-        page-break-inside: avoid;
-    }
+  .no-print, .no-print *, button, button * { display: none !important; visibility: hidden !important; }
 
-    .no-print,
-    .no-print *,
-    button,
-    button * {
-        display: none !important;
-        visibility: hidden !important;
-    }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-    }
+  html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; height: auto !important; }
+  main, section, .min-h-screen { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
 
-    html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background: white !important;
-        height: auto !important;
-    }
+  @page { margin: 1.5cm; size: A4; }
 
-    main, section, .min-h-screen {
-        min-height: 0 !important;
-        height: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    @page {
-        margin: 1.5cm;
-        size: A4;
-    }
-
-    body::after {
-        content: "Generado por ShiningCloud Dental — Documento orientativo. No constituye diagnóstico médico.";
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        text-align: center;
-        font-size: 7pt;
-        color: #999;
-        padding: 4mm;
-        visibility: visible;
-    }
+  body::after {
+    content: "Generado por ShiningCloud Dental — Documento orientativo. No constituye diagnóstico médico.";
+    position: fixed; bottom: 0; left: 0; right: 0;
+    text-align: center; font-size: 7pt; color: #6b6b6b; padding: 4mm; visibility: visible;
+  }
 }

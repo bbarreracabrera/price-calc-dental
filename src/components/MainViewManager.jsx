@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import { Shield, Menu } from 'lucide-react';
+import AlertasMedicas from './AlertasMedicas';
+import { Shield, Menu, Upload } from 'lucide-react';
 import LoadingScreen from './LoadingScreen';
 import { Card } from './UIComponents';
 import { ArrowRight } from 'lucide-react';
@@ -54,8 +55,8 @@ export default function MainViewManager(props) {
     return (
         <main className={`flex-1 flex flex-col p-3 sm:p-4 md:p-6 lg:p-8 min-h-0 overflow-y-auto transition-all duration-300 ${isWorkspaceActive ? 'md:ml-20' : 'md:ml-20 lg:ml-64'}`}>
             <div className="md:hidden flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-stone-100">
-                <button onClick={() => setMobileMenuOpen(true)} className={`p-2 rounded-xl bg-[#FDFBF7] text-[#5C544D]`}><Menu /></button>
-                <span className="font-black text-lg tracking-tight">ShiningCloud <span className="text-[#A3968B]">Dental</span></span>
+                <button onClick={() => setMobileMenuOpen(true)} className={`p-2 rounded-xl bg-[#FBFAF8] text-[#5C544D]`}><Menu /></button>
+                <span className="font-black text-lg tracking-tight">ShiningCloud <span className="text-[#8A7F74]">Dental</span></span>
                 <div className="w-8"></div>
             </div>
 
@@ -65,10 +66,10 @@ export default function MainViewManager(props) {
                         <MasterPanel supabase={supabase} notify={notify} session={session} />
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full py-24 px-6 text-center">
-                            <Shield size={48} className="text-[#A3968B] mb-4 opacity-60" />
-                            <h2 className="text-xl font-black text-[#312923] mb-2">Acceso restringido</h2>
-                            <p className="text-sm text-[#9A8F84] mb-6 max-w-xs">Este panel está reservado para administradores del sistema.</p>
-                            <button onClick={() => setActiveTab('dashboard')} className="px-5 py-2.5 bg-[#312923] text-white rounded-2xl font-bold text-sm hover:bg-black transition-colors">
+                            <Shield size={48} className="text-[#8A7F74] mb-4 opacity-60" />
+                            <h2 className="text-xl font-black text-[#241F1B] mb-2">Acceso restringido</h2>
+                            <p className="text-sm text-[#5E554E] mb-6 max-w-xs">Este panel está reservado para administradores del sistema.</p>
+                            <button onClick={() => setActiveTab('dashboard')} className="px-5 py-2.5 bg-[#241F1B] text-white rounded-2xl font-bold text-sm hover:bg-black transition-colors">
                                 Volver al inicio
                             </button>
                         </div>
@@ -83,7 +84,7 @@ export default function MainViewManager(props) {
                 {activeTab === 'help' && <HelpView />}
                 {activeTab === 'terms' && <LegalText />}
                 {activeTab === 'quote' && (userRole === 'admin' || userRole === 'dentist' || userRole === 'assistant') && <QuoteView themeMode={themeMode} t={t} quoteItems={quoteItems} setQuoteItems={setQuoteItems} newQuoteItem={newQuoteItem} setNewQuoteItem={setNewQuoteItem} catalog={catalog} patientRecords={patientRecords} sessionData={sessionData} setSessionData={setSessionData} getPatient={getPatient} savePatientData={savePatientData} saveToSupabase={saveToSupabase} notify={notify} generatePDF={handleGeneratePDF} setActiveTab={setActiveTab} adminEmail={clinicOwner} />}
-                {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} onGoToPatient={(patientId) => { setSelectedPatientId(patientId); setActiveTab('ficha'); }} />}
+                {activeTab === 'agenda' && <AgendaView themeMode={themeMode} t={t} appointments={appointments} patientRecords={patientRecords} team={team} onOpenModal={(apptData) => { setNewAppt(apptData); setModal('appt'); }} onGoToPatient={(patientId) => { setSelectedPatientId(patientId); setActiveTab('ficha'); }} />}
                 {activeTab === 'clinical' && (userRole === 'admin' || userRole === 'dentist') && <PrescriptionView themeMode={themeMode} t={t} patientRecords={patientRecords} getPatient={getPatient} savePatientData={savePatientData} setPatientRecords={setPatientRecords} rxPatient={rxPatient} setRxPatient={setRxPatient} medInput={medInput} setMedInput={setMedInput} prescription={prescription} setPrescription={setPrescription} notify={notify} generatePDF={handleGeneratePDF} adminEmail={clinicOwner} />}
                 {activeTab === 'recalls' && (userRole === 'admin' || userRole === 'assistant') && <CRMView themeMode={themeMode} t={t} getRecalls={getRecalls} patientRecords={patientRecords} setActiveTab={setActiveTab} setSelectedPatientId={setSelectedPatientId} sendWhatsApp={sendWhatsApp} getPatientPhone={getPatientPhone} />}
                 {activeTab === 'supply' && (userRole === 'admin' || userRole === 'dentist') && <SupplyView orders={supplyOrders} catalog={catalog} onOrderCreate={handleOrderCreate} notify={notify} />}
@@ -94,10 +95,10 @@ export default function MainViewManager(props) {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowImportModal(true)}
-                                className="shrink-0 px-4 py-3 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl text-sm font-black text-[#312923] hover:bg-[#DFD2C4]/30 transition-colors whitespace-nowrap"
-                                title="Importar pacientes desde CSV"
+                                className="shrink-0 flex items-center gap-2 px-4 py-3 bg-accent-soft border border-accent/25 rounded-2xl text-xs font-extrabold text-accent hover:bg-accent hover:text-white transition-colors whitespace-nowrap"
+                                title="Traer pacientes desde Dentalink, Reservo, AgendaPro, Excel o fichas en papel"
                             >
-                                📥 CSV
+                                <Upload size={14} /> Traer pacientes
                             </button>
                             <PatientSelect theme={themeMode} patients={patientRecords} placeholder="Buscar o Crear Paciente..." adminEmail={clinicOwner} onQueryChange={setPatientSearchQuery} onSelect={async (p) => {
                                 if (p.id === 'new') {
@@ -118,7 +119,7 @@ export default function MainViewManager(props) {
                             }} />
                         </div>
                         {totalPatients > 0 && (
-                            <p className="text-[11px] font-bold text-[#A3968B] uppercase tracking-widest px-1">
+                            <p className="text-[11px] font-bold text-[#8A7F74] uppercase tracking-widest px-1">
                                 {patientSearchQuery.length >= 2
                                     ? `${filteredPatientKeys.length} resultado${filteredPatientKeys.length !== 1 ? 's' : ''} para "${patientSearchQuery}"`
                                     : `Mostrando ${Object.keys(patientRecords).length} de ${totalPatients} pacientes`}
@@ -126,16 +127,21 @@ export default function MainViewManager(props) {
                         )}
                         <div className="grid gap-3">
                             {filteredPatientKeys.map(k => (
-                                <Card key={k} onClick={() => setSelectedPatientId(k)} className="cursor-pointer py-5 px-6 flex justify-between items-center group hover:bg-white hover:border-[#A3968B] transition-all">
-                                    <span className="font-bold capitalize text-[#2A2421] group-hover:text-[#A3968B]">{patientRecords[k]?.personal?.legalName || 'Paciente sin nombre'}</span>
-                                    <div className="w-8 h-8 rounded-full bg-[#FDFBF7] flex items-center justify-center text-[#5C544D] group-hover:bg-[#E5E7EB] transition-colors">
+                                <Card key={k} onClick={() => setSelectedPatientId(k)} className="cursor-pointer py-5 px-6 flex justify-between items-center group hover:bg-white hover:border-[#8A7F74] transition-all">
+                                    <div className="min-w-0 flex flex-col gap-1">
+                                        <span className="font-bold capitalize text-[#2A2421] group-hover:text-[#8A7F74] truncate">{patientRecords[k]?.personal?.legalName || 'Paciente sin nombre'}</span>
+                                        {/* Las alergias y los antecedentes críticos se ven antes de
+                                            abrir la ficha, no solo dentro de ella. */}
+                                        <AlertasMedicas p={patientRecords[k]} variante="chip" />
+                                    </div>
+                                    <div className="w-8 h-8 shrink-0 rounded-full bg-[#FBFAF8] flex items-center justify-center text-[#5C544D] group-hover:bg-[#E5E7EB] transition-colors">
                                         <ArrowRight size={16} />
                                     </div>
                                 </Card>
                             ))}
                             {filteredPatientKeys.length === 0 && patientSearchQuery.length >= 2 && (
-                                <div className="text-center py-10 bg-[#FDFBF7] border border-dashed border-[#DFD2C4] rounded-3xl">
-                                    <p className="text-sm font-bold text-[#9A8F84]">No se encontraron pacientes con "{patientSearchQuery}"</p>
+                                <div className="text-center py-10 bg-[#FBFAF8] border border-dashed border-[#D9D2C7] rounded-3xl">
+                                    <p className="text-sm font-bold text-[#5E554E]">No se encontraron pacientes con "{patientSearchQuery}"</p>
                                 </div>
                             )}
                         </div>
@@ -143,7 +149,7 @@ export default function MainViewManager(props) {
                             <button
                                 onClick={loadMorePatients}
                                 disabled={patientsLoading}
-                                className="w-full py-3 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl text-sm font-black text-[#312923] hover:bg-[#DFD2C4]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-3 bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl text-sm font-black text-[#241F1B] hover:bg-[#D9D2C7]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {patientsLoading ? 'Cargando...' : `Cargar más (${totalPatients - Object.keys(patientRecords).length} restantes)`}
                             </button>
@@ -176,7 +182,9 @@ export default function MainViewManager(props) {
                         handleGeneratePDF={handleGeneratePDF} handleImageUpload={handleImageUpload}
                         notify={notify} sendWhatsApp={sendWhatsApp} setSelectedImg={setSelectedImg}
                         config={config}
-                        supabase={supabase} // <-- NUEVA PROP
+                        supabase={supabase}
+                        // El Resumen de la ficha muestra la próxima cita del paciente.
+                        appointments={appointments}
                     />
                 )}
             </Suspense>

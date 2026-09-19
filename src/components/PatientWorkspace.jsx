@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
-    ArrowLeft, AlertTriangle, User, FileQuestion, Activity,
-    FileBarChart, FileText, FileSignature, ImageIcon,
-    Mic, Sparkles, Calculator, Heart, Stethoscope,
-    FolderOpen, ChevronRight, Plus, MessageCircle, Calendar,
-    Zap, ClipboardList, Phone, Menu, X, GitBranch, HardDrive, Microscope, FastForward,
-    Volume2, VolumeX, Palette
+  ArrowLeft, User, FileQuestion, Activity, FileBarChart, FileText, FileSignature,
+  ImageIcon, Mic, Calculator, Heart, Stethoscope, FolderOpen, Plus, MessageCircle,
+  Calendar, Zap, Phone, Menu, X, GitBranch, HardDrive, Microscope, FastForward,
+  Volume2, VolumeX, Palette, LayoutDashboard, Printer, ChevronRight,
 } from 'lucide-react';
 
-// --- IMPORTACIÓN DE PESTAÑAS ---
+import { supabase as supabaseClient } from '../supabase';
+import { formatRUT } from '../constants';
+
 import PatientPersonalTab from './PatientPersonalTab';
 import PatientAnamnesisTab from './PatientAnamnesisTab';
 import OdontogramTab from './OdontogramTab';
@@ -19,480 +19,613 @@ import PatientImagesTab from './PatientImagesTab';
 import ActiveQuotesTab from './ActiveQuotesTab';
 import PRATab from './PRATab';
 import CariogramTab from './CariogramTab';
-import { PatientCardSkeleton, FormSkeleton } from './SkeletonLoaders';
-
-// Nuevos componentes de seguimiento de especialidades
 import OrthodonticsTrackingTab from './OrthodonticsTrackingTab';
 import ImplantologyTrackingTab from './ImplantologyTrackingTab';
 import EndodonticsTrackingTab from './EndodonticsTrackingTab';
-
-// --- NUEVO COMPONENTE DSD ---
 import DSDTab from './DSDTab';
+import PatientSummaryTab from './PatientSummaryTab';
+import AlertasMedicas from './AlertasMedicas';
+import { PatientCardSkeleton, FormSkeleton } from './SkeletonLoaders';
+
+// ============================================================================
+// FICHA DEL PACIENTE
+// ----------------------------------------------------------------------------
+// Antes: catorce pestañas repartidas en cuatro grupos, todas al mismo nivel
+// dentro de cada grupo. "Clínica Pro" tenía seis, y Ortodoncia, Implantología y
+// Endodoncia pesaban igual que Odontograma, Periodontograma y Evolución, que se
+// usan en toda atención. Además aparecían siempre, aunque el paciente viniera
+// solo a una limpieza.
+//
+// Ahora: cinco secciones con sub-pestañas dentro. Las de especialidad aparecen
+// únicamente si el paciente tiene registros en esa especialidad, o si el
+// profesional las activa a propósito desde el botón de la sección Clínica.
+//
+// Tres cambios más que apuntan a lo mismo, menos clics:
+//
+//   · Resumen es la pantalla de entrada. Antes caías en Datos Personales, que
+//     es justo lo que menos se mira con el paciente sentado al frente.
+//   · Las alertas médicas viven fuera del área de contenido, así que se ven
+//     desde cualquier sección y no solo desde la cabecera.
+//   · La evolución se escribe en un panel lateral que se abre encima de lo que
+//     estés mirando. Ya no hay que salir del odontograma para registrar.
+//
+// Y un error que tenía un botón muerto: esta vista pasaba la función de PDF
+// como `handleGeneratePDF`, pero PatientConsentTab la recibe como `generatePDF`.
+// El botón "Descargar PDF" de un consentimiento firmado llamaba a undefined.
+// ============================================================================
+
+const SECCIONES = [
+  { id: 'resumen',    label: 'Resumen',    icono: LayoutDashboard, tabs: ['resumen'] },
+  { id: 'paciente',   label: 'Paciente',   icono: User,            tabs: ['personal', 'anamnesis'] },
+  { id: 'clinica',    label: 'Clínica',    icono: Stethoscope,     tabs: ['clinical', 'perio', 'evolution', 'orthodontics', 'implantology', 'endodontics'] },
+  { id: 'riesgo',     label: 'Riesgo',     icono: Heart,           tabs: ['pra', 'cariogram'] },
+  { id: 'documentos', label: 'Documentos', icono: FolderOpen,      tabs: ['quotes', 'consent', 'images', 'dsd'] },
+];
+
+const PESTANAS = [
+  { id: 'resumen',      label: 'Resumen',            icono: LayoutDashboard, seccion: 'resumen' },
+  { id: 'personal',     label: 'Datos personales',   icono: User,            seccion: 'paciente' },
+  { id: 'anamnesis',    label: 'Anamnesis',          icono: FileQuestion,    seccion: 'paciente',   restringida: true },
+  { id: 'clinical',     label: 'Odontograma',        icono: Activity,        seccion: 'clinica' },
+  { id: 'perio',        label: 'Periodontograma',    icono: FileBarChart,    seccion: 'clinica',    restringida: true },
+  { id: 'evolution',    label: 'Evolución clínica',  icono: FileText,        seccion: 'clinica',    restringida: true },
+  { id: 'orthodontics', label: 'Ortodoncia',         icono: GitBranch,       seccion: 'clinica',    restringida: true, especialidad: 'ortodoncia' },
+  { id: 'implantology', label: 'Implantología',      icono: HardDrive,       seccion: 'clinica',    restringida: true, especialidad: 'implantologia' },
+  { id: 'endodontics',  label: 'Endodoncia',         icono: Microscope,      seccion: 'clinica',    restringida: true, especialidad: 'endodoncia' },
+  { id: 'pra',          label: 'Riesgo periodontal', icono: Heart,           seccion: 'riesgo',     restringida: true },
+  { id: 'cariogram',    label: 'Riesgo de caries',   icono: Calculator,      seccion: 'riesgo',     restringida: true },
+  { id: 'quotes',       label: 'Presupuestos',       icono: Calculator,      seccion: 'documentos' },
+  { id: 'consent',      label: 'Consentimientos',    icono: FileSignature,   seccion: 'documentos' },
+  { id: 'images',       label: 'Imágenes',           icono: ImageIcon,       seccion: 'documentos' },
+  { id: 'dsd',          label: 'Diseño de sonrisa',  icono: Palette,         seccion: 'documentos' },
+];
+
+const ESPECIALIDADES = [
+  { clave: 'ortodoncia',    tabla: 'orthodontics_records', tab: 'orthodontics', label: 'Ortodoncia' },
+  { clave: 'implantologia', tabla: 'implantology_records', tab: 'implantology', label: 'Implantología' },
+  { clave: 'endodoncia',    tabla: 'endodontics_records',  tab: 'endodontics',  label: 'Endodoncia' },
+];
 
 export default function PatientWorkspace({
-    selectedPatientId, setSelectedPatientId, patientTab, setPatientTab,
-    userRole, themeMode, session, clinicOwner, patientRecords, setActiveTab,
-    activeFormType, setActiveFormType, viewingForm, setViewingForm,
-    odontogramMode, setOdontogramMode, odontogramType, setOdontogramType,
-    toothModalData, setToothModalData, catalog, sessionData, setSessionData,
-    isListening, voiceStatus, toggleVoice, voiceConfirmationEnabled, toggleVoiceConfirmation,
-    newEvolution, setNewEvolution, activeFolder, setActiveFolder, uploading,
-    consentTemplate, setConsentTemplate, consentText, setConsentText, modal,
-    getPatient, savePatientData, setPatientRecords, setModal, setQuoteItems,
-    setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
-    handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg, config,
-    supabase, // <-- NUEVA PROP
-    isLoading = false
+  selectedPatientId, setSelectedPatientId, patientTab, setPatientTab,
+  userRole, session, setActiveTab,
+  activeFormType, setActiveFormType, viewingForm, setViewingForm,
+  odontogramMode, setOdontogramMode, odontogramType, setOdontogramType,
+  setToothModalData, catalog, sessionData, setSessionData,
+  isListening, voiceStatus, toggleVoice, voiceConfirmationEnabled, toggleVoiceConfirmation,
+  newEvolution, setNewEvolution, activeFolder, setActiveFolder, uploading,
+  consentTemplate, setConsentTemplate, consentText, setConsentText, modal,
+  getPatient, savePatientData, setModal, setQuoteItems,
+  setPerioData, restoreSnapshot, savePerioSnapshot, getPerioStats, logAction,
+  handleGeneratePDF, handleImageUpload, notify, sendWhatsApp, setSelectedImg, config,
+  supabase, appointments = [], isLoading = false,
 }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showQuickActions, setShowQuickActions] = useState(true);
+  const db = supabase || supabaseClient;
 
-    if (isLoading || (selectedPatientId && !getPatient(selectedPatientId))) {
-        return (
-            <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)] gap-4 lg:gap-6 animate-in fade-in p-4 lg:p-0">
-                <div className="w-full lg:w-56 shrink-0 space-y-4">
-                    <div className="h-40 bg-[#DFD2C4]/20 animate-pulse rounded-2xl"></div>
-                    <div className="space-y-2">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="h-10 bg-[#DFD2C4]/10 animate-pulse rounded-xl"></div>
-                        ))}
-                    </div>
-                </div>
-                <div className="flex-1 bg-white rounded-[2.5rem] border border-[#DFD2C4]/60 p-4 lg:p-8 shadow-sm overflow-hidden">
-                    <PatientCardSkeleton />
-                    <div className="mt-8">
-                        <FormSkeleton />
-                    </div>
-                </div>
-            </div>
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const [panelEvolucion, setPanelEvolucion] = useState(false);
+  const [especialidadesActivas, setEspecialidadesActivas] = useState([]);
+  const [especialidadesManuales, setEspecialidadesManuales] = useState([]);
+  const [menuEspecialidad, setMenuEspecialidad] = useState(false);
+  const contenidoRef = useRef(null);
+
+  // ---------------------------------------------------------------------
+  // Qué especialidades tiene realmente este paciente
+  // ---------------------------------------------------------------------
+  // Los registros de especialidad viven en tablas propias, no dentro del JSON
+  // del paciente, así que hay que preguntarlo. Son tres conteos sin traer
+  // filas; se resuelven en una sola ida y vuelta.
+  useEffect(() => {
+    let vigente = true;
+    if (!selectedPatientId || !db) return undefined;
+
+    (async () => {
+      try {
+        const resultados = await Promise.all(
+          ESPECIALIDADES.map(e =>
+            db.from(e.tabla).select('id', { count: 'exact', head: true }).eq('patient_id', selectedPatientId),
+          ),
         );
-    }
-    const p = getPatient(selectedPatientId);
+        if (!vigente) return;
+        setEspecialidadesActivas(
+          ESPECIALIDADES.filter((e, i) => (resultados[i]?.count || 0) > 0).map(e => e.clave),
+        );
+      } catch {
+        // Si la consulta falla, se muestran las tres: es preferible una pestaña
+        // de más que esconderle al profesional un tratamiento en curso.
+        if (vigente) setEspecialidadesActivas(ESPECIALIDADES.map(e => e.clave));
+      }
+    })();
 
-    const activeQuotesCount = p.clinical?.quotes?.filter(q => q.status === 'en_proceso' || q.status === 'active')?.length || 0;
-    const consentsCount = p.consents?.length || 0;
+    return () => { vigente = false; };
+  }, [selectedPatientId, db]);
 
-    // --- ACCIONES RÁPIDAS ---
-    const quickActions = [
-        {
-            id: 'fast_exam',
-            label: 'Examen Rápido',
-            icon: FastForward,
-            color: 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-200',
-            action: () => {
-                setPatientTab('clinical');
-                setOdontogramMode('hallazgos');
-                notify('Modo Examen Rápido activado. Selecciona los hallazgos directamente en el odontograma.');
-            }
-        },
-        {
-            id: 'evolution',
-            label: 'Nueva Evolución',
-            icon: Plus,
-            color: 'bg-[#5B6651] text-white hover:bg-[#4a5442]',
-            action: () => {
-                setPatientTab('evolution');
-                setTimeout(() => {
-                    const el = document.getElementById('new-evolution-input');
-                    if (el) el.focus();
-                }, 200);
-            }
-        },
-        {
-            id: 'quote',
-            label: 'Planificación',
-            icon: Calculator,
-            color: 'bg-[#CBAAA2]/20 text-[#8B5E57] hover:bg-[#CBAAA2]/40 border border-[#CBAAA2]/30',
-            action: () => {
-                if (setSessionData) {
-                    setSessionData(prev => ({
-                        ...prev,
-                        patientId: selectedPatientId,
-                        patientName: p.personal?.legalName || p.name || 'Paciente'
-                    }));
-                }
-                setActiveTab('quote');
-            }
-        },
-        {
-            id: 'whatsapp',
-            label: 'WhatsApp',
-            icon: MessageCircle,
-            color: 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200',
-            action: () => {
-                const phone = p.personal?.phone?.replace(/\D/g, '');
-                if (!phone) { notify('El paciente no tiene teléfono registrado.'); return; }
-                const name = p.personal?.legalName || 'paciente';
-                window.open(`https://wa.me/56${phone.replace(/^0/, '')}?text=Hola%20${encodeURIComponent(name)}%2C%20le%20contactamos%20desde%20la%20cl%C3%ADnica.`, '_blank');
-            }
-        },
-        {
-            id: 'agenda',
-            label: 'Agendar Cita',
-            icon: Calendar,
-            color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200',
-            action: () => setModal('appt')
-        },
-        {
-            id: 'call',
-            label: 'Llamar',
-            icon: Phone,
-            color: 'bg-[#FDFBF7] text-[#6B615A] hover:bg-[#DFD2C4]/40 border border-[#DFD2C4]',
-            action: () => {
-                const phone = p.personal?.phone?.replace(/\D/g, '');
-                if (!phone) { notify('El paciente no tiene teléfono registrado.'); return; }
-                window.location.href = `tel:+56${phone.replace(/^0/, '')}`;
-            }
-        }
-    ];
+  useEffect(() => { setEspecialidadesManuales([]); }, [selectedPatientId]);
 
-    // --- GRUPOS Y BOTONES DE NAVEGACIÓN ---
-    function ShieldIcon(props) { return <Heart {...props} />; }
+  const especialidadesVisibles = useMemo(
+    () => [...new Set([...especialidadesActivas, ...especialidadesManuales])],
+    [especialidadesActivas, especialidadesManuales],
+  );
 
-    const TAB_GROUPS = [
-        { id: 'data',      label: 'Ficha & Datos', icon: User,        tabs: ['personal', 'anamnesis'] },
-        { id: 'clinical',  label: 'Clínica Pro',   icon: Stethoscope, tabs: ['clinical', 'perio', 'evolution', 'orthodontics', 'implantology', 'endodontics'] },
-        { id: 'risk',      label: 'Prevención',    icon: ShieldIcon,  tabs: ['pra', 'cariogram'] },
-        { id: 'documents', label: 'Gestión',       icon: FolderOpen,  tabs: ['quotes', 'consent', 'images', 'dsd'] }, // <-- AÑADIDO 'dsd'
-    ];
+  const pestanaVisible = useCallback((id) => {
+    const t = PESTANAS.find(x => x.id === id);
+    if (!t) return false;
+    if (userRole === 'assistant' && t.restringida) return false;
+    if (t.especialidad && !especialidadesVisibles.includes(t.especialidad)) return false;
+    return true;
+  }, [userRole, especialidadesVisibles]);
 
-    const tabButtons = [
-        { id: 'personal',  label: 'Datos Personales',    icon: User,          group: 'data' },
-        { id: 'anamnesis', label: 'Anamnesis / Ficha',   icon: FileQuestion,  group: 'data',      restricted: true },
-        { id: 'clinical',  label: 'Odontograma',         icon: Activity,      group: 'clinical' },
-        { id: 'perio',     label: 'Periodontograma',     icon: FileBarChart,  group: 'clinical',  restricted: true },
-        { id: 'evolution', label: 'Evolución Clínica',   icon: FileText,      group: 'clinical',  restricted: true },
-        { id: 'orthodontics', label: 'Ortodoncia',       icon: GitBranch,     group: 'clinical',  restricted: true },
-        { id: 'implantology', label: 'Implantología',   icon: HardDrive,     group: 'clinical',  restricted: true },
-        { id: 'endodontics', label: 'Endodoncia',       icon: Microscope,    group: 'clinical',  restricted: true },
-        { id: 'pra',       label: 'Riesgo Periodontal',  icon: Heart,         group: 'risk',      restricted: true },
-        { id: 'cariogram', label: 'Riesgo Caries',       icon: Calculator,    group: 'risk',      restricted: true },
-        { id: 'quotes',    label: 'Presupuestos',        icon: Calculator,    group: 'documents', badge: activeQuotesCount },
-        { id: 'consent',   label: 'Consentimientos',     icon: FileSignature, group: 'documents', badge: consentsCount },
-        { id: 'images',    label: 'Galería Multimedia',  icon: ImageIcon,     group: 'documents' },
-        { id: 'dsd',       label: 'Diseño Sonrisa',      icon: Palette,       group: 'documents' }, // <-- NUEVA PESTAÑA
-    ];
+  const p = getPatient?.(selectedPatientId);
 
-    const isTabVisible = (tabId) => {
-        const t = tabButtons.find(b => b.id === tabId);
-        return t && !(userRole === 'assistant' && t.restricted);
+  const seccionActual = useMemo(
+    () => SECCIONES.find(s => s.tabs.includes(patientTab))?.id || 'resumen',
+    [patientTab],
+  );
+
+  const irA = useCallback((tab) => {
+    setPatientTab(tab);
+    setMenuAbierto(false);
+    contenidoRef.current?.scrollTo?.({ top: 0 });
+  }, [setPatientTab]);
+
+  const abrirSeccion = useCallback((seccionId) => {
+    const seccion = SECCIONES.find(s => s.id === seccionId);
+    const primera = seccion?.tabs.find(pestanaVisible);
+    if (primera) irA(primera);
+  }, [irA, pestanaVisible]);
+
+  const abrirEvolucion = useCallback(() => {
+    setPanelEvolucion(true);
+    setTimeout(() => document.getElementById('new-evolution-input')?.focus(), 180);
+  }, []);
+
+  // ---------------------------------------------------------------------
+  // Atajos de teclado
+  // ---------------------------------------------------------------------
+  // Para las cuatro acciones que se repiten en cada atención. No se disparan
+  // mientras se escribe en un campo ni con modificadores, para no pelear con
+  // copiar y pegar.
+  useEffect(() => {
+    const manejar = (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+
+      const k = e.key.toLowerCase();
+      if (k === 'r') { e.preventDefault(); irA('resumen'); }
+      else if (k === 'o') { e.preventDefault(); irA('clinical'); }
+      else if (k === 'e') { e.preventDefault(); abrirEvolucion(); }
+      else if (k === 'p') { e.preventDefault(); irA('quotes'); }
+      else if (k === 'escape' && panelEvolucion) setPanelEvolucion(false);
     };
+    window.addEventListener('keydown', manejar);
+    return () => window.removeEventListener('keydown', manejar);
+  }, [irA, abrirEvolucion, panelEvolucion]);
 
-    // Alertas médicas críticas
-    const criticalConditions = ['Diabetes', 'Hipertensión', 'Cardiopatía', 'Alergias', 'Asma', 'Coagulopatía', 'Epilepsia'];
-    const activeAlerts = Object.entries(p.anamnesis?.conditions || {})
-        .filter(([k, v]) => v && criticalConditions.includes(k))
-        .map(([k]) => k);
-
+  // ---------------------------------------------------------------------
+  if (isLoading || (selectedPatientId && !p)) {
     return (
-        <div className="flex flex-col h-full animate-in slide-in-from-right pb-10 lg:pb-0">
+      <div className="flex h-[calc(100vh-100px)] animate-in flex-col gap-4 fade-in lg:flex-row lg:gap-6">
+        <div className="w-full shrink-0 space-y-3 lg:w-52">
+          <div className="h-32 animate-pulse rounded-panel bg-raised" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-9 animate-pulse rounded-xl bg-raised/60" />
+          ))}
+        </div>
+        <div className="flex-1 overflow-hidden rounded-panel border border-line bg-surface p-4 shadow-card lg:p-8">
+          <PatientCardSkeleton />
+          <div className="mt-8"><FormSkeleton /></div>
+        </div>
+      </div>
+    );
+  }
+  if (!p) return null;
 
-            {/* ===== ENCABEZADO DEL DOSSIER ===== */}
-            <div className="flex flex-col gap-3 border-b border-[#DFD2C4]/50 pb-4 lg:pb-5 mb-4 lg:mb-5 px-4 lg:px-0">
-                
-                {/* Fila 1: Volver + Alertas + Menú Móvil */}
-                <div className="flex items-center justify-between gap-2">
-                    <button
-                        onClick={() => setSelectedPatientId(null)}
-                        className="flex items-center gap-2 text-[10px] font-black text-[#9A8F84] hover:text-[#5B6651] transition-colors tracking-widest uppercase"
-                    >
-                        <ArrowLeft size={12} /> VOLVER
-                    </button>
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                        {activeAlerts.length > 0 && activeAlerts.map((alert, idx) => (
-                            <div key={idx} className="bg-red-600 border border-red-700 px-2 lg:px-3 py-1 lg:py-1.5 rounded-xl flex items-center gap-2 shadow-sm animate-pulse">
-                                <AlertTriangle size={13} className="text-white shrink-0" />
-                                <span className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-tight">
-                                    {alert}
-                                </span>
-                            </div>
-                        ))}
-                        <button 
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="lg:hidden p-2 hover:bg-[#DFD2C4]/30 rounded-lg transition-colors"
-                        >
-                            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-                        </button>
-                    </div>
-                </div>
+  const nombre = p.personal?.legalName || p.personal?.name || 'Paciente';
+  const citasPaciente = appointments.filter(
+    c => c.patientId === selectedPatientId || c.patient_id === selectedPatientId,
+  );
 
-                {/* Fila 2: Avatar + Nombre */}
-                <div className="flex items-center gap-3 lg:gap-4">
-                    <div className="w-10 lg:w-12 h-10 lg:h-12 rounded-2xl bg-[#5B6651]/10 flex items-center justify-center text-[#5B6651] font-black text-lg lg:text-xl shadow-inner border border-[#5B6651]/10 shrink-0">
-                        {p.personal?.legalName?.charAt(0)?.toUpperCase() || 'P'}
-                    </div>
-                    <div className="min-w-0">
-                        <h2 className="text-xl lg:text-2xl font-black text-[#312923] tracking-tight leading-none truncate">
-                            {p.personal?.legalName || 'Paciente'}
-                        </h2>
-                        <p className="text-[9px] lg:text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1 truncate">
-                            RUT: {p.personal?.rut || '—'}
-                        </p>
-                    </div>
-                </div>
+  const presupuestosActivos =
+    p.clinical?.quotes?.filter(q => q.status === 'en_proceso' || q.status === 'active')?.length || 0;
+  const contadores = { quotes: presupuestosActivos, consent: p.consents?.length || 0 };
 
-                {/* Fila 3: BARRA DE ACCIONES RÁPIDAS (Scroll horizontal en móvil) */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:pb-0 lg:flex-wrap">
-                    <div className="flex items-center gap-1.5 mr-1 shrink-0">
-                        <Zap size={11} className="text-amber-500" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#9A8F84] whitespace-nowrap">Acciones</span>
-                    </div>
-                    {quickActions.map(action => (
+  const accionesRapidas = [
+    {
+      id: 'evolution', label: 'Evolución', icono: Plus, atajo: 'E',
+      clase: 'bg-accent text-white hover:bg-accent-hover',
+      accion: abrirEvolucion,
+    },
+    {
+      id: 'fast_exam', label: 'Examen rápido', icono: FastForward, atajo: 'O',
+      clase: 'bg-warn-soft text-warn border border-warn/25',
+      accion: () => {
+        irA('clinical');
+        setOdontogramMode?.('hallazgos');
+        notify?.('Examen rápido activado. Marca los hallazgos en el odontograma.');
+      },
+    },
+    {
+      id: 'quote', label: 'Presupuesto', icono: Calculator, atajo: 'P',
+      clase: 'bg-rose-soft text-rose border border-rose/25',
+      accion: () => {
+        setSessionData?.(prev => ({ ...prev, patientId: selectedPatientId, patientName: nombre }));
+        setActiveTab?.('quote');
+      },
+    },
+    {
+      id: 'ficha', label: 'Imprimir ficha', icono: Printer,
+      clase: 'bg-raised text-ink border border-line',
+      accion: () => handleGeneratePDF?.('ficha', p),
+    },
+    {
+      id: 'agenda', label: 'Agendar', icono: Calendar,
+      clase: 'bg-sky-soft text-sky border border-sky/25',
+      accion: () => setModal?.('appt'),
+    },
+    {
+      id: 'whatsapp', label: 'WhatsApp', icono: MessageCircle,
+      clase: 'bg-ok-soft text-ok border border-ok/25',
+      accion: () => {
+        const tel = p.personal?.phone?.replace(/\D/g, '');
+        if (!tel) return notify?.('El paciente no tiene teléfono registrado.');
+        return window.open(`https://wa.me/56${tel.replace(/^0/, '')}?text=Hola%20${encodeURIComponent(nombre)}`, '_blank');
+      },
+    },
+    {
+      id: 'call', label: 'Llamar', icono: Phone,
+      clase: 'bg-raised text-muted border border-line',
+      accion: () => {
+        const tel = p.personal?.phone?.replace(/\D/g, '');
+        if (!tel) return notify?.('El paciente no tiene teléfono registrado.');
+        window.location.href = `tel:+56${tel.replace(/^0/, '')}`;
+        return undefined;
+      },
+    },
+  ];
+
+  const propsBase = { p, getPatient, selectedPatientId, savePatientData, notify, session };
+
+  const contenido = {
+    resumen: (
+      <PatientSummaryTab
+        p={p}
+        irA={irA}
+        citas={citasPaciente}
+        onNuevaEvolucion={abrirEvolucion}
+        onAgendar={() => setModal?.('appt')}
+      />
+    ),
+    personal: <PatientPersonalTab {...propsBase} sendWhatsApp={sendWhatsApp} config={config} />,
+    anamnesis: (
+      <PatientAnamnesisTab
+        {...propsBase}
+        activeFormType={activeFormType} setActiveFormType={setActiveFormType}
+        viewingForm={viewingForm} setViewingForm={setViewingForm}
+      />
+    ),
+    clinical: (
+      <OdontogramTab
+        {...propsBase}
+        odontogramMode={odontogramMode} setOdontogramMode={setOdontogramMode}
+        odontogramType={odontogramType} setOdontogramType={setOdontogramType}
+        setToothModalData={setToothModalData} setModal={setModal}
+        userRole={userRole} catalog={catalog} setQuoteItems={setQuoteItems}
+        setActiveTab={setActiveTab} sessionData={sessionData} setSessionData={setSessionData}
+      />
+    ),
+    perio: (
+      <PerioTab
+        {...propsBase}
+        setPerioData={setPerioData} setModal={setModal} setToothModalData={setToothModalData}
+        restoreSnapshot={restoreSnapshot} savePerioSnapshot={savePerioSnapshot}
+        getPerioStats={getPerioStats}
+        config={config} logAction={logAction}
+      />
+    ),
+    evolution: <PatientEvolutionTab {...propsBase} newEvolution={newEvolution} setNewEvolution={setNewEvolution} />,
+    orthodontics: <OrthodonticsTrackingTab {...propsBase} />,
+    implantology: <ImplantologyTrackingTab {...propsBase} />,
+    endodontics: <EndodonticsTrackingTab {...propsBase} />,
+    pra: <PRATab {...propsBase} />,
+    cariogram: <CariogramTab {...propsBase} />,
+    quotes: <ActiveQuotesTab {...propsBase} setQuoteItems={setQuoteItems} setActiveTab={setActiveTab} />,
+    consent: (
+      <PatientConsentTab
+        {...propsBase}
+        consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate}
+        consentText={consentText} setConsentText={setConsentText}
+        modal={modal} setModal={setModal}
+        // El nombre de esta propiedad es lo que estaba roto: el componente la
+        // recibe como `generatePDF`, no como `handleGeneratePDF`.
+        generatePDF={handleGeneratePDF}
+      />
+    ),
+    images: (
+      <PatientImagesTab
+        {...propsBase}
+        activeFolder={activeFolder} setActiveFolder={setActiveFolder}
+        uploading={uploading} handleImageUpload={handleImageUpload}
+        setSelectedImg={setSelectedImg} config={config} saveToSupabase={savePatientData}
+      />
+    ),
+    dsd: (
+      <DSDTab
+        {...propsBase}
+        supabase={db} config={config} handleImageUpload={handleImageUpload}
+        activeFolder={activeFolder} setActiveFolder={setActiveFolder}
+      />
+    ),
+  };
+
+  const subPestanas = SECCIONES.find(s => s.id === seccionActual)?.tabs.filter(pestanaVisible) || [];
+  const especialidadesDisponibles = ESPECIALIDADES.filter(e => !especialidadesVisibles.includes(e.clave));
+
+  return (
+    <div className="flex h-full animate-in flex-col slide-in-from-right pb-20 lg:pb-0">
+
+      {/* ===== CABECERA ===== */}
+      <header className="mb-4 flex flex-col gap-3 border-b border-line px-4 pb-4 lg:px-0">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => setSelectedPatientId(null)}
+            className="flex items-center gap-1.5 text-2xs font-extrabold uppercase tracking-wider text-muted transition-colors hover:text-accent"
+          >
+            <ArrowLeft size={13} /> Volver
+          </button>
+          <button
+            onClick={() => setMenuAbierto(!menuAbierto)}
+            aria-label="Abrir navegación de la ficha"
+            className="rounded-lg p-2 transition-colors hover:bg-raised lg:hidden"
+          >
+            {menuAbierto ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent-soft text-lg font-extrabold text-accent">
+            {nombre.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <h2 className="truncate text-xl font-extrabold leading-tight tracking-tight text-ink lg:text-2xl">
+              {nombre}
+            </h2>
+            <p className="tabular mt-0.5 truncate text-2xs font-bold uppercase tracking-wider text-muted">
+              RUT {p.personal?.rut ? formatRUT(p.personal.rut) : 'no registrado'}
+              {p.personal?.age ? ` · ${p.personal.age} años` : ''}
+            </p>
+          </div>
+        </div>
+
+        {/* Las alertas viven aquí arriba, fuera del área de contenido: se ven
+            desde las cinco secciones y no solo desde una. */}
+        <AlertasMedicas p={p} onEditar={() => irA('anamnesis')} />
+
+        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0 lg:pb-0">
+          <span className="flex shrink-0 items-center gap-1 pr-1 text-2xs font-extrabold uppercase tracking-wider text-muted">
+            <Zap size={11} className="text-warn" /> Acciones
+          </span>
+          {accionesRapidas.map(a => (
+            <button
+              key={a.id}
+              onClick={a.accion}
+              title={a.atajo ? `${a.label} — tecla ${a.atajo}` : a.label}
+              className={`flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-2xs font-extrabold transition-all hover:-translate-y-0.5 ${a.clase}`}
+            >
+              <a.icono size={12} />
+              <span className="hidden sm:inline">{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* ===== CUERPO ===== */}
+      <div className="flex min-h-0 flex-1 gap-4 px-4 lg:px-0">
+
+        <nav
+          aria-label="Secciones de la ficha"
+          className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col gap-1 overflow-y-auto border-r border-line bg-surface p-3 transition-transform duration-200 custom-scrollbar
+            lg:static lg:w-52 lg:translate-x-0 lg:border-0 lg:bg-transparent lg:p-0
+            ${menuAbierto ? 'translate-x-0' : '-translate-x-full'}`}
+        >
+          {SECCIONES.map(s => {
+            const visibles = s.tabs.filter(pestanaVisible);
+            if (!visibles.length) return null;
+            const activa = seccionActual === s.id;
+            const pendientes = visibles.reduce((n, t) => n + (contadores[t] || 0), 0);
+
+            return (
+              <div key={s.id}>
+                <button
+                  onClick={() => abrirSeccion(s.id)}
+                  aria-current={activa ? 'page' : undefined}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors
+                    ${activa ? 'bg-ink text-white' : 'text-ink hover:bg-raised'}`}
+                >
+                  <s.icono size={15} className={activa ? 'text-white' : 'text-muted'} />
+                  <span className="text-xs font-extrabold tracking-tight">{s.label}</span>
+                  {pendientes > 0 && (
+                    <span className={`ml-auto rounded-md px-1.5 py-0.5 text-2xs font-extrabold ${activa ? 'bg-white/20' : 'bg-accent-soft text-accent'}`}>
+                      {pendientes}
+                    </span>
+                  )}
+                </button>
+
+                {/* Las sub-pestañas solo se despliegan dentro de la sección
+                    abierta: esa jerarquía es lo que se había perdido. */}
+                {activa && visibles.length > 1 && (
+                  <div className="mb-1 ml-3 mt-1 space-y-0.5 border-l border-line pl-2">
+                    {visibles.map(id => {
+                      const t = PESTANAS.find(x => x.id === id);
+                      const sel = patientTab === id;
+                      return (
                         <button
-                            key={action.id}
-                            onClick={action.action}
-                            className={`flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-xl text-[9px] lg:text-[10px] font-black transition-all hover:-translate-y-0.5 shadow-sm shrink-0 ${action.color}`}
+                          key={id}
+                          onClick={() => irA(id)}
+                          className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors
+                            ${sel ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-raised hover:text-ink'}`}
                         >
-                            <action.icon size={11} />
-                            <span className="hidden sm:inline">{action.label}</span>
+                          <t.icono size={12} className="shrink-0" />
+                          <span className="truncate text-2xs font-bold">{t.label}</span>
+                          {contadores[id] > 0 && (
+                            <span className="ml-auto text-2xs font-extrabold">{contadores[id]}</span>
+                          )}
                         </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* ===== CUERPO PRINCIPAL: MENÚ LATERAL + CONTENIDO ===== */}
-            <div className="flex gap-4 lg:gap-5 flex-1 min-h-0 px-4 lg:px-0">
-
-                {/* --- MENÚ LATERAL DE NAVEGACIÓN (Drawer en móvil) --- */}
-                <div className={`fixed lg:static inset-y-0 left-0 z-40 w-56 bg-white border-r border-[#DFD2C4]/50 flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 pb-4 transition-transform duration-300 lg:translate-x-0 ${
-                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}>
-                    {TAB_GROUPS.map(group => {
-                        const visibleTabs = tabButtons.filter(t => t.group === group.id && isTabVisible(t.id));
-                        if (visibleTabs.length === 0) return null;
-                        return (
-                            <div key={group.id} className="space-y-1 px-3">
-                                <h3 className="text-[9px] font-black text-[#9A8F84] uppercase tracking-[0.2em] px-3 flex items-center gap-2 mb-2">
-                                    <group.icon size={11} />
-                                    {group.label}
-                                </h3>
-                                {visibleTabs.map(tab => {
-                                    const isActive = patientTab === tab.id;
-                                    return (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => {
-                                                setPatientTab(tab.id);
-                                                setSidebarOpen(false);
-                                            }}
-                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl transition-all group ${
-                                                isActive
-                                                    ? 'bg-[#312923] text-white shadow-md'
-                                                    : 'bg-white hover:bg-[#FDFBF7] text-[#6B615A] border border-transparent hover:border-[#DFD2C4]/40'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <tab.icon size={15} className={isActive ? 'text-white' : 'text-[#9A8F84] group-hover:text-[#5B6651]'} />
-                                                <span className={`text-[11px] font-black tracking-tight ${isActive ? 'text-white' : 'text-[#312923]'}`}>{tab.label}</span>
-                                            </div>
-                                            {tab.badge > 0 && (
-                                                <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-black ${isActive ? 'bg-white/20 text-white' : 'bg-[#CBAAA2]/20 text-[#8B5E57]'}`}>
-                                                    {tab.badge}
-                                                </span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                                <div className="h-4"></div>
-                            </div>
-                        );
+                      );
                     })}
 
-                    {/* Widget de Asistente de Voz (Sticky bottom en sidebar) */}
-                    <div className={`mt-auto mx-3 mb-3 rounded-[1.5rem] border transition-all ${
-                        isListening
-                            ? 'border-red-400 bg-red-50 shadow-lg shadow-red-100'
-                            : 'border-[#5B6651]/30 bg-gradient-to-br from-[#5B6651]/5 to-[#5B6651]/10'
-                    }`}>
+                    {s.id === 'clinica' && userRole !== 'assistant' && especialidadesDisponibles.length > 0 && (
+                      <div className="relative">
                         <button
-                            onClick={toggleVoice}
-                            className={`w-full p-4 flex flex-col items-center gap-2 transition-all group ${
-                                isListening ? 'cursor-pointer' : 'hover:bg-[#5B6651]/5'
-                            }`}
+                          onClick={() => setMenuEspecialidad(!menuEspecialidad)}
+                          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-muted transition-colors hover:bg-raised hover:text-accent"
                         >
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${
-                                isListening
-                                    ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-300'
-                                    : 'bg-[#5B6651] text-white group-hover:scale-110 shadow-md shadow-[#5B6651]/30'
-                            }`}>
-                                <Mic size={18} />
-                            </div>
-                            <div className="text-center">
-                                <p className={`text-[10px] font-black uppercase tracking-widest ${
-                                    isListening ? 'text-red-600' : 'text-[#312923]'
-                                }`}>
-                                    {isListening ? '● Escuchando...' : 'Asistente de Voz'}
-                                </p>
-                                <p className="text-[9px] font-bold text-[#9A8F84] mt-0.5">
-                                    {isListening ? 'Toca para detener' : 'Toca para activar'}
-                                </p>
-                            </div>
+                          <Plus size={12} className="shrink-0" />
+                          <span className="text-2xs font-bold">Agregar seguimiento</span>
                         </button>
-                        {/* Switch de confirmación hablada */}
-                        <div className="px-3 pb-2">
-                            <button
-                                onClick={toggleVoiceConfirmation}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
-                                    voiceConfirmationEnabled
-                                        ? 'bg-[#5B6651]/10 border-[#5B6651]/30 text-[#5B6651]'
-                                        : 'bg-white border-[#DFD2C4] text-[#9A8F84] hover:border-[#5B6651]/30'
-                                }`}
-                                title="Lee en voz alta lo que se guardó en cada dictado"
-                            >
-                                <span className="flex items-center gap-1.5">
-                                    {voiceConfirmationEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
-                                    Confirmación hablada
-                                </span>
-                                <span className={`w-7 h-4 rounded-full relative transition-colors shrink-0 ${voiceConfirmationEnabled ? 'bg-[#5B6651]' : 'bg-[#DFD2C4]'}`}>
-                                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${voiceConfirmationEnabled ? 'left-[14px]' : 'left-0.5'}`} />
-                                </span>
-                            </button>
-                        </div>
-                        {voiceStatus && (
-                            <div className="px-3 pb-3">
-                                <p className="text-[9px] font-black text-[#5B6651] bg-white rounded-xl px-3 py-2 text-center border border-[#5B6651]/20 truncate">
-                                    {voiceStatus}
-                                </p>
-                            </div>
+                        {menuEspecialidad && (
+                          <div className="mt-0.5 space-y-0.5 rounded-lg border border-line bg-surface p-1 shadow-card">
+                            {especialidadesDisponibles.map(e => (
+                              <button
+                                key={e.clave}
+                                onClick={() => {
+                                  setEspecialidadesManuales(prev => [...prev, e.clave]);
+                                  setMenuEspecialidad(false);
+                                  irA(e.tab);
+                                }}
+                                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-2xs font-bold text-ink hover:bg-accent-soft"
+                              >
+                                <ChevronRight size={10} /> {e.label}
+                              </button>
+                            ))}
+                          </div>
                         )}
-                    </div>
-                </div>
-
-                {/* Overlay para cerrar sidebar en móvil */}
-                {sidebarOpen && (
-                    <div 
-                        className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                    />
-                )}
-
-                {/* --- ÁREA DE CONTENIDO PRINCIPAL --- */}
-                <div className="flex-1 bg-white rounded-[1.5rem] lg:rounded-[2.5rem] p-4 lg:p-7 border border-[#DFD2C4]/40 shadow-sm overflow-y-auto custom-scrollbar relative min-w-0">
-
-                    {/* Indicador flotante de estado de voz */}
-                    {voiceStatus && (
-                        <div className="absolute top-4 right-4 lg:right-6 bg-[#312923] text-white px-3 lg:px-4 py-2 rounded-full text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-xl animate-bounce z-10 flex items-center gap-2">
-                            <Sparkles size={11} className="text-amber-400 shrink-0" />
-                            <span className="hidden sm:inline">{voiceStatus}</span>
-                        </div>
+                      </div>
                     )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-                    {/* RENDERIZADO DINÁMICO */}
-                    <div className="animate-in fade-in duration-200">
-                        {patientTab === 'personal'  && (
-                            <PatientPersonalTab 
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData} 
-                                notify={notify} sendWhatsApp={sendWhatsApp} config={config}
-                            />
-                        )}
-                        {patientTab === 'anamnesis' && (
-                            <PatientAnamnesisTab
-                                p={p}
-                                getPatient={getPatient}
-                                selectedPatientId={selectedPatientId}
-                                savePatientData={savePatientData}
-                                notify={notify}
-                                session={session}
-                                activeFormType={activeFormType}
-                                setActiveFormType={setActiveFormType}
-                                viewingForm={viewingForm}
-                                setViewingForm={setViewingForm}
-                            />
-                        )}
-                        {patientTab === 'clinical'  && (
-                            <OdontogramTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                odontogramMode={odontogramMode} setOdontogramMode={setOdontogramMode}
-                                odontogramType={odontogramType} setOdontogramType={setOdontogramType}
-                                setToothModalData={setToothModalData} setModal={setModal}
-                                userRole={userRole} catalog={catalog} setQuoteItems={setQuoteItems}
-                                notify={notify} setActiveTab={setActiveTab} sessionData={sessionData} setSessionData={setSessionData}
-                            />
-                        )}
-                        {patientTab === 'perio' && (
-                            <PerioTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                setPerioData={setPerioData} setModal={setModal} setToothModalData={setToothModalData}
-                                restoreSnapshot={restoreSnapshot} savePerioSnapshot={savePerioSnapshot} getPerioStats={getPerioStats}
-                            />
-                        )}
-                        {patientTab === 'evolution' && (
-                            <PatientEvolutionTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                newEvolution={newEvolution} setNewEvolution={setNewEvolution} notify={notify} session={session}
-                            />
-                        )}
-                        {patientTab === 'orthodontics' && (
-                            <OrthodonticsTrackingTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                notify={notify} session={session}
-                            />
-                        )}
-                        {patientTab === 'implantology' && (
-                            <ImplantologyTrackingTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                notify={notify} session={session}
-                            />
-                        )}
-                        {patientTab === 'endodontics' && (
-                            <EndodonticsTrackingTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                notify={notify} session={session}
-                            />
-                        )}
-                        {patientTab === 'pra' && (
-                            <PRATab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                notify={notify}
-                            />
-                        )}
-                        {patientTab === 'cariogram' && (
-                            <CariogramTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                notify={notify}
-                            />
-                        )}
-                        {patientTab === 'quotes' && (
-                            <ActiveQuotesTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                notify={notify} setQuoteItems={setQuoteItems} setActiveTab={setActiveTab}
-                            />
-                        )}
-                        {patientTab === 'consent' && (
-                            <PatientConsentTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                consentTemplate={consentTemplate} setConsentTemplate={setConsentTemplate}
-                                consentText={consentText} setConsentText={setConsentText}
-                                notify={notify} session={session} modal={modal} setModal={setModal} handleGeneratePDF={handleGeneratePDF}
-                            />
-                        )}
-                        {patientTab === 'images' && (
-                            <PatientImagesTab
-                                p={p} getPatient={getPatient} selectedPatientId={selectedPatientId} savePatientData={savePatientData}
-                                activeFolder={activeFolder} setActiveFolder={setActiveFolder}
-                                uploading={uploading} handleImageUpload={handleImageUpload}
-                                setSelectedImg={setSelectedImg} notify={notify} config={config}
-                                saveToSupabase={savePatientData}
-                            />
-                        )}
-                        {/* --- NUEVA PESTAÑA DSD --- */}
-                        {patientTab === 'dsd' && (
-                            <DSDTab
-                                p={p}
-                                getPatient={getPatient}
-                                selectedPatientId={selectedPatientId}
-                                savePatientData={savePatientData}
-                                notify={notify}
-                                supabase={supabase}
-                                config={config}
-                                handleImageUpload={handleImageUpload}
-                                activeFolder={activeFolder}
-                                setActiveFolder={setActiveFolder}
-                            />
-                        )}
-                    </div>
-                </div>
+          <div className={`mt-auto rounded-panel border transition-colors ${
+            isListening ? 'border-danger/40 bg-danger-soft' : 'border-accent/20 bg-accent-soft/50'
+          }`}>
+            <button onClick={toggleVoice} className="flex w-full flex-col items-center gap-2 p-3">
+              <span className={`flex h-9 w-9 items-center justify-center rounded-2xl transition-colors ${
+                isListening ? 'animate-pulse bg-danger text-white' : 'bg-accent text-white'
+              }`}>
+                <Mic size={16} />
+              </span>
+              <span className="text-center">
+                <span className={`block text-2xs font-extrabold uppercase tracking-wider ${isListening ? 'text-danger' : 'text-ink'}`}>
+                  {isListening ? 'Escuchando' : 'Dictado por voz'}
+                </span>
+                <span className="mt-0.5 block text-2xs font-semibold text-muted">
+                  {isListening ? 'Toca para detener' : 'Toca para activar'}
+                </span>
+              </span>
+            </button>
+            <div className="px-2 pb-2">
+              <button
+                onClick={toggleVoiceConfirmation}
+                title="Lee en voz alta lo que se guardó en cada dictado"
+                className={`flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-2xs font-bold transition-colors ${
+                  voiceConfirmationEnabled ? 'border-accent/30 bg-accent-soft text-accent' : 'border-line bg-surface text-muted'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  {voiceConfirmationEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />} Confirmar en voz
+                </span>
+                <span className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${voiceConfirmationEnabled ? 'bg-accent' : 'bg-line-strong'}`}>
+                  <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${voiceConfirmationEnabled ? 'left-[14px]' : 'left-0.5'}`} />
+                </span>
+              </button>
             </div>
-        </div>
-    );
+            {voiceStatus && (
+              <p className="truncate px-2 pb-2 text-center text-2xs font-extrabold text-accent">{voiceStatus}</p>
+            )}
+          </div>
+        </nav>
+
+        {menuAbierto && (
+          <div className="fixed inset-0 z-30 bg-ink/40 lg:hidden" onClick={() => setMenuAbierto(false)} />
+        )}
+
+        <main
+          ref={contenidoRef}
+          className="min-w-0 flex-1 overflow-y-auto rounded-panel border border-line bg-surface p-4 shadow-card custom-scrollbar lg:p-6"
+        >
+          {subPestanas.length > 1 && (
+            <div className="-mx-4 mb-4 flex gap-1 overflow-x-auto border-b border-line px-4 pb-2 lg:hidden">
+              {subPestanas.map(id => {
+                const t = PESTANAS.find(x => x.id === id);
+                const sel = patientTab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => irA(id)}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-2xs font-extrabold transition-colors ${
+                      sel ? 'bg-accent-soft text-accent' : 'text-muted'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div key={patientTab} className="animate-in fade-in duration-150">
+            {contenido[patientTab] || contenido.resumen}
+          </div>
+        </main>
+      </div>
+
+      {/* ===== PANEL LATERAL DE EVOLUCIÓN ===== */}
+      {/* Se abre encima de cualquier sección. Registrar la atención ya no obliga
+          a salir del odontograma y perder lo que estabas mirando. */}
+      {panelEvolucion && (
+        <>
+          <div className="fixed inset-0 z-40 bg-ink/40" onClick={() => setPanelEvolucion(false)} />
+          <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl animate-in flex-col border-l border-line bg-surface shadow-pop slide-in-from-right duration-200">
+            <header className="flex items-center gap-3 border-b border-line px-5 py-4">
+              <FileText size={16} className="text-accent" />
+              <h3 className="text-sm font-extrabold text-ink">Evolución clínica</h3>
+              <span className="truncate text-2xs font-bold text-muted">{nombre}</span>
+              <button
+                onClick={() => setPanelEvolucion(false)}
+                aria-label="Cerrar panel de evolución"
+                className="ml-auto rounded-lg p-1.5 text-muted transition-colors hover:bg-raised hover:text-ink"
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+              <PatientEvolutionTab {...propsBase} newEvolution={newEvolution} setNewEvolution={setNewEvolution} />
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* ===== BARRA INFERIOR EN MÓVIL ===== */}
+      {/* En pantallas táctiles un cajón lateral cuesta dos gestos por cambio de
+          sección. Una barra fija cuesta uno. */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface/95 backdrop-blur lg:hidden">
+        {SECCIONES.filter(s => s.tabs.some(pestanaVisible)).map(s => {
+          const activa = seccionActual === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => abrirSeccion(s.id)}
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2 transition-colors ${activa ? 'text-accent' : 'text-muted'}`}
+            >
+              <s.icono size={17} />
+              <span className="text-2xs font-bold">{s.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </div>
+  );
 }

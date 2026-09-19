@@ -19,6 +19,7 @@ const INFERIOR_TOP = ['nota', 'furca', 'sangrado', 'supuracion', 'mg', 'pd'];
 const INFERIOR_BOTTOM = ['pd', 'mg', 'sangrado', 'supuracion', 'furca', 'movilidad', 'implante'];
 
 export default function PerioTab({
+    config, logAction, session, notify,
     themeMode, getPatient, selectedPatientId, savePatientData,
     savePerioSnapshot, getPerioStats, setToothModalData, setPerioData, setModal, restoreSnapshot
 }) {
@@ -61,18 +62,18 @@ export default function PerioTab({
     return (
         <div className="space-y-6 animate-in fade-in pb-10">
             {/* --- CABECERA Y SELECTORES --- */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#FDFBF7] p-5 rounded-[2rem] border border-[#DFD2C4]/50 shadow-sm relative z-10">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#FBFAF8] p-5 rounded-[2rem] border border-[#D9D2C7]/50 shadow-sm relative z-10">
                 <div>
-                    <h2 className="text-2xl font-black text-[#312923] tracking-tight">Periodontograma Clínico</h2>
-                    <p className="text-[10px] text-[#9A8F84] uppercase tracking-widest font-bold mt-1">Control de Tejidos Blandos</p>
+                    <h2 className="text-2xl font-black text-[#241F1B] tracking-tight">Periodontograma Clínico</h2>
+                    <p className="text-[11px] text-[#5E554E] uppercase tracking-widest font-bold mt-1">Control de Tejidos Blandos</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
-                    <div className="flex bg-white p-1.5 rounded-2xl border border-[#DFD2C4]/60 shadow-sm">
+                    <div className="flex bg-white p-1.5 rounded-2xl border border-[#D9D2C7]/60 shadow-sm">
                         {['adulto', 'pediatrico', 'mixto'].map((type) => (
-                            <button key={type} onClick={() => setPerioDentition(type)} className={`flex-1 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${perioDentition === type ? 'bg-[#FDFBF7] text-[#312923] border border-[#DFD2C4] shadow-sm' : 'text-[#9A8F84] hover:text-[#312923]'}`}>{type}</button>
+                            <button key={type} onClick={() => setPerioDentition(type)} className={`flex-1 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${perioDentition === type ? 'bg-[#FBFAF8] text-[#241F1B] border border-[#D9D2C7] shadow-sm' : 'text-[#5E554E] hover:text-[#241F1B]'}`}>{type}</button>
                         ))}
                     </div>
-                    <button onClick={savePerioSnapshot} className="px-6 py-3.5 bg-[#5B6651] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-[#5B6651]/20 flex items-center gap-2 hover:-translate-y-0.5 transition-all">
+                    <button onClick={savePerioSnapshot} className="px-6 py-3.5 bg-[#46523C] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-[#46523C]/20 flex items-center gap-2 hover:-translate-y-0.5 transition-all">
                         <Save size={16} /> Guardar Ficha
                     </button>
                     <button
@@ -80,12 +81,18 @@ export default function PerioTab({
                             patient: p,
                             stats: getPerioStats(),
                             perioDentition,
+                            // Sin esto el periodontograma salía sin membrete de la
+                            // clínica y sin quedar registrado en audit_logs.
+                            config,
+                            session,
+                            logAction,
+                            notify,
                             teethUpper: TEETH_UPPER,
                             teethLower: TEETH_LOWER,
                             teethUpperPed: TEETH_UPPER_PED,
                             teethLowerPed: TEETH_LOWER_PED,
                         })}
-                        className="px-6 py-3.5 bg-white text-[#312923] font-black text-[11px] uppercase tracking-widest rounded-2xl border border-[#DFD2C4] shadow-sm flex items-center gap-2 hover:-translate-y-0.5 transition-all"
+                        className="px-6 py-3.5 bg-white text-[#241F1B] font-black text-[11px] uppercase tracking-widest rounded-2xl border border-[#D9D2C7] shadow-sm flex items-center gap-2 hover:-translate-y-0.5 transition-all"
                     >
                         <Download size={16} /> Descargar PDF
                     </button>
@@ -104,30 +111,30 @@ export default function PerioTab({
                 return (
                     <div className="grid grid-cols-3 gap-4">
                         <Card className={`${bopColor.card} text-center py-6 shadow-sm`}>
-                            <p className={`${bopColor.title} font-black text-[10px] uppercase tracking-[0.2em] mb-2`}>Sangrado (BOP)</p>
+                            <p className={`${bopColor.title} font-black text-[11px] uppercase tracking-[0.2em] mb-2`}>Sangrado (BOP)</p>
                             <h2 className={`text-5xl font-black ${bopColor.value}`}>{bop}%</h2>
-                            <p className={`text-[10px] ${bopColor.sub} font-bold mt-2 uppercase tracking-widest`}>{bopColor.label}</p>
+                            <p className={`text-[11px] ${bopColor.sub} font-bold mt-2 uppercase tracking-widest`}>{bopColor.label}</p>
                         </Card>
                         <Card className="bg-amber-50 border-amber-200 text-center py-6 shadow-sm">
-                            <p className="text-amber-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">Índice de Higiene</p>
+                            <p className="text-amber-600 font-black text-[11px] uppercase tracking-[0.2em] mb-2">Índice de Higiene</p>
                             <h2 className="text-5xl font-black text-amber-500">{stats.plaque}%</h2>
-                            <p className="text-[10px] text-amber-400 font-bold mt-2 uppercase tracking-widest">O'Leary</p>
+                            <p className="text-[11px] text-amber-400 font-bold mt-2 uppercase tracking-widest">O'Leary</p>
                         </Card>
-                        <Card className="bg-[#FDFBF7] border-[#DFD2C4]/60 text-center py-6 shadow-sm">
-                            <p className="text-[#9A8F84] font-black text-[10px] uppercase tracking-[0.2em] mb-2">NIC Promedio</p>
-                            <h2 className="text-5xl font-black text-[#5B6651]">{stats.nic}<span className="text-2xl font-bold text-[#A3968B] ml-1">mm</span></h2>
-                            <p className="text-[10px] text-[#A3968B] font-bold mt-2 uppercase tracking-widest">Inserción Clínica</p>
+                        <Card className="bg-[#FBFAF8] border-[#D9D2C7]/60 text-center py-6 shadow-sm">
+                            <p className="text-[#5E554E] font-black text-[11px] uppercase tracking-[0.2em] mb-2">NIC Promedio</p>
+                            <h2 className="text-5xl font-black text-[#46523C]">{stats.nic}<span className="text-2xl font-bold text-[#8A7F74] ml-1">mm</span></h2>
+                            <p className="text-[11px] text-[#8A7F74] font-bold mt-2 uppercase tracking-widest">Inserción Clínica</p>
                         </Card>
                     </div>
                 );
             })()}
 
             {/* --- PERIODONTOGRAMA (ESTILO SEPA: TABLAS POR SITIO + DIENTES) --- */}
-            <Card className="w-full flex flex-col gap-6 overflow-x-auto p-4 md:p-6 bg-white border-[#DFD2C4]/40 shadow-sm relative no-scrollbar" style={hideScrollStyles}>
+            <Card className="w-full flex flex-col gap-6 overflow-x-auto p-4 md:p-6 bg-white border-[#D9D2C7]/40 shadow-sm relative no-scrollbar" style={hideScrollStyles}>
                 <div className="flex flex-col gap-6 w-full">
                     {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
                         <div>
-                            <p className="text-center text-[11px] font-black text-[#5B6651] uppercase tracking-[0.2em] mb-3">Superior</p>
+                            <p className="text-center text-[11px] font-black text-[#46523C] uppercase tracking-[0.2em] mb-3">Superior</p>
                             <PerioArchGrid
                                 teeth={TEETH_UPPER} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
                                 topFace="v" topRows={SUPERIOR_TOP} topLabel="Vestibular"
@@ -136,8 +143,8 @@ export default function PerioTab({
                         </div>
                     )}
                     {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
-                        <div className="bg-[#CBAAA2]/5 p-6 rounded-[2rem] border border-[#CBAAA2]/20 shadow-inner">
-                            <p className="text-center text-[11px] font-black text-[#CBAAA2] uppercase tracking-[0.2em] mb-3">Superior (temporal)</p>
+                        <div className="bg-[#D3A9A0]/5 p-6 rounded-[2rem] border border-[#D3A9A0]/20 shadow-inner">
+                            <p className="text-center text-[11px] font-black text-[#D3A9A0] uppercase tracking-[0.2em] mb-3">Superior (temporal)</p>
                             <PerioArchGrid
                                 teeth={TEETH_UPPER_PED} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
                                 topFace="v" topRows={SUPERIOR_TOP} topLabel="Vestibular"
@@ -146,11 +153,11 @@ export default function PerioTab({
                         </div>
                     )}
 
-                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#DFD2C4] to-transparent" />
+                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#D9D2C7] to-transparent" />
 
                     {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
-                        <div className="bg-[#CBAAA2]/5 p-6 rounded-[2rem] border border-[#CBAAA2]/20 shadow-inner">
-                            <p className="text-center text-[11px] font-black text-[#CBAAA2] uppercase tracking-[0.2em] mb-3">Inferior (temporal)</p>
+                        <div className="bg-[#D3A9A0]/5 p-6 rounded-[2rem] border border-[#D3A9A0]/20 shadow-inner">
+                            <p className="text-center text-[11px] font-black text-[#D3A9A0] uppercase tracking-[0.2em] mb-3">Inferior (temporal)</p>
                             <PerioArchGrid
                                 teeth={TEETH_LOWER_PED} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
                                 topFace="l" topRows={INFERIOR_TOP} topLabel="Lingual"
@@ -160,7 +167,7 @@ export default function PerioTab({
                     )}
                     {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
                         <div>
-                            <p className="text-center text-[11px] font-black text-[#5B6651] uppercase tracking-[0.2em] mb-3">Inferior</p>
+                            <p className="text-center text-[11px] font-black text-[#46523C] uppercase tracking-[0.2em] mb-3">Inferior</p>
                             <PerioArchGrid
                                 teeth={TEETH_LOWER} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
                                 topFace="l" topRows={INFERIOR_TOP} topLabel="Lingual"
@@ -172,28 +179,28 @@ export default function PerioTab({
             </Card>
 
             {/* --- ÍNDICE DE O'LEARY --- */}
-            <Card className="p-4 md:p-8 bg-white border-[#DFD2C4]/40 shadow-sm relative no-scrollbar overflow-x-auto" style={hideScrollStyles}>
-                <div className="flex justify-between items-end border-b border-[#DFD2C4]/50 pb-4 sticky left-0 min-w-[300px]">
+            <Card className="p-4 md:p-8 bg-white border-[#D9D2C7]/40 shadow-sm relative no-scrollbar overflow-x-auto" style={hideScrollStyles}>
+                <div className="flex justify-between items-end border-b border-[#D9D2C7]/50 pb-4 sticky left-0 min-w-[300px]">
                     <div>
-                        <h3 className="font-black text-2xl text-[#312923] tracking-tight">Índice de Placa (O'Leary)</h3>
-                        <p className="text-[10px] text-[#9A8F84] font-bold uppercase tracking-widest mt-1">Control de Higiene</p>
+                        <h3 className="font-black text-2xl text-[#241F1B] tracking-tight">Índice de Placa (O'Leary)</h3>
+                        <p className="text-[11px] text-[#5E554E] font-bold uppercase tracking-widest mt-1">Control de Higiene</p>
                     </div>
-                    <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest bg-[#FDFBF7] px-5 py-2.5 rounded-xl border border-[#DFD2C4]/50 shadow-sm">
+                    <div className="flex gap-4 text-[11px] font-bold uppercase tracking-widest bg-[#FBFAF8] px-5 py-2.5 rounded-xl border border-[#D9D2C7]/50 shadow-sm">
                         <span className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-md animate-pulse shadow-sm" /> Placa</span>
-                        <span className="flex items-center gap-2"><div className="w-3 h-3 bg-white border border-[#DFD2C4] rounded-md" /> Limpio</span>
+                        <span className="flex items-center gap-2"><div className="w-3 h-3 bg-white border border-[#D9D2C7] rounded-md" /> Limpio</span>
                     </div>
                 </div>
 
                 <div className="flex flex-col gap-8 w-max mx-auto mt-8">
-                    <div className="w-full bg-[#FDFBF7] p-6 rounded-[2rem] border border-[#DFD2C4]/50 shadow-inner flex flex-col items-center">
-                        <span className="block text-[10px] font-black text-[#9A8F84] uppercase tracking-widest mb-4">Maxilar Superior</span>
+                    <div className="w-full bg-[#FBFAF8] p-6 rounded-[2rem] border border-[#D9D2C7]/50 shadow-inner flex flex-col items-center">
+                        <span className="block text-[11px] font-black text-[#5E554E] uppercase tracking-widest mb-4">Maxilar Superior</span>
                         <div className="w-full flex flex-col items-center">
                             {(perioDentition === 'adulto' || perioDentition === 'mixto') && <div className="flex justify-center w-full">{renderHygieneRow(TEETH_UPPER)}</div>}
                             {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && <div className="mt-4 flex justify-center w-full">{renderHygieneRow(TEETH_UPPER_PED)}</div>}
                         </div>
                     </div>
-                    <div className="w-full bg-[#FDFBF7] p-6 rounded-[2rem] border border-[#DFD2C4]/50 shadow-inner flex flex-col items-center">
-                        <span className="block text-[10px] font-black text-[#9A8F84] uppercase tracking-widest mb-4">Maxilar Inferior</span>
+                    <div className="w-full bg-[#FBFAF8] p-6 rounded-[2rem] border border-[#D9D2C7]/50 shadow-inner flex flex-col items-center">
+                        <span className="block text-[11px] font-black text-[#5E554E] uppercase tracking-widest mb-4">Maxilar Inferior</span>
                         <div className="w-full flex flex-col items-center">
                             {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && <div className="mb-4 flex justify-center w-full">{renderHygieneRow(TEETH_LOWER_PED)}</div>}
                             {(perioDentition === 'adulto' || perioDentition === 'mixto') && <div className="flex justify-center w-full">{renderHygieneRow(TEETH_LOWER)}</div>}
@@ -204,32 +211,32 @@ export default function PerioTab({
 
             {/* --- HISTORIAL PERIO --- */}
             <div className="pt-4">
-                <div className="flex items-center gap-3 mb-6 border-b border-[#DFD2C4]/50 pb-4">
-                    <History className="text-[#9A8F84]" size={20} />
+                <div className="flex items-center gap-3 mb-6 border-b border-[#D9D2C7]/50 pb-4">
+                    <History className="text-[#5E554E]" size={20} />
                     <div>
-                        <h3 className="font-black text-xl text-[#312923] tracking-tight">Historial Clínico Perio</h3>
-                        <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">Evoluciones Guardadas</p>
+                        <h3 className="font-black text-xl text-[#241F1B] tracking-tight">Historial Clínico Perio</h3>
+                        <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest">Evoluciones Guardadas</p>
                     </div>
                 </div>
 
                 {(!p.clinical?.perioHistory || p.clinical.perioHistory.length === 0) ? (
-                    <div className="text-center py-12 bg-[#FDFBF7] rounded-[2rem] border border-[#DFD2C4]/40">
-                        <p className="text-[#9A8F84] font-bold text-xs uppercase tracking-widest">No hay registros históricos previos</p>
+                    <div className="text-center py-12 bg-[#FBFAF8] rounded-[2rem] border border-[#D9D2C7]/40">
+                        <p className="text-[#5E554E] font-bold text-xs uppercase tracking-widest">No hay registros históricos previos</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {p.clinical.perioHistory.map((snap, idx) => (
-                            <Card key={idx} className="p-5 hover:border-[#5B6651] transition-all cursor-pointer group" onClick={() => restoreSnapshot(snap)}>
+                            <Card key={idx} className="p-5 hover:border-[#46523C] transition-all cursor-pointer group" onClick={() => restoreSnapshot(snap)}>
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-[#FDFBF7] rounded-lg flex items-center justify-center border border-[#DFD2C4]/50 text-[#5B6651]">
+                                        <div className="w-8 h-8 bg-[#FBFAF8] rounded-lg flex items-center justify-center border border-[#D9D2C7]/50 text-[#46523C]">
                                             <History size={16} />
                                         </div>
-                                        <span className="text-[10px] font-black text-[#312923] uppercase tracking-widest">{snap.date}</span>
+                                        <span className="text-[11px] font-black text-[#241F1B] uppercase tracking-widest">{snap.date}</span>
                                     </div>
-                                    <span className="text-[9px] font-bold px-2 py-1 bg-green-50 text-green-600 rounded-md border border-green-100">BOP: {snap.stats?.bop}%</span>
+                                    <span className="text-[11px] font-bold px-2 py-1 bg-green-50 text-green-600 rounded-md border border-green-100">BOP: {snap.stats?.bop}%</span>
                                 </div>
-                                <p className="text-[11px] text-[#9A8F84] line-clamp-2 italic">"{snap.notes || 'Sin observaciones adicionales'}"</p>
+                                <p className="text-[11px] text-[#5E554E] line-clamp-2 italic">"{snap.notes || 'Sin observaciones adicionales'}"</p>
                             </Card>
                         ))}
                     </div>
