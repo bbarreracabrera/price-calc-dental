@@ -29,12 +29,12 @@ export default function MyClinicsTab({ jobs }) {
 
     if (clinicStats.length === 0) {
         return (
-            <div className="bg-white border border-[#DFD2C4] rounded-3xl p-12 text-center">
+            <div className="bg-white border border-[#D9D2C7] rounded-3xl p-12 text-center">
                 <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-400 mx-auto mb-4">
                     <TrendingUp size={32} />
                 </div>
-                <h3 className="font-black text-[#312923] text-lg mb-2">Aún no tienes clínicas conectadas</h3>
-                <p className="text-sm text-[#9A8F84] max-w-md mx-auto leading-relaxed">
+                <h3 className="font-black text-[#241F1B] text-lg mb-2">Aún no tienes clínicas conectadas</h3>
+                <p className="text-sm text-[#5E554E] max-w-md mx-auto leading-relaxed">
                     Cuando una clínica te invite a su red, aparecerá aquí con
                     estadísticas de los trabajos asignados.
                 </p>
@@ -44,7 +44,7 @@ export default function MyClinicsTab({ jobs }) {
 
     return (
         <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-black ml-1">
+            <p className="text-[11px] uppercase tracking-widest text-[#5E554E] font-black ml-1">
                 {clinicStats.length} {clinicStats.length === 1 ? 'clínica conectada' : 'clínicas conectadas'}
             </p>
             {clinicStats.map(clinic => (
@@ -56,33 +56,33 @@ export default function MyClinicsTab({ jobs }) {
 
 function ClinicCard({ clinic }) {
     return (
-        <div className="bg-white border border-[#DFD2C4] rounded-2xl p-5 hover:shadow-sm transition-shadow">
+        <div className="bg-white border border-[#D9D2C7] rounded-2xl p-5 hover:shadow-sm transition-shadow">
             <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 bg-[#FDFBF7] border border-[#DFD2C4] rounded-xl flex items-center justify-center shrink-0">
-                        <Building2 size={18} className="text-[#A3968B]" />
+                    <div className="w-10 h-10 bg-[#FBFAF8] border border-[#D9D2C7] rounded-xl flex items-center justify-center shrink-0">
+                        <Building2 size={18} className="text-[#8A7F74]" />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="font-black text-[#312923] truncate text-sm">{clinic.email}</h3>
-                        <p className="text-[10px] text-[#9A8F84] uppercase tracking-widest font-bold mt-0.5">
+                        <h3 className="font-black text-[#241F1B] truncate text-sm">{clinic.email}</h3>
+                        <p className="text-[11px] text-[#5E554E] uppercase tracking-widest font-bold mt-0.5">
                             Cliente activo · {clinic.total} trabajo{clinic.total !== 1 ? 's' : ''}
                         </p>
                     </div>
                 </div>
                 <a
                     href={`mailto:${clinic.email}`}
-                    className="p-2 text-[#9A8F84] hover:text-[#5B6651] hover:bg-[#FDFBF7] rounded-xl transition-colors shrink-0"
+                    className="p-2 text-[#5E554E] hover:text-[#46523C] hover:bg-[#FBFAF8] rounded-xl transition-colors shrink-0"
                     title="Contactar por email"
                 >
                     <MessageCircle size={18} />
                 </a>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 pt-4 border-t border-[#DFD2C4]/50">
-                <StatPill label="Total"       value={clinic.total}       color="text-[#312923]" />
+            <div className="grid grid-cols-4 gap-2 pt-4 border-t border-[#D9D2C7]/50">
+                <StatPill label="Total"       value={clinic.total}       color="text-[#241F1B]" />
                 <StatPill label="En curso"    value={clinic.en_curso}    color="text-amber-600" />
-                <StatPill label="Listos"      value={clinic.completados} color="text-[#5B6651]" />
-                <StatPill label="Despachados" value={clinic.despachados} color="text-[#A3968B]" />
+                <StatPill label="Listos"      value={clinic.completados} color="text-[#46523C]" />
+                <StatPill label="Despachados" value={clinic.despachados} color="text-[#8A7F74]" />
             </div>
         </div>
     );
@@ -92,7 +92,7 @@ function StatPill({ label, value, color }) {
     return (
         <div className="text-center">
             <p className={`text-2xl font-black ${color}`}>{value}</p>
-            <p className="text-[9px] uppercase tracking-widest font-black text-[#9A8F84] mt-0.5 leading-tight">{label}</p>
+            <p className="text-[11px] uppercase tracking-widest font-black text-[#5E554E] mt-0.5 leading-tight">{label}</p>
         </div>
     );
 }

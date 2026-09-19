@@ -57,30 +57,30 @@ export default function MPOAuthCallback() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
-            <div className="bg-white rounded-[2rem] border border-[#DFD2C4]/50 p-10 w-full max-w-md shadow-2xl text-center">
+        <div className="min-h-screen bg-[#FBFAF8] flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2rem] border border-[#D9D2C7]/50 p-10 w-full max-w-md shadow-2xl text-center">
                 {status === 'loading' && (
                     <>
-                        <Loader size={48} className="text-[#5B6651] animate-spin mx-auto mb-5" />
-                        <h1 className="text-xl font-black text-[#312923] tracking-tight mb-2">Conectando...</h1>
-                        <p className="text-sm font-bold text-[#9A8F84]">{message}</p>
+                        <Loader size={48} className="text-[#46523C] animate-spin mx-auto mb-5" />
+                        <h1 className="text-xl font-black text-[#241F1B] tracking-tight mb-2">Conectando...</h1>
+                        <p className="text-sm font-bold text-[#5E554E]">{message}</p>
                     </>
                 )}
                 {status === 'success' && (
                     <>
-                        <CheckCircle size={48} className="text-[#5B6651] mx-auto mb-5" />
-                        <h1 className="text-xl font-black text-[#312923] tracking-tight mb-2">¡Conectado!</h1>
-                        <p className="text-sm font-bold text-[#9A8F84]">{message}</p>
+                        <CheckCircle size={48} className="text-[#46523C] mx-auto mb-5" />
+                        <h1 className="text-xl font-black text-[#241F1B] tracking-tight mb-2">¡Conectado!</h1>
+                        <p className="text-sm font-bold text-[#5E554E]">{message}</p>
                     </>
                 )}
                 {status === 'error' && (
                     <>
                         <XCircle size={48} className="text-red-500 mx-auto mb-5" />
-                        <h1 className="text-xl font-black text-[#312923] tracking-tight mb-2">Error de Conexión</h1>
-                        <p className="text-sm font-bold text-[#9A8F84] mb-6">{message}</p>
+                        <h1 className="text-xl font-black text-[#241F1B] tracking-tight mb-2">Error de Conexión</h1>
+                        <p className="text-sm font-bold text-[#5E554E] mb-6">{message}</p>
                         <button
                             onClick={() => { window.location.href = '/?tab=settings'; }}
-                            className="px-6 py-3 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20"
+                            className="px-6 py-3 bg-[#241F1B] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#241F1B]/20"
                         >
                             Volver a Configuración
                         </button>

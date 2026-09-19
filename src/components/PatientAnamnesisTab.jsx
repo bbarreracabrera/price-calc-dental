@@ -66,11 +66,11 @@ export default function PatientAnamnesisTab({
         <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto pb-10">
             
             {/* ALERTAS MÉDICAS */}
-            <div className="bg-[#FDFBF7] border border-[#CBAAA2]/50 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-2 h-full bg-[#CBAAA2]"></div>
+            <div className="bg-[#FBFAF8] border border-[#D3A9A0]/50 rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-full bg-[#D3A9A0]"></div>
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2 bg-[#CBAAA2]/10 rounded-xl text-[#CBAAA2]"><AlertCircle size={20} /></div>
-                    <div><h3 className="text-[11px] font-black text-[#312923] uppercase tracking-widest leading-none">Alertas Médicas Activas</h3></div>
+                    <div className="p-2 bg-[#D3A9A0]/10 rounded-xl text-[#D3A9A0]"><AlertCircle size={20} /></div>
+                    <div><h3 className="text-[11px] font-black text-[#241F1B] uppercase tracking-widest leading-none">Alertas Médicas Activas</h3></div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
@@ -80,7 +80,7 @@ export default function PatientAnamnesisTab({
                             <button 
                                 key={tag} 
                                 onClick={() => handleConditionToggle(tag, isActive)} // Usamos la función segura
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${isActive ? 'bg-[#CBAAA2] border-[#CBAAA2] text-white shadow-sm' : 'bg-white border-[#DFD2C4]/50 text-[#9A8F84] hover:border-[#DFD2C4]'}`}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${isActive ? 'bg-[#D3A9A0] border-[#D3A9A0] text-white shadow-sm' : 'bg-white border-[#D9D2C7]/50 text-[#5E554E] hover:border-[#D9D2C7]'}`}
                             >
                                 {isActive && <CheckSquare size={12} />} {tag}
                             </button>
@@ -88,46 +88,46 @@ export default function PatientAnamnesisTab({
                     })}
                 </div>
 
-                <div className="bg-white p-1 rounded-2xl border border-[#DFD2C4]/50 focus-within:border-[#CBAAA2] transition-colors">
-                    <input className="w-full bg-transparent border-none outline-none px-4 py-3 text-[11px] font-bold text-[#312923] placeholder-[#9A8F84]/50" placeholder="Ej: Alergia a la Penicilina..." value={anamnesis.remote || ''} onChange={(e) => savePatientData(selectedPatientId, { ...p, anamnesis: { ...anamnesis, remote: e.target.value } })} />
+                <div className="bg-white p-1 rounded-2xl border border-[#D9D2C7]/50 focus-within:border-[#D3A9A0] transition-colors">
+                    <input className="w-full bg-transparent border-none outline-none px-4 py-3 text-[11px] font-bold text-[#241F1B] placeholder-[#5E554E]/50" placeholder="Ej: Alergia a la Penicilina..." value={anamnesis.remote || ''} onChange={(e) => savePatientData(selectedPatientId, { ...p, anamnesis: { ...anamnesis, remote: e.target.value } })} />
                 </div>
             </div>
 
             {/* CABECERA: NAVEGACIÓN Y SELECTOR */}
             {isReadOnly ? (
-                <div className="flex items-center justify-between bg-white border border-[#DFD2C4]/50 p-4 rounded-3xl shadow-sm">
-                    <button onClick={() => setViewingForm(null)} className="flex items-center gap-2 px-4 py-2 bg-[#FDFBF7] hover:bg-[#DFD2C4]/30 rounded-xl text-[10px] font-black text-[#9A8F84] uppercase transition-colors"><ArrowLeft size={14}/> Volver a Edición</button>
-                    <div className="text-center"><p className="text-[10px] font-black text-[#5B6651] uppercase mb-1">Archivo Histórico Intocable</p><h2 className="text-lg font-black text-[#312923] capitalize">{viewingForm.label}</h2></div>
-                    <div className="text-right hidden sm:block"><p className="text-[10px] font-bold text-[#9A8F84] uppercase">{viewingForm.date}</p><p className="text-[10px] font-bold text-[#6B615A] uppercase">{viewingForm.author}</p></div>
+                <div className="flex items-center justify-between bg-white border border-[#D9D2C7]/50 p-4 rounded-3xl shadow-sm">
+                    <button onClick={() => setViewingForm(null)} className="flex items-center gap-2 px-4 py-2 bg-[#FBFAF8] hover:bg-[#D9D2C7]/30 rounded-xl text-[11px] font-black text-[#5E554E] uppercase transition-colors"><ArrowLeft size={14}/> Volver a Edición</button>
+                    <div className="text-center"><p className="text-[11px] font-black text-[#46523C] uppercase mb-1">Archivo Histórico Intocable</p><h2 className="text-lg font-black text-[#241F1B] capitalize">{viewingForm.label}</h2></div>
+                    <div className="text-right hidden sm:block"><p className="text-[11px] font-bold text-[#5E554E] uppercase">{viewingForm.date}</p><p className="text-[11px] font-bold text-[#5E554E] uppercase">{viewingForm.author}</p></div>
                 </div>
             ) : (
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#DFD2C4]/50 pb-6">
-                    <div className="flex bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4] shadow-sm w-full md:w-auto overflow-x-auto hide-scrollbar">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#D9D2C7]/50 pb-6">
+                    <div className="flex bg-[#FBFAF8] p-1.5 rounded-2xl border border-[#D9D2C7] shadow-sm w-full md:w-auto overflow-x-auto hide-scrollbar">
                         {availableForms.filter(f => f.quickAccess).map(form => {
                             const isActive = activeFormType === form.id;
                             return (
-                                <button key={form.id} onClick={() => setActiveFormType(form.id)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${isActive ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#9A8F84] hover:text-[#5B6651]'}`}>
+                                <button key={form.id} onClick={() => setActiveFormType(form.id)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all whitespace-nowrap ${isActive ? 'bg-[#46523C] text-white shadow-md' : 'text-[#5E554E] hover:text-[#46523C]'}`}>
                                     <form.icon size={16} /> {form.label}
                                 </button>
                             )
                         })}
                     </div>
                     <div className="relative w-full md:w-64">
-                        <select value={activeFormType} onChange={(e) => setActiveFormType(e.target.value)} className="w-full appearance-none bg-white border border-[#DFD2C4] text-[#312923] text-[10px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl outline-none focus:border-[#5B6651] shadow-sm cursor-pointer">
+                        <select value={activeFormType} onChange={(e) => setActiveFormType(e.target.value)} className="w-full appearance-none bg-white border border-[#D9D2C7] text-[#241F1B] text-[11px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl outline-none focus:border-[#46523C] shadow-sm cursor-pointer">
                             <optgroup label="Accesos Rápidos">{availableForms.filter(f => f.quickAccess).map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</optgroup>
                             <optgroup label="Otras Especialidades">{availableForms.filter(f => !f.quickAccess).map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</optgroup>
                         </select>
-                        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9A8F84] pointer-events-none" />
+                        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#5E554E] pointer-events-none" />
                     </div>
                 </div>
             )}
 
             {/* LIENZO DE LA FICHA */}
-            <div className="bg-white border border-[#DFD2C4]/40 rounded-[2rem] p-6 md:p-10 shadow-sm relative">
+            <div className="bg-white border border-[#D9D2C7]/40 rounded-[2rem] p-6 md:p-10 shadow-sm relative">
                 {!isReadOnly && (
-                    <div className="flex items-center gap-3 mb-8 border-b border-[#DFD2C4]/40 pb-4">
-                        <div className="p-3 bg-[#5B6651]/10 text-[#5B6651] rounded-xl">{React.createElement(currentFormDef.icon, { size: 24 })}</div>
-                        <div><h2 className="text-2xl font-black text-[#312923] tracking-tight">{currentFormDef.label}</h2><p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">Borrador en edición</p></div>
+                    <div className="flex items-center gap-3 mb-8 border-b border-[#D9D2C7]/40 pb-4">
+                        <div className="p-3 bg-[#46523C]/10 text-[#46523C] rounded-xl">{React.createElement(currentFormDef.icon, { size: 24 })}</div>
+                        <div><h2 className="text-2xl font-black text-[#241F1B] tracking-tight">{currentFormDef.label}</h2><p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest">Borrador en edición</p></div>
                     </div>
                 )}
 
@@ -135,12 +135,12 @@ export default function PatientAnamnesisTab({
                     {(isReadOnly ? viewingForm.type === 'general' : activeFormType === 'general') && (
                         <>
                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-1">1. Motivo de Consulta</h4>
+                                <h4 className="text-[11px] font-black uppercase text-[#5E554E] border-b border-[#D9D2C7]/50 pb-1">1. Motivo de Consulta</h4>
                                 <InputField textarea label="Motivo de Consulta" disabled={isReadOnly} value={activeData.motivo || ''} onChange={e=>setDraft('general', 'motivo', e.target.value)} />
                                 <InputField textarea label="Historia de la Enfermedad" disabled={isReadOnly} value={activeData.enfermedadActual || ''} onChange={e=>setDraft('general', 'enfermedadActual', e.target.value)} />
                             </div>
                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-1">2. Antecedentes Remotos</h4>
+                                <h4 className="text-[11px] font-black uppercase text-[#5E554E] border-b border-[#D9D2C7]/50 pb-1">2. Antecedentes Remotos</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <InputField textarea label="Médicos y Quirúrgicos" disabled={isReadOnly} value={activeData.medicos || ''} onChange={e=>setDraft('general', 'medicos', e.target.value)} />
                                     <InputField textarea label="Fármacos y Alergias" disabled={isReadOnly} value={activeData.farmacosAlergias || ''} onChange={e=>setDraft('general', 'farmacosAlergias', e.target.value)} />
@@ -151,7 +151,7 @@ export default function PatientAnamnesisTab({
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-1">3. Examen Físico</h4>
+                                <h4 className="text-[11px] font-black uppercase text-[#5E554E] border-b border-[#D9D2C7]/50 pb-1">3. Examen Físico</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <InputField textarea label="Examen Extraoral" disabled={isReadOnly} value={activeData.extraoral || ''} onChange={e=>setDraft('general', 'extraoral', e.target.value)} />
                                     <InputField textarea label="Examen Intraoral" disabled={isReadOnly} value={activeData.intraoral || ''} onChange={e=>setDraft('general', 'intraoral', e.target.value)} />
@@ -161,8 +161,8 @@ export default function PatientAnamnesisTab({
                                     <InputField textarea label="Periodonto Inicial" disabled={isReadOnly} value={activeData.periodonto || ''} onChange={e=>setDraft('general', 'periodonto', e.target.value)} />
                                 </div>
                             </div>
-                            <div className="space-y-4 bg-[#FDFBF7] p-5 rounded-[2rem] border border-[#DFD2C4]/50">
-                                <h4 className="text-[10px] font-black uppercase text-[#5B6651] border-b border-[#DFD2C4]/50 pb-1">4. Conclusión</h4>
+                            <div className="space-y-4 bg-[#FBFAF8] p-5 rounded-[2rem] border border-[#D9D2C7]/50">
+                                <h4 className="text-[11px] font-black uppercase text-[#46523C] border-b border-[#D9D2C7]/50 pb-1">4. Conclusión</h4>
                                 <InputField textarea label="Diagnóstico Clínico Integral" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('general', 'diagnostico', e.target.value)} />
                                 <InputField textarea label="Plan de Tratamiento" disabled={isReadOnly} value={activeData.plan || ''} onChange={e=>setDraft('general', 'plan', e.target.value)} />
                             </div>
@@ -173,8 +173,8 @@ export default function PatientAnamnesisTab({
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-[#9A8F84] ml-1">ASA</label>
-                                    <select className="w-full p-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.asa || ''} onChange={e=>setDraft('cirugia', 'asa', e.target.value)}>
+                                    <label className="text-[11px] font-black uppercase text-[#5E554E] ml-1">ASA</label>
+                                    <select className="w-full p-3.5 rounded-2xl border border-[#D9D2C7]/70 bg-[#FBFAF8] font-bold outline-none text-sm" disabled={isReadOnly} value={activeData.asa || ''} onChange={e=>setDraft('cirugia', 'asa', e.target.value)}>
                                         <option value="">Seleccione...</option><option value="I">ASA I</option><option value="II">ASA II</option><option value="III">ASA III</option>
                                     </select>
                                 </div>
@@ -183,7 +183,7 @@ export default function PatientAnamnesisTab({
                                 <InputField label="HGT" placeholder="mg/dl" disabled={isReadOnly} value={activeData.hgt || ''} onChange={e=>setDraft('cirugia', 'hgt', e.target.value)} />
                             </div>
                             <InputField textarea label="Sistemática Radiográfica" disabled={isReadOnly} value={activeData.rx || ''} onChange={e=>setDraft('cirugia', 'rx', e.target.value)} />
-                            <div className="space-y-4 bg-[#CBAAA2]/5 p-5 rounded-[2rem] border border-[#CBAAA2]/20">
+                            <div className="space-y-4 bg-[#D3A9A0]/5 p-5 rounded-[2rem] border border-[#D3A9A0]/20">
                                 <InputField textarea label="Diagnóstico Quirúrgico" disabled={isReadOnly} value={activeData.diagnostico || ''} onChange={e=>setDraft('cirugia', 'diagnostico', e.target.value)} />
                                 <InputField textarea label="Paso a paso (Técnica)" disabled={isReadOnly} value={activeData.tecnica || ''} onChange={e=>setDraft('cirugia', 'tecnica', e.target.value)} />
                             </div>
@@ -203,17 +203,17 @@ export default function PatientAnamnesisTab({
                     )}
 
                     {!isReadOnly && !['general', 'cirugia', 'endodoncia', 'ortodoncia', 'implantologia'].includes(activeFormType) && (
-                        <div className="text-center py-16 bg-[#FDFBF7] border-2 border-dashed border-[#DFD2C4] rounded-[2.5rem]">
-                            <FilePlus2 className="mx-auto text-[#DFD2C4] mb-4" size={48}/>
-                            <h3 className="text-xl font-black text-[#312923]">Ficha de {currentFormDef.label}</h3>
-                            <p className="text-xs font-bold text-[#9A8F84] mt-2 uppercase tracking-widest">Plantilla en desarrollo</p>
+                        <div className="text-center py-16 bg-[#FBFAF8] border-2 border-dashed border-[#D9D2C7] rounded-[2.5rem]">
+                            <FilePlus2 className="mx-auto text-[#D9D2C7] mb-4" size={48}/>
+                            <h3 className="text-xl font-black text-[#241F1B]">Ficha de {currentFormDef.label}</h3>
+                            <p className="text-xs font-bold text-[#5E554E] mt-2 uppercase tracking-widest">Plantilla en desarrollo</p>
                         </div>
                     )}
                 </div>
 
                 {!isReadOnly && (
-                    <div className="mt-10 flex justify-end border-t border-[#DFD2C4]/40 pt-8">
-                        <Button variant="primary" onClick={() => saveFinalForm(activeFormType)} className="flex items-center gap-3 px-8 py-4 bg-[#5B6651] text-white hover:-translate-y-0.5 rounded-2xl font-black uppercase tracking-[0.15em] text-xs">
+                    <div className="mt-10 flex justify-end border-t border-[#D9D2C7]/40 pt-8">
+                        <Button variant="primary" onClick={() => saveFinalForm(activeFormType)} className="flex items-center gap-3 px-8 py-4 bg-[#46523C] text-white hover:-translate-y-0.5 rounded-2xl font-black uppercase tracking-[0.15em] text-xs">
                             <Save size={18} /> CERRAR FICHA DEFINITIVA
                         </Button>
                     </div>
@@ -223,15 +223,15 @@ export default function PatientAnamnesisTab({
             {/* LISTA HISTORIAL */}
             {!isReadOnly && (
                 <div className="pt-8">
-                    <div className="flex items-center gap-3 mb-6"><History className="text-[#9A8F84]" size={20}/><h4 className="font-black text-xl text-[#312923]">Archivo Clínico</h4></div>
+                    <div className="flex items-center gap-3 mb-6"><History className="text-[#5E554E]" size={20}/><h4 className="font-black text-xl text-[#241F1B]">Archivo Clínico</h4></div>
                     {history.length === 0 ? (
-                        <div className="bg-white border border-[#DFD2C4]/40 rounded-3xl p-10 text-center"><p className="text-sm font-bold text-[#9A8F84]">No hay fichas finalizadas.</p></div>
+                        <div className="bg-white border border-[#D9D2C7]/40 rounded-3xl p-10 text-center"><p className="text-sm font-bold text-[#5E554E]">No hay fichas finalizadas.</p></div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {history.map(form => (
-                                <div key={form.id} onClick={() => setViewingForm(form)} className="p-5 bg-white border border-[#DFD2C4]/50 rounded-[1.5rem] flex items-start gap-4 cursor-pointer hover:border-[#5B6651]">
-                                    <div className="p-3 rounded-2xl bg-[#FDFBF7] text-[#5B6651]"><FileText size={20}/></div>
-                                    <div className="flex-1"><p className="font-black text-sm text-[#312923]">{form.label}</p><p className="text-[10px] font-bold text-[#9A8F84] mt-1">{form.date}</p></div>
+                                <div key={form.id} onClick={() => setViewingForm(form)} className="p-5 bg-white border border-[#D9D2C7]/50 rounded-[1.5rem] flex items-start gap-4 cursor-pointer hover:border-[#46523C]">
+                                    <div className="p-3 rounded-2xl bg-[#FBFAF8] text-[#46523C]"><FileText size={20}/></div>
+                                    <div className="flex-1"><p className="font-black text-sm text-[#241F1B]">{form.label}</p><p className="text-[11px] font-bold text-[#5E554E] mt-1">{form.date}</p></div>
                                 </div>
                             ))}
                         </div>

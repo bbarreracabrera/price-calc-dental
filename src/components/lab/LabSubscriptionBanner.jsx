@@ -36,9 +36,9 @@ export default function LabSubscriptionBanner({ supabase, labEmail }) {
         return (
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-2xl">
                 <Star size={14} className="text-emerald-600 fill-emerald-600" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Lab Pro Activo</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700">Lab Pro Activo</span>
                 {subscription?.next_billing_date && (
-                    <span className="text-[9px] text-emerald-500 font-bold ml-2">
+                    <span className="text-[11px] text-emerald-500 font-bold ml-2">
                         · Próximo cobro: {new Date(subscription.next_billing_date).toLocaleDateString('es-CL')}
                     </span>
                 )}
@@ -57,7 +57,7 @@ export default function LabSubscriptionBanner({ supabase, labEmail }) {
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <Zap size={14} className="text-amber-600" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Trial Pro — {daysLeft} días restantes</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-amber-700">Trial Pro — {daysLeft} días restantes</span>
                         </div>
                         <p className="text-xs text-amber-600 font-medium">Estás probando Lab Pro. Activa tu suscripción para no perder el acceso.</p>
                     </div>
@@ -65,7 +65,7 @@ export default function LabSubscriptionBanner({ supabase, labEmail }) {
                         href={MP_LAB_PRO_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-700 transition-colors"
+                        className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-amber-700 transition-colors"
                     >
                         Activar <ArrowRight size={12} />
                     </a>
@@ -76,15 +76,15 @@ export default function LabSubscriptionBanner({ supabase, labEmail }) {
 
     // Plan Free — mostrar CTA para upgrade
     return (
-        <div className="bg-[#312923] rounded-[2rem] p-6 text-white relative overflow-hidden">
+        <div className="bg-[#241F1B] rounded-[2rem] p-6 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
                 <Star size={120} />
             </div>
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                        <Lock size={14} className="text-[#CBAAA2]" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#CBAAA2]">Plan Gratuito</span>
+                        <Lock size={14} className="text-[#D3A9A0]" />
+                        <span className="text-[11px] font-black uppercase tracking-widest text-[#D3A9A0]">Plan Gratuito</span>
                     </div>
                     <h3 className="text-lg font-black">Desbloquea Lab Pro por $12.990/mes</h3>
                     <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -94,8 +94,8 @@ export default function LabSubscriptionBanner({ supabase, labEmail }) {
                             'Análisis de revenue',
                             'Multi-técnico',
                         ].map((f, i) => (
-                            <div key={i} className="flex items-center gap-1.5 text-[10px] font-bold text-white/60">
-                                <CheckCircle2 size={10} className="text-[#CBAAA2]" /> {f}
+                            <div key={i} className="flex items-center gap-1.5 text-[11px] font-bold text-white/60">
+                                <CheckCircle2 size={10} className="text-[#D3A9A0]" /> {f}
                             </div>
                         ))}
                     </div>
@@ -104,9 +104,9 @@ export default function LabSubscriptionBanner({ supabase, labEmail }) {
                     href={MP_LAB_PRO_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-2 px-6 py-3 bg-white text-[#312923] rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#FDFBF7] transition-colors shadow-lg"
+                    className="shrink-0 flex items-center gap-2 px-6 py-3 bg-white text-[#241F1B] rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#FBFAF8] transition-colors shadow-lg"
                 >
-                    <Star size={14} className="fill-[#312923]" />
+                    <Star size={14} className="fill-[#241F1B]" />
                     Upgrade a Pro
                 </a>
             </div>

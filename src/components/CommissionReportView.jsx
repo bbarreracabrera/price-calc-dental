@@ -70,13 +70,13 @@ export default function CommissionReportView({ appointments, team, config }) {
     <div className="space-y-6 animate-in fade-in h-full flex flex-col pb-10">
       
       {/* Encabezado */}
-      <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#DFD2C4]/50 shrink-0">
+      <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#D9D2C7]/50 shrink-0">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign size={14} className="text-[#A3968B]"/>
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Gestión de Honorarios</p>
+            <DollarSign size={14} className="text-[#8A7F74]"/>
+            <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Gestión de Honorarios</p>
           </div>
-          <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Liquidación de Comisiones</h2>
+          <h2 className="text-4xl font-black text-[#241F1B] tracking-tighter">Liquidación de Comisiones</h2>
         </div>
         
         <div className="flex flex-col md:flex-row gap-3">
@@ -84,11 +84,11 @@ export default function CommissionReportView({ appointments, team, config }) {
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-4 py-3 bg-white border border-[#DFD2C4] rounded-xl font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+            className="px-4 py-3 bg-white border border-[#D9D2C7] rounded-xl font-bold text-[#241F1B] outline-none focus:border-[#46523C]"
           />
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-6 py-3 bg-[#5B6651] text-white font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-[#4a5442] transition-all shadow-lg shadow-[#5B6651]/20"
+            className="flex items-center gap-2 px-6 py-3 bg-[#46523C] text-white font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-[#36402F] transition-all shadow-lg shadow-[#46523C]/20"
           >
             <Download size={16}/> Exportar CSV
           </button>
@@ -98,13 +98,13 @@ export default function CommissionReportView({ appointments, team, config }) {
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
         
         {/* Tabs */}
-        <div className="flex gap-2 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-1 w-fit">
+        <div className="flex gap-2 bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl p-1 w-fit">
           <button
             onClick={() => setViewMode('commission')}
             className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
               viewMode === 'commission' 
-                ? 'bg-[#5B6651] text-white shadow-sm' 
-                : 'text-[#312923] hover:bg-white'
+                ? 'bg-[#46523C] text-white shadow-sm' 
+                : 'text-[#241F1B] hover:bg-white'
             }`}
           >
             <DollarSign size={14} className="inline mr-1"/> Comisiones
@@ -113,8 +113,8 @@ export default function CommissionReportView({ appointments, team, config }) {
             onClick={() => setViewMode('productivity')}
             className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
               viewMode === 'productivity' 
-                ? 'bg-[#5B6651] text-white shadow-sm' 
-                : 'text-[#312923] hover:bg-white'
+                ? 'bg-[#46523C] text-white shadow-sm' 
+                : 'text-[#241F1B] hover:bg-white'
             }`}
           >
             <TrendingUp size={14} className="inline mr-1"/> Productividad
@@ -124,37 +124,37 @@ export default function CommissionReportView({ appointments, team, config }) {
         {/* Resumen Global */}
         {viewMode === 'commission' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="rounded-2xl border border-[#DFD2C4]/60 bg-white p-6 shadow-sm">
+            <Card className="rounded-2xl border border-[#D9D2C7]/60 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-2">Ingresos Totales</p>
-                  <p className="text-3xl font-black text-[#312923]">${totalIncome.toLocaleString('es-CL')}</p>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-2">Ingresos Totales</p>
+                  <p className="text-3xl font-black text-[#241F1B]">${totalIncome.toLocaleString('es-CL')}</p>
                 </div>
-                <div className="w-12 h-12 bg-[#5B6651]/10 rounded-xl flex items-center justify-center text-[#5B6651]">
+                <div className="w-12 h-12 bg-[#46523C]/10 rounded-xl flex items-center justify-center text-[#46523C]">
                   <DollarSign size={24}/>
                 </div>
               </div>
             </Card>
 
-            <Card className="rounded-2xl border border-[#DFD2C4]/60 bg-white p-6 shadow-sm">
+            <Card className="rounded-2xl border border-[#D9D2C7]/60 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-2">Comisiones a Pagar</p>
-                  <p className="text-3xl font-black text-[#CBAAA2]">${totalCommissions.toLocaleString('es-CL')}</p>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-2">Comisiones a Pagar</p>
+                  <p className="text-3xl font-black text-[#D3A9A0]">${totalCommissions.toLocaleString('es-CL')}</p>
                 </div>
-                <div className="w-12 h-12 bg-[#CBAAA2]/10 rounded-xl flex items-center justify-center text-[#CBAAA2]">
+                <div className="w-12 h-12 bg-[#D3A9A0]/10 rounded-xl flex items-center justify-center text-[#D3A9A0]">
                   <TrendingUp size={24}/>
                 </div>
               </div>
             </Card>
 
-            <Card className="rounded-2xl border border-[#DFD2C4]/60 bg-white p-6 shadow-sm">
+            <Card className="rounded-2xl border border-[#D9D2C7]/60 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-2">Profesionales Activos</p>
-                  <p className="text-3xl font-black text-[#5B6651]">{commissionReport.length}</p>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-2">Profesionales Activos</p>
+                  <p className="text-3xl font-black text-[#46523C]">{commissionReport.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-[#5B6651]/10 rounded-xl flex items-center justify-center text-[#5B6651]">
+                <div className="w-12 h-12 bg-[#46523C]/10 rounded-xl flex items-center justify-center text-[#46523C]">
                   <Users size={24}/>
                 </div>
               </div>
@@ -164,28 +164,28 @@ export default function CommissionReportView({ appointments, team, config }) {
 
         {/* Tabla de Comisiones */}
         {viewMode === 'commission' && (
-          <Card className="rounded-2xl border border-[#DFD2C4]/60 bg-white p-6 shadow-sm overflow-x-auto">
-            <h3 className="font-black text-lg text-[#312923] mb-4">Detalle por Profesional</h3>
+          <Card className="rounded-2xl border border-[#D9D2C7]/60 bg-white p-6 shadow-sm overflow-x-auto">
+            <h3 className="font-black text-lg text-[#241F1B] mb-4">Detalle por Profesional</h3>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#DFD2C4]/50">
-                  <th className="text-left py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Profesional</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Ingresos</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Comisión %</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Monto</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Citas</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Ticket Promedio</th>
+                <tr className="border-b border-[#D9D2C7]/50">
+                  <th className="text-left py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Profesional</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Ingresos</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Comisión %</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Monto</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Citas</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Ticket Promedio</th>
                 </tr>
               </thead>
               <tbody>
                 {commissionReport.map((report, idx) => (
-                  <tr key={idx} className="border-b border-[#DFD2C4]/30 hover:bg-[#FDFBF7] transition-colors">
-                    <td className="py-3 px-4 font-bold text-[#312923]">{report.dentistName}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#312923]">${report.totalIncome.toLocaleString('es-CL')}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#5B6651]">{report.commission}%</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#CBAAA2]">${report.commissionAmount.toLocaleString('es-CL')}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#312923]">{report.appointmentCount}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#5B6651]">${Math.round(report.averageTicket).toLocaleString('es-CL')}</td>
+                  <tr key={idx} className="border-b border-[#D9D2C7]/30 hover:bg-[#FBFAF8] transition-colors">
+                    <td className="py-3 px-4 font-bold text-[#241F1B]">{report.dentistName}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#241F1B]">${report.totalIncome.toLocaleString('es-CL')}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#46523C]">{report.commission}%</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#D3A9A0]">${report.commissionAmount.toLocaleString('es-CL')}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#241F1B]">{report.appointmentCount}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#46523C]">${Math.round(report.averageTicket).toLocaleString('es-CL')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -195,30 +195,30 @@ export default function CommissionReportView({ appointments, team, config }) {
 
         {/* Tabla de Productividad */}
         {viewMode === 'productivity' && (
-          <Card className="rounded-2xl border border-[#DFD2C4]/60 bg-white p-6 shadow-sm overflow-x-auto">
-            <h3 className="font-black text-lg text-[#312923] mb-4">Estadísticas de Productividad</h3>
+          <Card className="rounded-2xl border border-[#D9D2C7]/60 bg-white p-6 shadow-sm overflow-x-auto">
+            <h3 className="font-black text-lg text-[#241F1B] mb-4">Estadísticas de Productividad</h3>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#DFD2C4]/50">
-                  <th className="text-left py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Profesional</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Citas Totales</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Completadas</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">No Asistió</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Tasa No-Show</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Ingresos</th>
-                  <th className="text-right py-3 px-4 font-black text-[#9A8F84] text-[10px] uppercase tracking-widest">Ticket Promedio</th>
+                <tr className="border-b border-[#D9D2C7]/50">
+                  <th className="text-left py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Profesional</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Citas Totales</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Completadas</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">No Asistió</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Tasa No-Show</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Ingresos</th>
+                  <th className="text-right py-3 px-4 font-black text-[#5E554E] text-[11px] uppercase tracking-widest">Ticket Promedio</th>
                 </tr>
               </thead>
               <tbody>
                 {productivityStats.map((stat, idx) => (
-                  <tr key={idx} className="border-b border-[#DFD2C4]/30 hover:bg-[#FDFBF7] transition-colors">
-                    <td className="py-3 px-4 font-bold text-[#312923]">{stat.dentistName}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#312923]">{stat.totalAppointments}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#5B6651]">{stat.completedAppointments}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#CBAAA2]">{stat.noShowCount}</td>
+                  <tr key={idx} className="border-b border-[#D9D2C7]/30 hover:bg-[#FBFAF8] transition-colors">
+                    <td className="py-3 px-4 font-bold text-[#241F1B]">{stat.dentistName}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#241F1B]">{stat.totalAppointments}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#46523C]">{stat.completedAppointments}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#D3A9A0]">{stat.noShowCount}</td>
                     <td className="text-right py-3 px-4 font-bold text-[#D9A86C]">{stat.noShowRate}%</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#312923]">${stat.totalIncome.toLocaleString('es-CL')}</td>
-                    <td className="text-right py-3 px-4 font-bold text-[#5B6651]">${Math.round(stat.averageTicket).toLocaleString('es-CL')}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#241F1B]">${stat.totalIncome.toLocaleString('es-CL')}</td>
+                    <td className="text-right py-3 px-4 font-bold text-[#46523C]">${Math.round(stat.averageTicket).toLocaleString('es-CL')}</td>
                   </tr>
                 ))}
               </tbody>

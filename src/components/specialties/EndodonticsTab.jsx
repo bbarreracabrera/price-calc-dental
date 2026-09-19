@@ -67,35 +67,35 @@ export default function EndodonticsTab({ patientId, onSave }) {
   return (
     <div className="space-y-6">
       {/* Formulario de Nuevo Tratamiento */}
-      <div className="bg-white border border-[#DFD2C4] rounded-2xl p-6 space-y-6">
-        <h3 className="text-lg font-black text-[#312923]">Registrar Tratamiento Endodóncico</h3>
+      <div className="bg-white border border-[#D9D2C7] rounded-2xl p-6 space-y-6">
+        <h3 className="text-lg font-black text-[#241F1B]">Registrar Tratamiento Endodóncico</h3>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Fecha</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Fecha</label>
             <input
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Diente</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Diente</label>
             <input
               type="text"
               placeholder="ej: 1.6"
               value={formData.tooth}
               onChange={(e) => setFormData({ ...formData, tooth: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Diagnóstico</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Diagnóstico</label>
             <select
               value={formData.diagnosis}
               onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             >
               <option value="">Seleccionar</option>
               <option value="pulpitis_reversible">Pulpitis Reversible</option>
@@ -107,53 +107,53 @@ export default function EndodonticsTab({ patientId, onSave }) {
         </div>
 
         <div>
-          <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Síntomas</label>
+          <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Síntomas</label>
           <textarea
             value={formData.symptoms}
             onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
             placeholder="Describe los síntomas del paciente..."
-            className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651] resize-none h-16"
+            className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C] resize-none h-16"
           />
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Longitud de Trabajo (mm)</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Longitud de Trabajo (mm)</label>
             <input
               type="number"
               value={formData.workingLength}
               onChange={(e) => setFormData({ ...formData, workingLength: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Conductometría (mm)</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Conductometría (mm)</label>
             <input
               type="number"
               value={formData.conductometryLength}
               onChange={(e) => setFormData({ ...formData, conductometryLength: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Secuencia de Limas</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Secuencia de Limas</label>
             <input
               type="text"
               placeholder="ej: 10K, 15K, 20K, 25K"
               value={formData.fileSequence}
               onChange={(e) => setFormData({ ...formData, fileSequence: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Técnica Obturación</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Técnica Obturación</label>
             <select
               value={formData.obturationTechnique}
               onChange={(e) => setFormData({ ...formData, obturationTechnique: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             >
               <option value="lateral">Condensación Lateral</option>
               <option value="continuous">Onda Continua</option>
@@ -162,65 +162,65 @@ export default function EndodonticsTab({ patientId, onSave }) {
             </select>
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Cemento Sellador</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Cemento Sellador</label>
             <input
               type="text"
               placeholder="ej: AH Plus"
               value={formData.sealer}
               onChange={(e) => setFormData({ ...formData, sealer: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Número de Sesiones</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Número de Sesiones</label>
             <input
               type="number"
               value={formData.sessionCount}
               onChange={(e) => setFormData({ ...formData, sessionCount: parseInt(e.target.value) })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Medicación Entre Sesiones</label>
+          <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Medicación Entre Sesiones</label>
           <input
             type="text"
             placeholder="ej: Hidróxido de Calcio"
             value={formData.medicationBetweenSessions}
             onChange={(e) => setFormData({ ...formData, medicationBetweenSessions: e.target.value })}
-            className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+            className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Complicaciones</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Complicaciones</label>
             <textarea
               value={formData.complications}
               onChange={(e) => setFormData({ ...formData, complications: e.target.value })}
               placeholder="Si las hay..."
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651] resize-none h-16"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C] resize-none h-16"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Notas de Sesión</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Notas de Sesión</label>
             <textarea
               value={formData.sessionNotes}
               onChange={(e) => setFormData({ ...formData, sessionNotes: e.target.value })}
               placeholder="Observaciones clínicas..."
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651] resize-none h-16"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C] resize-none h-16"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Pronóstico</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Pronóstico</label>
             <select
               value={formData.prognosis}
               onChange={(e) => setFormData({ ...formData, prognosis: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             >
               <option value="favorable">Favorable</option>
               <option value="uncertain">Incierto</option>
@@ -228,19 +228,19 @@ export default function EndodonticsTab({ patientId, onSave }) {
             </select>
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Fecha Seguimiento</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Fecha Seguimiento</label>
             <input
               type="date"
               value={formData.followUpDate}
               onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
         </div>
 
         <button
           onClick={handleAddTreatment}
-          className="w-full px-4 py-3 bg-[#5B6651] text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-[#4a5442] transition-all flex items-center justify-center gap-2"
+          className="w-full px-4 py-3 bg-[#46523C] text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-[#36402F] transition-all flex items-center justify-center gap-2"
         >
           <Plus size={16} /> Guardar Tratamiento
         </button>
@@ -248,19 +248,19 @@ export default function EndodonticsTab({ patientId, onSave }) {
 
       {/* Historial de Tratamientos */}
       <div className="space-y-3">
-        <h3 className="text-lg font-black text-[#312923]">Historial de Tratamientos</h3>
+        <h3 className="text-lg font-black text-[#241F1B]">Historial de Tratamientos</h3>
         {treatments.length === 0 ? (
-          <p className="text-sm text-[#9A8F84] italic">No hay tratamientos registrados.</p>
+          <p className="text-sm text-[#5E554E] italic">No hay tratamientos registrados.</p>
         ) : (
           treatments.map((treatment) => (
-            <div key={treatment.id} className="bg-white border border-[#DFD2C4] rounded-2xl p-4">
+            <div key={treatment.id} className="bg-white border border-[#D9D2C7] rounded-2xl p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className="font-black text-[#312923]">Diente {treatment.tooth}</p>
-                  <p className="text-xs text-[#6B615A] font-bold">
+                  <p className="font-black text-[#241F1B]">Diente {treatment.tooth}</p>
+                  <p className="text-xs text-[#5E554E] font-bold">
                     {treatment.diagnosis} • {treatment.sessionCount} sesión(es)
                   </p>
-                  <p className="text-xs text-[#9A8F84] font-bold mt-1">
+                  <p className="text-xs text-[#5E554E] font-bold mt-1">
                     {new Date(treatment.date).toLocaleDateString('es-CL')} • Pronóstico: {treatment.prognosis}
                   </p>
                 </div>

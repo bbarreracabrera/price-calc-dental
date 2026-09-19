@@ -36,22 +36,22 @@ export default function ApptModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-[#312923]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] bg-[#241F1B]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
             {/* Contenedor principal con alto máximo controlado */}
-            <Card className="w-full max-w-md shadow-2xl p-6 md:p-8 flex flex-col max-h-[90vh] bg-white/95 border-[#DFD2C4]/50">
+            <Card className="w-full max-w-md shadow-2xl p-6 md:p-8 flex flex-col max-h-[90vh] bg-white/95 border-[#D9D2C7]/50">
                 
                 {/* --- HEADER DEL MODAL (Fijo arriba) --- */}
-                <div className="flex justify-between items-center border-b border-[#DFD2C4]/40 pb-4 shrink-0">
+                <div className="flex justify-between items-center border-b border-[#D9D2C7]/40 pb-4 shrink-0">
                     <div>
-                        <h3 className="font-black text-2xl text-[#312923] tracking-tight">
+                        <h3 className="font-black text-2xl text-[#241F1B] tracking-tight">
                             {newAppt.id ? 'Editar Cita' : 'Agendar Cita'}
                         </h3>
-                        {newAppt.id && <p className="text-xs font-bold text-[#5B6651] mt-1 uppercase tracking-widest">{newAppt.name}</p>}
+                        {newAppt.id && <p className="text-xs font-bold text-[#46523C] mt-1 uppercase tracking-widest">{newAppt.name}</p>}
                     </div>
                     <button
                         aria-label="Cerrar modal"
                         onClick={() => setModal(null)}
-                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#FDFBF7] text-[#9A8F84] hover:bg-[#DFD2C4]/30 hover:text-[#312923] transition-colors border border-[#DFD2C4]/50 shrink-0"
+                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#FBFAF8] text-[#5E554E] hover:bg-[#D9D2C7]/30 hover:text-[#241F1B] transition-colors border border-[#D9D2C7]/50 shrink-0"
                     >
                         <X size={20}/>
                     </button>
@@ -62,8 +62,8 @@ export default function ApptModal({
                     
                     {/* SELECCIÓN DE PACIENTE */}
                     {!newAppt.id && (
-                        <div className="bg-[#FDFBF7] p-4 rounded-2xl border border-[#DFD2C4]/40">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] mb-2 block ml-1">Seleccionar Paciente</label>
+                        <div className="bg-[#FBFAF8] p-4 rounded-2xl border border-[#D9D2C7]/40">
+                            <label className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] mb-2 block ml-1">Seleccionar Paciente</label>
                             <PatientSelect
                                 theme={themeMode}
                                 patients={patientRecords}
@@ -95,8 +95,8 @@ export default function ApptModal({
                     )}
 
                     {newPatId && (
-                        <div className="bg-[#5B6651]/5 border border-[#5B6651]/20 rounded-2xl p-3 animate-in fade-in">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#5B6651] block mb-2">Teléfono del nuevo paciente</label>
+                        <div className="bg-[#46523C]/5 border border-[#46523C]/20 rounded-2xl p-3 animate-in fade-in">
+                            <label className="text-[11px] font-black uppercase tracking-widest text-[#46523C] block mb-2">Teléfono del nuevo paciente</label>
                             <InputField
                                 icon={MessageCircle}
                                 type="tel"
@@ -126,11 +126,11 @@ export default function ApptModal({
 
                         {/* ODONTÓLOGO TRATANTE */}
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] ml-1">Odontólogo Tratante</label>
+                            <label className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] ml-1">Odontólogo Tratante</label>
                             <div className="relative">
-                                <Stethoscope size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                <Stethoscope size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#D9D2C7]" />
                                 <select 
-                                    className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-bold text-[#312923] text-sm appearance-none cursor-pointer" 
+                                    className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#D9D2C7]/70 bg-[#FBFAF8] focus:bg-white focus:border-[#D3A9A0] focus:ring-4 focus:ring-[#D3A9A0]/10 outline-none transition-all font-bold text-[#241F1B] text-sm appearance-none cursor-pointer" 
                                     value={newAppt.dentist_email || ''} 
                                     onChange={e => {
                                         const selectedDoc = team.find(m => m.email === e.target.value);
@@ -147,12 +147,12 @@ export default function ApptModal({
                         
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] ml-1">Fecha</label>
+                                <label className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] ml-1">Fecha</label>
                                 <div className="relative">
-                                    <CalendarDays size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                    <CalendarDays size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#D9D2C7]" />
                                     <input 
                                         type="date" 
-                                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-medium text-[#312923] text-sm" 
+                                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#D9D2C7]/70 bg-[#FBFAF8] focus:bg-white focus:border-[#D3A9A0] focus:ring-4 focus:ring-[#D3A9A0]/10 outline-none transition-all font-medium text-[#241F1B] text-sm" 
                                         value={newAppt.date} 
                                         onChange={e => setNewAppt({...newAppt, date: e.target.value})}
                                     />
@@ -160,12 +160,12 @@ export default function ApptModal({
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] ml-1">Hora Inicio</label>
+                                <label className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] ml-1">Hora Inicio</label>
                                 <div className="relative">
-                                    <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                    <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#D9D2C7]" />
                                     <input 
                                         type="time" 
-                                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-medium text-[#312923] text-sm" 
+                                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#D9D2C7]/70 bg-[#FBFAF8] focus:bg-white focus:border-[#D3A9A0] focus:ring-4 focus:ring-[#D3A9A0]/10 outline-none transition-all font-medium text-[#241F1B] text-sm" 
                                         value={newAppt.time} 
                                         onChange={e => setNewAppt({...newAppt, time: e.target.value})}
                                     />
@@ -173,11 +173,11 @@ export default function ApptModal({
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] ml-1">Duración</label>
+                                <label className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] ml-1">Duración</label>
                                 <div className="relative">
-                                    <Activity size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#DFD2C4]" />
+                                    <Activity size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#D9D2C7]" />
                                     <select 
-                                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-bold text-[#312923] text-sm appearance-none cursor-pointer" 
+                                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#D9D2C7]/70 bg-[#FBFAF8] focus:bg-white focus:border-[#D3A9A0] focus:ring-4 focus:ring-[#D3A9A0]/10 outline-none transition-all font-bold text-[#241F1B] text-sm appearance-none cursor-pointer" 
                                         value={newAppt.duration} 
                                         onChange={e => setNewAppt({...newAppt, duration: Number(e.target.value)})}
                                     >
@@ -192,14 +192,14 @@ export default function ApptModal({
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-[#9A8F84] ml-1">Estado</label>
+                                <label className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] ml-1">Estado</label>
                                 <select 
                                     className={`w-full px-4 py-3.5 rounded-2xl border focus:ring-4 outline-none transition-all font-bold text-sm appearance-none cursor-pointer ${
-                                        newAppt.status === 'agendado' ? 'bg-[#FDFBF7] text-[#6B615A] border-[#DFD2C4]/70 focus:border-[#9A8F84] focus:ring-[#9A8F84]/20' :
-                                        newAppt.status === 'confirmado' ? 'bg-[#5B6651]/10 text-[#5B6651] border-[#5B6651]/30 focus:border-[#5B6651] focus:ring-[#5B6651]/20' :
+                                        newAppt.status === 'agendado' ? 'bg-[#FBFAF8] text-[#5E554E] border-[#D9D2C7]/70 focus:border-[#5E554E] focus:ring-[#5E554E]/20' :
+                                        newAppt.status === 'confirmado' ? 'bg-[#46523C]/10 text-[#46523C] border-[#46523C]/30 focus:border-[#46523C] focus:ring-[#46523C]/20' :
                                         newAppt.status === 'espera' ? 'bg-amber-50 text-amber-700 border-amber-200 focus:border-amber-500 focus:ring-amber-200' :
                                         newAppt.status === 'atendiendo' ? 'bg-blue-50 text-blue-700 border-blue-200 focus:border-blue-500 focus:ring-blue-200' :
-                                        'bg-[#CBAAA2]/10 text-[#CBAAA2] border-[#CBAAA2]/30 focus:border-[#CBAAA2] focus:ring-[#CBAAA2]/20'
+                                        'bg-[#D3A9A0]/10 text-[#D3A9A0] border-[#D3A9A0]/30 focus:border-[#D3A9A0] focus:ring-[#D3A9A0]/20'
                                     }`} 
                                     value={newAppt.status} 
                                     onChange={e => setNewAppt({...newAppt, status: e.target.value})}
@@ -216,18 +216,18 @@ export default function ApptModal({
                 </div>
 
                 {/* --- BOTONES DE ACCIÓN (Fijos abajo) --- */}
-                <div className="flex flex-col gap-3 pt-4 border-t border-[#DFD2C4]/40 shrink-0">
+                <div className="flex flex-col gap-3 pt-4 border-t border-[#D9D2C7]/40 shrink-0">
                     {newAppt.id && (
                         <div className="flex gap-2 mb-2">
                             <button 
                                 onClick={() => handleSendReminder('whatsapp')}
-                                className="flex-1 py-2 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#25D366]/20 transition-all"
+                                className="flex-1 py-2 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/20 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#25D366]/20 transition-all"
                             >
                                 <MessageCircle size={14}/> Recordatorio WhatsApp
                             </button>
                             <button 
                                 onClick={() => handleSendReminder('email')}
-                                className="flex-1 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-100 transition-all"
+                                className="flex-1 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-100 transition-all"
                             >
                                 <FileText size={14}/> Recordatorio Email
                             </button>
@@ -238,7 +238,7 @@ export default function ApptModal({
                             <Button
                                 aria-label="Eliminar cita"
                                 variant="danger"
-                                className="px-5 !bg-[#CBAAA2]/10 !text-[#CBAAA2] hover:!bg-[#CBAAA2]/20 !border-transparent"
+                                className="px-5 !bg-[#D3A9A0]/10 !text-[#D3A9A0] hover:!bg-[#D3A9A0]/20 !border-transparent"
                                 onClick={async (e) => {
                                     e.stopPropagation(); 
                                     try {
@@ -258,7 +258,7 @@ export default function ApptModal({
                         
                         <Button 
                             variant="primary" 
-                            className="flex-1 py-4 text-xs tracking-widest uppercase shadow-lg shadow-[#5B6651]/20 hover:-translate-y-0.5" 
+                            className="flex-1 py-4 text-xs tracking-widest uppercase shadow-lg shadow-[#46523C]/20 hover:-translate-y-0.5" 
                             onClick={async () => {
                                 if(newAppt.name) {
                                     // Validación de conflictos
@@ -292,7 +292,7 @@ export default function ApptModal({
                                 e.stopPropagation();
                                 sendWhatsApp(getPatientPhone(newAppt.patient_id, newAppt.name), `Hola ${newAppt.name}, le escribimos de ShiningCloud Dental para confirmar su cita con el/la Dr/a. ${newAppt.dentist_name || ''} para el ${newAppt.date.split('-').reverse().join('/')} a las ${newAppt.time}. ¿Nos confirma su asistencia?`);
                             }}
-                            className="w-full flex items-center justify-center gap-2 text-[11px] bg-[#5B6651]/5 border border-[#5B6651]/10 py-3 rounded-2xl hover:bg-[#5B6651]/10 text-[#5B6651] transition-colors font-bold uppercase tracking-widest"
+                            className="w-full flex items-center justify-center gap-2 text-[11px] bg-[#46523C]/5 border border-[#46523C]/10 py-3 rounded-2xl hover:bg-[#46523C]/10 text-[#46523C] transition-colors font-bold uppercase tracking-widest"
                         >
                             <MessageCircle size={16} /> Enviar WhatsApp
                         </button>

@@ -8,18 +8,18 @@ import {
 
 export default function LandingPRA() {
     return (
-        <div className="min-h-screen bg-[#FDFBF7]">
+        <div className="min-h-screen bg-[#FBFAF8]">
 
             {/* Header */}
-            <header className="no-print bg-white border-b border-[#DFD2C4] sticky top-0 z-10">
+            <header className="no-print bg-white border-b border-[#D9D2C7] sticky top-0 z-10">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
                     <a href="/" className="flex items-center gap-1.5 font-black text-lg">
-                        <span className="text-[#312923]">ShiningCloud</span>
-                        <span className="text-[#CBAAA2]">Dental</span>
+                        <span className="text-[#241F1B]">ShiningCloud</span>
+                        <span className="text-[#D3A9A0]">Dental</span>
                     </a>
                     <a
                         href="/"
-                        className="flex items-center gap-1 text-sm text-[#9A8F84] hover:text-[#312923] transition-colors"
+                        className="flex items-center gap-1 text-sm text-[#5E554E] hover:text-[#241F1B] transition-colors"
                     >
                         <ArrowLeft size={14} /> Volver
                     </a>
@@ -28,13 +28,13 @@ export default function LandingPRA() {
 
             {/* Hero */}
             <section className="no-print max-w-5xl mx-auto px-4 pt-12 pb-6 text-center">
-                <div className="inline-block px-3 py-1 bg-white border border-[#DFD2C4] rounded-full text-[10px] font-black uppercase tracking-widest text-[#5B6651] mb-4">
+                <div className="inline-block px-3 py-1 bg-white border border-[#D9D2C7] rounded-full text-[11px] font-black uppercase tracking-widest text-[#46523C] mb-4">
                     Herramienta gratuita
                 </div>
-                <h1 className="text-3xl md:text-4xl font-black text-[#312923] mb-3 tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-black text-[#241F1B] mb-3 tracking-tight">
                     Calculadora de Riesgo Periodontal
                 </h1>
-                <p className="text-[#9A8F84] max-w-2xl mx-auto text-base">
+                <p className="text-[#5E554E] max-w-2xl mx-auto text-base">
                     Evalúa el riesgo periodontal de tus pacientes con el modelo de Lang &amp; Tonetti.
                     100% gratis, sin registro, sin datos personales.
                 </p>
@@ -47,18 +47,18 @@ export default function LandingPRA() {
 
             {/* CTA */}
             <section className="no-print max-w-5xl mx-auto px-4 py-12">
-                <div className="bg-[#312923] rounded-3xl p-8 md:p-12 text-center">
+                <div className="bg-[#241F1B] rounded-3xl p-8 md:p-12 text-center">
                     <h2 className="text-2xl md:text-3xl font-black text-white mb-3 tracking-tight">
                         ¿Te gustó esta herramienta?
                     </h2>
-                    <p className="text-[#DFD2C4] mb-6 max-w-2xl mx-auto">
+                    <p className="text-[#D9D2C7] mb-6 max-w-2xl mx-auto">
                         En ShiningCloud Dental esta calculadora se integra con la ficha de tus pacientes.
                         Los datos del periodontograma se cargan automáticamente, puedes comparar la
                         evolución entre visitas y guardar el historial completo de riesgo.
                     </p>
                     <a
                         href="/"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#312923] font-black rounded-2xl hover:bg-[#FDFBF7] transition-colors text-sm"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#241F1B] font-black rounded-2xl hover:bg-[#FBFAF8] transition-colors text-sm"
                     >
                         Conocer la app completa <ExternalLink size={16} />
                     </a>
@@ -68,21 +68,21 @@ export default function LandingPRA() {
             {/* ¿Cómo usar? */}
             <EducationalSection>
                 <section className="no-print max-w-5xl mx-auto px-4 py-12">
-                <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-10">
+                <div className="bg-white rounded-3xl border border-[#D9D2C7] p-6 md:p-10">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-2xl bg-[#5B6651]/10 flex items-center justify-center shrink-0">
-                            <Info size={20} className="text-[#5B6651]" />
+                        <div className="w-10 h-10 rounded-2xl bg-[#46523C]/10 flex items-center justify-center shrink-0">
+                            <Info size={20} className="text-[#46523C]" />
                         </div>
-                        <h2 className="text-2xl font-black text-[#312923]">
+                        <h2 className="text-2xl font-black text-[#241F1B]">
                             ¿Cómo usar esta herramienta?
                         </h2>
                     </div>
-                    <p className="text-sm text-[#9A8F84] mb-6 ml-[52px]">
+                    <p className="text-sm text-[#5E554E] mb-6 ml-[52px]">
                         Guía paso a paso para evaluar correctamente el riesgo periodontal
                     </p>
 
-                    <div className="bg-[#FDFBF7] border-l-4 border-[#5B6651] rounded-r-2xl p-4 mb-6">
-                        <p className="text-sm text-[#312923]">
+                    <div className="bg-[#FBFAF8] border-l-4 border-[#46523C] rounded-r-2xl p-4 mb-6">
+                        <p className="text-sm text-[#241F1B]">
                             <strong>Propósito:</strong> El Periodontal Risk Assessment (PRA) de
                             Lang &amp; Tonetti permite estratificar el riesgo individual de
                             recurrencia de la enfermedad periodontal durante la fase de
@@ -128,11 +128,11 @@ export default function LandingPRA() {
             {/* Parámetros y umbrales */}
             <EducationalSection>
                 <section className="no-print max-w-5xl mx-auto px-4 pb-12">
-                    <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-10">
-                        <h2 className="text-2xl font-black text-[#312923] mb-2">
+                    <div className="bg-white rounded-3xl border border-[#D9D2C7] p-6 md:p-10">
+                        <h2 className="text-2xl font-black text-[#241F1B] mb-2">
                             Parámetros evaluados y umbrales de riesgo
                         </h2>
-                        <p className="text-sm text-[#9A8F84] mb-6">
+                        <p className="text-sm text-[#5E554E] mb-6">
                             Los seis parámetros del PRA se valoran de forma conjunta. Cada uno
                             se ubica en una de las cuatro zonas concéntricas del hexágono.
                         </p>
@@ -140,12 +140,12 @@ export default function LandingPRA() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="border-b-2 border-[#DFD2C4]">
-                                        <th className="text-left py-3 pr-4 text-xs font-bold uppercase tracking-widest text-[#9A8F84]">
+                                    <tr className="border-b-2 border-[#D9D2C7]">
+                                        <th className="text-left py-3 pr-4 text-xs font-bold uppercase tracking-widest text-[#5E554E]">
                                             Parámetro
                                         </th>
                                         {[
-                                            { color: '#5B6651', label: 'Bajo' },
+                                            { color: '#46523C', label: 'Bajo' },
                                             { color: '#D9A86C', label: 'Moderado' },
                                             { color: '#B87C50', label: 'Alto' },
                                             { color: '#B92323', label: 'Muy alto' },
@@ -153,7 +153,7 @@ export default function LandingPRA() {
                                             <th key={label} className="text-left py-3 px-2">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: color }} />
-                                                    <span className="text-xs font-bold uppercase tracking-widest text-[#9A8F84]">{label}</span>
+                                                    <span className="text-xs font-bold uppercase tracking-widest text-[#5E554E]">{label}</span>
                                                 </div>
                                             </th>
                                         ))}
@@ -161,15 +161,15 @@ export default function LandingPRA() {
                                 </thead>
                                 <tbody>
                                     {PARAMETERS.map((p, i) => (
-                                        <tr key={i} className="border-b border-[#DFD2C4]/50">
+                                        <tr key={i} className="border-b border-[#D9D2C7]/50">
                                             <td className="py-4 pr-4">
-                                                <p className="font-bold text-[#312923]">{p.name}</p>
-                                                <p className="text-xs text-[#9A8F84] mt-0.5">{p.desc}</p>
+                                                <p className="font-bold text-[#241F1B]">{p.name}</p>
+                                                <p className="text-xs text-[#5E554E] mt-0.5">{p.desc}</p>
                                             </td>
-                                            <td className="py-4 px-2 text-[#312923]">{p.z1}</td>
-                                            <td className="py-4 px-2 text-[#312923]">{p.z2}</td>
-                                            <td className="py-4 px-2 text-[#312923]">{p.z3}</td>
-                                            <td className="py-4 px-2 text-[#312923]">{p.z4}</td>
+                                            <td className="py-4 px-2 text-[#241F1B]">{p.z1}</td>
+                                            <td className="py-4 px-2 text-[#241F1B]">{p.z2}</td>
+                                            <td className="py-4 px-2 text-[#241F1B]">{p.z3}</td>
+                                            <td className="py-4 px-2 text-[#241F1B]">{p.z4}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -182,16 +182,16 @@ export default function LandingPRA() {
             {/* Clasificación de riesgo */}
             <EducationalSection>
                 <section className="no-print max-w-5xl mx-auto px-4 pb-12">
-                    <h2 className="text-2xl font-black text-[#312923] mb-2">
+                    <h2 className="text-2xl font-black text-[#241F1B] mb-2">
                         Clasificación de riesgo
                     </h2>
-                    <p className="text-sm text-[#9A8F84] mb-6">
+                    <p className="text-sm text-[#5E554E] mb-6">
                         Según Sanz-Sánchez &amp; Bascones-Martínez (2017)
                     </p>
 
                     <div className="grid md:grid-cols-3 gap-4">
                         <RiskCard
-                            color="#5B6651"
+                            color="#46523C"
                             icon={<CheckCircle size={20} />}
                             title="Riesgo Bajo"
                             interval="Control cada 12 meses"
@@ -223,8 +223,8 @@ export default function LandingPRA() {
                         />
                     </div>
 
-                    <div className="mt-6 bg-[#FDFBF7] border-l-4 border-[#A3968B] rounded-r-2xl p-4">
-                        <p className="text-sm text-[#312923]">
+                    <div className="mt-6 bg-[#FBFAF8] border-l-4 border-[#8A7F74] rounded-r-2xl p-4">
+                        <p className="text-sm text-[#241F1B]">
                             <strong>Importante:</strong> El riesgo debe reevaluarse en cada cita
                             de mantenimiento. Estudios longitudinales (Axelsson &amp; Lindhe, 2004)
                             demuestran que pacientes sin mantenimiento regular presentan pérdida
@@ -238,11 +238,11 @@ export default function LandingPRA() {
             {/* Protocolo SPT */}
             <EducationalSection>
                 <section className="no-print max-w-5xl mx-auto px-4 pb-12">
-                    <div className="bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-10">
-                        <h2 className="text-2xl font-black text-[#312923] mb-2">
+                    <div className="bg-white rounded-3xl border border-[#D9D2C7] p-6 md:p-10">
+                        <h2 className="text-2xl font-black text-[#241F1B] mb-2">
                             Protocolo de la visita de mantenimiento (SPT)
                         </h2>
-                        <p className="text-sm text-[#9A8F84] mb-6">
+                        <p className="text-sm text-[#5E554E] mb-6">
                             Duración aproximada: 1 hora, estructurada en 4 etapas
                         </p>
 
@@ -275,7 +275,7 @@ export default function LandingPRA() {
             </EducationalSection>
 
             {/* Footer */}
-            <footer className="no-print max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-[#A3968B]">
+            <footer className="no-print max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-[#8A7F74]">
                 Basado en Lang NP, Tonetti MS (2003). Periodontal risk assessment for patients in
                 supportive periodontal therapy. <em>Oral Health Prev Dent.</em>
             </footer>
@@ -332,12 +332,12 @@ function EducationalSection({ children }) {
 function Step({ number, title, children }) {
     return (
         <div className="flex gap-4">
-            <div className="shrink-0 w-8 h-8 rounded-full bg-[#5B6651] text-white font-black text-sm flex items-center justify-center">
+            <div className="shrink-0 w-8 h-8 rounded-full bg-[#46523C] text-white font-black text-sm flex items-center justify-center">
                 {number}
             </div>
             <div className="flex-1">
-                <h3 className="font-bold text-[#312923] mb-1">{title}</h3>
-                <p className="text-sm text-[#9A8F84] leading-relaxed">{children}</p>
+                <h3 className="font-bold text-[#241F1B] mb-1">{title}</h3>
+                <p className="text-sm text-[#5E554E] leading-relaxed">{children}</p>
             </div>
         </div>
     );
@@ -353,7 +353,7 @@ function RiskCard({ color, icon, title, interval, criteria }) {
                 {icon}
                 <h3 className="font-black">{title}</h3>
             </div>
-            <ul className="space-y-1 mb-4 text-sm text-[#312923]">
+            <ul className="space-y-1 mb-4 text-sm text-[#241F1B]">
                 {criteria.map((c, i) => (
                     <li key={i}>• {c}</li>
                 ))}
@@ -370,15 +370,15 @@ function RiskCard({ color, icon, title, interval, criteria }) {
 
 function ProtocolCard({ step, title, duration, description }) {
     return (
-        <div className="bg-[#FDFBF7] rounded-2xl p-5 border border-[#DFD2C4]">
+        <div className="bg-[#FBFAF8] rounded-2xl p-5 border border-[#D9D2C7]">
             <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl font-black text-[#5B6651]">{step}</span>
+                <span className="text-2xl font-black text-[#46523C]">{step}</span>
                 <div>
-                    <h4 className="font-bold text-[#312923]">{title}</h4>
-                    {duration && <p className="text-xs text-[#9A8F84]">{duration}</p>}
+                    <h4 className="font-bold text-[#241F1B]">{title}</h4>
+                    {duration && <p className="text-xs text-[#5E554E]">{duration}</p>}
                 </div>
             </div>
-            <p className="text-sm text-[#9A8F84] leading-relaxed">{description}</p>
+            <p className="text-sm text-[#5E554E] leading-relaxed">{description}</p>
         </div>
     );
 }

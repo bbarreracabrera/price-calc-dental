@@ -93,13 +93,13 @@ export default function HelpView() {
             
             {/* Header */}
             <div className="text-center space-y-4">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B6651]/10 text-[#5B6651] rounded-full text-[10px] font-black uppercase tracking-widest">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#46523C]/10 text-[#46523C] rounded-full text-[11px] font-black uppercase tracking-widest">
                     <ShieldCheck size={14}/> Centro de Capacitación ShiningCloud
                 </div>
-                <h1 className="text-4xl md:text-6xl font-black text-[#312923] tracking-tighter">
-                    Todo lo que puedes <span className="text-[#5B6651]">lograr</span>
+                <h1 className="text-4xl md:text-6xl font-black text-[#241F1B] tracking-tighter">
+                    Todo lo que puedes <span className="text-[#46523C]">lograr</span>
                 </h1>
-                <p className="text-[#9A8F84] font-medium max-w-2xl mx-auto text-lg">
+                <p className="text-[#5E554E] font-medium max-w-2xl mx-auto text-lg">
                     Descubre las herramientas diseñadas para hacer tu clínica más rápida, rentable y accesible.
                 </p>
             </div>
@@ -107,15 +107,15 @@ export default function HelpView() {
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {features.map((f, i) => (
-                    <Card key={i} className="p-8 border-[#DFD2C4]/50 hover:border-[#5B6651]/40 transition-all hover:shadow-2xl group bg-white rounded-[2.5rem]">
+                    <Card key={i} className="p-8 border-[#D9D2C7]/50 hover:border-[#46523C]/40 transition-all hover:shadow-2xl group bg-white rounded-[2.5rem]">
                         <div className={`w-14 h-14 ${f.bg} ${f.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm`}>
                             <f.icon size={28} />
                         </div>
-                        <h3 className="text-xl font-black text-[#312923] mb-4">{f.title}</h3>
+                        <h3 className="text-xl font-black text-[#241F1B] mb-4">{f.title}</h3>
                         <ul className="space-y-4">
                             {f.content.map((item, j) => (
-                                <li key={j} className="flex gap-3 text-sm text-[#6B615A] font-medium leading-relaxed">
-                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#5B6651] shrink-0" />
+                                <li key={j} className="flex gap-3 text-sm text-[#5E554E] font-medium leading-relaxed">
+                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#46523C] shrink-0" />
                                     {item}
                                 </li>
                             ))}
@@ -125,15 +125,15 @@ export default function HelpView() {
             </div>
 
             {/* Support Section */}
-            <div className="bg-[#312923] rounded-[3rem] p-8 md:p-16 text-white relative overflow-hidden shadow-2xl">
+            <div className="bg-[#241F1B] rounded-[3rem] p-8 md:p-16 text-white relative overflow-hidden shadow-2xl">
                 <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
                     <BookOpen size={300} />
                 </div>
 
                 <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div className="space-y-6">
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tight">¿Necesitas ayuda <br/><span className="text-[#CBAAA2]">personalizada?</span></h2>
-                        <p className="text-[#A3968B] text-lg font-medium leading-relaxed">
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight">¿Necesitas ayuda <br/><span className="text-[#D3A9A0]">personalizada?</span></h2>
+                        <p className="text-[#8A7F74] text-lg font-medium leading-relaxed">
                             Estamos aquí para apoyarte en el crecimiento de tu clínica. Contacta directamente con nuestro equipo técnico y comercial.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -145,7 +145,7 @@ export default function HelpView() {
                             </button>
                             <button 
                                 onClick={handleEmail}
-                                className="px-8 py-4 bg-white text-[#312923] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#FDFBF7] transition-all shadow-lg flex items-center justify-center gap-3"
+                                className="px-8 py-4 bg-white text-[#241F1B] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#FBFAF8] transition-all shadow-lg flex items-center justify-center gap-3"
                             >
                                 <Mail size={18} /> Enviar Email
                             </button>
@@ -153,19 +153,19 @@ export default function HelpView() {
                     </div>
 
                     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 space-y-6">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#CBAAA2]">Contacto Directo</h4>
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#D3A9A0]">Contacto Directo</h4>
                         <div className="space-y-4">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><MessageCircle size={18}/></div>
                                 <div>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-[#A3968B]">WhatsApp</p>
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-[#8A7F74]">WhatsApp</p>
                                     <p className="font-bold">+56 9 3274 5439</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><Mail size={18}/></div>
                                 <div>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-[#A3968B]">Email</p>
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-[#8A7F74]">Email</p>
                                     <p className="font-bold">b.barreracabrera.dent@gmail.com</p>
                                 </div>
                             </div>
@@ -176,7 +176,7 @@ export default function HelpView() {
 
             {/* Footer help */}
             <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#9A8F84]">
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#5E554E]">
                     ShiningCloud Dental © 2026 • Desarrollado para odontólogos, por odontólogos.
                 </p>
             </div>

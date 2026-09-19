@@ -290,7 +290,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center"><p className="animate-pulse font-bold text-[#A3968B] uppercase tracking-widest">Conectando con la Clínica...</p></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center"><p className="animate-pulse font-bold text-[#8A7F74] uppercase tracking-widest">Conectando con la Clínica...</p></div>;
     useEffect(() => {
         const checkPaymentStatus = async () => {
             const pendingApptId = localStorage.getItem('pending_appointment_id');
@@ -320,36 +320,36 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
         checkPaymentStatus();
     }, [supabase, notify]);
 
-    if (!clinicConfig || !adminEmail) return <div className="h-screen flex flex-col items-center justify-center p-6 text-center"><h1 className="text-2xl font-black text-[#312923] mb-4">Clínica no encontrada</h1><p className="text-[#6B615A]">Asegúrate de que el enlace sea correcto.</p></div>;
+    if (!clinicConfig || !adminEmail) return <div className="h-screen flex flex-col items-center justify-center p-6 text-center"><h1 className="text-2xl font-black text-[#241F1B] mb-4">Clínica no encontrada</h1><p className="text-[#5E554E]">Asegúrate de que el enlace sea correcto.</p></div>;
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans selection:bg-[#CBAAA2] selection:text-white">
-            <div className="bg-white rounded-[2rem] border border-[#DFD2C4]/50 p-6 sm:p-10 w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-500">
-                <h1 className="text-3xl font-black text-[#312923] tracking-tight mb-6 text-center">Agenda tu Cita en {clinicConfig.name}</h1>
+        <div className="min-h-screen bg-[#FBFAF8] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans selection:bg-[#D3A9A0] selection:text-white">
+            <div className="bg-white rounded-[2rem] border border-[#D9D2C7]/50 p-6 sm:p-10 w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-500">
+                <h1 className="text-3xl font-black text-[#241F1B] tracking-tight mb-6 text-center">Agenda tu Cita en {clinicConfig.name}</h1>
 
                 {step === 1 && (
                     <div className="space-y-6">
-                        <div className="flex items-center gap-2 text-[#A3968B] mb-4">
+                        <div className="flex items-center gap-2 text-[#8A7F74] mb-4">
                             <CalendarDays size={20} />
                             <span className="font-black text-sm uppercase tracking-widest">Paso 1: Elige Fecha y Hora</span>
                         </div>
-                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Fecha</label>
+                        <label className="block text-sm font-bold text-[#5E554E] mb-2">Fecha</label>
                         <input
                             type="date"
                             value={formData.date}
                             onChange={(e) => handleDateSelect(e.target.value)}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                            className="w-full p-4 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm"
                         />
                         {formData.date && availableTimes.length > 0 && (
                             <div className="mt-4">
-                                <label className="block text-sm font-bold text-[#6B615A] mb-2">Hora</label>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-60 overflow-y-auto p-2 rounded-xl border border-[#DFD2C4]/50 bg-[#FDFBF7]">
+                                <label className="block text-sm font-bold text-[#5E554E] mb-2">Hora</label>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-60 overflow-y-auto p-2 rounded-xl border border-[#D9D2C7]/50 bg-[#FBFAF8]">
                                     {availableTimes.map(slot => (
                                         <button
                                             key={slot.id}
                                             onClick={() => setFormData({ ...formData, time: slot.id })}
-                                            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${formData.time === slot.id ? 'bg-[#5B6651] text-white shadow-md' : 'bg-white text-[#6B615A] hover:bg-[#F0EDE9] border border-[#DFD2C4]'}`}
+                                            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${formData.time === slot.id ? 'bg-[#46523C] text-white shadow-md' : 'bg-white text-[#5E554E] hover:bg-[#F0EDE9] border border-[#D9D2C7]'}`}
                                         >
                                             {slot.id}
                                         </button>
@@ -363,7 +363,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         <button
                             onClick={() => setStep(2)}
                             disabled={!formData.date || !formData.time}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#312923]/20 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#241F1B] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#241F1B]/20 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
                         >
                             Siguiente <ChevronRight size={16} />
                         </button>
@@ -372,22 +372,22 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
                 {step === 2 && (
                     <div className="space-y-6">
-                        <button onClick={() => setStep(1)} className="flex items-center gap-2 text-[#A3968B] mb-4 hover:text-[#312923] transition-colors">
+                        <button onClick={() => setStep(1)} className="flex items-center gap-2 text-[#8A7F74] mb-4 hover:text-[#241F1B] transition-colors">
                             <ArrowLeft size={16} /> <span className="font-black text-sm uppercase tracking-widest">Volver</span>
                         </button>
-                        <div className="flex items-center gap-2 text-[#A3968B] mb-4">
+                        <div className="flex items-center gap-2 text-[#8A7F74] mb-4">
                             <User size={20} />
                             <span className="font-black text-sm uppercase tracking-widest">Paso 2: Tus Datos</span>
                         </div>
-                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Nombre Completo</label>
+                        <label className="block text-sm font-bold text-[#5E554E] mb-2">Nombre Completo</label>
                         <input
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             placeholder="Tu Nombre Completo"
-                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                            className="w-full p-4 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm"
                         />
-                        <label className="block text-sm font-bold text-[#6B615A] mb-2">RUT (sin puntos ni guion)</label>
+                        <label className="block text-sm font-bold text-[#5E554E] mb-2">RUT (sin puntos ni guion)</label>
                         <input
                             type="text"
                             value={formData.rut}
@@ -401,36 +401,36 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                                 }
                             }}
                             placeholder="Ej: 12345678K"
-                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                            className="w-full p-4 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm"
                         />
                         {rutError && <p className="text-red-500 text-xs mt-1">{rutError}</p>}
-                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Teléfono</label>
+                        <label className="block text-sm font-bold text-[#5E554E] mb-2">Teléfono</label>
                         <input
                             type="tel"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             placeholder="Ej: +56912345678"
-                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                            className="w-full p-4 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm"
                         />
                         {(requirePayment || clinicConfig?.require_email_for_booking === true || clinicConfig?.require_email_for_booking === 'true') && (
                             <>
-                                <label className="block text-sm font-bold text-[#6B615A] mb-2">Email (para confirmación)</label>
+                                <label className="block text-sm font-bold text-[#5E554E] mb-2">Email (para confirmación)</label>
                                 <input
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="tu@correo.com"
-                                    className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                                    className="w-full p-4 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm"
                                 />
                             </>
                         )}
-                        <label className="block text-sm font-bold text-[#6B615A] mb-2">Motivo de la Cita (opcional)</label>
+                        <label className="block text-sm font-bold text-[#5E554E] mb-2">Motivo de la Cita (opcional)</label>
                         <textarea
                             value={formData.reason}
                             onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                             placeholder="Ej: Limpieza dental, Evaluación, etc."
                             rows="3"
-                            className="w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                            className="w-full p-4 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm"
                         ></textarea>
                         <div className="flex items-center mt-4">
                             <input
@@ -438,9 +438,9 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                                 id="dataPolicy"
                                 checked={acceptedDataPolicy}
                                 onChange={(e) => setAcceptedDataPolicy(e.target.checked)}
-                                className="h-4 w-4 text-[#5B6651] focus:ring-[#5B6651] border-[#DFD2C4] rounded"
+                                className="h-4 w-4 text-[#46523C] focus:ring-[#46523C] border-[#D9D2C7] rounded"
                             />
-                            <label htmlFor="dataPolicy" className="ml-2 block text-sm text-[#6B615A]">
+                            <label htmlFor="dataPolicy" className="ml-2 block text-sm text-[#5E554E]">
                                 Acepto la política de privacidad y el tratamiento de mis datos.
                             </label>
                         </div>
@@ -449,24 +449,24 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         <button
                             onClick={handleSubmit}
                             disabled={isSubmitting || !formData.name || !formData.phone || !acceptedDataPolicy || rutError}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#312923]/20 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#241F1B] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#241F1B]/20 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
                         >
                             {isSubmitting ? <><Loader size={16} className="animate-spin" /> Agendando...</> : <>{requirePayment && appointmentPrice > 0 ? `Pagar $${appointmentPrice.toLocaleString('es-CL')} y Agendar` : 'Agendar Cita'} <ChevronRight size={16} /></>}
                         </button>
                         {requirePayment && appointmentPrice > 0 && (
-                            <p className="text-xs font-bold text-[#9A8F84] mt-3 text-center">Se abrirá una ventana de MercadoPago para completar el pago.</p>
+                            <p className="text-xs font-bold text-[#5E554E] mt-3 text-center">Se abrirá una ventana de MercadoPago para completar el pago.</p>
                         )}
                     </div>
                 )}
 
                 {step === 3 && (
                     <div className="space-y-6 text-center">
-                        <div className="flex items-center gap-2 text-[#A3968B] mb-4 justify-center">
+                        <div className="flex items-center gap-2 text-[#8A7F74] mb-4 justify-center">
                             <CreditCard size={20} />
                             <span className="font-black text-sm uppercase tracking-widest">Paso 3: Confirmar Pago</span>
                         </div>
-                        <h2 className="text-2xl font-black text-[#312923] mb-4">Pago Requerido</h2>
-                        <p className="text-[#6B615A] text-base mb-6">Para confirmar tu cita, se requiere un pago de <span className="font-black">${appointmentPrice.toLocaleString('es-CL')} CLP</span>.</p>
+                        <h2 className="text-2xl font-black text-[#241F1B] mb-4">Pago Requerido</h2>
+                        <p className="text-[#5E554E] text-base mb-6">Para confirmar tu cita, se requiere un pago de <span className="font-black">${appointmentPrice.toLocaleString('es-CL')} CLP</span>.</p>
                         <button
                             onClick={handleSubmit}
                             disabled={isSubmitting}
@@ -476,7 +476,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                         </button>
                         <button
                             onClick={() => setStep(2)}
-                            className="mt-4 text-[10px] font-black uppercase tracking-widest text-[#A3968B] hover:text-[#312923] transition-colors"
+                            className="mt-4 text-[11px] font-black uppercase tracking-widest text-[#8A7F74] hover:text-[#241F1B] transition-colors"
                         >
                             Volver a mis datos
                         </button>
@@ -485,13 +485,13 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
 
                 {step === 4 && (
                     <div className="space-y-6 text-center">
-                        <CheckCircle2 size={48} className="text-[#5B6651] mx-auto mb-4" />
-                        <h2 className="text-2xl font-black text-[#312923] mb-2">¡Cita Agendada!</h2>
-                        <p className="text-[#6B615A] text-base">
+                        <CheckCircle2 size={48} className="text-[#46523C] mx-auto mb-4" />
+                        <h2 className="text-2xl font-black text-[#241F1B] mb-2">¡Cita Agendada!</h2>
+                        <p className="text-[#5E554E] text-base">
                             Tu hora ha sido agendada con éxito. Recibirás un correo de confirmación pronto.
                         </p>
                         {requiresPayment && (
-                            <p className="text-[#6B615A] text-sm mt-4">
+                            <p className="text-[#5E554E] text-sm mt-4">
                                 Tu hora quedará confirmada una vez que el pago sea procesado por MercadoPago.
                             </p>
                         )}
@@ -502,7 +502,7 @@ export default function PublicBooking({ clinicId, supabase, notify }) {
                                 setAcceptedDataPolicy(false);
                                 setRequiresPayment(false);
                             }}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#312923]/20 mt-6"
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#241F1B] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all shadow-lg shadow-[#241F1B]/20 mt-6"
                         >
                             Agendar otra cita
                         </button>

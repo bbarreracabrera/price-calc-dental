@@ -97,17 +97,17 @@ export default function WelcomeTour({ run, onComplete, setActiveTab, setMobileMe
             callback={handleCallback}
             styles={{
                 options: {
-                    primaryColor: '#5B6651',
-                    textColor: '#312923',
-                    backgroundColor: '#FDFBF7',
-                    arrowColor: '#FDFBF7',
+                    primaryColor: '#46523C',
+                    textColor: '#241F1B',
+                    backgroundColor: '#FBFAF8',
+                    arrowColor: '#FBFAF8',
                     overlayColor: 'rgba(49, 41, 35, 0.5)',
                     zIndex: 1000,
                 },
                 tooltip: { borderRadius: 16, padding: 20 },
-                buttonNext: { backgroundColor: '#312923', borderRadius: 12, padding: '10px 20px' },
-                buttonBack: { color: '#9A8F84' },
-                buttonSkip: { color: '#9A8F84' },
+                buttonNext: { backgroundColor: '#241F1B', borderRadius: 12, padding: '10px 20px' },
+                buttonBack: { color: '#5E554E' },
+                buttonSkip: { color: '#5E554E' },
             }}
             locale={{
                 back: 'Atrás',

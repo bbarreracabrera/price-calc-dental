@@ -11,8 +11,8 @@ export default function AddItemModal({
     const [batchInput, setBatchInput] = useState({ qty: '', barcode: '', expiry: '' });
     const [showScanner, setShowScanner] = useState(false);
 
-    const inputClass = "w-full p-4 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm";
-    const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
+    const inputClass = "w-full p-4 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm";
+    const labelClass = "text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-2 mb-2 block";
 
     // --- LÓGICA DEL ESCÁNER POR CÁMARA (NIVEL ENTERPRISE) ---
     useEffect(() => {
@@ -113,19 +113,19 @@ export default function AddItemModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-[#312923]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="w-full max-w-lg bg-white border border-[#DFD2C4]/50 rounded-[2.5rem] shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
+        <div className="fixed inset-0 z-[100] bg-[#241F1B]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="w-full max-w-lg bg-white border border-[#D9D2C7]/50 rounded-[2.5rem] shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
                 
                 {/* --- HEADER --- */}
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#DFD2C4]/50 shrink-0">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#D9D2C7]/50 shrink-0">
                     <div>
-                        <h3 className="font-black text-2xl text-[#312923] tracking-tight flex items-center gap-2">
-                            {newItem.id ? <Edit3 className="text-[#A3968B]"/> : <PackagePlus className="text-[#5B6651]"/>}
+                        <h3 className="font-black text-2xl text-[#241F1B] tracking-tight flex items-center gap-2">
+                            {newItem.id ? <Edit3 className="text-[#8A7F74]"/> : <PackagePlus className="text-[#46523C]"/>}
                             {newItem.id ? 'Editar Insumo' : 'Nueva Compra'}
                         </h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Gestión de Stock por Lotes</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mt-1">Gestión de Stock por Lotes</p>
                     </div>
-                    <button aria-label="Cerrar modal" onClick={()=>{setModal(null); setShowScanner(false); setNewItem({name:'', stock:0, min:5, unit:'u', id:null, batches:[]});}} className="p-2 text-[#9A8F84] hover:bg-[#FDFBF7] hover:text-[#312923] rounded-xl transition-all">
+                    <button aria-label="Cerrar modal" onClick={()=>{setModal(null); setShowScanner(false); setNewItem({name:'', stock:0, min:5, unit:'u', id:null, batches:[]});}} className="p-2 text-[#5E554E] hover:bg-[#FBFAF8] hover:text-[#241F1B] rounded-xl transition-all">
                         <X size={20}/>
                     </button>
                 </div>
@@ -165,34 +165,34 @@ export default function AddItemModal({
                     </div>
 
                     {/* --- MÓDULO DE ESCANEO / COMPRA --- */}
-                    <div className="p-5 bg-[#5B6651]/5 border border-[#5B6651]/20 rounded-3xl space-y-4">
-                        <h4 className="text-xs font-black text-[#5B6651] uppercase tracking-widest flex items-center gap-2">
+                    <div className="p-5 bg-[#46523C]/5 border border-[#46523C]/20 rounded-3xl space-y-4">
+                        <h4 className="text-xs font-black text-[#46523C] uppercase tracking-widest flex items-center gap-2">
                             <Barcode size={16}/> Nuevo Lote (Escáner o Cámara)
                         </h4>
                         
                         <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-1">
-                                <label htmlFor="batchQty" className="text-[9px] font-black uppercase tracking-widest text-[#5B6651]/60 block mb-1">Cantidad</label>
-                                <input id="batchQty" type="number" placeholder="+0" className="w-full p-3 rounded-xl bg-white border border-[#5B6651]/20 outline-none font-bold text-[#312923] focus:border-[#5B6651] text-sm" value={batchInput.qty} onChange={e=>setBatchInput({...batchInput, qty:e.target.value})} />
+                                <label htmlFor="batchQty" className="text-[11px] font-black uppercase tracking-widest text-[#46523C]/60 block mb-1">Cantidad</label>
+                                <input id="batchQty" type="number" placeholder="+0" className="w-full p-3 rounded-xl bg-white border border-[#46523C]/20 outline-none font-bold text-[#241F1B] focus:border-[#46523C] text-sm" value={batchInput.qty} onChange={e=>setBatchInput({...batchInput, qty:e.target.value})} />
                             </div>
                             <div className="col-span-1">
-                                <label htmlFor="batchExpiry" className="text-[9px] font-black uppercase tracking-widest text-[#5B6651]/60 block mb-1">Vencimiento</label>
+                                <label htmlFor="batchExpiry" className="text-[11px] font-black uppercase tracking-widest text-[#46523C]/60 block mb-1">Vencimiento</label>
                                 <div className="relative">
-                                    <CalendarDays size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B6651]/40" />
-                                    <input id="batchExpiry" type="date" className="w-full p-3 pl-9 rounded-xl bg-white border border-[#5B6651]/20 outline-none font-bold text-[#312923] focus:border-[#5B6651] text-sm" value={batchInput.expiry} onChange={e=>setBatchInput({...batchInput, expiry:e.target.value})} />
+                                    <CalendarDays size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#46523C]/40" />
+                                    <input id="batchExpiry" type="date" className="w-full p-3 pl-9 rounded-xl bg-white border border-[#46523C]/20 outline-none font-bold text-[#241F1B] focus:border-[#46523C] text-sm" value={batchInput.expiry} onChange={e=>setBatchInput({...batchInput, expiry:e.target.value})} />
                                 </div>
                             </div>
                             
                             <div className="col-span-2">
-                                <label htmlFor="batchBarcode" className="text-[9px] font-black uppercase tracking-widest text-[#5B6651]/60 block mb-1">Código de Barras</label>
+                                <label htmlFor="batchBarcode" className="text-[11px] font-black uppercase tracking-widest text-[#46523C]/60 block mb-1">Código de Barras</label>
                                 <div className="flex gap-2">
                                     <div className="relative flex-1">
-                                        <Barcode size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B6651]/40" />
+                                        <Barcode size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#46523C]/40" />
                                         <input 
                                             id="batchBarcode" 
                                             type="text" 
                                             placeholder="Usa el lector físico o la cámara..." 
-                                            className="w-full p-3 pl-9 rounded-xl bg-white border border-[#5B6651]/20 outline-none font-bold text-[#312923] focus:border-[#5B6651] text-sm" 
+                                            className="w-full p-3 pl-9 rounded-xl bg-white border border-[#46523C]/20 outline-none font-bold text-[#241F1B] focus:border-[#46523C] text-sm" 
                                             value={batchInput.barcode} 
                                             onChange={e=>setBatchInput({...batchInput, barcode:e.target.value})} 
                                         />
@@ -201,7 +201,7 @@ export default function AddItemModal({
                                         type="button"
                                         aria-label={showScanner ? "Detener escáner" : "Escanear código de barras"}
                                         onClick={() => setShowScanner(!showScanner)}
-                                        className={`p-3 rounded-xl transition-all shadow-sm ${showScanner ? 'bg-red-500 text-white' : 'bg-white text-[#5B6651] border border-[#5B6651]/20 hover:bg-[#5B6651] hover:text-white'}`}
+                                        className={`p-3 rounded-xl transition-all shadow-sm ${showScanner ? 'bg-red-500 text-white' : 'bg-white text-[#46523C] border border-[#46523C]/20 hover:bg-[#46523C] hover:text-white'}`}
                                         title="Activar Cámara del Teléfono/PC"
                                     >
                                         {showScanner ? <StopCircle size={20}/> : <Camera size={20}/>}
@@ -212,9 +212,9 @@ export default function AddItemModal({
 
                         {/* --- ÁREA DEL VISOR DE CÁMARA MEJORADO --- */}
                         {showScanner && (
-                            <div className="mt-4 overflow-hidden rounded-2xl border-2 border-[#5B6651] bg-black">
+                            <div className="mt-4 overflow-hidden rounded-2xl border-2 border-[#46523C] bg-black">
                                 <div id="reader" className="w-full h-auto"></div>
-                                <p className="p-3 text-center text-[10px] text-white font-bold bg-[#312923] flex items-center justify-center gap-2">
+                                <p className="p-3 text-center text-[11px] text-white font-bold bg-[#241F1B] flex items-center justify-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                                     Enfocando... Acércalo a 15cm
                                 </p>
@@ -225,7 +225,7 @@ export default function AddItemModal({
                     {/* --- BOTONES DE ACCIÓN --- */}
                     <div className="flex gap-3 pt-2 shrink-0">
                         <button 
-                            className="flex-1 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white bg-[#312923] hover:bg-[#1a1512] shadow-xl shadow-[#312923]/20 active:scale-95 transition-all flex items-center justify-center gap-2" 
+                            className="flex-1 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white bg-[#241F1B] hover:bg-[#1a1512] shadow-xl shadow-[#241F1B]/20 active:scale-95 transition-all flex items-center justify-center gap-2" 
                             onClick={handleSave}
                         >
                             <Save size={16}/> GUARDAR REGISTRO

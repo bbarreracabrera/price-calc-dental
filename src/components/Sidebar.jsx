@@ -37,16 +37,16 @@ export default function Sidebar({
     const centerIcons = isWorkspaceActive ? 'justify-center' : '';
 
     return (
-        <aside className={`fixed inset-y-0 left-0 z-50 ${sidebarWidth} transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-all duration-300 ease-in-out bg-white border-r border-[#DFD2C4]/50 flex flex-col shadow-[4px_0_24px_rgba(91,102,81,0.04)]`}>
+        <aside className={`fixed inset-y-0 left-0 z-50 ${sidebarWidth} transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-all duration-300 ease-in-out bg-white border-r border-[#D9D2C7]/50 flex flex-col shadow-[4px_0_24px_rgba(91,102,81,0.04)]`}>
             
             {/* --- CABECERA Y LOGO --- */}
-            <div className={`p-6 border-b border-[#DFD2C4]/40 flex flex-col items-center gap-4 relative bg-[#FDFBF7]/50 ${isWorkspaceActive ? 'px-2' : ''}`}>
-                <button onClick={() => setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 text-[#9A8F84] hover:bg-[#DFD2C4]/30 rounded-full transition-colors">
+            <div className={`p-6 border-b border-[#D9D2C7]/40 flex flex-col items-center gap-4 relative bg-[#FBFAF8]/50 ${isWorkspaceActive ? 'px-2' : ''}`}>
+                <button onClick={() => setMobileMenuOpen(false)} className="md:hidden absolute top-4 right-4 p-2 text-[#5E554E] hover:bg-[#D9D2C7]/30 rounded-full transition-colors">
                     <X size={20}/>
                 </button>
                 
                 {/* Logo */}
-                <div className={`rounded-2xl flex items-center justify-center shadow-sm bg-gradient-to-br from-[#9A8F84] to-[#5B6651] text-white border border-[#DFD2C4] transition-all ${isWorkspaceActive ? 'w-10 h-10' : 'w-14 h-14'}`}>
+                <div className={`rounded-2xl flex items-center justify-center shadow-sm bg-gradient-to-br from-[#5E554E] to-[#46523C] text-white border border-[#D9D2C7] transition-all ${isWorkspaceActive ? 'w-10 h-10' : 'w-14 h-14'}`}>
                     {config?.logo ? (
                         <img src={config.logo} className="w-full h-full object-contain rounded-2xl" alt="Logo"/>
                     ) : (
@@ -56,20 +56,20 @@ export default function Sidebar({
                 
                 {/* Textos del Logo (Se ocultan si colapsa) */}
                 <div className={`text-center ${hideOnCollapse}`}>
-                    <h1 className="text-xl font-black tracking-tight text-[#312923]">ShiningCloud</h1>
-                    <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[#CBAAA2] mt-1">Dental</p>
+                    <h1 className="text-xl font-black tracking-tight text-[#241F1B]">ShiningCloud</h1>
+                    <p className="text-[11px] uppercase font-bold tracking-[0.2em] text-[#D3A9A0] mt-1">Dental</p>
                 </div>
             </div>
             
             {/* --- PERFIL DE USUARIO --- */}
             <div className={`px-4 py-5 ${isWorkspaceActive ? 'px-2' : ''}`}>
-                <div className={`flex items-center gap-3 p-3 rounded-2xl bg-[#FDFBF7] border border-[#DFD2C4]/60 shadow-sm hover:border-[#CBAAA2]/50 transition-colors ${centerIcons}`}>
-                    <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${userRole === 'admin' ? 'bg-[#312923]' : userRole === 'dentist' ? 'bg-[#5B6651]' : 'bg-[#9A8F84]'}`}>
+                <div className={`flex items-center gap-3 p-3 rounded-2xl bg-[#FBFAF8] border border-[#D9D2C7]/60 shadow-sm hover:border-[#D3A9A0]/50 transition-colors ${centerIcons}`}>
+                    <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${userRole === 'admin' ? 'bg-[#241F1B]' : userRole === 'dentist' ? 'bg-[#46523C]' : 'bg-[#5E554E]'}`}>
                         {session?.user?.email?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <div className={`overflow-hidden flex-1 ${hideOnCollapse}`}>
-                        <p className="text-xs font-bold text-[#312923] truncate">{session?.user?.email?.split('@')[0] || 'Usuario'}</p>
-                        <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${userRole === 'admin' ? 'text-[#CBAAA2]' : userRole === 'dentist' ? 'text-[#5B6651]' : 'text-[#9A8F84]'}`}>
+                        <p className="text-xs font-bold text-[#241F1B] truncate">{session?.user?.email?.split('@')[0] || 'Usuario'}</p>
+                        <p className={`text-[11px] font-bold uppercase tracking-widest mt-0.5 ${userRole === 'admin' ? 'text-[#D3A9A0]' : userRole === 'dentist' ? 'text-[#46523C]' : 'text-[#5E554E]'}`}>
                             {userRole === 'admin' ? 'Administrador' : userRole === 'dentist' ? 'Dentista' : 'Asistente'}
                         </p>
                     </div>
@@ -99,12 +99,12 @@ export default function Sidebar({
                                 if(item.id !== 'ficha') setSelectedPatientId(null); 
                                 setMobileMenuOpen(false); 
                             }} 
-                            className={`w-full flex items-center gap-3 py-3.5 rounded-2xl font-bold text-xs transition-all duration-200 group ${centerIcons} ${isActive ? 'bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20' : 'text-[#6B615A] hover:bg-[#FDFBF7] hover:text-[#312923] border border-transparent'} ${isWorkspaceActive ? 'px-0' : 'px-4'}`}
+                            className={`w-full flex items-center gap-3 py-3.5 rounded-2xl font-bold text-xs transition-all duration-200 group ${centerIcons} ${isActive ? 'bg-[#46523C]/10 text-[#46523C] border border-[#46523C]/20' : 'text-[#5E554E] hover:bg-[#FBFAF8] hover:text-[#241F1B] border border-transparent'} ${isWorkspaceActive ? 'px-0' : 'px-4'}`}
                         >
-                            <item.icon size={18} className={`shrink-0 transition-transform duration-300 ${isActive ? 'text-[#5B6651] scale-110' : 'text-[#9A8F84] group-hover:text-[#CBAAA2] group-hover:scale-110'}`}/>
+                            <item.icon size={18} className={`shrink-0 transition-transform duration-300 ${isActive ? 'text-[#46523C] scale-110' : 'text-[#5E554E] group-hover:text-[#D3A9A0] group-hover:scale-110'}`}/>
                             <span className={`mt-0.5 flex-1 ${hideOnCollapse}`}>{item.label}</span>
                             {item.id === 'agenda' && todayApptCount > 0 && (
-                                <span className={`text-[9px] font-black bg-[#5B6651] text-white px-1.5 py-0.5 rounded-full leading-none shrink-0 ${hideOnCollapse}`}>
+                                <span className={`text-[11px] font-black bg-[#46523C] text-white px-1.5 py-0.5 rounded-full leading-none shrink-0 ${hideOnCollapse}`}>
                                     {todayApptCount}
                                 </span>
                             )}
@@ -114,20 +114,20 @@ export default function Sidebar({
             </nav>
 
             {/* --- ZONA INFERIOR: PANEL MAESTRO & SALIR --- */}
-            <div className={`p-4 space-y-3 border-t border-[#DFD2C4]/40 bg-[#FDFBF7]/30 ${isWorkspaceActive ? 'px-2' : ''}`}>
+            <div className={`p-4 space-y-3 border-t border-[#D9D2C7]/40 bg-[#FBFAF8]/30 ${isWorkspaceActive ? 'px-2' : ''}`}>
                 
                 {/* BOTÓN PANEL MAESTRO */}
                 {isMasterAdmin && (
                     <button
                         title={isWorkspaceActive ? "Panel Maestro" : ""}
                         onClick={() => { setActiveTab('master_panel'); setMobileMenuOpen(false); }}
-                        className={`w-full p-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-3 ${centerIcons} ${
+                        className={`w-full p-4 rounded-2xl transition-all font-black text-[11px] uppercase tracking-widest flex items-center gap-3 ${centerIcons} ${
                             activeTab === 'master_panel'
-                            ? 'bg-[#5B6651] text-white shadow-md border border-[#4a5442]'
-                            : 'bg-[#312923] text-[#A3968B] border border-[#1a1512] hover:bg-black hover:scale-[1.02] shadow-sm'
+                            ? 'bg-[#46523C] text-white shadow-md border border-[#36402F]'
+                            : 'bg-[#241F1B] text-[#8A7F74] border border-[#1a1512] hover:bg-black hover:scale-[1.02] shadow-sm'
                         }`}
                     >
-                        <Globe size={18} className={`shrink-0 transition-transform duration-300 ${activeTab === 'master_panel' ? 'text-white' : 'text-[#A3968B]'}`}/>
+                        <Globe size={18} className={`shrink-0 transition-transform duration-300 ${activeTab === 'master_panel' ? 'text-white' : 'text-[#8A7F74]'}`}/>
                         <span className={`mt-0.5 ${hideOnCollapse}`}>Panel Maestro</span>
                     </button>
                 )}
@@ -136,9 +136,9 @@ export default function Sidebar({
                 <button
                     title={isWorkspaceActive ? "Cerrar Sesión" : ""}
                     onClick={() => supabase.auth.signOut()}
-                    className={`w-full p-4 rounded-2xl bg-white border border-[#DFD2C4]/50 text-[#6B615A] font-bold text-xs transition-all hover:bg-[#CBAAA2]/10 hover:text-[#312923] hover:border-[#CBAAA2]/40 flex items-center gap-3 ${centerIcons}`}
+                    className={`w-full p-4 rounded-2xl bg-white border border-[#D9D2C7]/50 text-[#5E554E] font-bold text-xs transition-all hover:bg-[#D3A9A0]/10 hover:text-[#241F1B] hover:border-[#D3A9A0]/40 flex items-center gap-3 ${centerIcons}`}
                 >
-                    <LogOut size={18} className="text-[#CBAAA2] shrink-0"/>
+                    <LogOut size={18} className="text-[#D3A9A0] shrink-0"/>
                     <span className={`mt-0.5 ${hideOnCollapse}`}>CERRAR SESIÓN</span>
                 </button>
 
@@ -147,14 +147,14 @@ export default function Sidebar({
                     <button
                         title="Atajos de teclado"
                         onClick={() => setShowShortcuts(s => !s)}
-                        className={`w-full p-3 rounded-xl text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] transition-colors flex items-center gap-3 text-[10px] font-bold ${centerIcons}`}
+                        className={`w-full p-3 rounded-xl text-[#5E554E] hover:text-[#241F1B] hover:bg-[#FBFAF8] transition-colors flex items-center gap-3 text-[11px] font-bold ${centerIcons}`}
                     >
                         <HelpCircle size={15} className="shrink-0"/>
                         <span className={hideOnCollapse}>Atajos de teclado</span>
                     </button>
                     {showShortcuts && (
-                        <div className="absolute bottom-full left-0 mb-2 w-52 bg-[#312923] text-white rounded-2xl p-4 shadow-2xl z-50 text-[10px] space-y-1.5">
-                            <p className="font-black uppercase tracking-widest text-[#A3968B] mb-2">Atajos</p>
+                        <div className="absolute bottom-full left-0 mb-2 w-52 bg-[#241F1B] text-white rounded-2xl p-4 shadow-2xl z-50 text-[11px] space-y-1.5">
+                            <p className="font-black uppercase tracking-widest text-[#8A7F74] mb-2">Atajos</p>
                             {[
                                 ['Ctrl/⌘ + K', 'Buscar paciente'],
                                 ['N', 'Nuevo paciente'],
@@ -164,8 +164,8 @@ export default function Sidebar({
                                 ['F', 'Ir a Finanzas'],
                             ].map(([key, label]) => (
                                 <div key={key} className="flex justify-between items-center gap-3">
-                                    <span className="text-[#DFD2C4]">{label}</span>
-                                    <kbd className="bg-white/10 px-1.5 py-0.5 rounded font-mono font-bold text-[9px] shrink-0">{key}</kbd>
+                                    <span className="text-[#D9D2C7]">{label}</span>
+                                    <kbd className="bg-white/10 px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shrink-0">{key}</kbd>
                                 </div>
                             ))}
                         </div>

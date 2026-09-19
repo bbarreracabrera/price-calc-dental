@@ -202,13 +202,13 @@ export default function DSDTab({
     return (
         <div className="space-y-6 animate-in fade-in">
             {/* Encabezado */}
-            <div className="flex justify-between items-center border-b border-[#DFD2C4]/50 pb-4">
+            <div className="flex justify-between items-center border-b border-[#D9D2C7]/50 pb-4">
                 <div>
-                    <h3 className="text-xl font-black text-[#312923] flex items-center gap-2">
+                    <h3 className="text-xl font-black text-[#241F1B] flex items-center gap-2">
                         <Palette className="text-purple-600" size={24} />
                         Diseño de Sonrisa (DSD)
                     </h3>
-                    <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1">
+                    <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest mt-1">
                         Proyecto: {projectImages.length} imágenes
                     </p>
                 </div>
@@ -216,7 +216,7 @@ export default function DSDTab({
                     <button
                         onClick={openDSD}
                         disabled={!currentImageId}
-                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${
+                        className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition ${
                             currentImageId
                                 ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
                                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -226,7 +226,7 @@ export default function DSDTab({
                     </button>
                     <button
                         onClick={() => setShowLabelEditor(!showLabelEditor)}
-                        className="px-3 py-2 bg-[#FDFBF7] border border-[#DFD2C4] rounded-xl text-[10px] font-black text-[#9A8F84] hover:text-[#5B6651] transition"
+                        className="px-3 py-2 bg-[#FBFAF8] border border-[#D9D2C7] rounded-xl text-[11px] font-black text-[#5E554E] hover:text-[#46523C] transition"
                     >
                         <Tag size={14} className="inline mr-1" /> Etiquetas
                     </button>
@@ -235,28 +235,28 @@ export default function DSDTab({
 
             {/* Editor de etiquetas */}
             {showLabelEditor && (
-                <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-4 space-y-3">
+                <div className="bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl p-4 space-y-3">
                     <div className="flex items-center gap-2">
                         <input
                             type="text"
                             value={newLabel}
                             onChange={(e) => setNewLabel(e.target.value)}
                             placeholder="Nueva etiqueta..."
-                            className="flex-1 p-2 rounded-xl border border-[#DFD2C4] bg-white text-sm font-bold outline-none focus:border-[#5B6651]"
+                            className="flex-1 p-2 rounded-xl border border-[#D9D2C7] bg-white text-sm font-bold outline-none focus:border-[#46523C]"
                             onKeyDown={(e) => e.key === 'Enter' && handleAddLabel()}
                         />
                         <button
                             onClick={handleAddLabel}
-                            className="p-2 bg-[#5B6651] text-white rounded-xl hover:bg-[#4a5442] transition"
+                            className="p-2 bg-[#46523C] text-white rounded-xl hover:bg-[#36402F] transition"
                         >
                             <Plus size={16} />
                         </button>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {labels.map(label => (
-                            <span key={label} className="flex items-center gap-1 bg-white border border-[#DFD2C4] rounded-full px-3 py-1 text-[10px] font-bold text-[#5B6651]">
+                            <span key={label} className="flex items-center gap-1 bg-white border border-[#D9D2C7] rounded-full px-3 py-1 text-[11px] font-bold text-[#46523C]">
                                 {label}
-                                <button onClick={() => handleRemoveLabel(label)} className="text-[#9A8F84] hover:text-red-500 transition">
+                                <button onClick={() => handleRemoveLabel(label)} className="text-[#5E554E] hover:text-red-500 transition">
                                     <X size={12} />
                                 </button>
                             </span>
@@ -266,14 +266,14 @@ export default function DSDTab({
             )}
 
             {/* Galería del paciente */}
-            <div className="border-b border-[#DFD2C4]/30 pb-4">
-                <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mb-3">Galería del paciente</p>
+            <div className="border-b border-[#D9D2C7]/30 pb-4">
+                <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest mb-3">Galería del paciente</p>
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                     {folderImages.map(img => {
                         const inProject = projectImages.some(pi => pi.id === img.id);
                         return (
                             <div key={img.id} className="relative group">
-                                <div className="aspect-square bg-[#0a0a0a] rounded-xl overflow-hidden border border-[#DFD2C4]/30">
+                                <div className="aspect-square bg-[#0a0a0a] rounded-xl overflow-hidden border border-[#D9D2C7]/30">
                                     <PrivateImage img={img} className="w-full h-full object-cover" />
                                 </div>
                                 <button
@@ -290,7 +290,7 @@ export default function DSDTab({
                             </div>
                         );
                     })}
-                    <div className="relative aspect-square border-2 border-dashed border-[#DFD2C4] hover:border-purple-400 bg-[#FDFBF7] hover:bg-purple-50/30 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer">
+                    <div className="relative aspect-square border-2 border-dashed border-[#D9D2C7] hover:border-purple-400 bg-[#FBFAF8] hover:bg-purple-50/30 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer">
                         <input
                             type="file"
                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
@@ -302,8 +302,8 @@ export default function DSDTab({
                             }}
                             accept="image/*"
                         />
-                        <Upload size={20} className="text-[#9A8F84] group-hover:text-purple-600" />
-                        <p className="text-[8px] font-bold text-[#9A8F84] mt-1">Subir</p>
+                        <Upload size={20} className="text-[#5E554E] group-hover:text-purple-600" />
+                        <p className="text-[11px] font-bold text-[#5E554E] mt-1">Subir</p>
                     </div>
                 </div>
             </div>
@@ -311,7 +311,7 @@ export default function DSDTab({
             {/* Storyboard del proyecto */}
             {projectImages.length > 0 && (
                 <div>
-                    <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest mb-3 flex items-center gap-2">
                         <Palette size={14} className="text-purple-600" /> Proyecto DSD ({projectImages.length})
                     </p>
                     <div className="flex flex-wrap gap-4">
@@ -320,7 +320,7 @@ export default function DSDTab({
                                 key={img.id}
                                 onClick={() => handleSelectImage(img.id)}
                                 className={`group relative w-32 rounded-2xl border-2 overflow-hidden cursor-pointer transition ${
-                                    currentImageId === img.id ? 'border-purple-600 shadow-lg shadow-purple-200' : 'border-[#DFD2C4] hover:border-purple-400'
+                                    currentImageId === img.id ? 'border-purple-600 shadow-lg shadow-purple-200' : 'border-[#D9D2C7] hover:border-purple-400'
                                 }`}
                             >
                                 <div className="aspect-square bg-[#0a0a0a]">
@@ -331,7 +331,7 @@ export default function DSDTab({
                                         value={img.label || ''}
                                         onChange={(e) => handleLabelChange(img.id, e.target.value)}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="w-full bg-transparent text-white text-[9px] font-bold border-none outline-none appearance-none cursor-pointer"
+                                        className="w-full bg-transparent text-white text-[11px] font-bold border-none outline-none appearance-none cursor-pointer"
                                     >
                                         {labels.map(label => (
                                             <option key={label} value={label} className="text-black">{label}</option>

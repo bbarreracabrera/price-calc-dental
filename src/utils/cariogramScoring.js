@@ -176,7 +176,7 @@ export function calculateCariogram(values) {
 }
 
 export const RISK_LABELS = {
-    low:      { label: 'Riesgo Bajo',      recommendation: 'Mantenimiento estándar',              color: '#5B6651' },
+    low:      { label: 'Riesgo Bajo',      recommendation: 'Mantenimiento estándar',              color: '#46523C' },
     moderate: { label: 'Riesgo Moderado',  recommendation: 'Intensificar prevención',             color: '#D9A86C' },
     high:     { label: 'Riesgo Alto',      recommendation: 'Programa intensivo de prevención',    color: '#B92323' },
 };

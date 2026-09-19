@@ -25,7 +25,7 @@ export const PrivateImage = ({ img, onClick, className }) => {
         return () => { isMounted = false; }; 
     }, [img]);
 
-    if (!signedUrl) return <div className="w-full h-full flex items-center justify-center bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/40"><Loader className="animate-spin text-[#9A8F84]" size={20}/></div>;
+    if (!signedUrl) return <div className="w-full h-full flex items-center justify-center bg-[#FBFAF8] rounded-xl border border-[#D9D2C7]/40"><Loader className="animate-spin text-[#5E554E]" size={20}/></div>;
 
     // Detectar tipo basado en la extensión del path original o la URL antes de los parámetros
     const getExtension = (path) => {
@@ -59,10 +59,10 @@ export const PrivateImage = ({ img, onClick, className }) => {
         };
 
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-[#FDFBF7] hover:bg-white border border-[#DFD2C4]/40 transition-colors rounded-xl p-4 text-center" onClick={() => window.open(signedUrl, '_blank')}>
+            <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-[#FBFAF8] hover:bg-white border border-[#D9D2C7]/40 transition-colors rounded-xl p-4 text-center" onClick={() => window.open(signedUrl, '_blank')}>
                 {getIcon()}
-                <span className="text-[10px] font-black mt-2 text-[#312923] uppercase tracking-widest">{getLabel()}</span>
-                <span className="text-[8px] font-bold mt-1 text-[#9A8F84] uppercase tracking-tighter opacity-60">Click para descargar/ver</span>
+                <span className="text-[11px] font-black mt-2 text-[#241F1B] uppercase tracking-widest">{getLabel()}</span>
+                <span className="text-[11px] font-bold mt-1 text-[#5E554E] uppercase tracking-tighter opacity-60">Click para descargar/ver</span>
             </div>
         );
     }
@@ -81,17 +81,17 @@ export const PrivateImage = ({ img, onClick, className }) => {
 export const TermsScreen = ({ theme }) => {
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto w-full animate-fade-in">
-            <Card className="p-6 md:p-10 shadow-xl border border-[#DFD2C4]/40">
-                <div className="flex items-center gap-4 mb-8 border-b border-[#DFD2C4]/40 pb-6">
-                    <div className="w-12 h-12 bg-[#FDFBF7] border border-[#DFD2C4] text-[#5B6651] rounded-2xl flex items-center justify-center">
+            <Card className="p-6 md:p-10 shadow-xl border border-[#D9D2C7]/40">
+                <div className="flex items-center gap-4 mb-8 border-b border-[#D9D2C7]/40 pb-6">
+                    <div className="w-12 h-12 bg-[#FBFAF8] border border-[#D9D2C7] text-[#46523C] rounded-2xl flex items-center justify-center">
                         <FileText size={24} />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black tracking-tight text-[#312923]">Términos de Uso y Servicio</h2>
-                        <p className="text-sm text-[#9A8F84] font-medium mt-1">Última actualización: 28-02-2026</p>
+                        <h2 className="text-2xl font-black tracking-tight text-[#241F1B]">Términos de Uso y Servicio</h2>
+                        <p className="text-sm text-[#5E554E] font-medium mt-1">Última actualización: 28-02-2026</p>
                     </div>
                 </div>
-                <div className="text-[#6B615A] leading-relaxed">
+                <div className="text-[#5E554E] leading-relaxed">
                     <LegalText isDarkTheme={false} />
                 </div>
             </Card>
@@ -189,10 +189,10 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
                 onFocus={() => setShowResults(true)}
             />
             {showResults && query && (
-                <div className="mt-2 rounded-2xl border border-[#DFD2C4]/70 max-h-60 overflow-y-auto shadow-inner bg-white custom-scrollbar transition-all animate-in fade-in slide-in-from-top-2">
+                <div className="mt-2 rounded-2xl border border-[#D9D2C7]/70 max-h-60 overflow-y-auto shadow-inner bg-white custom-scrollbar transition-all animate-in fade-in slide-in-from-top-2">
 
                     {isSearching && (
-                        <div className="p-4 text-xs text-[#9A8F84] font-medium text-center flex items-center justify-center gap-2">
+                        <div className="p-4 text-xs text-[#5E554E] font-medium text-center flex items-center justify-center gap-2">
                             <Loader size={14} className="animate-spin"/> Buscando en base de datos...
                         </div>
                     )}
@@ -201,23 +201,23 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
                         <div
                             key={p.id}
                             onClick={() => { onSelect(p); setQuery(p.personal?.legalName || ''); setShowResults(false); if (onQueryChange) onQueryChange(''); }}
-                            className="p-4 hover:bg-[#FDFBF7] cursor-pointer border-b border-[#DFD2C4]/30 last:border-0 flex justify-between items-center group transition-colors"
+                            className="p-4 hover:bg-[#FBFAF8] cursor-pointer border-b border-[#D9D2C7]/30 last:border-0 flex justify-between items-center group transition-colors"
                         >
                             <div>
-                                <p className="font-bold text-sm text-[#312923] group-hover:text-[#5B6651]">{p.personal?.legalName}</p>
+                                <p className="font-bold text-sm text-[#241F1B] group-hover:text-[#46523C]">{p.personal?.legalName}</p>
                                 {(p.personal?.rut || p.personal?.phone) && (
-                                    <p className="text-[11px] font-medium text-[#9A8F84] mt-0.5">
+                                    <p className="text-[11px] font-medium text-[#5E554E] mt-0.5">
                                         {p.personal?.rut && `${p.personal.rut}`}
                                         {p.personal?.rut && p.personal?.phone && ' · '}
                                         {p.personal?.phone}
                                     </p>
                                 )}
                             </div>
-                            {!patients[p.id] && <span className="text-[9px] bg-[#DFD2C4]/30 text-[#9A8F84] border border-[#DFD2C4] px-2 py-0.5 rounded-full font-black tracking-widest shrink-0">NUBE</span>}
+                            {!patients[p.id] && <span className="text-[11px] bg-[#D9D2C7]/30 text-[#5E554E] border border-[#D9D2C7] px-2 py-0.5 rounded-full font-black tracking-widest shrink-0">NUBE</span>}
                         </div>
                     )) : !isSearching && (
-                        <div className="p-4 text-sm text-[#6B615A] text-center">
-                            No encontrado. <button className="underline cursor-pointer font-bold ml-1 text-[#CBAAA2] hover:text-[#5B6651] transition-colors" onClick={(e)=>{ e.preventDefault(); onSelect({id:'new', name: query}); setShowResults(false); }}>Crear "{query}"</button>
+                        <div className="p-4 text-sm text-[#5E554E] text-center">
+                            No encontrado. <button className="underline cursor-pointer font-bold ml-1 text-[#D3A9A0] hover:text-[#46523C] transition-colors" onClick={(e)=>{ e.preventDefault(); onSelect({id:'new', name: query}); setShowResults(false); }}>Crear "{query}"</button>
                         </div>
                     )}
                 </div>
@@ -297,35 +297,35 @@ export const AuthScreen = () => {
     };
    
     return (
-        <div className="fixed inset-0 w-full min-h-screen flex bg-[#FDFBF7] font-sans selection:bg-[#CBAAA2] selection:text-white z-[100] overflow-y-auto">
+        <div className="fixed inset-0 w-full min-h-screen flex bg-[#FBFAF8] font-sans selection:bg-[#D3A9A0] selection:text-white z-[100] overflow-y-auto">
             
             {/* --- PANEL IZQUIERDO (VISUAL Y BRANDING) - Oculto en móviles --- */}
-            <div className="hidden lg:flex w-1/2 bg-[#312923] relative flex-col justify-between p-12 overflow-hidden">
+            <div className="hidden lg:flex w-1/2 bg-[#241F1B] relative flex-col justify-between p-12 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
-                <div className="absolute -left-32 -bottom-32 w-96 h-96 bg-[#5B6651]/40 rounded-full blur-[100px] pointer-events-none"></div>
-                <div className="absolute top-20 right-10 w-64 h-64 bg-[#CBAAA2]/20 rounded-full blur-[80px] pointer-events-none"></div>
+                <div className="absolute -left-32 -bottom-32 w-96 h-96 bg-[#46523C]/40 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute top-20 right-10 w-64 h-64 bg-[#D3A9A0]/20 rounded-full blur-[80px] pointer-events-none"></div>
 
                 <div className="relative z-10 flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
                         <Cloud className="text-white" size={20} strokeWidth={2.5} />
                     </div>
-                    <span className="font-black text-2xl tracking-tighter text-white">ShiningCloud<span className="text-[#DFD2C4]">Dental</span></span>
+                    <span className="font-black text-2xl tracking-tighter text-white">ShiningCloud<span className="text-[#D9D2C7]">Dental</span></span>
                 </div>
 
                 <div className="relative z-10 max-w-md animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 text-white/80 text-[10px] font-black uppercase tracking-[0.2em] mb-6 backdrop-blur-md">
-                        <Sparkles size={14} className="text-[#CBAAA2]"/> Entorno Seguro
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 text-white/80 text-[11px] font-black uppercase tracking-[0.2em] mb-6 backdrop-blur-md">
+                        <Sparkles size={14} className="text-[#D3A9A0]"/> Entorno Seguro
                     </div>
                     <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter mb-6 leading-tight">
                         Tu clínica en la <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#DFD2C4] to-[#CBAAA2]">bóveda digital.</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D9D2C7] to-[#D3A9A0]">bóveda digital.</span>
                     </h1>
-                    <p className="text-[#DFD2C4] font-medium text-lg leading-relaxed">
+                    <p className="text-[#D9D2C7] font-medium text-lg leading-relaxed">
                         Encriptación de grado bancario y trazabilidad absoluta. Todo lo que necesitas para dirigir tu ecosistema médico, protegido bajo los estándares más estrictos.
                     </p>
                 </div>
 
-                <div className="relative z-10 flex gap-6 text-[#DFD2C4]/60 font-black text-xs uppercase tracking-widest">
+                <div className="relative z-10 flex gap-6 text-[#D9D2C7]/60 font-black text-xs uppercase tracking-widest">
                     <span className="flex items-center gap-2"><ShieldCheck size={16}/> MINSAL Ready</span>
                     <span className="flex items-center gap-2"><Lock size={16}/> AES-256</span>
                 </div>
@@ -336,7 +336,7 @@ export const AuthScreen = () => {
                 
                 {/* Botón Volver a la Landing (Útil si el usuario quiere salir de la pantalla completa) */}
                 <div className="absolute top-6 right-6 z-20">
-                    <button onClick={() => window.location.reload()} className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] hover:text-[#312923] transition-colors">
+                    <button onClick={() => window.location.reload()} className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] hover:text-[#241F1B] transition-colors">
                         Volver al inicio
                     </button>
                 </div>
@@ -345,22 +345,22 @@ export const AuthScreen = () => {
                     
                     <div className="text-center lg:text-left mb-8">
                         <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
-                            <div className="w-12 h-12 bg-[#312923] rounded-xl flex items-center justify-center shadow-md">
+                            <div className="w-12 h-12 bg-[#241F1B] rounded-xl flex items-center justify-center shadow-md">
                                 <Cloud className="text-white" size={24} strokeWidth={2.5} />
                             </div>
                         </div>
 
                         {isSignUp ? (
                             <>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-3">Registra tu Clínica</h2>
-                                <p className="text-[#9A8F84] text-sm font-medium mb-8">Completa tus datos para activar tu espacio de trabajo seguro.</p>
+                                <h2 className="text-3xl font-black text-[#241F1B] tracking-tighter mb-3">Registra tu Clínica</h2>
+                                <p className="text-[#5E554E] text-sm font-medium mb-8">Completa tus datos para activar tu espacio de trabajo seguro.</p>
                             </>
                         ) : (
                             <>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter mb-2">
+                                <h2 className="text-3xl font-black text-[#241F1B] tracking-tighter mb-2">
                                     Bienvenido de vuelta.
                                 </h2>
-                                <p className="text-[#6B615A] font-medium">
+                                <p className="text-[#5E554E] font-medium">
                                     Ingresa tus credenciales para acceder.
                                 </p>
                             </>
@@ -368,9 +368,9 @@ export const AuthScreen = () => {
                     </div>
 
                     {vieneDePago && (
-                        <div className="mb-6 p-4 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl flex items-start gap-3 shadow-sm">
-                            <AlertCircle size={18} className="text-[#5B6651] shrink-0 mt-0.5"/>
-                            <p className="text-xs font-bold text-[#6B615A] leading-relaxed">
+                        <div className="mb-6 p-4 bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl flex items-start gap-3 shadow-sm">
+                            <AlertCircle size={18} className="text-[#46523C] shrink-0 mt-0.5"/>
+                            <p className="text-xs font-bold text-[#5E554E] leading-relaxed">
                                 Crea el correo y contraseña con el que administrarás tu clínica a partir de hoy.
                             </p>
                         </div>
@@ -385,10 +385,10 @@ export const AuthScreen = () => {
                         )}
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-1">Correo Electrónico</label>
+                            <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-1">Correo Electrónico</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Mail size={18} className="text-[#A3968B] group-focus-within:text-[#5B6651] transition-colors"/>
+                                    <Mail size={18} className="text-[#8A7F74] group-focus-within:text-[#46523C] transition-colors"/>
                                 </div>
                                 <input
                                     type="email"
@@ -396,23 +396,23 @@ export const AuthScreen = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="doctor@clinica.cl"
-                                    className="w-full pl-11 pr-4 py-4 bg-white border border-[#DFD2C4] rounded-2xl text-[#312923] font-medium placeholder:text-[#DFD2C4] focus:outline-none focus:ring-2 focus:ring-[#5B6651]/30 focus:border-[#5B6651] transition-all shadow-sm"
+                                    className="w-full pl-11 pr-4 py-4 bg-white border border-[#D9D2C7] rounded-2xl text-[#241F1B] font-medium placeholder:text-[#D9D2C7] focus:outline-none focus:ring-2 focus:ring-[#46523C]/30 focus:border-[#46523C] transition-all shadow-sm"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center ml-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Contraseña</label>
+                                <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Contraseña</label>
                                 {!isSignUp && (
-                                    <button type="button" onClick={handleResetPassword} disabled={loading} className="text-[10px] font-black uppercase tracking-widest text-[#CBAAA2] hover:text-[#312923] transition-colors">
+                                    <button type="button" onClick={handleResetPassword} disabled={loading} className="text-[11px] font-black uppercase tracking-widest text-[#D3A9A0] hover:text-[#241F1B] transition-colors">
                                         ¿Olvidaste tu clave?
                                     </button>
                                 )}
                             </div>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Lock size={18} className="text-[#A3968B] group-focus-within:text-[#5B6651] transition-colors"/>
+                                    <Lock size={18} className="text-[#8A7F74] group-focus-within:text-[#46523C] transition-colors"/>
                                 </div>
                                 <input
                                     type="password"
@@ -421,7 +421,7 @@ export const AuthScreen = () => {
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     minLength={6}
-                                    className="w-full pl-11 pr-4 py-4 bg-white border border-[#DFD2C4] rounded-2xl text-[#312923] font-medium placeholder:text-[#DFD2C4] focus:outline-none focus:ring-2 focus:ring-[#5B6651]/30 focus:border-[#5B6651] transition-all shadow-sm"
+                                    className="w-full pl-11 pr-4 py-4 bg-white border border-[#D9D2C7] rounded-2xl text-[#241F1B] font-medium placeholder:text-[#D9D2C7] focus:outline-none focus:ring-2 focus:ring-[#46523C]/30 focus:border-[#46523C] transition-all shadow-sm"
                                 />
                             </div>
                         </div>
@@ -433,16 +433,16 @@ export const AuthScreen = () => {
                                     type="button"
                                     onClick={() => setAcceptedTerms(!acceptedTerms)}
                                     aria-pressed={acceptedTerms}
-                                    className={`mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all ${acceptedTerms ? 'bg-[#5B6651] border-[#5B6651]' : 'bg-white border-[#DFD2C4] hover:border-[#5B6651]/50'}`}
+                                    className={`mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all ${acceptedTerms ? 'bg-[#46523C] border-[#46523C]' : 'bg-white border-[#D9D2C7] hover:border-[#46523C]/50'}`}
                                 >
                                     {acceptedTerms && <Check size={12} className="text-white" strokeWidth={3.5} />}
                                 </button>
-                                <p className="text-xs font-medium text-[#6B615A] leading-relaxed">
+                                <p className="text-xs font-medium text-[#5E554E] leading-relaxed">
                                     He leído y acepto los{' '}
                                     <button
                                         type="button"
                                         onClick={() => setShowTerms(true)}
-                                        className="font-black text-[#5B6651] underline decoration-[#5B6651]/30 underline-offset-2 hover:text-[#312923] transition-colors"
+                                        className="font-black text-[#46523C] underline decoration-[#46523C]/30 underline-offset-2 hover:text-[#241F1B] transition-colors"
                                     >
                                         Términos y Condiciones
                                     </button>
@@ -454,7 +454,7 @@ export const AuthScreen = () => {
                         <button 
                             type="submit" 
                             disabled={loading || (isSignUp && !acceptedTerms)}
-                            className="w-full py-4 mt-4 bg-[#312923] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#312923]/20 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
+                            className="w-full py-4 mt-4 bg-[#241F1B] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#241F1B]/20 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
                         >
                             {loading ? (
                                 <span className="animate-pulse flex items-center gap-2"><Loader size={16} className="animate-spin"/> Procesando...</span>
@@ -467,19 +467,19 @@ export const AuthScreen = () => {
                     </form>
 
                     {!vieneDePago && (
-                        <div className="mt-8 text-center border-t border-[#DFD2C4]/40 pt-6">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-3">
+                        <div className="mt-8 text-center border-t border-[#D9D2C7]/40 pt-6">
+                            <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-3">
                                 ¿Aún no tienes tu clínica en la nube?
                             </p>
                             <button 
                                 onClick={(e) => { e.preventDefault(); window.location.href = MP_SUBSCRIPTION_LINK; }} 
-                                className="w-full px-6 py-3.5 rounded-2xl border border-[#DFD2C4] text-[#6B615A] hover:bg-white hover:text-[#5B6651] hover:border-[#5B6651]/50 transition-all text-xs font-black uppercase tracking-widest shadow-sm bg-[#FDFBF7]"
+                                className="w-full px-6 py-3.5 rounded-2xl border border-[#D9D2C7] text-[#5E554E] hover:bg-white hover:text-[#46523C] hover:border-[#46523C]/50 transition-all text-xs font-black uppercase tracking-widest shadow-sm bg-[#FBFAF8]"
                             >
                                 Probar 30 días gratis
                             </button>
                             
-                            <p className="text-xs font-bold text-[#6B615A] mt-6">
-                                O <button onClick={() => setIsSignUp(!isSignUp)} className="text-[#5B6651] hover:text-[#312923] transition-colors font-black underline decoration-[#5B6651]/30 underline-offset-4">
+                            <p className="text-xs font-bold text-[#5E554E] mt-6">
+                                O <button onClick={() => setIsSignUp(!isSignUp)} className="text-[#46523C] hover:text-[#241F1B] transition-colors font-black underline decoration-[#46523C]/30 underline-offset-4">
                                     {isSignUp ? "inicia sesión aquí" : "crea una cuenta manual"}
                                 </button>
                             </p>
@@ -493,14 +493,14 @@ export const AuthScreen = () => {
             {showTerms && (
                 <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowTerms(false)}>
                     <div className="bg-white rounded-[2rem] shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 md:p-8 relative custom-scrollbar" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setShowTerms(false)} className="absolute top-5 right-5 p-1.5 text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] rounded-xl transition-colors">
+                        <button onClick={() => setShowTerms(false)} className="absolute top-5 right-5 p-1.5 text-[#5E554E] hover:text-[#241F1B] hover:bg-[#FBFAF8] rounded-xl transition-colors">
                             <X size={20} />
                         </button>
-                        <h2 className="text-xl font-black text-[#312923] tracking-tight mb-6 pr-8">Términos y Condiciones</h2>
+                        <h2 className="text-xl font-black text-[#241F1B] tracking-tight mb-6 pr-8">Términos y Condiciones</h2>
                         <LegalText />
                         <button
                             onClick={() => { setAcceptedTerms(true); setShowTerms(false); }}
-                            className="w-full mt-8 py-4 bg-[#312923] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all"
+                            className="w-full mt-8 py-4 bg-[#241F1B] text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-black transition-all"
                         >
                             Entendido, acepto los términos
                         </button>

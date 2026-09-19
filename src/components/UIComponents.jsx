@@ -9,7 +9,7 @@ export const Card = ({ children, className = "", theme, onClick, ...props }) => 
             {...props} 
             onClick={onClick}
             // Bordes suaves y sombra tintada en oliva al hacer hover
-            className={`p-6 bg-white rounded-[2rem] border border-[#DFD2C4]/50 transition-all duration-300 relative ${onClick ? 'cursor-pointer hover:shadow-lg hover:border-[#CBAAA2] hover:-translate-y-0.5' : ''} ${className}`}
+            className={`p-6 bg-white rounded-[2rem] border border-[#D9D2C7]/50 transition-all duration-300 relative ${onClick ? 'cursor-pointer hover:shadow-lg hover:border-[#D3A9A0] hover:-translate-y-0.5' : ''} ${className}`}
             style={{ boxShadow: onClick ? '' : '0 10px 25px -5px rgba(91, 102, 81, 0.06)' }}
         >
             {children}
@@ -21,11 +21,11 @@ export const Card = ({ children, className = "", theme, onClick, ...props }) => 
 export const Button = ({ onClick, children, variant = "primary", className = "", theme, disabled }) => { 
     const styles = { 
         // Botón principal: Verde Oliva Profundo
-        primary: `bg-[#5B6651] hover:bg-[#4a5442] text-white shadow-sm hover:shadow-md`, 
+        primary: `bg-[#46523C] hover:bg-[#36402F] text-white shadow-sm hover:shadow-md`, 
         // Botón secundario: Fondo Crema, texto Topo, hover Rosa Suave
-        secondary: `bg-[#FDFBF7] text-[#6B615A] hover:bg-[#CBAAA2]/10 hover:text-[#5B6651] border border-[#DFD2C4]`,
+        secondary: `bg-[#FBFAF8] text-[#5E554E] hover:bg-[#D3A9A0]/10 hover:text-[#46523C] border border-[#D9D2C7]`,
         danger: `bg-red-50 text-red-600 hover:bg-red-100 border border-red-100/50`,
-        ghost: `bg-transparent text-[#9A8F84] hover:bg-[#DFD2C4]/20 hover:text-[#312923]`
+        ghost: `bg-transparent text-[#5E554E] hover:bg-[#D9D2C7]/20 hover:text-[#241F1B]`
     }; 
     
     const selectedStyle = styles[variant] || styles.primary;
@@ -45,10 +45,10 @@ export const Button = ({ onClick, children, variant = "primary", className = "",
 export const InputField = ({ label, icon: Icon, theme, textarea, className="", value, onChange, onBlur, ...props }) => { 
     return (
         <div className={`w-full flex flex-col gap-1.5 ${className}`}>
-            {label && <label className="text-[11px] font-bold uppercase tracking-widest ml-1 text-[#9A8F84]">{label}</label>}
+            {label && <label className="text-[11px] font-bold uppercase tracking-widest ml-1 text-[#5E554E]">{label}</label>}
             <div className="relative group">
                 {/* Icono cambia a Rosa al hacer focus */}
-                {Icon && <Icon size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#DFD2C4] group-focus-within:text-[#CBAAA2] transition-colors" />}
+                {Icon && <Icon size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#D9D2C7] group-focus-within:text-[#D3A9A0] transition-colors" />}
                 {textarea ? 
                     <textarea 
                         {...props} 
@@ -56,14 +56,14 @@ export const InputField = ({ label, icon: Icon, theme, textarea, className="", v
                         onChange={onChange}
                         onBlur={onBlur} // <-- CLAVE: Exponer el evento onBlur para el auto-guardado
                         rows="3" 
-                        className={`w-full p-4 ${Icon ? 'pl-11' : 'pl-4'} rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-medium text-[#312923] resize-none text-sm`}
+                        className={`w-full p-4 ${Icon ? 'pl-11' : 'pl-4'} rounded-2xl border border-[#D9D2C7]/70 bg-[#FBFAF8] focus:bg-white focus:border-[#D3A9A0] focus:ring-4 focus:ring-[#D3A9A0]/10 outline-none transition-all font-medium text-[#241F1B] resize-none text-sm`}
                     /> : 
                     <input 
                         {...props} 
                         value={value}
                         onChange={onChange}
                         onBlur={onBlur} // <-- CLAVE: Exponer el evento onBlur para el auto-guardado
-                        className={`w-full p-4 ${Icon ? 'pl-11' : 'pl-4'} rounded-2xl border border-[#DFD2C4]/70 bg-[#FDFBF7] focus:bg-white focus:border-[#CBAAA2] focus:ring-4 focus:ring-[#CBAAA2]/10 outline-none transition-all font-medium text-[#312923] text-sm`}
+                        className={`w-full p-4 ${Icon ? 'pl-11' : 'pl-4'} rounded-2xl border border-[#D9D2C7]/70 bg-[#FBFAF8] focus:bg-white focus:border-[#D3A9A0] focus:ring-4 focus:ring-[#D3A9A0]/10 outline-none transition-all font-medium text-[#241F1B] text-sm`}
                     />
                 }
             </div>
@@ -90,7 +90,7 @@ export const SignaturePad = ({ onSignatureChange }) => {
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#312923';
+            ctx.strokeStyle = '#241F1B';
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -148,10 +148,10 @@ export const SignaturePad = ({ onSignatureChange }) => {
 
     return (
         <div ref={containerRef} className="relative">
-            <div className="border-2 border-dashed border-[#DFD2C4] rounded-2xl bg-white relative overflow-hidden">
+            <div className="border-2 border-dashed border-[#D9D2C7] rounded-2xl bg-white relative overflow-hidden">
                 {!hasSignature && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <p className="text-[#9A8F84] text-sm italic">✍️ Firma aquí</p>
+                        <p className="text-[#5E554E] text-sm italic">✍️ Firma aquí</p>
                     </div>
                 )}
                 <canvas
@@ -170,7 +170,7 @@ export const SignaturePad = ({ onSignatureChange }) => {
             {hasSignature && (
                 <button
                     onClick={clearSignature}
-                    className="mt-2 px-3 py-1.5 bg-[#FDFBF7] border border-[#DFD2C4] rounded-xl text-xs font-bold text-[#312923] hover:bg-[#DFD2C4]/30 flex items-center gap-1 transition-colors"
+                    className="mt-2 px-3 py-1.5 bg-[#FBFAF8] border border-[#D9D2C7] rounded-xl text-xs font-bold text-[#241F1B] hover:bg-[#D9D2C7]/30 flex items-center gap-1 transition-colors"
                 >
                     <Trash2 size={12} /> Limpiar firma
                 </button>
@@ -204,7 +204,7 @@ export const SimpleLineChart = ({ data }) => {
                 <Line 
                     type="monotone" 
                     dataKey="ingresos" 
-                    stroke="#5B6651"
+                    stroke="#46523C"
                     strokeWidth={4} 
                     dot={{ r: 4, fill: '#ffffff', stroke: '#9CA3AF', strokeWidth: 2 }} 
                     activeDot={{ r: 7, fill: '#9CA3AF', stroke: '#ffffff', strokeWidth: 3, boxShadow: '0 0 10px rgba(156,163,175,0.5)' }} 
@@ -247,7 +247,7 @@ export const SecureFileLink = ({ bucket, filePath, fileName }) => {
 
     if (status === 'loading') {
         return (
-            <span className="inline-flex items-center gap-1 text-[9px] bg-[#FDFBF7] text-[#9A8F84] px-2 py-0.5 rounded-full font-black border border-[#DFD2C4] animate-pulse">
+            <span className="inline-flex items-center gap-1 text-[11px] bg-[#FBFAF8] text-[#5E554E] px-2 py-0.5 rounded-full font-black border border-[#D9D2C7] animate-pulse">
                 <Paperclip size={10}/> Cargando...
             </span>
         );
@@ -256,7 +256,7 @@ export const SecureFileLink = ({ bucket, filePath, fileName }) => {
     if (status === 'error') {
         return (
             <span
-                className="inline-flex items-center gap-1 text-[9px] bg-red-50 text-red-500 px-2 py-0.5 rounded-full font-black border border-red-200"
+                className="inline-flex items-center gap-1 text-[11px] bg-red-50 text-red-500 px-2 py-0.5 rounded-full font-black border border-red-200"
                 title="El archivo no está disponible en el almacenamiento"
             >
                 <Paperclip size={10}/> Archivo no disponible
@@ -269,7 +269,7 @@ export const SecureFileLink = ({ bucket, filePath, fileName }) => {
             href={secureUrl} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="inline-flex items-center gap-1 text-[9px] bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-0.5 rounded-full font-black border border-indigo-200 transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-0.5 rounded-full font-black border border-indigo-200 transition-colors"
             title={fileName}
         >
             <Paperclip size={10}/> {fileName || 'Archivo Adjunto'}
@@ -282,15 +282,15 @@ export const ConfirmModal = ({ title, message, onConfirm, onCancel, confirmLabel
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onCancel}>
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
             <div
-                className="relative bg-white rounded-[2rem] shadow-2xl border border-[#DFD2C4]/50 p-8 max-w-sm w-full animate-in zoom-in-95 duration-200"
+                className="relative bg-white rounded-[2rem] shadow-2xl border border-[#D9D2C7]/50 p-8 max-w-sm w-full animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
             >
-                <h3 className="text-xl font-black text-[#312923] tracking-tight mb-3">{title}</h3>
-                {message && <p className="text-sm text-[#9A8F84] font-medium leading-relaxed mb-6">{message}</p>}
+                <h3 className="text-xl font-black text-[#241F1B] tracking-tight mb-3">{title}</h3>
+                {message && <p className="text-sm text-[#5E554E] font-medium leading-relaxed mb-6">{message}</p>}
                 <div className="flex gap-3">
                     <button
                         onClick={onCancel}
-                        className="flex-1 py-3 rounded-2xl border border-[#DFD2C4] text-[11px] font-black uppercase tracking-widest text-[#9A8F84] hover:bg-[#FDFBF7] transition-all"
+                        className="flex-1 py-3 rounded-2xl border border-[#D9D2C7] text-[11px] font-black uppercase tracking-widest text-[#5E554E] hover:bg-[#FBFAF8] transition-all"
                     >
                         Cancelar
                     </button>
@@ -299,7 +299,7 @@ export const ConfirmModal = ({ title, message, onConfirm, onCancel, confirmLabel
                         className={`flex-1 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
                             danger
                                 ? 'bg-red-50 text-red-500 hover:bg-red-100 border border-red-100'
-                                : 'bg-[#5B6651] text-white hover:bg-[#4a5442]'
+                                : 'bg-[#46523C] text-white hover:bg-[#36402F]'
                         }`}
                     >
                         {confirmLabel}
@@ -317,24 +317,24 @@ export const PromptModal = ({ message, placeholder = '', value = '', onChange, o
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onCancel}>
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
             <div
-                className="relative bg-white rounded-[2rem] shadow-2xl border border-[#DFD2C4]/50 p-8 max-w-sm w-full animate-in zoom-in-95 duration-200"
+                className="relative bg-white rounded-[2rem] shadow-2xl border border-[#D9D2C7]/50 p-8 max-w-sm w-full animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
             >
-                <h3 className="text-xl font-black text-[#312923] tracking-tight mb-4">{message}</h3>
+                <h3 className="text-xl font-black text-[#241F1B] tracking-tight mb-4">{message}</h3>
                 <input
                     autoFocus
                     value={value}
                     onChange={e => onChange(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && value.trim()) onSubmit(); if (e.key === 'Escape') onCancel(); }}
                     placeholder={placeholder}
-                    className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] focus:bg-white focus:border-[#5B6651] focus:ring-4 focus:ring-[#5B6651]/20 outline-none transition-all font-medium text-[#312923] mb-6"
+                    className="w-full p-4 rounded-2xl border border-[#D9D2C7] bg-[#FBFAF8] focus:bg-white focus:border-[#46523C] focus:ring-4 focus:ring-[#46523C]/20 outline-none transition-all font-medium text-[#241F1B] mb-6"
                 />
                 <div className="flex gap-3">
-                    <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border border-[#DFD2C4] text-[11px] font-black uppercase tracking-widest text-[#9A8F84] hover:bg-[#FDFBF7] transition-all">Cancelar</button>
+                    <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border border-[#D9D2C7] text-[11px] font-black uppercase tracking-widest text-[#5E554E] hover:bg-[#FBFAF8] transition-all">Cancelar</button>
                     <button
                         onClick={onSubmit}
                         disabled={!value.trim()}
-                        className="flex-1 py-3 rounded-2xl bg-[#5B6651] text-white text-[11px] font-black uppercase tracking-widest hover:bg-[#4a5442] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex-1 py-3 rounded-2xl bg-[#46523C] text-white text-[11px] font-black uppercase tracking-widest hover:bg-[#36402F] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >{confirmLabel}</button>
                 </div>
             </div>

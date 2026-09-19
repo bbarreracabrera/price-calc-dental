@@ -102,26 +102,26 @@ export default function MyPricingTab({ pricing, refreshPricing, notify, session 
             {/* Toolbar */}
             <div className="flex flex-col md:flex-row gap-3">
                 <div className="flex-1 relative">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8F84]" />
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5E554E]" />
                     <input
                         type="text"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         placeholder="Buscar servicio..."
-                        className="w-full pl-9 pr-3 py-2.5 border border-[#DFD2C4] rounded-xl bg-[#FDFBF7] text-[#312923] font-medium text-sm focus:outline-none focus:border-[#5B6651]"
+                        className="w-full pl-9 pr-3 py-2.5 border border-[#D9D2C7] rounded-xl bg-[#FBFAF8] text-[#241F1B] font-medium text-sm focus:outline-none focus:border-[#46523C]"
                     />
                 </div>
                 <select
                     value={categoryFilter}
                     onChange={e => setCategoryFilter(e.target.value)}
-                    className="px-3 py-2.5 border border-[#DFD2C4] rounded-xl bg-[#FDFBF7] text-[#312923] font-medium text-sm focus:outline-none focus:border-[#5B6651]"
+                    className="px-3 py-2.5 border border-[#D9D2C7] rounded-xl bg-[#FBFAF8] text-[#241F1B] font-medium text-sm focus:outline-none focus:border-[#46523C]"
                 >
                     <option value="all">Todas las categorías</option>
                     {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
                 <button
                     onClick={openAdd}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#312923] text-white rounded-xl font-bold text-sm hover:bg-[#1a1512] transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-[#241F1B] text-white rounded-xl font-bold text-sm hover:bg-[#1a1512] transition-colors"
                 >
                     <Plus size={16} /> Agregar servicio
                 </button>
@@ -129,18 +129,18 @@ export default function MyPricingTab({ pricing, refreshPricing, notify, session 
 
             {/* Empty state */}
             {pricing.length === 0 && (
-                <div className="bg-white border border-[#DFD2C4] rounded-3xl p-12 text-center">
+                <div className="bg-white border border-[#D9D2C7] rounded-3xl p-12 text-center">
                     <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mx-auto mb-4">
                         <Plus size={32} />
                     </div>
-                    <h3 className="font-black text-[#312923] text-lg mb-2">Tu arancel está vacío</h3>
-                    <p className="text-sm text-[#9A8F84] mb-6 max-w-md mx-auto leading-relaxed">
+                    <h3 className="font-black text-[#241F1B] text-lg mb-2">Tu arancel está vacío</h3>
+                    <p className="text-sm text-[#5E554E] mb-6 max-w-md mx-auto leading-relaxed">
                         Agrega los servicios que ofrece tu laboratorio con sus precios.
                         Las clínicas conectadas verán esta información al asignarte trabajos.
                     </p>
                     <button
                         onClick={openAdd}
-                        className="px-6 py-2.5 bg-[#5B6651] text-white rounded-xl font-bold text-sm hover:bg-[#4a5542] transition-colors"
+                        className="px-6 py-2.5 bg-[#46523C] text-white rounded-xl font-bold text-sm hover:bg-[#4a5542] transition-colors"
                     >
                         Agregar primer servicio
                     </button>
@@ -155,8 +155,8 @@ export default function MyPricingTab({ pricing, refreshPricing, notify, session 
                         if (items.length === 0) return null;
                         return (
                             <div key={cat.id}>
-                                <h3 className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-black mb-3 ml-1">
-                                    {cat.label} <span className="text-[#DFD2C4]">({items.length})</span>
+                                <h3 className="text-[11px] uppercase tracking-widest text-[#5E554E] font-black mb-3 ml-1">
+                                    {cat.label} <span className="text-[#D9D2C7]">({items.length})</span>
                                 </h3>
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                                     {items.map(item => (
@@ -201,27 +201,27 @@ function ServiceCard({ item, onEdit, onDelete }) {
     const formatPrice = (n) => new Intl.NumberFormat('es-CL').format(n || 0);
 
     return (
-        <div className="bg-white border border-[#DFD2C4] rounded-2xl p-4 hover:shadow-sm transition-shadow">
+        <div className="bg-white border border-[#D9D2C7] rounded-2xl p-4 hover:shadow-sm transition-shadow">
             <div className="flex items-start justify-between gap-2 mb-3">
-                <h4 className="font-bold text-[#312923] flex-1 leading-tight">{d.name}</h4>
+                <h4 className="font-bold text-[#241F1B] flex-1 leading-tight">{d.name}</h4>
                 <div className="flex gap-0.5 shrink-0">
-                    <button onClick={onEdit} className="p-1.5 text-[#9A8F84] hover:text-[#312923] rounded-lg hover:bg-[#FDFBF7] transition-colors" title="Editar">
+                    <button onClick={onEdit} className="p-1.5 text-[#5E554E] hover:text-[#241F1B] rounded-lg hover:bg-[#FBFAF8] transition-colors" title="Editar">
                         <Edit2 size={13} />
                     </button>
-                    <button onClick={onDelete} className="p-1.5 text-[#9A8F84] hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors" title="Eliminar">
+                    <button onClick={onDelete} className="p-1.5 text-[#5E554E] hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors" title="Eliminar">
                         <Trash2 size={13} />
                     </button>
                 </div>
             </div>
-            <p className="text-2xl font-black text-[#5B6651]">
+            <p className="text-2xl font-black text-[#46523C]">
                 ${formatPrice(d.price)}
-                <span className="text-xs font-normal text-[#9A8F84] ml-1">CLP</span>
+                <span className="text-xs font-normal text-[#5E554E] ml-1">CLP</span>
             </p>
             {d.estimated_days > 0 && (
-                <p className="text-xs text-[#9A8F84] mt-1.5">~{d.estimated_days} días de elaboración</p>
+                <p className="text-xs text-[#5E554E] mt-1.5">~{d.estimated_days} días de elaboración</p>
             )}
             {d.description && (
-                <p className="text-xs text-[#A3968B] mt-2 leading-relaxed line-clamp-2">{d.description}</p>
+                <p className="text-xs text-[#8A7F74] mt-2 leading-relaxed line-clamp-2">{d.description}</p>
             )}
         </div>
     );
@@ -244,16 +244,16 @@ function PricingModal({ item, onSave, onClose }) {
         onSave(form);
     };
 
-    const inputClass = "w-full px-3 py-2.5 border border-[#DFD2C4] rounded-xl bg-[#FDFBF7] text-[#312923] font-medium text-sm focus:outline-none focus:border-[#5B6651] transition-colors";
+    const inputClass = "w-full px-3 py-2.5 border border-[#D9D2C7] rounded-xl bg-[#FBFAF8] text-[#241F1B] font-medium text-sm focus:outline-none focus:border-[#46523C] transition-colors";
 
     return (
-        <div className="fixed inset-0 bg-[#312923]/80 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#241F1B]/80 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
                 <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-xl font-black text-[#312923]">
+                    <h2 className="text-xl font-black text-[#241F1B]">
                         {item ? 'Editar servicio' : 'Nuevo servicio'}
                     </h2>
-                    <button onClick={onClose} className="p-1.5 text-[#9A8F84] hover:text-[#312923] rounded-lg hover:bg-[#FDFBF7] transition-colors">
+                    <button onClick={onClose} className="p-1.5 text-[#5E554E] hover:text-[#241F1B] rounded-lg hover:bg-[#FBFAF8] transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -281,10 +281,10 @@ function PricingModal({ item, onSave, onClose }) {
                 </div>
 
                 <div className="flex gap-3 mt-6">
-                    <button onClick={onClose} className="flex-1 py-2.5 border border-[#DFD2C4] text-[#312923] font-bold rounded-xl hover:bg-[#FDFBF7] transition-colors text-sm">
+                    <button onClick={onClose} className="flex-1 py-2.5 border border-[#D9D2C7] text-[#241F1B] font-bold rounded-xl hover:bg-[#FBFAF8] transition-colors text-sm">
                         Cancelar
                     </button>
-                    <button onClick={handleSubmit} className="flex-1 py-2.5 bg-[#312923] text-white font-bold rounded-xl hover:bg-[#1a1512] transition-colors text-sm flex items-center justify-center gap-2">
+                    <button onClick={handleSubmit} className="flex-1 py-2.5 bg-[#241F1B] text-white font-bold rounded-xl hover:bg-[#1a1512] transition-colors text-sm flex items-center justify-center gap-2">
                         <Save size={14} /> Guardar
                     </button>
                 </div>
@@ -296,7 +296,7 @@ function PricingModal({ item, onSave, onClose }) {
 function Field({ label, children }) {
     return (
         <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-1.5">{label}</label>
+            <label className="block text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-1.5">{label}</label>
             {children}
         </div>
     );

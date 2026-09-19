@@ -72,14 +72,14 @@ export default function PatientConsentTab({
         <div className="space-y-8 animate-in fade-in max-w-4xl mx-auto pb-10">
 
             {/* --- ENCABEZADO --- */}
-            <div className="border-b border-[#DFD2C4]/50 pb-4">
-                <h2 className="text-2xl font-black text-[#312923] tracking-tight flex items-center gap-3">
-                    <div className="p-2.5 bg-[#5B6651]/10 text-[#5B6651] rounded-xl">
+            <div className="border-b border-[#D9D2C7]/50 pb-4">
+                <h2 className="text-2xl font-black text-[#241F1B] tracking-tight flex items-center gap-3">
+                    <div className="p-2.5 bg-[#46523C]/10 text-[#46523C] rounded-xl">
                         <FileSignature size={22} />
                     </div>
                     Consentimientos Informados
                 </h2>
-                <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-2 ml-1">
+                <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest mt-2 ml-1">
                     Documentación Legal y Firmas — Ley 19.799
                 </p>
             </div>
@@ -88,16 +88,16 @@ export default function PatientConsentTab({
             {modal === 'sign' ? (
                 <div className="space-y-6 animate-in slide-in-from-bottom-2">
                     <div className="flex justify-between items-center">
-                        <h3 className="font-black text-xl text-[#312923]">{CONSENT_TEMPLATES[consentTemplate]?.title}</h3>
-                        <button onClick={() => setModal(null)} className="px-4 py-2 bg-[#FDFBF7] text-[#9A8F84] hover:text-[#312923] border border-[#DFD2C4]/50 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors">
+                        <h3 className="font-black text-xl text-[#241F1B]">{CONSENT_TEMPLATES[consentTemplate]?.title}</h3>
+                        <button onClick={() => setModal(null)} className="px-4 py-2 bg-[#FBFAF8] text-[#5E554E] hover:text-[#241F1B] border border-[#D9D2C7]/50 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-colors">
                             Cancelar
                         </button>
                     </div>
 
                     {/* Texto del Consentimiento */}
-                    <div className="bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-3xl p-6 shadow-inner focus-within:border-[#5B6651]/30 transition-colors">
+                    <div className="bg-[#FBFAF8] border border-[#D9D2C7]/60 rounded-3xl p-6 shadow-inner focus-within:border-[#46523C]/30 transition-colors">
                         <textarea
-                            className="w-full h-64 bg-transparent text-sm leading-relaxed outline-none resize-none text-[#312923] font-medium custom-scrollbar pr-4"
+                            className="w-full h-64 bg-transparent text-sm leading-relaxed outline-none resize-none text-[#241F1B] font-medium custom-scrollbar pr-4"
                             value={consentText}
                             onChange={(e) => setConsentText(e.target.value)}
                             placeholder="Redacte o ajuste el consentimiento aquí..."
@@ -105,12 +105,12 @@ export default function PatientConsentTab({
                     </div>
 
                     {/* Pad de Firma */}
-                    <div className="bg-white border border-[#DFD2C4]/60 rounded-3xl p-6 shadow-sm">
+                    <div className="bg-white border border-[#D9D2C7]/60 rounded-3xl p-6 shadow-sm">
                         <div className="mb-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#5B6651] flex items-center gap-2">
+                            <h4 className="text-[11px] font-black uppercase tracking-widest text-[#46523C] flex items-center gap-2">
                                 <PenTool size={14}/> Firma del Paciente / Apoderado
                             </h4>
-                            <p className="text-[10px] text-[#9A8F84] font-medium mt-1">Por favor, firme dentro del recuadro utilizando el cursor o su dedo.</p>
+                            <p className="text-[11px] text-[#5E554E] font-medium mt-1">Por favor, firme dentro del recuadro utilizando el cursor o su dedo.</p>
                         </div>
 
                         <SignaturePad onSignatureChange={setHasSignature} />
@@ -119,7 +119,7 @@ export default function PatientConsentTab({
                             <button
                                 onClick={handleSignConsent}
                                 disabled={isSigning || !hasSignature}
-                                className="flex-1 py-3.5 bg-[#5B6651] hover:bg-[#4a5442] text-white font-black text-sm rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
+                                className="flex-1 py-3.5 bg-[#46523C] hover:bg-[#36402F] text-white font-black text-sm rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
                             >
                                 {isSigning ? (
                                     <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando firma...</>
@@ -127,7 +127,7 @@ export default function PatientConsentTab({
                             </button>
                             <button
                                 onClick={() => setModal(null)}
-                                className="px-6 py-3.5 bg-[#FDFBF7] border border-[#DFD2C4] text-[#312923] font-black text-sm rounded-2xl hover:bg-[#DFD2C4]/30 transition-colors"
+                                className="px-6 py-3.5 bg-[#FBFAF8] border border-[#D9D2C7] text-[#241F1B] font-black text-sm rounded-2xl hover:bg-[#D9D2C7]/30 transition-colors"
                             >
                                 Cancelar
                             </button>
@@ -137,7 +137,7 @@ export default function PatientConsentTab({
             ) : (
                 // Modo selección de plantilla
                 <div className="space-y-6">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-2">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] border-b border-[#D9D2C7]/50 pb-2">
                         Plantillas Disponibles
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
@@ -145,15 +145,15 @@ export default function PatientConsentTab({
                             <button
                                 key={key}
                                 onClick={() => { setConsentTemplate(key); setConsentText(tpl.text); setModal('sign'); }}
-                                className="group flex flex-col items-center justify-center p-8 bg-white border border-[#DFD2C4]/60 hover:border-[#5B6651] rounded-3xl transition-all shadow-sm hover:shadow-md text-center"
+                                className="group flex flex-col items-center justify-center p-8 bg-white border border-[#D9D2C7]/60 hover:border-[#46523C] rounded-3xl transition-all shadow-sm hover:shadow-md text-center"
                             >
-                                <div className="w-14 h-14 bg-[#FDFBF7] rounded-2xl flex items-center justify-center group-hover:bg-[#5B6651]/10 group-hover:scale-110 transition-all duration-300 border border-[#DFD2C4]/50 mb-4">
-                                    <FileText className="text-[#9A8F84] group-hover:text-[#5B6651] transition-colors" size={24}/>
+                                <div className="w-14 h-14 bg-[#FBFAF8] rounded-2xl flex items-center justify-center group-hover:bg-[#46523C]/10 group-hover:scale-110 transition-all duration-300 border border-[#D9D2C7]/50 mb-4">
+                                    <FileText className="text-[#5E554E] group-hover:text-[#46523C] transition-colors" size={24}/>
                                 </div>
-                                <span className="font-black text-sm text-[#312923] group-hover:text-[#5B6651] transition-colors line-clamp-2">
+                                <span className="font-black text-sm text-[#241F1B] group-hover:text-[#46523C] transition-colors line-clamp-2">
                                     {tpl.title}
                                 </span>
-                                <span className="text-[9px] font-bold text-[#9A8F84] uppercase tracking-widest mt-2">Crear Nuevo</span>
+                                <span className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest mt-2">Crear Nuevo</span>
                             </button>
                         ))}
                     </div>
@@ -163,27 +163,27 @@ export default function PatientConsentTab({
             {/* --- ARCHIVO DE CONSENTIMIENTOS FIRMADOS --- */}
             {modal !== 'sign' && (
                 <div className="pt-8">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] border-b border-[#DFD2C4]/50 pb-2 mb-6 flex items-center gap-2">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] border-b border-[#D9D2C7]/50 pb-2 mb-6 flex items-center gap-2">
                         <CheckCircle2 size={14}/> Archivo Legal (Firmados)
                     </h3>
 
                     {signedConsents.length === 0 ? (
-                        <div className="text-center py-12 bg-[#FDFBF7] border-2 border-dashed border-[#DFD2C4] rounded-3xl">
-                            <FileX className="mx-auto text-[#DFD2C4] mb-3" size={32}/>
-                            <p className="text-sm font-bold text-[#9A8F84]">No hay consentimientos firmados para este paciente.</p>
+                        <div className="text-center py-12 bg-[#FBFAF8] border-2 border-dashed border-[#D9D2C7] rounded-3xl">
+                            <FileX className="mx-auto text-[#D9D2C7] mb-3" size={32}/>
+                            <p className="text-sm font-bold text-[#5E554E]">No hay consentimientos firmados para este paciente.</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             {signedConsents.map((c, i) => (
-                                <div key={c.id || i} className="bg-white border border-[#DFD2C4]/60 rounded-3xl p-5 shadow-sm">
+                                <div key={c.id || i} className="bg-white border border-[#D9D2C7]/60 rounded-3xl p-5 shadow-sm">
                                     <div className="flex justify-between items-start mb-3">
                                         <div className="flex items-start gap-4">
-                                            <div className="p-2.5 bg-[#FDFBF7] rounded-xl text-[#9A8F84] shrink-0">
+                                            <div className="p-2.5 bg-[#FBFAF8] rounded-xl text-[#5E554E] shrink-0">
                                                 <FileSignature size={20}/>
                                             </div>
                                             <div>
-                                                <p className="font-black text-sm text-[#312923]">{c.type}</p>
-                                                <p className="text-[10px] font-bold text-[#9A8F84] mt-0.5">
+                                                <p className="font-black text-sm text-[#241F1B]">{c.type}</p>
+                                                <p className="text-[11px] font-bold text-[#5E554E] mt-0.5">
                                                     Firmado el {c.signed_at
                                                         ? new Date(c.signed_at).toLocaleString('es-CL')
                                                         : (c.date || '—')}
@@ -191,27 +191,27 @@ export default function PatientConsentTab({
                                             </div>
                                         </div>
                                         {c.hash && (
-                                            <div className="flex items-center gap-1.5 text-[#5B6651] text-[10px] font-black bg-[#5B6651]/10 px-2.5 py-1 rounded-full border border-[#5B6651]/20 shrink-0">
+                                            <div className="flex items-center gap-1.5 text-[#46523C] text-[11px] font-black bg-[#46523C]/10 px-2.5 py-1 rounded-full border border-[#46523C]/20 shrink-0">
                                                 <ShieldCheck size={11}/> Verificado
                                             </div>
                                         )}
                                     </div>
 
                                     {c.hash && (
-                                        <p className="text-[9px] font-mono text-[#A3968B] mb-3 bg-[#FDFBF7] px-3 py-1.5 rounded-xl border border-[#DFD2C4]/50 break-all">
+                                        <p className="text-[11px] font-mono text-[#8A7F74] mb-3 bg-[#FBFAF8] px-3 py-1.5 rounded-xl border border-[#D9D2C7]/50 break-all">
                                             Hash: {c.hash}
                                         </p>
                                     )}
 
                                     <div className="flex items-center justify-between">
                                         {c.signature && (
-                                            <div className="bg-[#FDFBF7] p-1.5 rounded-xl border border-[#DFD2C4]/50 h-10 w-20 flex items-center justify-center">
+                                            <div className="bg-[#FBFAF8] p-1.5 rounded-xl border border-[#D9D2C7]/50 h-10 w-20 flex items-center justify-center">
                                                 <img src={c.signature} className="max-h-full max-w-full object-contain opacity-80 mix-blend-multiply" alt="Firma"/>
                                             </div>
                                         )}
                                         <button
                                             onClick={() => generatePDF('consent', c)}
-                                            className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#312923] hover:bg-[#1a1512] text-white rounded-xl text-xs font-bold transition-colors"
+                                            className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#241F1B] hover:bg-[#1a1512] text-white rounded-xl text-xs font-bold transition-colors"
                                         >
                                             <Printer size={13}/> Descargar PDF
                                         </button>

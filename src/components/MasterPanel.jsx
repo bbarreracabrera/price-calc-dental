@@ -18,8 +18,8 @@ const PLANS = [
         id: 'starter',
         name: 'Starter',
         price: 10000,
-        color: 'from-[#5B6651] to-[#4a5442]',
-        badge: 'bg-[#5B6651]/10 text-[#5B6651]',
+        color: 'from-[#46523C] to-[#36402F]',
+        badge: 'bg-[#46523C]/10 text-[#46523C]',
         features: ['Hasta 200 pacientes', 'Agenda ilimitada', 'Odontograma + Voz', 'Soporte por WhatsApp'],
         target: 'Dentista independiente'
     },
@@ -27,7 +27,7 @@ const PLANS = [
         id: 'pro',
         name: 'Pro',
         price: 19900,
-        color: 'from-[#312923] to-[#1a1512]',
+        color: 'from-[#241F1B] to-[#1a1512]',
         badge: 'bg-amber-100 text-amber-700',
         features: ['Pacientes ilimitados', 'Multi-doctor (hasta 3)', 'Laboratorio Digital', 'Finanzas + Rentabilidad', 'Recordatorios automáticos', 'Soporte prioritario'],
         target: 'Clínica pequeña/mediana',
@@ -260,10 +260,10 @@ export default function MasterPanel({ supabase, notify, session }) {
 
     if (!isAdmin) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-[#FDFBF7] to-[#F5F0E8]">
-                <Shield size={48} className="text-[#9A8F84] mb-4" />
-                <h2 className="text-2xl font-black text-[#312923] mb-2">Acceso Restringido</h2>
-                <p className="text-[#9A8F84] text-center max-w-xs">Este panel está reservado exclusivamente para el administrador de ShiningCloud Supply.</p>
+            <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-[#FBFAF8] to-[#F5F0E8]">
+                <Shield size={48} className="text-[#5E554E] mb-4" />
+                <h2 className="text-2xl font-black text-[#241F1B] mb-2">Acceso Restringido</h2>
+                <p className="text-[#5E554E] text-center max-w-xs">Este panel está reservado exclusivamente para el administrador de ShiningCloud Supply.</p>
             </div>
         );
     }
@@ -271,21 +271,21 @@ export default function MasterPanel({ supabase, notify, session }) {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin"><RefreshCw size={32} className="text-[#5B6651]" /></div>
+                <div className="animate-spin"><RefreshCw size={32} className="text-[#46523C]" /></div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gradient-to-br from-[#FDFBF7] to-[#F5F0E8] p-4 md:p-6 gap-4">
+        <div className="flex flex-col h-screen bg-gradient-to-br from-[#FBFAF8] to-[#F5F0E8] p-4 md:p-6 gap-4">
             {/* HEADER */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">ShiningCloud Supply · Centro de Operaciones</p>
-                    <h1 className="text-3xl md:text-4xl font-black text-[#312923] tracking-tighter">Panel Maestro</h1>
-                    <p className="text-xs font-bold text-[#9A8F84] mt-1">Gestión de órdenes y clínicas suscritas</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-[#46523C]">ShiningCloud Supply · Centro de Operaciones</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-[#241F1B] tracking-tighter">Panel Maestro</h1>
+                    <p className="text-xs font-bold text-[#5E554E] mt-1">Gestión de órdenes y clínicas suscritas</p>
                 </div>
-                <button onClick={fetchDashboardData} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#DFD2C4] bg-white text-[#9A8F84] text-[10px] font-black uppercase tracking-widest hover:bg-[#FDFBF7] transition-all">
+                <button onClick={fetchDashboardData} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#D9D2C7] bg-white text-[#5E554E] text-[11px] font-black uppercase tracking-widest hover:bg-[#FBFAF8] transition-all">
                     <RefreshCw size={12} /> Actualizar
                 </button>
             </div>
@@ -298,8 +298,8 @@ export default function MasterPanel({ supabase, notify, session }) {
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all whitespace-nowrap ${
                             activeTab === tab.id
-                                ? 'bg-[#312923] text-white shadow-md'
-                                : 'bg-white text-[#9A8F84] border border-[#DFD2C4] hover:border-[#A3968B]'
+                                ? 'bg-[#241F1B] text-white shadow-md'
+                                : 'bg-white text-[#5E554E] border border-[#D9D2C7] hover:border-[#8A7F74]'
                         }`}
                     >
                         <tab.icon size={13} /> {tab.label}
@@ -311,49 +311,49 @@ export default function MasterPanel({ supabase, notify, session }) {
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-6">
                 {/* KPIs */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                    <Card className="p-4 bg-white border border-[#DFD2C4]/60 shadow-sm">
-                        <p className="text-[10px] font-bold text-[#9A8F84] mb-1">Total Órdenes</p>
-                        <h3 className="text-2xl md:text-3xl font-black text-[#312923]">{metrics.totalOrders}</h3>
-                        <p className="text-[9px] font-bold text-amber-600 mt-1">{metrics.pendingOrders} pendientes</p>
+                    <Card className="p-4 bg-white border border-[#D9D2C7]/60 shadow-sm">
+                        <p className="text-[11px] font-bold text-[#5E554E] mb-1">Total Órdenes</p>
+                        <h3 className="text-2xl md:text-3xl font-black text-[#241F1B]">{metrics.totalOrders}</h3>
+                        <p className="text-[11px] font-bold text-amber-600 mt-1">{metrics.pendingOrders} pendientes</p>
                     </Card>
 
-                    <Card className="p-4 bg-white border border-[#DFD2C4]/60 shadow-sm">
-                        <p className="text-[10px] font-bold text-[#9A8F84] mb-1">Clínicas Activas</p>
-                        <h3 className="text-2xl md:text-3xl font-black text-[#312923]">{metrics.activeClinics}</h3>
-                        <p className="text-[9px] font-bold text-emerald-600 mt-1">{saasSubscriptions.length} total</p>
+                    <Card className="p-4 bg-white border border-[#D9D2C7]/60 shadow-sm">
+                        <p className="text-[11px] font-bold text-[#5E554E] mb-1">Clínicas Activas</p>
+                        <h3 className="text-2xl md:text-3xl font-black text-[#241F1B]">{metrics.activeClinics}</h3>
+                        <p className="text-[11px] font-bold text-emerald-600 mt-1">{saasSubscriptions.length} total</p>
                     </Card>
 
-                    <Card className="p-4 bg-white border border-[#DFD2C4]/60 shadow-sm">
-                        <p className="text-[10px] font-bold text-[#9A8F84] mb-1">Ingresos Supply</p>
-                        <h3 className="text-2xl md:text-3xl font-black text-[#312923]">${(metrics.totalRevenue / 1000).toFixed(0)}K</h3>
-                        <p className="text-[9px] font-bold text-blue-600 mt-1">{metrics.deliveredOrders} entregas</p>
+                    <Card className="p-4 bg-white border border-[#D9D2C7]/60 shadow-sm">
+                        <p className="text-[11px] font-bold text-[#5E554E] mb-1">Ingresos Supply</p>
+                        <h3 className="text-2xl md:text-3xl font-black text-[#241F1B]">${(metrics.totalRevenue / 1000).toFixed(0)}K</h3>
+                        <p className="text-[11px] font-bold text-blue-600 mt-1">{metrics.deliveredOrders} entregas</p>
                     </Card>
 
-                    <Card className="p-4 bg-white border border-[#DFD2C4]/60 shadow-sm">
-                        <p className="text-[10px] font-bold text-[#9A8F84] mb-1">En Tránsito</p>
-                        <h3 className="text-2xl md:text-3xl font-black text-[#312923]">{metrics.shippedOrders}</h3>
-                        <p className="text-[9px] font-bold text-purple-600 mt-1">órdenes</p>
+                    <Card className="p-4 bg-white border border-[#D9D2C7]/60 shadow-sm">
+                        <p className="text-[11px] font-bold text-[#5E554E] mb-1">En Tránsito</p>
+                        <h3 className="text-2xl md:text-3xl font-black text-[#241F1B]">{metrics.shippedOrders}</h3>
+                        <p className="text-[11px] font-bold text-purple-600 mt-1">órdenes</p>
                     </Card>
                 </div>
 
                 {/* ÓRDENES */}
                 {activeTab === 'orders' && (
                     <div className="space-y-4">
-                        <h3 className="font-black text-xl text-[#312923]">Órdenes de Suministros</h3>
+                        <h3 className="font-black text-xl text-[#241F1B]">Órdenes de Suministros</h3>
                         {supplyOrders.length === 0 ? (
-                            <Card className="p-12 text-center bg-white border border-[#DFD2C4]/60">
-                                <Package size={36} className="mx-auto mb-3 text-[#9A8F84] opacity-30" />
-                                <p className="font-bold text-[#9A8F84]">No hay órdenes aún</p>
+                            <Card className="p-12 text-center bg-white border border-[#D9D2C7]/60">
+                                <Package size={36} className="mx-auto mb-3 text-[#5E554E] opacity-30" />
+                                <p className="font-bold text-[#5E554E]">No hay órdenes aún</p>
                             </Card>
                         ) : (
                             <div className="space-y-3">
                                 {supplyOrders.map(order => (
-                                    <Card key={order.id} className="p-4 bg-white border border-[#DFD2C4]/60 hover:border-[#A3968B] transition-all cursor-pointer" onClick={() => { setSelectedOrder(order); setShowOrderDetails(true); }}>
+                                    <Card key={order.id} className="p-4 bg-white border border-[#D9D2C7]/60 hover:border-[#8A7F74] transition-all cursor-pointer" onClick={() => { setSelectedOrder(order); setShowOrderDetails(true); }}>
                                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <p className="font-black text-[#312923]">Orden #{order.id}</p>
-                                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                                                    <p className="font-black text-[#241F1B]">Orden #{order.id}</p>
+                                                    <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-md border ${
                                                         order.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
                                                         order.status === 'shipped' ? 'bg-blue-50 text-blue-600 border-blue-200' :
                                                         'bg-emerald-50 text-emerald-600 border-emerald-200'
@@ -361,14 +361,14 @@ export default function MasterPanel({ supabase, notify, session }) {
                                                         {order.status === 'pending' ? 'Pendiente' : order.status === 'shipped' ? 'Enviado' : 'Entregado'}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs font-bold text-[#9A8F84]">Clínica: {order.admin_email}</p>
-                                                <p className="text-xs font-bold text-[#9A8F84]">Producto: {order.order_details?.item_name} (x{order.order_details?.quantity})</p>
-                                                <p className="text-[10px] font-bold text-[#9A8F84] mt-1">{new Date(order.created_at).toLocaleDateString('es-CL')}</p>
+                                                <p className="text-xs font-bold text-[#5E554E]">Clínica: {order.admin_email}</p>
+                                                <p className="text-xs font-bold text-[#5E554E]">Producto: {order.order_details?.item_name} (x{order.order_details?.quantity})</p>
+                                                <p className="text-[11px] font-bold text-[#5E554E] mt-1">{new Date(order.created_at).toLocaleDateString('es-CL')}</p>
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
-                                                <p className="font-black text-[#312923] text-lg">${Number(order.total_amount).toLocaleString('es-CL')}</p>
+                                                <p className="font-black text-[#241F1B] text-lg">${Number(order.total_amount).toLocaleString('es-CL')}</p>
                                                 <div className="flex gap-2">
-                                                    <button onClick={(e) => { e.stopPropagation(); exportOrderAsCSV(order); }} className="p-2 bg-[#5B6651]/10 text-[#5B6651] rounded-lg hover:bg-[#5B6651]/20 transition-all" title="Descargar orden">
+                                                    <button onClick={(e) => { e.stopPropagation(); exportOrderAsCSV(order); }} className="p-2 bg-[#46523C]/10 text-[#46523C] rounded-lg hover:bg-[#46523C]/20 transition-all" title="Descargar orden">
                                                         <Download size={14} />
                                                     </button>
                                                     <button onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setShowProviderModal(true); }} className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500/20 transition-all" title="Enviar a proveedor">
@@ -387,24 +387,24 @@ export default function MasterPanel({ supabase, notify, session }) {
                 {/* CLÍNICAS */}
                 {activeTab === 'clinics' && (
                     <div className="space-y-4">
-                        <h3 className="font-black text-xl text-[#312923]">Clínicas Suscritas</h3>
+                        <h3 className="font-black text-xl text-[#241F1B]">Clínicas Suscritas</h3>
                         {saasSubscriptions.length === 0 ? (
-                            <Card className="p-12 text-center bg-white border border-[#DFD2C4]/60">
-                                <Building2 size={36} className="mx-auto mb-3 text-[#9A8F84] opacity-30" />
-                                <p className="font-bold text-[#9A8F84]">No hay clínicas suscritas</p>
+                            <Card className="p-12 text-center bg-white border border-[#D9D2C7]/60">
+                                <Building2 size={36} className="mx-auto mb-3 text-[#5E554E] opacity-30" />
+                                <p className="font-bold text-[#5E554E]">No hay clínicas suscritas</p>
                             </Card>
                         ) : (
                             <div className="space-y-3">
                                 {saasSubscriptions.map((sub, i) => (
-                                    <Card key={i} className="p-4 bg-white border border-[#DFD2C4]/60 hover:border-[#A3968B] transition-all cursor-pointer" onClick={() => { setSelectedSub(sub); setShowSubDetail(true); }}>
+                                    <Card key={i} className="p-4 bg-white border border-[#D9D2C7]/60 hover:border-[#8A7F74] transition-all cursor-pointer" onClick={() => { setSelectedSub(sub); setShowSubDetail(true); }}>
                                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
                                             <div className="flex-1">
-                                                <p className="font-black text-[#312923]">{sub.clinic_name}</p>
-                                                <p className="text-xs font-bold text-[#9A8F84]">{sub.clinic_email}</p>
-                                                <p className="text-[10px] font-bold text-[#9A8F84] mt-1">Plan: {sub.plan_type || '—'} • ${Number(sub.monthly_fee).toLocaleString('es-CL')}/mes</p>
+                                                <p className="font-black text-[#241F1B]">{sub.clinic_name}</p>
+                                                <p className="text-xs font-bold text-[#5E554E]">{sub.clinic_email}</p>
+                                                <p className="text-[11px] font-bold text-[#5E554E] mt-1">Plan: {sub.plan_type || '—'} • ${Number(sub.monthly_fee).toLocaleString('es-CL')}/mes</p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                                                <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-md border ${
                                                     sub.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'
                                                 }`}>
                                                     {sub.status === 'active' ? 'Activa' : 'Trial'}
@@ -422,13 +422,13 @@ export default function MasterPanel({ supabase, notify, session }) {
                 {activeTab === 'providers' && (
                     <div className="space-y-4">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                            <h3 className="font-black text-xl text-[#312923]">Proveedores Convenio</h3>
+                            <h3 className="font-black text-xl text-[#241F1B]">Proveedores Convenio</h3>
                             <div className="flex items-center gap-2">
                                 {providerCities.length > 0 && (
                                     <select
                                         value={cityFilter}
                                         onChange={e => setCityFilter(e.target.value)}
-                                        className="px-3 py-2 rounded-xl border border-[#DFD2C4] bg-white text-[11px] font-bold text-[#312923] outline-none"
+                                        className="px-3 py-2 rounded-xl border border-[#D9D2C7] bg-white text-[11px] font-bold text-[#241F1B] outline-none"
                                     >
                                         <option value="">Todas las ciudades</option>
                                         {providerCities.map(city => <option key={city} value={city}>{city}</option>)}
@@ -436,27 +436,27 @@ export default function MasterPanel({ supabase, notify, session }) {
                                 )}
                                 <button
                                     onClick={() => { setEditingProvider({ name: '', phone: '', email: '', city: '' }); setShowProviderFormModal(true); }}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-[#312923] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black transition-all"
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-[#241F1B] text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-black transition-all"
                                 >
                                     <Plus size={14} /> Nuevo Proveedor
                                 </button>
                             </div>
                         </div>
                         {filteredProviders.length === 0 ? (
-                            <Card className="p-12 text-center bg-white border border-[#DFD2C4]/60">
-                                <Truck size={36} className="mx-auto mb-3 text-[#9A8F84] opacity-30" />
-                                <p className="font-bold text-[#9A8F84]">{cityFilter ? `No hay proveedores en ${cityFilter}` : 'No hay proveedores registrados aún'}</p>
+                            <Card className="p-12 text-center bg-white border border-[#D9D2C7]/60">
+                                <Truck size={36} className="mx-auto mb-3 text-[#5E554E] opacity-30" />
+                                <p className="font-bold text-[#5E554E]">{cityFilter ? `No hay proveedores en ${cityFilter}` : 'No hay proveedores registrados aún'}</p>
                             </Card>
                         ) : (
                             <div className="space-y-3">
                                 {filteredProviders.map(provider => (
-                                    <Card key={provider.id} className="p-4 bg-white border border-[#DFD2C4]/60">
+                                    <Card key={provider.id} className="p-4 bg-white border border-[#D9D2C7]/60">
                                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">
-                                                    <p className="font-black text-[#312923]">{provider.name}</p>
+                                                    <p className="font-black text-[#241F1B]">{provider.name}</p>
                                                     {provider.city && (
-                                                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20">{provider.city}</span>
+                                                        <span className="text-[11px] font-black uppercase px-2 py-0.5 rounded-md bg-[#46523C]/10 text-[#46523C] border border-[#46523C]/20">{provider.city}</span>
                                                     )}
                                                 </div>
                                                 <div className="flex flex-col gap-1 mt-2">
@@ -474,11 +474,11 @@ export default function MasterPanel({ supabase, notify, session }) {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {provider.phone && (
-                                                    <button onClick={() => window.open(`https://wa.me/${provider.phone.replace(/[^0-9]/g, '')}`, '_blank')} className="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-600 transition-all">
+                                                    <button onClick={() => window.open(`https://wa.me/${provider.phone.replace(/[^0-9]/g, '')}`, '_blank')} className="px-4 py-2 bg-emerald-500 text-white text-[11px] font-black uppercase rounded-lg hover:bg-emerald-600 transition-all">
                                                         WhatsApp
                                                     </button>
                                                 )}
-                                                <button onClick={() => { setEditingProvider(provider); setShowProviderFormModal(true); }} className="p-2 bg-[#5B6651]/10 text-[#5B6651] rounded-lg hover:bg-[#5B6651]/20 transition-all" title="Editar">
+                                                <button onClick={() => { setEditingProvider(provider); setShowProviderFormModal(true); }} className="p-2 bg-[#46523C]/10 text-[#46523C] rounded-lg hover:bg-[#46523C]/20 transition-all" title="Editar">
                                                     <Building2 size={14} />
                                                 </button>
                                                 <button onClick={() => handleDeleteProvider(provider.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-all" title="Eliminar">
@@ -500,21 +500,21 @@ export default function MasterPanel({ supabase, notify, session }) {
                     <Card className="w-full max-w-2xl p-6 bg-white rounded-2xl">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h3 className="font-black text-xl text-[#312923]">Orden #{selectedOrder.id}</h3>
-                                <p className="text-xs font-bold text-[#9A8F84]">{new Date(selectedOrder.created_at).toLocaleDateString('es-CL')}</p>
+                                <h3 className="font-black text-xl text-[#241F1B]">Orden #{selectedOrder.id}</h3>
+                                <p className="text-xs font-bold text-[#5E554E]">{new Date(selectedOrder.created_at).toLocaleDateString('es-CL')}</p>
                             </div>
-                            <button onClick={() => setShowOrderDetails(false)} className="text-[#9A8F84] hover:text-[#312923]">✕</button>
+                            <button onClick={() => setShowOrderDetails(false)} className="text-[#5E554E] hover:text-[#241F1B]">✕</button>
                         </div>
 
                         <div className="space-y-3 mb-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-[10px] font-black uppercase text-[#9A8F84]">Clínica</p>
-                                    <p className="font-bold text-[#312923]">{selectedOrder.admin_email}</p>
+                                    <p className="text-[11px] font-black uppercase text-[#5E554E]">Clínica</p>
+                                    <p className="font-bold text-[#241F1B]">{selectedOrder.admin_email}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase text-[#9A8F84]">Estado</p>
-                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border inline-block ${
+                                    <p className="text-[11px] font-black uppercase text-[#5E554E]">Estado</p>
+                                    <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-md border inline-block ${
                                         selectedOrder.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
                                         selectedOrder.status === 'shipped' ? 'bg-blue-50 text-blue-600 border-blue-200' :
                                         'bg-emerald-50 text-emerald-600 border-emerald-200'
@@ -523,19 +523,19 @@ export default function MasterPanel({ supabase, notify, session }) {
                                     </span>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase text-[#9A8F84]">Producto</p>
-                                    <p className="font-bold text-[#312923]">{selectedOrder.order_details?.item_name}</p>
+                                    <p className="text-[11px] font-black uppercase text-[#5E554E]">Producto</p>
+                                    <p className="font-bold text-[#241F1B]">{selectedOrder.order_details?.item_name}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase text-[#9A8F84]">Cantidad</p>
-                                    <p className="font-bold text-[#312923]">{selectedOrder.order_details?.quantity}</p>
+                                    <p className="text-[11px] font-black uppercase text-[#5E554E]">Cantidad</p>
+                                    <p className="font-bold text-[#241F1B]">{selectedOrder.order_details?.quantity}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase text-[#9A8F84]">Monto Total</p>
-                                    <p className="font-black text-lg text-[#312923]">${Number(selectedOrder.total_amount).toLocaleString('es-CL')}</p>
+                                    <p className="text-[11px] font-black uppercase text-[#5E554E]">Monto Total</p>
+                                    <p className="font-black text-lg text-[#241F1B]">${Number(selectedOrder.total_amount).toLocaleString('es-CL')}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase text-[#9A8F84]">Contacto</p>
+                                    <p className="text-[11px] font-black uppercase text-[#5E554E]">Contacto</p>
                                     <a href={`tel:${selectedOrder.order_details?.phone_contact}`} className="font-bold text-blue-600 hover:underline">{selectedOrder.order_details?.phone_contact}</a>
                                 </div>
                             </div>
@@ -543,19 +543,19 @@ export default function MasterPanel({ supabase, notify, session }) {
 
                         <div className="flex gap-3 flex-wrap">
                             {selectedOrder.status !== 'shipped' && (
-                                <button onClick={() => { updateOrderStatus(selectedOrder.id, 'shipped'); setShowOrderDetails(false); }} className="px-4 py-2 bg-blue-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-blue-600 transition-all">
+                                <button onClick={() => { updateOrderStatus(selectedOrder.id, 'shipped'); setShowOrderDetails(false); }} className="px-4 py-2 bg-blue-500 text-white text-[11px] font-black uppercase rounded-lg hover:bg-blue-600 transition-all">
                                     Marcar Enviado
                                 </button>
                             )}
                             {selectedOrder.status !== 'delivered' && (
-                                <button onClick={() => { updateOrderStatus(selectedOrder.id, 'delivered'); setShowOrderDetails(false); }} className="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-600 transition-all">
+                                <button onClick={() => { updateOrderStatus(selectedOrder.id, 'delivered'); setShowOrderDetails(false); }} className="px-4 py-2 bg-emerald-500 text-white text-[11px] font-black uppercase rounded-lg hover:bg-emerald-600 transition-all">
                                     Marcar Entregado
                                 </button>
                             )}
-                            <button onClick={() => exportOrderAsCSV(selectedOrder)} className="px-4 py-2 bg-[#5B6651] text-white text-[10px] font-black uppercase rounded-lg hover:bg-[#4a5442] transition-all">
+                            <button onClick={() => exportOrderAsCSV(selectedOrder)} className="px-4 py-2 bg-[#46523C] text-white text-[11px] font-black uppercase rounded-lg hover:bg-[#36402F] transition-all">
                                 Descargar
                             </button>
-                            <button onClick={() => setShowOrderDetails(false)} className="px-4 py-2 bg-[#DFD2C4]/30 text-[#312923] text-[10px] font-black uppercase rounded-lg hover:bg-[#DFD2C4]/50 transition-all">
+                            <button onClick={() => setShowOrderDetails(false)} className="px-4 py-2 bg-[#D9D2C7]/30 text-[#241F1B] text-[11px] font-black uppercase rounded-lg hover:bg-[#D9D2C7]/50 transition-all">
                                 Cerrar
                             </button>
                         </div>
@@ -567,17 +567,17 @@ export default function MasterPanel({ supabase, notify, session }) {
             {showProviderModal && selectedOrder && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <Card className="w-full max-w-md p-6 bg-white rounded-2xl">
-                        <h3 className="font-black text-xl text-[#312923] mb-4">Enviar a Proveedor</h3>
-                        <p className="text-sm font-bold text-[#9A8F84] mb-4">Selecciona el proveedor para enviar los detalles de la orden:</p>
+                        <h3 className="font-black text-xl text-[#241F1B] mb-4">Enviar a Proveedor</h3>
+                        <p className="text-sm font-bold text-[#5E554E] mb-4">Selecciona el proveedor para enviar los detalles de la orden:</p>
                         <div className="space-y-2 mb-6">
                             {providerList.map(provider => (
-                                <button key={provider.id} onClick={() => { sendToProvider(selectedOrder, provider); setShowProviderModal(false); }} className="w-full p-3 text-left border border-[#DFD2C4] rounded-lg hover:bg-[#FDFBF7] transition-all">
-                                    <p className="font-bold text-[#312923]">{provider.name}</p>
-                                    <p className="text-xs font-bold text-[#9A8F84]">{provider.phone}</p>
+                                <button key={provider.id} onClick={() => { sendToProvider(selectedOrder, provider); setShowProviderModal(false); }} className="w-full p-3 text-left border border-[#D9D2C7] rounded-lg hover:bg-[#FBFAF8] transition-all">
+                                    <p className="font-bold text-[#241F1B]">{provider.name}</p>
+                                    <p className="text-xs font-bold text-[#5E554E]">{provider.phone}</p>
                                 </button>
                             ))}
                         </div>
-                        <button onClick={() => setShowProviderModal(false)} className="w-full px-4 py-2 bg-[#DFD2C4]/30 text-[#312923] text-[10px] font-black uppercase rounded-lg hover:bg-[#DFD2C4]/50 transition-all">
+                        <button onClick={() => setShowProviderModal(false)} className="w-full px-4 py-2 bg-[#D9D2C7]/30 text-[#241F1B] text-[11px] font-black uppercase rounded-lg hover:bg-[#D9D2C7]/50 transition-all">
                             Cancelar
                         </button>
                     </Card>
@@ -590,77 +590,77 @@ export default function MasterPanel({ supabase, notify, session }) {
                     <Card className="w-full max-w-lg p-6 bg-white rounded-2xl">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h3 className="font-black text-xl text-[#312923]">{selectedSub.clinic_name}</h3>
-                                <p className="text-xs font-bold text-[#9A8F84]">{selectedSub.clinic_email}</p>
+                                <h3 className="font-black text-xl text-[#241F1B]">{selectedSub.clinic_name}</h3>
+                                <p className="text-xs font-bold text-[#5E554E]">{selectedSub.clinic_email}</p>
                             </div>
-                            <button onClick={() => setShowSubDetail(false)} className="text-[#9A8F84] hover:text-[#312923]">✕</button>
+                            <button onClick={() => setShowSubDetail(false)} className="text-[#5E554E] hover:text-[#241F1B]">✕</button>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Plan</p>
-                                <p className="font-bold text-[#312923]">{selectedSub.plan_type || '—'}</p>
+                                <p className="text-[11px] font-black uppercase text-[#5E554E]">Plan</p>
+                                <p className="font-bold text-[#241F1B]">{selectedSub.plan_type || '—'}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Estado</p>
-                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border inline-block ${selectedSub.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
+                                <p className="text-[11px] font-black uppercase text-[#5E554E]">Estado</p>
+                                <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-md border inline-block ${selectedSub.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
                                     {selectedSub.status === 'active' ? 'Activa' : 'Trial'}
                                 </span>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Valor Mensual</p>
-                                <p className="font-black text-lg text-[#312923]">${Number(selectedSub.monthly_fee || 0).toLocaleString('es-CL')}</p>
+                                <p className="text-[11px] font-black uppercase text-[#5E554E]">Valor Mensual</p>
+                                <p className="font-black text-lg text-[#241F1B]">${Number(selectedSub.monthly_fee || 0).toLocaleString('es-CL')}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Próximo Cobro</p>
-                                <p className="font-bold text-[#312923]">{selectedSub.next_billing_date ? new Date(selectedSub.next_billing_date).toLocaleDateString('es-CL') : '—'}</p>
+                                <p className="text-[11px] font-black uppercase text-[#5E554E]">Próximo Cobro</p>
+                                <p className="font-bold text-[#241F1B]">{selectedSub.next_billing_date ? new Date(selectedSub.next_billing_date).toLocaleDateString('es-CL') : '—'}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Suscrito desde</p>
-                                <p className="font-bold text-[#312923]">{selectedSub.created_at ? new Date(selectedSub.created_at).toLocaleDateString('es-CL') : '—'}</p>
+                                <p className="text-[11px] font-black uppercase text-[#5E554E]">Suscrito desde</p>
+                                <p className="font-bold text-[#241F1B]">{selectedSub.created_at ? new Date(selectedSub.created_at).toLocaleDateString('es-CL') : '—'}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Tiempo como Cliente</p>
-                                <p className="font-bold text-[#312923]">{getTenure(selectedSub.created_at)}</p>
+                                <p className="text-[11px] font-black uppercase text-[#5E554E]">Tiempo como Cliente</p>
+                                <p className="font-bold text-[#241F1B]">{getTenure(selectedSub.created_at)}</p>
                             </div>
                             <div className="col-span-2">
-                                <p className="text-[10px] font-black uppercase text-[#9A8F84]">Contacto</p>
+                                <p className="text-[11px] font-black uppercase text-[#5E554E]">Contacto</p>
                                 {clinicPhones[selectedSub.clinic_email] ? (
                                     <a href={`tel:${clinicPhones[selectedSub.clinic_email]}`} className="font-bold text-blue-600 hover:underline">{clinicPhones[selectedSub.clinic_email]}</a>
                                 ) : (
-                                    <p className="font-bold text-[#9A8F84] text-sm">No registrado</p>
+                                    <p className="font-bold text-[#5E554E] text-sm">No registrado</p>
                                 )}
                             </div>
                         </div>
 
                         <div className="mb-4">
-                            <p className="text-[10px] font-black uppercase text-[#9A8F84] mb-2">Historial de Pagos</p>
+                            <p className="text-[11px] font-black uppercase text-[#5E554E] mb-2">Historial de Pagos</p>
                             {loadingSubPayments ? (
-                                <p className="text-xs font-bold text-[#9A8F84]">Cargando...</p>
+                                <p className="text-xs font-bold text-[#5E554E]">Cargando...</p>
                             ) : subPayments.length === 0 ? (
-                                <div className="bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl p-3">
-                                    <p className="text-[10px] font-bold text-[#9A8F84] leading-relaxed">
+                                <div className="bg-[#FBFAF8] border border-[#D9D2C7]/60 rounded-xl p-3">
+                                    <p className="text-[11px] font-bold text-[#5E554E] leading-relaxed">
                                         Aún no hay cobros recurrentes registrados para esta clínica. En cuanto Mercado Pago confirme el primer pago de la suscripción, aparecerá aquí automáticamente.
                                     </p>
                                 </div>
                             ) : (
                                 <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
                                     {subPayments.map(p => (
-                                        <div key={p.id} className="flex items-center justify-between bg-[#FDFBF7] border border-[#DFD2C4]/50 rounded-xl px-3 py-2">
+                                        <div key={p.id} className="flex items-center justify-between bg-[#FBFAF8] border border-[#D9D2C7]/50 rounded-xl px-3 py-2">
                                             <div>
-                                                <p className="text-xs font-bold text-[#312923]">{p.paid_at ? new Date(p.paid_at).toLocaleDateString('es-CL') : '—'}</p>
-                                                <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-500 border-red-200'}`}>
+                                                <p className="text-xs font-bold text-[#241F1B]">{p.paid_at ? new Date(p.paid_at).toLocaleDateString('es-CL') : '—'}</p>
+                                                <span className={`text-[11px] font-black uppercase px-1.5 py-0.5 rounded-md border ${p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-500 border-red-200'}`}>
                                                     {p.status === 'approved' ? 'Aprobado' : (p.status || '—')}
                                                 </span>
                                             </div>
-                                            <p className="font-black text-[#312923] text-sm">${Number(p.amount || 0).toLocaleString('es-CL')}</p>
+                                            <p className="font-black text-[#241F1B] text-sm">${Number(p.amount || 0).toLocaleString('es-CL')}</p>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        <button onClick={() => setShowSubDetail(false)} className="w-full px-4 py-2 bg-[#DFD2C4]/30 text-[#312923] text-[10px] font-black uppercase rounded-lg hover:bg-[#DFD2C4]/50 transition-all">
+                        <button onClick={() => setShowSubDetail(false)} className="w-full px-4 py-2 bg-[#D9D2C7]/30 text-[#241F1B] text-[11px] font-black uppercase rounded-lg hover:bg-[#D9D2C7]/50 transition-all">
                             Cerrar
                         </button>
                     </Card>
@@ -671,57 +671,57 @@ export default function MasterPanel({ supabase, notify, session }) {
             {showProviderFormModal && editingProvider && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <Card className="w-full max-w-md p-6 bg-white rounded-2xl">
-                        <h3 className="font-black text-xl text-[#312923] mb-4">{editingProvider.id ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h3>
+                        <h3 className="font-black text-xl text-[#241F1B] mb-4">{editingProvider.id ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h3>
                         <div className="space-y-3 mb-6">
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Nombre</label>
+                                <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-1">Nombre</label>
                                 <input
                                     type="text"
                                     value={editingProvider.name}
                                     onChange={e => setEditingProvider({ ...editingProvider, name: e.target.value })}
-                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    className="w-full p-3 rounded-xl border border-[#D9D2C7] bg-[#FBFAF8] text-sm font-bold text-[#241F1B] outline-none focus:border-[#46523C]"
                                     placeholder="Ej: Tienda Dental Centro"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Ciudad</label>
+                                <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-1">Ciudad</label>
                                 <input
                                     type="text"
                                     value={editingProvider.city || ''}
                                     onChange={e => setEditingProvider({ ...editingProvider, city: e.target.value })}
-                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    className="w-full p-3 rounded-xl border border-[#D9D2C7] bg-[#FBFAF8] text-sm font-bold text-[#241F1B] outline-none focus:border-[#46523C]"
                                     placeholder="Ej: Valdivia"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Teléfono</label>
+                                <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-1">Teléfono</label>
                                 <input
                                     type="text"
                                     value={editingProvider.phone || ''}
                                     onChange={e => setEditingProvider({ ...editingProvider, phone: e.target.value })}
-                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    className="w-full p-3 rounded-xl border border-[#D9D2C7] bg-[#FBFAF8] text-sm font-bold text-[#241F1B] outline-none focus:border-[#46523C]"
                                     placeholder="+56912345678"
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1">Correo</label>
+                                <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-1">Correo</label>
                                 <input
                                     type="email"
                                     value={editingProvider.email || ''}
                                     onChange={e => setEditingProvider({ ...editingProvider, email: e.target.value })}
-                                    className="w-full p-3 rounded-xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold text-[#312923] outline-none focus:border-[#5B6651]"
+                                    className="w-full p-3 rounded-xl border border-[#D9D2C7] bg-[#FBFAF8] text-sm font-bold text-[#241F1B] outline-none focus:border-[#46523C]"
                                     placeholder="ventas@proveedor.cl"
                                 />
                             </div>
                         </div>
                         <div className="flex gap-3">
-                            <button onClick={() => { setShowProviderFormModal(false); setEditingProvider(null); }} className="flex-1 px-4 py-2.5 bg-[#DFD2C4]/30 text-[#312923] text-[10px] font-black uppercase rounded-lg hover:bg-[#DFD2C4]/50 transition-all">
+                            <button onClick={() => { setShowProviderFormModal(false); setEditingProvider(null); }} className="flex-1 px-4 py-2.5 bg-[#D9D2C7]/30 text-[#241F1B] text-[11px] font-black uppercase rounded-lg hover:bg-[#D9D2C7]/50 transition-all">
                                 Cancelar
                             </button>
                             <button
                                 onClick={() => handleSaveProvider(editingProvider)}
                                 disabled={!editingProvider.name?.trim()}
-                                className="flex-1 px-4 py-2.5 bg-[#312923] text-white text-[10px] font-black uppercase rounded-lg hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 px-4 py-2.5 bg-[#241F1B] text-white text-[11px] font-black uppercase rounded-lg hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Guardar
                             </button>

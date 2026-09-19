@@ -152,17 +152,17 @@ export default function App() {
       const base = { duration: 3000, style: { padding: '12px 16px', borderRadius: '16px', fontWeight: 'bold', fontSize: '13px' } };
       if (variant === 'error') {
           toast.error(m, { ...base, duration: 4000,
-              style: { ...base.style, background: '#312923', color: '#fff', border: '1px solid #B92323' },
+              style: { ...base.style, background: '#241F1B', color: '#fff', border: '1px solid #B92323' },
               iconTheme: { primary: '#B92323', secondary: '#fff' },
           });
       } else if (variant === 'info') {
           toast(m, { ...base, icon: 'ℹ️',
-              style: { ...base.style, background: '#FDFBF7', color: '#312923', border: '1px solid #DFD2C4' },
+              style: { ...base.style, background: '#FBFAF8', color: '#241F1B', border: '1px solid #D9D2C7' },
           });
       } else {
           toast.success(m, { ...base,
-              style: { ...base.style, background: '#5B6651', color: '#fff' },
-              iconTheme: { primary: '#fff', secondary: '#5B6651' },
+              style: { ...base.style, background: '#46523C', color: '#fff' },
+              iconTheme: { primary: '#fff', secondary: '#46523C' },
           });
       }
   };
@@ -785,7 +785,7 @@ const saveToOfflineVault = async (table, id, data) => {
   
   if (publicClinicId) {
       return (
-          <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans selection:bg-[#CBAAA2] selection:text-white flex flex-col">
+          <div className="min-h-screen bg-[#FBFAF8] text-[#241F1B] font-sans selection:bg-[#D3A9A0] selection:text-white flex flex-col">
               <Toaster position="bottom-center" />
               <PublicBooking clinicId={publicClinicId} supabase={supabase} notify={notify} />
           </div>
@@ -826,28 +826,28 @@ const saveToOfflineVault = async (table, id, data) => {
 
   if (!session && linkError) {
       return (
-          <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl border border-[#DFD2C4] max-w-md w-full p-8 text-center shadow-lg">
+          <div className="min-h-screen bg-[#FBFAF8] flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl border border-[#D9D2C7] max-w-md w-full p-8 text-center shadow-lg">
                   <div className="w-16 h-16 rounded-2xl bg-[#D9A86C]/10 flex items-center justify-center mx-auto mb-4">
                       <Clock size={28} className="text-[#D9A86C]" />
                   </div>
-                  <h1 className="text-2xl font-black text-[#312923] mb-2">
+                  <h1 className="text-2xl font-black text-[#241F1B] mb-2">
                       {linkError.isExpired ? 'Enlace expirado' : 'Enlace inválido'}
                   </h1>
-                  <p className="text-sm text-[#9A8F84] mb-6 leading-relaxed">
+                  <p className="text-sm text-[#5E554E] mb-6 leading-relaxed">
                       {linkError.isExpired
                           ? 'Este enlace ya no es válido. Los enlaces de acceso expiran después de 1 hora por seguridad.'
                           : 'No pudimos validar este enlace. Puede haber sido usado anteriormente o ser inválido.'}
                   </p>
-                  <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-4 mb-6 text-left">
-                      <p className="text-xs font-bold uppercase tracking-widest text-[#9A8F84] mb-2">¿Qué hacer?</p>
-                      <p className="text-sm text-[#312923] leading-relaxed">
+                  <div className="bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl p-4 mb-6 text-left">
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#5E554E] mb-2">¿Qué hacer?</p>
+                      <p className="text-sm text-[#241F1B] leading-relaxed">
                           Si la clínica te invitó, pídele que te <strong>reenvíe la invitación</strong>. Recibirás un email nuevo en unos minutos.
                       </p>
                   </div>
                   <button
                       onClick={() => { setLinkError(null); window.location.reload(); }}
-                      className="w-full py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
+                      className="w-full py-3 bg-[#241F1B] text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
                   >
                       Ir al inicio de sesión
                   </button>
@@ -859,7 +859,7 @@ const saveToOfflineVault = async (table, id, data) => {
   if (!session) {
       if (!showLogin) return <LandingPage onLoginClick={() => setShowLogin(true)} />;
       return (
-          <div className="min-h-screen flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans">
+          <div className="min-h-screen flex bg-[#FBFAF8] text-[#2A2421] transition-all duration-500 font-sans">
               <button onClick={() => setShowLogin(false)} className="absolute top-6 left-6 z-50 text-[#5C544D] hover:text-[#2A2421] flex items-center gap-2 font-bold text-sm transition-colors bg-white px-4 py-2 rounded-xl shadow-sm border border-stone-200">
                   <ArrowLeft size={16}/> Volver al inicio
               </button>
@@ -871,7 +871,7 @@ const saveToOfflineVault = async (table, id, data) => {
   // --- MAGIA: INTERCEPTAMOS AL LABORATORIO ---
   if (userRole === 'lab') {
       return (
-          <div className="min-h-screen bg-[#FDFBF7] text-[#312923] font-sans">
+          <div className="min-h-screen bg-[#FBFAF8] text-[#241F1B] font-sans">
               <Toaster position="bottom-center" />
               <main className="p-6 md:p-10 h-screen overflow-y-auto">
                   <Suspense fallback={<LoadingScreen />}>
@@ -893,7 +893,7 @@ const saveToOfflineVault = async (table, id, data) => {
   const isWorkspaceActive = (activeTab === 'ficha' && selectedPatientId !== null) || activeTab === 'agenda';
 
   return (
-    <div className="h-full flex bg-[#FDFBF7] text-[#2A2421] transition-all duration-500 font-sans overflow-hidden">
+    <div className="h-full flex bg-[#FBFAF8] text-[#2A2421] transition-all duration-500 font-sans overflow-hidden">
       <Toaster position="bottom-center" reverseOrder={false} />
       
       {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-[#2A2421]/30 backdrop-blur-sm md:hidden" onClick={()=>setMobileMenuOpen(false)}></div>}

@@ -35,7 +35,7 @@ export default function OdontogramTab({
 
     // --- HERRAMIENTAS ---
     const tools = [
-        { id: 'pointer', label: 'Ver Detalle', icon: MousePointer2, color: 'text-[#5B6651]' },
+        { id: 'pointer', label: 'Ver Detalle', icon: MousePointer2, color: 'text-[#46523C]' },
         { id: 'caries', label: 'Caries', dot: 'bg-red-500', isFace: true },
         { id: 'filled', label: 'Resina', dot: 'bg-blue-400', isFace: true },
         { id: 'sealant', label: 'Sellante', icon: Shield, color: 'text-emerald-500', isFace: true },
@@ -44,13 +44,13 @@ export default function OdontogramTab({
         { id: 'crown', label: 'Corona', icon: Circle, color: 'text-amber-400' },
         { id: 'implant', label: 'Implante', icon: ArrowDown, color: 'text-gray-500' },
         { id: 'extract', label: 'Ind. Extracción', icon: Scissors, color: 'text-red-500' },
-        { id: 'missing', label: 'Ausente', icon: X, color: 'text-[#9A8F84]' },
+        { id: 'missing', label: 'Ausente', icon: X, color: 'text-[#5E554E]' },
         { id: 'sano', label: 'Sano / Limpiar', icon: Check, color: 'text-emerald-400' },
         { id: 'extrusion', label: 'Extrusión', icon: ArrowUp, color: 'text-cyan-500' },
         { id: 'intrusion', label: 'Intrusión', icon: ArrowDown, color: 'text-cyan-500' },
         { id: 'mesioversion', label: 'Mesioversión', icon: ArrowLeft, color: 'text-purple-500' },
         { id: 'distoversion', label: 'Distoversión', icon: ArrowRight, color: 'text-purple-500' },
-        { id: 'diastema', label: 'Diastema', icon: ArrowLeftRight, color: 'text-[#9A8F84]' },
+        { id: 'diastema', label: 'Diastema', icon: ArrowLeftRight, color: 'text-[#5E554E]' },
     ];
 
     // --- CLICK EN DIENTE ---
@@ -163,7 +163,7 @@ export default function OdontogramTab({
     // --- CASILLA INDIVIDUAL DEL ODONTOGRAMA (recuadro rellenable, sin diente dibujado) ---
     const OdontogramCell = ({ n, edgeLabelTop, edgeLabelBottom }) => (
         <div className={`flex flex-col items-center group transition-transform relative pt-4 pb-4 ${!viewingSnapshotId ? 'cursor-pointer hover:scale-105' : ''}`}>
-            <span className="absolute top-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">{edgeLabelTop}</span>
+            <span className="absolute top-0 text-[11px] font-black text-[#5E554E] opacity-40 group-hover:opacity-100 transition-opacity">{edgeLabelTop}</span>
             <ToothSVG
                 number={n}
                 faces={activeTeethData[n]?.faces}
@@ -172,7 +172,7 @@ export default function OdontogramTab({
                 interactive={!viewingSnapshotId}
                 onFaceClick={(face) => handleToothClick(n, face)}
             />
-            <span className="absolute bottom-0 text-[8px] font-black text-[#9A8F84] opacity-40 group-hover:opacity-100 transition-opacity">{edgeLabelBottom}</span>
+            <span className="absolute bottom-0 text-[11px] font-black text-[#5E554E] opacity-40 group-hover:opacity-100 transition-opacity">{edgeLabelBottom}</span>
         </div>
     );
 
@@ -181,19 +181,19 @@ export default function OdontogramTab({
             
             {/* CONTROLES SUPERIORES */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
-                <div className="flex bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4] shadow-sm w-full md:w-auto">
-                    <button onClick={() => {setOdontogramMode('hallazgos'); setViewingSnapshotId(null);}} className={`flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${odontogramMode === 'hallazgos' ? 'bg-[#5B6651] text-white shadow-md' : 'text-[#9A8F84] hover:text-[#5B6651]'}`}>
+                <div className="flex bg-[#FBFAF8] p-1.5 rounded-2xl border border-[#D9D2C7] shadow-sm w-full md:w-auto">
+                    <button onClick={() => {setOdontogramMode('hallazgos'); setViewingSnapshotId(null);}} className={`flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${odontogramMode === 'hallazgos' ? 'bg-[#46523C] text-white shadow-md' : 'text-[#5E554E] hover:text-[#46523C]'}`}>
                         <Search size={14}/> Diagnóstico
                     </button>
-                    <button onClick={() => {setOdontogramMode('tratamientos'); setViewingSnapshotId(null);}} className={`flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${odontogramMode === 'tratamientos' ? 'bg-[#CBAAA2] text-white shadow-md' : 'text-[#9A8F84] hover:text-[#CBAAA2]'}`}>
+                    <button onClick={() => {setOdontogramMode('tratamientos'); setViewingSnapshotId(null);}} className={`flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${odontogramMode === 'tratamientos' ? 'bg-[#D3A9A0] text-white shadow-md' : 'text-[#5E554E] hover:text-[#D3A9A0]'}`}>
                         <PenTool size={14}/> Plan
                     </button>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex bg-white p-1.5 rounded-2xl border border-[#DFD2C4]/60 shadow-sm w-full md:w-auto">
+                    <div className="flex bg-white p-1.5 rounded-2xl border border-[#D9D2C7]/60 shadow-sm w-full md:w-auto">
                         {['adulto', 'pediatrico', 'mixto'].map((type) => (
-                            <button key={type} disabled={!!viewingSnapshotId} onClick={() => setOdontogramType(type)} className={`flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${odontogramType === type ? 'bg-[#FDFBF7] text-[#312923] border border-[#DFD2C4] shadow-sm' : 'text-[#9A8F84] hover:text-[#312923]'} ${viewingSnapshotId ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <button key={type} disabled={!!viewingSnapshotId} onClick={() => setOdontogramType(type)} className={`flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${odontogramType === type ? 'bg-[#FBFAF8] text-[#241F1B] border border-[#D9D2C7] shadow-sm' : 'text-[#5E554E] hover:text-[#241F1B]'} ${viewingSnapshotId ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                 {type}
                             </button>
                         ))}
@@ -213,7 +213,7 @@ export default function OdontogramTab({
                     </div>
                     <button 
                         onClick={() => setViewingSnapshotId(null)} 
-                        className="px-4 py-2 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-amber-600 transition-all"
+                        className="px-4 py-2 bg-amber-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-amber-600 transition-all"
                     >
                         Volver al Presente
                     </button>
@@ -221,8 +221,8 @@ export default function OdontogramTab({
             )}
 
             {/* TOOLBAR SUPERIOR HORIZONTAL (Deshabilitado en modo historia) */}
-            <div className={`w-full bg-white p-3 rounded-[1.5rem] border border-[#DFD2C4]/60 shadow-sm flex flex-wrap items-center justify-center gap-2 relative z-10 transition-opacity ${viewingSnapshotId ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                <span className="text-[9px] font-black text-[#9A8F84] uppercase tracking-widest mr-2 hidden xl:block">Herramientas:</span>
+            <div className={`w-full bg-white p-3 rounded-[1.5rem] border border-[#D9D2C7]/60 shadow-sm flex flex-wrap items-center justify-center gap-2 relative z-10 transition-opacity ${viewingSnapshotId ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                <span className="text-[11px] font-black text-[#5E554E] uppercase tracking-widest mr-2 hidden xl:block">Herramientas:</span>
                 
                 {tools.map(tool => (
                     <button 
@@ -230,22 +230,22 @@ export default function OdontogramTab({
                         onClick={() => setActiveTool(tool.id)}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all whitespace-nowrap ${
                             activeTool === tool.id 
-                            ? 'bg-[#5B6651] text-white shadow-md transform scale-105' 
-                            : 'bg-[#FDFBF7] text-[#6B615A] hover:bg-white border border-[#DFD2C4]/50 hover:border-[#DFD2C4] hover:shadow-sm'
+                            ? 'bg-[#46523C] text-white shadow-md transform scale-105' 
+                            : 'bg-[#FBFAF8] text-[#5E554E] hover:bg-white border border-[#D9D2C7]/50 hover:border-[#D9D2C7] hover:shadow-sm'
                         }`}
                     >
                         <div className="flex justify-center shrink-0">
                             {tool.icon && <tool.icon size={14} className={activeTool === tool.id ? 'text-white' : tool.color} />}
                             {tool.dot && <div className={`w-2.5 h-2.5 rounded-full ${tool.dot} ${activeTool === tool.id ? 'border border-white/50' : ''}`}></div>}
                         </div>
-                        <span className="text-[10px] font-bold">{tool.label}</span>
+                        <span className="text-[11px] font-bold">{tool.label}</span>
                     </button>
                 ))}
             </div>
 
             {/* LIENZO DEL ODONTOGRAMA */}
             <Card 
-                className="w-full flex flex-col items-center gap-8 py-10 bg-white border-[#DFD2C4]/40 shadow-sm overflow-x-auto relative"
+                className="w-full flex flex-col items-center gap-8 py-10 bg-white border-[#D9D2C7]/40 shadow-sm overflow-x-auto relative"
                 style={{ ...hideScrollStyles, boxShadow: 'inset 0 10px 30px -5px rgba(91,102,81,0.03)' }}
             >
                 <div className="flex flex-col items-center gap-8 w-max px-4 pt-4" style={hideScrollStyles}>
@@ -261,18 +261,18 @@ export default function OdontogramTab({
                     
                     {/* Superior Pediátrico */}
                     {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
-                        <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-6 rounded-[2.5rem] border border-[#CBAAA2]/20 w-max mx-auto">
+                        <div className="flex gap-2 flex-nowrap justify-center bg-[#D3A9A0]/5 p-6 rounded-[2.5rem] border border-[#D3A9A0]/20 w-max mx-auto">
                             {TEETH_UPPER_PED.map(n => (
                                 <OdontogramCell key={n} n={n} edgeLabelTop="V" edgeLabelBottom="P" />
                             ))}
                         </div>
                     )}
 
-                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#DFD2C4] to-transparent my-2"></div>
+                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#D9D2C7] to-transparent my-2"></div>
 
                     {/* Inferior Pediátrico */}
                     {(odontogramType === 'pediatrico' || odontogramType === 'mixto') && (
-                        <div className="flex gap-2 flex-nowrap justify-center bg-[#CBAAA2]/5 p-6 rounded-[2.5rem] border border-[#CBAAA2]/20 w-max mx-auto">
+                        <div className="flex gap-2 flex-nowrap justify-center bg-[#D3A9A0]/5 p-6 rounded-[2.5rem] border border-[#D3A9A0]/20 w-max mx-auto">
                             {TEETH_LOWER_PED.map(n => (
                                 <OdontogramCell key={n} n={n} edgeLabelTop="L" edgeLabelBottom="V" />
                             ))}
@@ -291,21 +291,21 @@ export default function OdontogramTab({
             </Card>
 
             {/* --- PANEL DE HISTORIAL EVOLUTIVO (LA MÁQUINA DEL TIEMPO) --- */}
-            <div className="w-full bg-[#FDFBF7] p-5 rounded-[2rem] border border-[#DFD2C4]/60 shadow-inner flex flex-col md:flex-row gap-6">
+            <div className="w-full bg-[#FBFAF8] p-5 rounded-[2rem] border border-[#D9D2C7]/60 shadow-inner flex flex-col md:flex-row gap-6">
                 
                 <div className="flex flex-col items-start gap-3 w-full md:w-1/3">
                     <div>
-                        <h3 className="text-sm font-black text-[#312923] flex items-center gap-2">
-                            <History size={16} className="text-[#CBAAA2]" />
+                        <h3 className="text-sm font-black text-[#241F1B] flex items-center gap-2">
+                            <History size={16} className="text-[#D3A9A0]" />
                             Historial del Odontograma
                         </h3>
-                        <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest mt-1">Línea de tiempo clínica</p>
+                        <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest mt-1">Línea de tiempo clínica</p>
                     </div>
                     
                     <button 
                         onClick={handleTakeSnapshot}
                         disabled={!!viewingSnapshotId}
-                        className={`w-full py-3 flex items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewingSnapshotId ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#CBAAA2] text-white hover:bg-[#b09088] shadow-md shadow-[#CBAAA2]/20 hover:-translate-y-0.5'}`}
+                        className={`w-full py-3 flex items-center justify-center gap-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${viewingSnapshotId ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D3A9A0] text-white hover:bg-[#b09088] shadow-md shadow-[#D3A9A0]/20 hover:-translate-y-0.5'}`}
                     >
                         <Camera size={16}/> Guardar Foto Actual
                     </button>
@@ -313,7 +313,7 @@ export default function OdontogramTab({
 
                 <div className="flex-1 flex gap-3 overflow-x-auto custom-scrollbar pb-2 items-center">
                     {historicalSnapshots.length === 0 ? (
-                        <p className="text-xs font-bold text-[#9A8F84] italic mx-auto opacity-60">No hay registros históricos guardados aún.</p>
+                        <p className="text-xs font-bold text-[#5E554E] italic mx-auto opacity-60">No hay registros históricos guardados aún.</p>
                     ) : (
                         historicalSnapshots.map(snap => (
                             <div 
@@ -322,11 +322,11 @@ export default function OdontogramTab({
                                 className={`shrink-0 w-48 p-4 rounded-2xl border cursor-pointer transition-all ${
                                     viewingSnapshotId === snap.id 
                                     ? 'bg-amber-50 border-amber-300 shadow-md transform scale-105' 
-                                    : 'bg-white border-[#DFD2C4]/50 hover:border-[#CBAAA2] hover:shadow-sm'
+                                    : 'bg-white border-[#D9D2C7]/50 hover:border-[#D3A9A0] hover:shadow-sm'
                                 }`}
                             >
-                                <p className="text-[11px] font-black text-[#312923] mb-1 leading-tight">{snap.date}</p>
-                                <p className="text-[9px] font-bold text-[#9A8F84] uppercase tracking-widest">Odontograma: {snap.type}</p>
+                                <p className="text-[11px] font-black text-[#241F1B] mb-1 leading-tight">{snap.date}</p>
+                                <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest">Odontograma: {snap.type}</p>
                                 
                             </div>
                         ))
@@ -336,10 +336,10 @@ export default function OdontogramTab({
 
             {/* LISTA DE RESUMEN Y ACCIÓN */}
             <div className="w-full mt-2 space-y-4">
-                <div className="flex justify-between items-end border-b border-[#DFD2C4] pb-4">
+                <div className="flex justify-between items-end border-b border-[#D9D2C7] pb-4">
                     <div>
-                        <h3 className="text-xl font-black text-[#312923] tracking-tight">Registro de Hallazgos {viewingSnapshotId ? '(Histórico)' : ''}</h3>
-                        <p className="text-[10px] font-bold text-[#9A8F84] mt-1 uppercase tracking-widest">Resumen detallado de la pieza dental</p>
+                        <h3 className="text-xl font-black text-[#241F1B] tracking-tight">Registro de Hallazgos {viewingSnapshotId ? '(Histórico)' : ''}</h3>
+                        <p className="text-[11px] font-bold text-[#5E554E] mt-1 uppercase tracking-widest">Resumen detallado de la pieza dental</p>
                     </div>
                     {/* El botón de cotizar desaparece si estamos viendo el pasado */}
                     {(userRole === 'admin' || userRole === 'dentist') && !viewingSnapshotId && (
@@ -385,7 +385,7 @@ export default function OdontogramTab({
                                 setActiveTab('quote');
                                 setSessionData({...sessionData, patientName: patient.personal?.legalName || patient.name, patientId: selectedPatientId});
                             }} 
-                            className="flex items-center gap-2 px-6 py-3 bg-[#5B6651] text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-lg shadow-[#5B6651]/20 hover:-translate-y-0.5 transition-all"
+                            className="flex items-center gap-2 px-6 py-3 bg-[#46523C] text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-lg shadow-[#46523C]/20 hover:-translate-y-0.5 transition-all"
                         >
                             <LayoutGrid size={16}/> Generar Presupuesto
                         </button>
@@ -428,20 +428,20 @@ export default function OdontogramTab({
                         if (hasContent) {
                             return (
                                 <div key={n} onClick={() => { if(!viewingSnapshotId) { setToothModalData({ id: n, mode: odontogramMode, ...toothData, faces: toothData.faces || { v: null, l: null, m: null, d: null, o: null }, treatment: toothData.treatment || { name: '', status: 'planned' } }); setModal('tooth'); } }} 
-                                     className={`group flex gap-4 p-4 bg-white rounded-2xl border border-[#DFD2C4]/60 transition-all shadow-sm ${!viewingSnapshotId ? 'cursor-pointer hover:border-[#5B6651] hover:shadow-md' : 'opacity-80'}`}>
-                                    <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center font-black text-lg transition-colors ${n > 50 ? 'bg-[#CBAAA2]/20 text-[#CBAAA2]' : 'bg-[#5B6651]/10 text-[#5B6651] group-hover:bg-[#5B6651] group-hover:text-white'}`}>
+                                     className={`group flex gap-4 p-4 bg-white rounded-2xl border border-[#D9D2C7]/60 transition-all shadow-sm ${!viewingSnapshotId ? 'cursor-pointer hover:border-[#46523C] hover:shadow-md' : 'opacity-80'}`}>
+                                    <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center font-black text-lg transition-colors ${n > 50 ? 'bg-[#D3A9A0]/20 text-[#D3A9A0]' : 'bg-[#46523C]/10 text-[#46523C] group-hover:bg-[#46523C] group-hover:text-white'}`}>
                                         {n}
                                     </div>
                                     <div className="flex-1 space-y-2">
-                                        <p className="text-sm font-bold text-[#312923]">
+                                        <p className="text-sm font-bold text-[#241F1B]">
                                             {renderStatuses()}
                                             {toothData.faces && Object.values(toothData.faces).some(v=>v) && (
-                                               <span className="text-[#CBAAA2] ml-2 text-xs">
+                                               <span className="text-[#D3A9A0] ml-2 text-xs">
                                                   (Caras: {Object.entries(toothData.faces).filter(([k,v]) => v).map(([k]) => k.toUpperCase()).join(', ')})
                                                </span>
                                             )}
                                         </p>
-                                        {toothData.treatment?.name && <p className="text-xs font-medium text-[#6B615A] border-l-2 border-[#DFD2C4] pl-2">{toothData.treatment.name}</p>}
+                                        {toothData.treatment?.name && <p className="text-xs font-medium text-[#5E554E] border-l-2 border-[#D9D2C7] pl-2">{toothData.treatment.name}</p>}
                                     </div>
                                 </div>
                             );

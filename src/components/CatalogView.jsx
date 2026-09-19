@@ -138,20 +138,20 @@ export default function CatalogView({
         <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
             
             {/* --- ENCABEZADO BOUTIQUE --- */}
-            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#DFD2C4]/50 shrink-0">
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#D9D2C7]/50 shrink-0">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        <Library size={14} className="text-[#A3968B]"/>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Gestión Comercial</p>
+                        <Library size={14} className="text-[#8A7F74]"/>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Gestión Comercial</p>
                     </div>
-                    <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Arancel de Prestaciones</h2>
-                    <p className="text-xs font-bold text-[#9A8F84] mt-1">{catalog.length} tratamiento{catalog.length !== 1 ? 's' : ''} registrado{catalog.length !== 1 ? 's' : ''}</p>
+                    <h2 className="text-4xl font-black text-[#241F1B] tracking-tighter">Arancel de Prestaciones</h2>
+                    <p className="text-xs font-bold text-[#5E554E] mt-1">{catalog.length} tratamiento{catalog.length !== 1 ? 's' : ''} registrado{catalog.length !== 1 ? 's' : ''}</p>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                     {/* Botón Descargar Plantilla */}
                     <button
                         onClick={downloadTemplate}
-                        className="flex items-center gap-2 px-4 py-3 bg-[#FDFBF7] border border-[#DFD2C4] text-[#6B615A] font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-[#DFD2C4]/30 transition-all"
+                        className="flex items-center gap-2 px-4 py-3 bg-[#FBFAF8] border border-[#D9D2C7] text-[#5E554E] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#D9D2C7]/30 transition-all"
                         title="Descargar plantilla Excel para importar aranceles"
                     >
                         <Download size={14}/> Plantilla Excel
@@ -159,7 +159,7 @@ export default function CatalogView({
                     {/* Botón Importar desde Excel */}
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 px-4 py-3 bg-[#5B6651]/10 border border-[#5B6651]/30 text-[#5B6651] font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-[#5B6651]/20 transition-all"
+                        className="flex items-center gap-2 px-4 py-3 bg-[#46523C]/10 border border-[#46523C]/30 text-[#46523C] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#46523C]/20 transition-all"
                     >
                         <FileSpreadsheet size={14}/> Importar Excel
                     </button>
@@ -167,7 +167,7 @@ export default function CatalogView({
                     {/* Botón Nuevo Tratamiento */}
                     <button 
                         onClick={() => { setNewCatalogItem({name:'', price:'', category:'Examen', id:null}); setModal('catalogItem'); }}
-                        className="flex items-center gap-2 px-6 py-3.5 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#312923]/20 hover:-translate-y-0.5"
+                        className="flex items-center gap-2 px-6 py-3.5 bg-[#241F1B] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#1a1512] transition-all shadow-lg shadow-[#241F1B]/20 hover:-translate-y-0.5"
                     >
                         <Plus size={16}/> Nuevo Tratamiento
                     </button>
@@ -176,51 +176,51 @@ export default function CatalogView({
 
             {/* --- MODAL DE PREVISUALIZACIÓN DE IMPORTACIÓN --- */}
             {importPreview && (
-                <div className="fixed inset-0 z-50 bg-[#312923]/60 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 bg-[#241F1B]/60 flex items-center justify-center p-4">
                     <div className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
                         {/* Header */}
-                        <div className="flex justify-between items-start p-6 border-b border-[#DFD2C4]/50">
+                        <div className="flex justify-between items-start p-6 border-b border-[#D9D2C7]/50">
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <FileSpreadsheet size={18} className="text-[#5B6651]" />
-                                    <h3 className="text-xl font-black text-[#312923]">Vista Previa de Importación</h3>
+                                    <FileSpreadsheet size={18} className="text-[#46523C]" />
+                                    <h3 className="text-xl font-black text-[#241F1B]">Vista Previa de Importación</h3>
                                 </div>
-                                <p className="text-xs font-bold text-[#9A8F84]">{importPreview.fileName} · {importPreview.items.length} tratamientos detectados</p>
+                                <p className="text-xs font-bold text-[#5E554E]">{importPreview.fileName} · {importPreview.items.length} tratamientos detectados</p>
                             </div>
-                            <button onClick={() => setImportPreview(null)} className="p-2 rounded-xl text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] transition-all"><X size={18}/></button>
+                            <button onClick={() => setImportPreview(null)} className="p-2 rounded-xl text-[#5E554E] hover:text-[#241F1B] hover:bg-[#FBFAF8] transition-all"><X size={18}/></button>
                         </div>
                         {/* Errores */}
                         {importPreview.errors.length > 0 && (
                             <div className="mx-6 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl">
                                 <div className="flex items-center gap-2 mb-1">
                                     <AlertCircle size={14} className="text-amber-600" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">{importPreview.errors.length} filas omitidas</span>
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-amber-700">{importPreview.errors.length} filas omitidas</span>
                                 </div>
-                                {importPreview.errors.slice(0, 3).map((e, i) => <p key={i} className="text-[10px] font-bold text-amber-600">{e}</p>)}
+                                {importPreview.errors.slice(0, 3).map((e, i) => <p key={i} className="text-[11px] font-bold text-amber-600">{e}</p>)}
                             </div>
                         )}
                         {/* Lista de items */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2">
                             {importPreview.items.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between p-3 bg-[#FDFBF7] rounded-xl border border-[#DFD2C4]/50">
+                                <div key={i} className="flex items-center justify-between p-3 bg-[#FBFAF8] rounded-xl border border-[#D9D2C7]/50">
                                     <div className="flex items-center gap-3">
-                                        <CheckCircle size={14} className="text-[#5B6651] shrink-0" />
+                                        <CheckCircle size={14} className="text-[#46523C] shrink-0" />
                                         <div>
-                                            <p className="text-sm font-bold text-[#312923]">{item.name}</p>
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-white px-2 py-0.5 rounded-md border border-[#DFD2C4]/40">{item.category}</span>
+                                            <p className="text-sm font-bold text-[#241F1B]">{item.name}</p>
+                                            <span className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] bg-white px-2 py-0.5 rounded-md border border-[#D9D2C7]/40">{item.category}</span>
                                         </div>
                                     </div>
-                                    <span className="font-black text-[#5B6651] text-base">${Number(item.price).toLocaleString()}</span>
+                                    <span className="font-black text-[#46523C] text-base">${Number(item.price).toLocaleString()}</span>
                                 </div>
                             ))}
                         </div>
                         {/* Acciones */}
-                        <div className="p-6 border-t border-[#DFD2C4]/50 flex gap-3">
-                            <button onClick={() => setImportPreview(null)} className="flex-1 py-3 border border-[#DFD2C4] rounded-2xl font-black text-sm text-[#312923] hover:bg-[#FDFBF7] transition-colors">Cancelar</button>
+                        <div className="p-6 border-t border-[#D9D2C7]/50 flex gap-3">
+                            <button onClick={() => setImportPreview(null)} className="flex-1 py-3 border border-[#D9D2C7] rounded-2xl font-black text-sm text-[#241F1B] hover:bg-[#FBFAF8] transition-colors">Cancelar</button>
                             <button
                                 onClick={confirmImport}
                                 disabled={importing}
-                                className="flex-1 py-3 bg-[#5B6651] text-white font-black text-sm rounded-2xl hover:bg-[#4a5442] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="flex-1 py-3 bg-[#46523C] text-white font-black text-sm rounded-2xl hover:bg-[#36402F] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {importing ? 'Importando...' : <><Upload size={16}/> Confirmar Importación ({importPreview.items.length} ítems)</>}
                             </button>
@@ -261,13 +261,13 @@ export default function CatalogView({
             {catalog.length > 0 && (
                 <div className="space-y-4 shrink-0">
                     <div className="relative">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#A3968B]" size={20}/>
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#8A7F74]" size={20}/>
                         <input 
                             type="text" 
                             placeholder="Buscar tratamiento por nombre..." 
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full p-4 pl-14 rounded-2xl bg-white border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors shadow-sm"
+                            className="w-full p-4 pl-14 rounded-2xl bg-white border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors shadow-sm"
                         />
                     </div>
                     
@@ -276,10 +276,10 @@ export default function CatalogView({
                             <button 
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
-                                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all shadow-sm border ${
+                                className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all shadow-sm border ${
                                     activeCategory === cat 
-                                    ? 'bg-[#5B6651] text-white border-[#5B6651]' 
-                                    : 'bg-[#FDFBF7] text-[#9A8F84] border-[#DFD2C4]/60 hover:border-[#A3968B] hover:text-[#312923]'
+                                    ? 'bg-[#46523C] text-white border-[#46523C]' 
+                                    : 'bg-[#FBFAF8] text-[#5E554E] border-[#D9D2C7]/60 hover:border-[#8A7F74] hover:text-[#241F1B]'
                                 }`}
                             >
                                 {cat}
@@ -292,13 +292,13 @@ export default function CatalogView({
             {/* --- LISTA DE TRATAMIENTOS --- */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                 {catalog.length === 0 ? (
-                    <div className="p-12 border border-dashed border-[#DFD2C4] bg-[#FDFBF7]/50 rounded-[2rem] text-center flex flex-col items-center gap-5 mt-4">
-                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-[#DFD2C4]/50 text-[#CBAAA2]">
+                    <div className="p-12 border border-dashed border-[#D9D2C7] bg-[#FBFAF8]/50 rounded-[2rem] text-center flex flex-col items-center gap-5 mt-4">
+                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-[#D9D2C7]/50 text-[#D3A9A0]">
                             <Library size={32} strokeWidth={1.5}/>
                         </div>
                         <div>
-                            <h3 className="font-black text-[#312923] text-2xl tracking-tight">Tu arancel está vacío</h3>
-                            <p className="text-sm text-[#9A8F84] mt-2 font-bold max-w-md mx-auto leading-relaxed">
+                            <h3 className="font-black text-[#241F1B] text-2xl tracking-tight">Tu arancel está vacío</h3>
+                            <p className="text-sm text-[#5E554E] mt-2 font-bold max-w-md mx-auto leading-relaxed">
                                 No pierdas tiempo escribiendo desde cero. Carga un arancel base referencial y luego ajusta los precios a la realidad de tu clínica.
                             </p>
                         </div>
@@ -315,45 +315,45 @@ export default function CatalogView({
                                 setCatalog(newItems);
                                 notify("¡Arancel base cargado con éxito!");
                             }}
-                            className="mt-4 flex items-center gap-2 px-6 py-3.5 bg-[#5B6651] text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-[#4a5442] transition-all shadow-md"
+                            className="mt-4 flex items-center gap-2 px-6 py-3.5 bg-[#46523C] text-white font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-[#36402F] transition-all shadow-md"
                         >
                             <Plus size={16} /> Cargar Arancel Referencial (51 Ítems)
                         </button>
                     </div>
                 ) : filteredCatalog.length === 0 ? (
                     <div className="text-center py-20">
-                        <p className="text-lg font-bold text-[#A3968B]">No se encontraron tratamientos.</p>
-                        <p className="text-xs font-medium text-[#9A8F84] mt-2">Intenta con otra palabra clave o cambia de categoría.</p>
+                        <p className="text-lg font-bold text-[#8A7F74]">No se encontraron tratamientos.</p>
+                        <p className="text-xs font-medium text-[#5E554E] mt-2">Intenta con otra palabra clave o cambia de categoría.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                         {filteredCatalog.sort((a,b)=>a.name.localeCompare(b.name)).map(item => (
-                            <div key={item.id} className="group flex justify-between items-center p-5 bg-white rounded-2xl border border-[#DFD2C4]/50 hover:border-[#A3968B] hover:shadow-md transition-all">
+                            <div key={item.id} className="group flex justify-between items-center p-5 bg-white rounded-2xl border border-[#D9D2C7]/50 hover:border-[#8A7F74] hover:shadow-md transition-all">
                                 <div className="flex-1 pr-4">
-                                    <h4 className="font-black text-[#312923] text-sm md:text-base leading-tight group-hover:text-[#5B6651] transition-colors">{item.name}</h4>
+                                    <h4 className="font-black text-[#241F1B] text-sm md:text-base leading-tight group-hover:text-[#46523C] transition-colors">{item.name}</h4>
                                     <div className="flex items-center gap-1.5 mt-2">
-                                        <Tag size={12} className="text-[#CBAAA2]"/>
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] px-2 py-0.5 rounded-md border border-[#DFD2C4]/40">
+                                        <Tag size={12} className="text-[#D3A9A0]"/>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] bg-[#FBFAF8] px-2 py-0.5 rounded-md border border-[#D9D2C7]/40">
                                             {item.category || 'Otros'}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-5">
                                     <div className="text-right">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] block mb-0.5">Valor</span>
-                                        <span className="font-black text-[#5B6651] text-lg tracking-tighter">${Number(item.price).toLocaleString()}</span>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-0.5">Valor</span>
+                                        <span className="font-black text-[#46523C] text-lg tracking-tighter">${Number(item.price).toLocaleString()}</span>
                                     </div>
-                                    <div className="flex items-center gap-1 border-l border-[#DFD2C4]/50 pl-4">
+                                    <div className="flex items-center gap-1 border-l border-[#D9D2C7]/50 pl-4">
                                         <button 
                                             onClick={() => { setNewCatalogItem({ ...item, category: item.category || 'Otros' }); setModal('catalogItem'); }} 
-                                            className="p-2.5 rounded-xl text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] transition-all"
+                                            className="p-2.5 rounded-xl text-[#5E554E] hover:text-[#241F1B] hover:bg-[#FBFAF8] transition-all"
                                             title="Editar"
                                         >
                                             <Edit3 size={18}/>
                                         </button>
                                         <button
                                             onClick={() => { setItemToDelete(item); setShowConfirmDeleteModal(true); }}
-                                            className="p-2.5 rounded-xl text-[#9A8F84] hover:text-red-500 hover:bg-red-50 transition-all"
+                                            className="p-2.5 rounded-xl text-[#5E554E] hover:text-red-500 hover:bg-red-50 transition-all"
                                             title="Eliminar"
                                         >
                                             <Trash2 size={18}/>

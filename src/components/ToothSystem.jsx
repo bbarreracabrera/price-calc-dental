@@ -116,14 +116,14 @@ export const ToothSVG = ({ number, faces, status, size = 42, interactive = false
         intrusion: { color: '#06b6d4', label: '↓' },
         mesioversion: { color: '#a855f7', label: '←' },
         distoversion: { color: '#a855f7', label: '→' },
-        diastema: { color: '#9A8F84', label: '↔' },
+        diastema: { color: '#5E554E', label: '↔' },
     }[movementStatus] || {};
 
     const Zone = ({ id, points }) => (
         <polygon
             points={points}
             fill={getFaceColor(id)}
-            stroke="#DFD2C4"
+            stroke="#D9D2C7"
             strokeWidth="2.5"
             className={interactive ? 'cursor-pointer hover:opacity-70 transition-opacity' : ''}
             onClick={(e) => {
@@ -141,8 +141,8 @@ export const ToothSVG = ({ number, faces, status, size = 42, interactive = false
                 {/* Marco del recuadro — dorado punteado si tiene corona */}
                 <rect
                     x="2" y="2" width="96" height="96" rx="16"
-                    fill={isMissing ? '#F3F1EC' : '#FDFBF7'}
-                    stroke={isCrown ? '#eab308' : '#312923'}
+                    fill={isMissing ? '#F3F1EC' : '#FBFAF8'}
+                    stroke={isCrown ? '#eab308' : '#241F1B'}
                     strokeWidth={isCrown ? 3 : 2}
                     strokeDasharray={isCrown ? '6 4' : undefined}
                 />
@@ -160,7 +160,7 @@ export const ToothSVG = ({ number, faces, status, size = 42, interactive = false
 
                 {/* Ausente */}
                 {isMissing && (
-                    <g stroke="#9A8F84" strokeWidth="4" strokeLinecap="round">
+                    <g stroke="#5E554E" strokeWidth="4" strokeLinecap="round">
                         <line x1="20" y1="20" x2="80" y2="80" />
                         <line x1="80" y1="20" x2="20" y2="80" />
                     </g>
@@ -192,7 +192,7 @@ export const ToothSVG = ({ number, faces, status, size = 42, interactive = false
                     </g>
                 )}
             </svg>
-            {showNumber && <span className="text-[10px] font-bold mt-1 text-[#312923]">{number}</span>}
+            {showNumber && <span className="text-[11px] font-bold mt-1 text-[#241F1B]">{number}</span>}
         </div>
     );
 };
@@ -273,7 +273,7 @@ export const Tooth = ({ number, status, onClick, isPerioMode, perioData, perioFa
             {/* Badge de movilidad */}
             {mobilityLabel && (
                 <div
-                    className={`absolute left-1/2 -translate-x-1/2 ${isUpper ? '-bottom-4' : '-top-4'} px-1.5 py-[1px] rounded-full text-[8px] font-black text-white shadow-sm`}
+                    className={`absolute left-1/2 -translate-x-1/2 ${isUpper ? '-bottom-4' : '-top-4'} px-1.5 py-[1px] rounded-full text-[11px] font-black text-white shadow-sm`}
                     style={{ backgroundColor: mobilityColor }}
                     title={`Movilidad grado ${mobility}`}
                 >
@@ -287,13 +287,13 @@ export const Tooth = ({ number, status, onClick, isPerioMode, perioData, perioFa
 export const HygieneCell = ({ tooth, data = {}, onChange }) => {
     return (
         <div className="flex flex-col items-center gap-1 p-1">
-            <span className="text-[9px] font-black opacity-40">{tooth}</span>
-            <div className="w-8 h-8 rounded-full border-2 border-[#DFD2C4] relative rotate-45 overflow-hidden bg-white">
+            <span className="text-[11px] font-black opacity-40">{tooth}</span>
+            <div className="w-8 h-8 rounded-full border-2 border-[#D9D2C7] relative rotate-45 overflow-hidden bg-white">
                 <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
-                    <button onClick={() => onChange('v')} className={`border-[0.5px] border-[#DFD2C4] ${data.v ? 'bg-red-500' : 'bg-white'}`} />
-                    <button onClick={() => onChange('m')} className={`border-[0.5px] border-[#DFD2C4] ${data.m ? 'bg-red-500' : 'bg-white'}`} />
-                    <button onClick={() => onChange('d')} className={`border-[0.5px] border-[#DFD2C4] ${data.d ? 'bg-red-500' : 'bg-white'}`} />
-                    <button onClick={() => onChange('l')} className={`border-[0.5px] border-[#DFD2C4] ${data.l ? 'bg-red-500' : 'bg-white'}`} />
+                    <button onClick={() => onChange('v')} className={`border-[0.5px] border-[#D9D2C7] ${data.v ? 'bg-red-500' : 'bg-white'}`} />
+                    <button onClick={() => onChange('m')} className={`border-[0.5px] border-[#D9D2C7] ${data.m ? 'bg-red-500' : 'bg-white'}`} />
+                    <button onClick={() => onChange('d')} className={`border-[0.5px] border-[#D9D2C7] ${data.d ? 'bg-red-500' : 'bg-white'}`} />
+                    <button onClick={() => onChange('l')} className={`border-[0.5px] border-[#D9D2C7] ${data.l ? 'bg-red-500' : 'bg-white'}`} />
                 </div>
             </div>
         </div>

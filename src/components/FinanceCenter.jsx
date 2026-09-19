@@ -147,35 +147,35 @@ export default function FinanceCenter({
         <div className="space-y-8 animate-in fade-in h-full flex flex-col custom-scrollbar pb-10">
             
             {/* --- ENCABEZADO --- */}
-            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#DFD2C4]/50 shrink-0">
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#D9D2C7]/50 shrink-0">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        <Wallet size={14} className="text-[#A3968B]"/>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Contabilidad & Caja</p>
+                        <Wallet size={14} className="text-[#8A7F74]"/>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Contabilidad & Caja</p>
                     </div>
-                    <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Centro Financiero</h2>
+                    <h2 className="text-4xl font-black text-[#241F1B] tracking-tighter">Centro Financiero</h2>
                 </div>
-                <button onClick={exportToExcel} className="flex items-center gap-2 px-5 py-3 bg-white border border-[#DFD2C4] hover:bg-[#FDFBF7] text-[#312923] text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm">
+                <button onClick={exportToExcel} className="flex items-center gap-2 px-5 py-3 bg-white border border-[#D9D2C7] hover:bg-[#FBFAF8] text-[#241F1B] text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm">
                     <FileSpreadsheet size={16}/> Exportar Excel
                 </button>
             </div>
 
             {/* --- NAVEGACIÓN --- */}
-            <div className="flex flex-wrap bg-[#FDFBF7] p-1.5 rounded-2xl border border-[#DFD2C4]/60 shadow-inner shrink-0 gap-1 md:gap-0">
+            <div className="flex flex-wrap bg-[#FBFAF8] p-1.5 rounded-2xl border border-[#D9D2C7]/60 shadow-inner shrink-0 gap-1 md:gap-0">
                 {[
-                    { id: 'resumen', label: 'Resumen', color: 'bg-[#312923]' },
-                    { id: 'ingresos', label: 'Ingresos y Caja', color: 'bg-[#5B6651]' },
+                    { id: 'resumen', label: 'Resumen', color: 'bg-[#241F1B]' },
+                    { id: 'ingresos', label: 'Ingresos y Caja', color: 'bg-[#46523C]' },
                     { id: 'deudores', label: 'Cuentas x Cobrar', color: 'bg-red-500' },
-                    { id: 'gastos', label: 'Gastos / Lab', color: 'bg-[#A3968B]' },
+                    { id: 'gastos', label: 'Gastos / Lab', color: 'bg-[#8A7F74]' },
                     { id: 'honorarios', label: 'Honorarios y Comisiones', color: 'bg-indigo-600', dot: pendingHonorarios }
                 ].map(tab => (
                     <button 
                         key={tab.id}
                         onClick={() => setFinanceTab(tab.id)}
-                        className={`flex-1 min-w-[120px] py-3 px-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        className={`flex-1 min-w-[120px] py-3 px-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
                             financeTab === tab.id 
                             ? `${tab.color} text-white shadow-md` 
-                            : 'text-[#9A8F84] hover:text-[#312923]'
+                            : 'text-[#5E554E] hover:text-[#241F1B]'
                         }`}
                     >
                         <span className="flex items-center justify-center gap-1.5">
@@ -196,16 +196,16 @@ export default function FinanceCenter({
                         <div className="flex justify-end">
                             <button 
                                 onClick={() => setShowProfitability(!showProfitability)}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#5B6651]/10 text-[#5B6651] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#5B6651]/20 transition-all"
+                                className="flex items-center gap-2 px-4 py-2 bg-[#46523C]/10 text-[#46523C] rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-[#46523C]/20 transition-all"
                             >
                                 <TrendingDown size={14}/> {showProfitability ? 'Ver Resumen' : 'Análisis de Rentabilidad'}
                             </button>
                         </div>
 
                         {showProfitability && (
-                            <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-[2.5rem] p-8 animate-in zoom-in-95">
-                                <h3 className="text-xl font-black text-[#312923] mb-6 flex items-center gap-2">
-                                    <Calculator className="text-[#CBAAA2]"/> Rentabilidad por Tratamiento
+                            <div className="bg-[#FBFAF8] border border-[#D9D2C7] rounded-[2.5rem] p-8 animate-in zoom-in-95">
+                                <h3 className="text-xl font-black text-[#241F1B] mb-6 flex items-center gap-2">
+                                    <Calculator className="text-[#D3A9A0]"/> Rentabilidad por Tratamiento
                                 </h3>
                                 <div className="space-y-4">
                                     {(() => {
@@ -217,14 +217,14 @@ export default function FinanceCenter({
                                             return acc;
                                         }, {});
                                         return Object.entries(stats).sort((a,b) => b[1].income - a[1].income).map(([name, data]) => (
-                                            <div key={name} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#DFD2C4]/40">
+                                            <div key={name} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#D9D2C7]/40">
                                                 <div>
-                                                    <p className="font-bold text-[#312923]">{name}</p>
-                                                    <p className="text-[10px] text-[#9A8F84] font-black uppercase tracking-widest">{data.count} atenciones</p>
+                                                    <p className="font-bold text-[#241F1B]">{name}</p>
+                                                    <p className="text-[11px] text-[#5E554E] font-black uppercase tracking-widest">{data.count} atenciones</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-black text-[#5B6651]">${data.income.toLocaleString()}</p>
-                                                    <p className="text-[9px] text-[#9A8F84] font-bold">Ticket Prom: ${(data.income/data.count).toLocaleString()}</p>
+                                                    <p className="font-black text-[#46523C]">${data.income.toLocaleString()}</p>
+                                                    <p className="text-[11px] text-[#5E554E] font-bold">Ticket Prom: ${(data.income/data.count).toLocaleString()}</p>
                                                 </div>
                                             </div>
                                         ));
@@ -238,7 +238,7 @@ export default function FinanceCenter({
                             <select
                                 defaultValue="quarter"
                                 onChange={handlePresetChange}
-                                className="px-4 py-2.5 border border-[#DFD2C4] rounded-2xl bg-[#FDFBF7] text-[#312923] text-xs font-bold focus:outline-none focus:border-[#A3968B]"
+                                className="px-4 py-2.5 border border-[#D9D2C7] rounded-2xl bg-[#FBFAF8] text-[#241F1B] text-xs font-bold focus:outline-none focus:border-[#8A7F74]"
                             >
                                 {FINANCE_PRESETS.map(p => (
                                     <option key={p.key} value={p.key}>{p.label}</option>
@@ -246,58 +246,58 @@ export default function FinanceCenter({
                             </select>
 
                             {isLoadingFinancials && (
-                                <span className="text-xs text-[#9A8F84] flex items-center gap-1.5 font-bold">
+                                <span className="text-xs text-[#5E554E] flex items-center gap-1.5 font-bold">
                                     <Loader size={12} className="animate-spin"/> Cargando...
                                 </span>
                             )}
 
                             {!isLoadingFinancials && dateRange && (
-                                <span className="text-[10px] text-[#9A8F84] font-bold">
+                                <span className="text-[11px] text-[#5E554E] font-bold">
                                     {dateRange.start} → {dateRange.end}
                                 </span>
                             )}
 
                             {hasOlderData && !isLoadingFinancials && (
-                                <span className="text-[10px] text-[#CBAAA2] font-bold italic">
+                                <span className="text-[11px] text-[#D3A9A0] font-bold italic">
                                     Hay registros anteriores al rango actual
                                 </span>
                             )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <Card className="rounded-[2rem] border border-[#DFD2C4]/50 p-6 flex flex-col justify-between bg-white">
+                            <Card className="rounded-[2rem] border border-[#D9D2C7]/50 p-6 flex flex-col justify-between bg-white">
                                 <div className="flex justify-between items-start mb-4">
-                                    <div className="p-3 bg-[#5B6651]/10 text-[#5B6651] rounded-2xl"><ArrowUpRight size={20}/></div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">Recaudado</span>
+                                    <div className="p-3 bg-[#46523C]/10 text-[#46523C] rounded-2xl"><ArrowUpRight size={20}/></div>
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Recaudado</span>
                                 </div>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${filteredCollected.toLocaleString()}</h2>
+                                <h2 className="text-3xl font-black text-[#241F1B] tracking-tighter">${filteredCollected.toLocaleString()}</h2>
                             </Card>
 
-                            <Card className="rounded-[2rem] border border-[#DFD2C4]/50 p-6 flex flex-col justify-between bg-white">
+                            <Card className="rounded-[2rem] border border-[#D9D2C7]/50 p-6 flex flex-col justify-between bg-white">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-red-50 text-red-500 rounded-2xl"><ArrowDownRight size={20}/></div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">Egresos Totales</span>
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Egresos Totales</span>
                                 </div>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${filteredExpenses.toLocaleString()}</h2>
+                                <h2 className="text-3xl font-black text-[#241F1B] tracking-tighter">${filteredExpenses.toLocaleString()}</h2>
                             </Card>
 
-                            <Card className="rounded-[2rem] border border-[#DFD2C4]/50 p-6 flex flex-col justify-between bg-white">
+                            <Card className="rounded-[2rem] border border-[#D9D2C7]/50 p-6 flex flex-col justify-between bg-white">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-amber-50 text-amber-500 rounded-2xl"><Plus size={20}/></div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">Deuda Pacientes</span>
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Deuda Pacientes</span>
                                 </div>
-                                <h2 className="text-3xl font-black text-[#312923] tracking-tighter">${totalDebt.toLocaleString()}</h2>
+                                <h2 className="text-3xl font-black text-[#241F1B] tracking-tighter">${totalDebt.toLocaleString()}</h2>
                             </Card>
                         </div>
 
                         <div className={`relative overflow-hidden rounded-[2.5rem] py-12 text-center shadow-2xl transition-all duration-500 ${
-                            filteredProfit >= 0 ? 'bg-[#312923] text-white' : 'bg-red-600 text-white'
+                            filteredProfit >= 0 ? 'bg-[#241F1B] text-white' : 'bg-red-600 text-white'
                         }`}>
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
                             <div className="relative z-10">
                                 <p className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-60 mb-3">Utilidad Real de la Clínica</p>
                                 <h2 className="text-7xl font-black tracking-tighter mb-4">${filteredProfit.toLocaleString()}</h2>
-                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${filteredProfit >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/20 text-white'}`}>
+                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest ${filteredProfit >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/20 text-white'}`}>
                                     {filteredProfit >= 0 ? 'Caja en Positivo' : 'Caja en Negativo'}
                                 </div>
                             </div>
@@ -305,20 +305,20 @@ export default function FinanceCenter({
 
                         {/* Ingresos por método de pago */}
                         <div>
-                            <h3 className="font-black text-[#312923] text-lg tracking-tight mb-4">Ingresos por método de pago</h3>
+                            <h3 className="font-black text-[#241F1B] text-lg tracking-tight mb-4">Ingresos por método de pago</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                 {methodBreakdown.map(({ key, Icon, total, count, pct }) => (
-                                    <Card key={key} className={`rounded-[2rem] border p-5 flex flex-col gap-3 bg-white transition-all ${count === 0 ? 'border-[#DFD2C4]/30 opacity-40' : 'border-[#DFD2C4]/60'}`}>
-                                        <div className="p-3 bg-[#FDFBF7] rounded-2xl w-fit">
-                                            <Icon size={20} className="text-[#A3968B]"/>
+                                    <Card key={key} className={`rounded-[2rem] border p-5 flex flex-col gap-3 bg-white transition-all ${count === 0 ? 'border-[#D9D2C7]/30 opacity-40' : 'border-[#D9D2C7]/60'}`}>
+                                        <div className="p-3 bg-[#FBFAF8] rounded-2xl w-fit">
+                                            <Icon size={20} className="text-[#8A7F74]"/>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-1">{key}</p>
-                                            <p className="text-2xl font-black text-[#312923] tracking-tighter">${total.toLocaleString()}</p>
+                                            <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-1">{key}</p>
+                                            <p className="text-2xl font-black text-[#241F1B] tracking-tighter">${total.toLocaleString()}</p>
                                         </div>
                                         <div className="space-y-0.5">
-                                            <p className="text-[10px] font-bold text-[#5B6651]">{pct}% del total</p>
-                                            <p className="text-[10px] font-bold text-[#9A8F84]">{count} {count === 1 ? 'pago' : 'pagos'}</p>
+                                            <p className="text-[11px] font-bold text-[#46523C]">{pct}% del total</p>
+                                            <p className="text-[11px] font-bold text-[#5E554E]">{count} {count === 1 ? 'pago' : 'pagos'}</p>
                                         </div>
                                     </Card>
                                 ))}
@@ -338,7 +338,7 @@ export default function FinanceCenter({
                                     <FileText size={18} className="text-amber-500 shrink-0" />
                                     <div>
                                         <p className="font-black text-amber-800 text-sm">{sinBoleta.length} {sinBoleta.length === 1 ? 'pago sin boleta' : 'pagos sin boleta'}</p>
-                                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Emite las boletas pendientes en el portal SII</p>
+                                        <p className="text-[11px] font-bold text-amber-600 uppercase tracking-widest">Emite las boletas pendientes en el portal SII</p>
                                     </div>
                                 </div>
                             );
@@ -350,17 +350,17 @@ export default function FinanceCenter({
                                 const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
                                 const pending = (h.total || 0) - paid;
                                 return (
-                                    <div key={h.id} onClick={()=>onOpenAbonoModal(h, pending)} className="group flex justify-between items-center p-6 bg-white rounded-3xl border border-[#DFD2C4]/40 hover:border-[#5B6651]/50 hover:shadow-lg transition-all cursor-pointer">
+                                    <div key={h.id} onClick={()=>onOpenAbonoModal(h, pending)} className="group flex justify-between items-center p-6 bg-white rounded-3xl border border-[#D9D2C7]/40 hover:border-[#46523C]/50 hover:shadow-lg transition-all cursor-pointer">
                                         <div className="flex items-center gap-5">
                                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${pending <= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                                                 {h.patientName.charAt(0)}
                                             </div>
                                             <div>
-                                                <p className="font-black text-[#312923] text-lg">{h.patientName}</p>
+                                                <p className="font-black text-[#241F1B] text-lg">{h.patientName}</p>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{h.date} • Total: ${h.total?.toLocaleString()}</p>
+                                                    <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest">{h.date} • Total: ${h.total?.toLocaleString()}</p>
                                                     {h.created_by && (
-                                                        <span className="text-[8px] bg-[#DFD2C4]/30 text-[#A3968B] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+                                                        <span className="text-[11px] bg-[#D9D2C7]/30 text-[#8A7F74] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
                                                             Gen: {team.find(m => m.email === h.created_by)?.name || h.created_by.split('@')[0]}
                                                         </span>
                                                     )}
@@ -372,17 +372,17 @@ export default function FinanceCenter({
                                                 {pending <= 0 ? 'PAGADO' : `PENDIENTE: $${pending.toLocaleString()}`}
                                             </p>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[9px] font-black text-[#A3968B] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Click para abonar</span>
+                                                <span className="text-[11px] font-black text-[#8A7F74] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Click para abonar</span>
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         const patient = Object.values(patientRecords).find(p => p?.personal?.legalName === h.patientName);
                                                         setBoletaModal({ open: true, payment: h, patient: patient || null });
                                                     }}
-                                                    className={`shrink-0 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-all border ${
+                                                    className={`shrink-0 px-2.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center gap-1 transition-all border ${
                                                         h.boleta_emitida
                                                             ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                            : 'bg-[#FDFBF7] text-[#312923] border-[#DFD2C4] hover:border-[#5B6651] hover:bg-[#5B6651]/5'
+                                                            : 'bg-[#FBFAF8] text-[#241F1B] border-[#D9D2C7] hover:border-[#46523C] hover:bg-[#46523C]/5'
                                                     }`}
                                                 >
                                                     {h.boleta_emitida
@@ -407,7 +407,7 @@ export default function FinanceCenter({
                                 <p className="text-xs text-red-400 font-bold uppercase tracking-widest mt-1">Pacientes con saldos pendientes por cobrar</p>
                             </div>
                             <div className="text-right">
-                                <span className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] block mb-1">Total por Recuperar</span>
+                                <span className="text-[11px] font-black text-red-400 uppercase tracking-[0.2em] block mb-1">Total por Recuperar</span>
                                 <h2 className="text-4xl font-black text-red-600 tracking-tighter">${totalDebt.toLocaleString()}</h2>
                             </div>
                         </div>
@@ -424,13 +424,13 @@ export default function FinanceCenter({
                                         <div className="flex items-center gap-4 w-full md:w-auto">
                                             <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-500 font-black"><User size={20}/></div>
                                             <div>
-                                                <p className="font-black text-[#312923]">{h.patientName}</p>
-                                                <p className="text-[10px] text-[#9A8F84] font-bold uppercase tracking-widest mt-1">Atención: {h.date}</p>
+                                                <p className="font-black text-[#241F1B]">{h.patientName}</p>
+                                                <p className="text-[11px] text-[#5E554E] font-bold uppercase tracking-widest mt-1">Atención: {h.date}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-6 w-full md:w-auto justify-between">
                                             <div className="text-right">
-                                                <span className="text-[9px] font-black text-red-400 uppercase tracking-widest block">Saldo</span>
+                                                <span className="text-[11px] font-black text-red-400 uppercase tracking-widest block">Saldo</span>
                                                 <p className="font-black text-red-500 text-2xl tracking-tighter">${pending.toLocaleString()}</p>
                                             </div>
                                             <button 
@@ -438,7 +438,7 @@ export default function FinanceCenter({
                                                     const patientId = h.patientId || Object.keys(patientRecords).find(k => patientRecords[k]?.personal?.legalName === h.patientName);
                                                     sendWhatsApp(getPatientPhone(patientId, h.patientName), `Hola ${h.patientName}, nos comunicamos de la Clínica. Le recordamos amablemente que su ficha registra un saldo pendiente de $${pending.toLocaleString()}. ¿Desea que le enviemos los datos de pago?`);
                                                 }} 
-                                                className="flex items-center gap-2 px-6 py-3 bg-[#5B6651] hover:bg-[#4a5442] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#5B6651]/20 transition-all"
+                                                className="flex items-center gap-2 px-6 py-3 bg-[#46523C] hover:bg-[#36402F] text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#46523C]/20 transition-all"
                                             >
                                                 <MessageCircle size={16}/> Cobrar
                                             </button>
@@ -453,19 +453,19 @@ export default function FinanceCenter({
                 {/* --- TAB 4: GASTOS --- */}
                 {financeTab === 'gastos' && (
                     <div className="space-y-8 animate-in slide-in-from-bottom">
-                        <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 p-8 bg-[#FDFBF7] shadow-inner">
-                            <h3 className="font-black text-[#312923] text-xl mb-6 flex items-center gap-2">
-                                <Plus className="text-[#A3968B]"/> Registrar Nuevo Egreso
+                        <Card className="rounded-[2.5rem] border border-[#D9D2C7]/60 p-8 bg-[#FBFAF8] shadow-inner">
+                            <h3 className="font-black text-[#241F1B] text-xl mb-6 flex items-center gap-2">
+                                <Plus className="text-[#8A7F74]"/> Registrar Nuevo Egreso
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-[#9A8F84] uppercase tracking-widest ml-2">Descripción</label>
+                                    <label className="text-[11px] font-black text-[#5E554E] uppercase tracking-widest ml-2">Descripción</label>
                                     <InputField theme={themeMode} placeholder="Ej: Coronas de Zirconio, Insumos..." value={newExpense.description} onChange={e=>setNewExpense({...newExpense, description:e.target.value})}/>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-[#9A8F84] uppercase tracking-widest ml-2">Categoría</label>
+                                    <label className="text-[11px] font-black text-[#5E554E] uppercase tracking-widest ml-2">Categoría</label>
                                     <select 
-                                        className="w-full h-[52px] bg-white border border-[#DFD2C4] rounded-2xl px-4 text-xs font-bold text-[#312923] outline-none focus:border-[#5B6651] transition-all"
+                                        className="w-full h-[52px] bg-white border border-[#D9D2C7] rounded-2xl px-4 text-xs font-bold text-[#241F1B] outline-none focus:border-[#46523C] transition-all"
                                         value={newExpense.category} 
                                         onChange={e=>setNewExpense({...newExpense, category:e.target.value})}
                                     >
@@ -479,15 +479,15 @@ export default function FinanceCenter({
                                 </div>
                                 
                                 {newExpense.category === 'Laboratorio' && (
-                                    <div className="col-span-1 md:col-span-2 p-5 bg-white border border-[#DFD2C4]/60 rounded-3xl animate-in zoom-in-95">
-                                        <label className="text-[10px] font-black text-[#5B6651] uppercase tracking-widest block mb-3">Vincular a Paciente (Para cálculo de rentabilidad)</label>
+                                    <div className="col-span-1 md:col-span-2 p-5 bg-white border border-[#D9D2C7]/60 rounded-3xl animate-in zoom-in-95">
+                                        <label className="text-[11px] font-black text-[#46523C] uppercase tracking-widest block mb-3">Vincular a Paciente (Para cálculo de rentabilidad)</label>
                                         <PatientSelect theme={themeMode} patients={patientRecords} onSelect={(p) => setNewExpense({...newExpense, patientRef: p.personal.legalName})} placeholder="Busca el paciente del trabajo de lab..." adminEmail={adminEmail} />
-                                        {newExpense.patientRef && <p className="text-[10px] mt-3 font-black text-white bg-[#5B6651] inline-flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm">✓ Asociado a: {newExpense.patientRef}</p>}
+                                        {newExpense.patientRef && <p className="text-[11px] mt-3 font-black text-white bg-[#46523C] inline-flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm">✓ Asociado a: {newExpense.patientRef}</p>}
                                     </div>
                                 )}
                                 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-[#9A8F84] uppercase tracking-widest ml-2">Monto del Gasto</label>
+                                    <label className="text-[11px] font-black text-[#5E554E] uppercase tracking-widest ml-2">Monto del Gasto</label>
                                     <InputField theme={themeMode} type="number" placeholder="$ 00.000" value={newExpense.amount} onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}/> 
                                 </div>
 
@@ -505,7 +505,7 @@ export default function FinanceCenter({
                                                 notify("Gasto registrado con éxito"); 
                                             } 
                                         }}
-                                        className="w-full h-[52px] bg-[#312923] text-white font-black uppercase text-[11px] tracking-[0.2em] rounded-2xl hover:bg-[#1a1512] transition-all flex items-center justify-center gap-2 shadow-lg"
+                                        className="w-full h-[52px] bg-[#241F1B] text-white font-black uppercase text-[11px] tracking-[0.2em] rounded-2xl hover:bg-[#1a1512] transition-all flex items-center justify-center gap-2 shadow-lg"
                                     >
                                         <Plus size={18}/> Guardar Egreso
                                     </button>
@@ -518,18 +518,18 @@ export default function FinanceCenter({
                                 <div className="text-center py-10 opacity-30 text-xs font-bold uppercase tracking-widest">No hay egresos registrados</div>
                             ) : (
                                 [...expenseRecords].reverse().map(ex => (
-                                    <div key={ex.id} className="flex justify-between items-center p-5 rounded-3xl bg-white border border-[#DFD2C4]/40 hover:shadow-md transition-all group">
+                                    <div key={ex.id} className="flex justify-between items-center p-5 rounded-3xl bg-white border border-[#D9D2C7]/40 hover:shadow-md transition-all group">
                                         <div className="flex items-center gap-4">
-                                            <div className={`p-3 rounded-2xl ${ex.category==='Laboratorio' ? 'bg-[#5B6651]/10 text-[#5B6651]' : 'bg-[#FDFBF7] text-[#A3968B]'}`}>
+                                            <div className={`p-3 rounded-2xl ${ex.category==='Laboratorio' ? 'bg-[#46523C]/10 text-[#46523C]' : 'bg-[#FBFAF8] text-[#8A7F74]'}`}>
                                                 {ex.category==='Laboratorio' ? <Box size={20}/> : <TrendingDown size={20}/>}
                                             </div>
                                             <div>
-                                                <p className="font-black text-[#312923]">{ex.description}</p>
+                                                <p className="font-black text-[#241F1B]">{ex.description}</p>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <p className="text-[10px] font-bold text-[#9A8F84] uppercase tracking-widest">{ex.date} • {ex.category}</p>
-                                                    {ex.patientRef && <span className="text-[9px] bg-[#CBAAA2]/20 text-[#CBAAA2] px-2 py-0.5 rounded-full font-black">PAC: {ex.patientRef}</span>}
+                                                    <p className="text-[11px] font-bold text-[#5E554E] uppercase tracking-widest">{ex.date} • {ex.category}</p>
+                                                    {ex.patientRef && <span className="text-[11px] bg-[#D3A9A0]/20 text-[#D3A9A0] px-2 py-0.5 rounded-full font-black">PAC: {ex.patientRef}</span>}
                                                     {ex.created_by && (
-                                                        <span className="text-[9px] bg-[#DFD2C4]/30 text-[#A3968B] px-2 py-0.5 rounded-full font-black uppercase tracking-widest flex items-center gap-1">
+                                                        <span className="text-[11px] bg-[#D9D2C7]/30 text-[#8A7F74] px-2 py-0.5 rounded-full font-black uppercase tracking-widest flex items-center gap-1">
                                                             <User size={8}/> {team.find(m => m.email === ex.created_by)?.name || ex.created_by.split('@')[0]}
                                                         </span>
                                                     )}
@@ -551,7 +551,7 @@ export default function FinanceCenter({
                                                         console.error('Error eliminando egreso:', err.message);
                                                     }
                                                 }}
-                                                className="p-2.5 rounded-xl text-[#9A8F84] hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                                className="p-2.5 rounded-xl text-[#5E554E] hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
                                             >
                                                 <Trash2 size={18}/>
                                             </button>
@@ -578,16 +578,16 @@ export default function FinanceCenter({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {getDentistsCommissions().length === 0 ? (
-                                <div className="col-span-full text-center py-10 opacity-40 font-bold uppercase tracking-widest text-[#312923]">
+                                <div className="col-span-full text-center py-10 opacity-40 font-bold uppercase tracking-widest text-[#241F1B]">
                                     No hay odontólogos con comisiones configuradas.
                                 </div>
                             ) : (
                                 getDentistsCommissions().map(doc => (
-                                    <Card key={doc.email} className="rounded-3xl border border-[#DFD2C4]/60 bg-white p-6 shadow-sm hover:border-indigo-200 hover:shadow-lg transition-all flex flex-col justify-between">
-                                        <div className="flex justify-between items-start border-b border-[#DFD2C4]/40 pb-4 mb-4">
+                                    <Card key={doc.email} className="rounded-3xl border border-[#D9D2C7]/60 bg-white p-6 shadow-sm hover:border-indigo-200 hover:shadow-lg transition-all flex flex-col justify-between">
+                                        <div className="flex justify-between items-start border-b border-[#D9D2C7]/40 pb-4 mb-4">
                                             <div>
-                                                <h4 className="font-black text-xl text-[#312923] capitalize">Dr. {doc.name.split(' ')[0]}</h4>
-                                                <span className="text-[10px] bg-[#FDFBF7] border border-[#DFD2C4]/50 px-2 py-1 rounded-full font-black text-[#9A8F84] uppercase tracking-widest mt-2 inline-block">
+                                                <h4 className="font-black text-xl text-[#241F1B] capitalize">Dr. {doc.name.split(' ')[0]}</h4>
+                                                <span className="text-[11px] bg-[#FBFAF8] border border-[#D9D2C7]/50 px-2 py-1 rounded-full font-black text-[#5E554E] uppercase tracking-widest mt-2 inline-block">
                                                     Comisión: {doc.commission || 0}%
                                                 </span>
                                             </div>
@@ -599,16 +599,16 @@ export default function FinanceCenter({
                                         <div className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#9A8F84] mb-0.5">Producción</p>
-                                                    <p className="font-black text-[#5B6651] text-lg">${doc.produccion.toLocaleString()}</p>
+                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] mb-0.5">Producción</p>
+                                                    <p className="font-black text-[#46523C] text-lg">${doc.produccion.toLocaleString()}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#9A8F84] mb-0.5">Ya Pagado</p>
-                                                    <p className="font-black text-[#A3968B] text-lg">${doc.pagado.toLocaleString()}</p>
+                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#5E554E] mb-0.5">Ya Pagado</p>
+                                                    <p className="font-black text-[#8A7F74] text-lg">${doc.pagado.toLocaleString()}</p>
                                                 </div>
                                             </div>
                                             
-                                            <div className="pt-4 border-t border-dashed border-[#DFD2C4]">
+                                            <div className="pt-4 border-t border-dashed border-[#D9D2C7]">
                                                 <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-1">Saldo por Pagar</p>
                                                 <h3 className="font-black text-indigo-600 text-3xl tracking-tighter">${doc.aPagar.toLocaleString()}</h3>
                                             </div>
@@ -634,14 +634,14 @@ export default function FinanceCenter({
                                                             notify(`Honorarios liquidados con éxito`);
                                                         }
                                                     }}
-                                                    className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2"
+                                                    className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2"
                                                 >
                                                     <Wallet size={16}/> Liquidar Saldo
                                                 </button>
                                             )}
 
                                             {doc.aPagar === 0 && (
-                                                <div className="w-full mt-4 py-3 bg-emerald-50 text-emerald-500 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-100">
+                                                <div className="w-full mt-4 py-3 bg-emerald-50 text-emerald-500 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-100">
                                                     <CheckCircle2 size={16}/> Pagos al Día
                                                 </div>
                                             )}

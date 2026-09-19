@@ -104,19 +104,19 @@ function NewTemplateModal({ onClose, onSave, clinicEmail }) {
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg border border-[#DFD2C4]/60 animate-in fade-in zoom-in-95">
-                <div className="p-6 border-b border-[#DFD2C4]/50 flex justify-between items-center">
-                    <h3 className="text-lg font-black text-[#312923] flex items-center gap-2">
-                        <BookOpen size={18} className="text-[#CBAAA2]" />
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg border border-[#D9D2C7]/60 animate-in fade-in zoom-in-95">
+                <div className="p-6 border-b border-[#D9D2C7]/50 flex justify-between items-center">
+                    <h3 className="text-lg font-black text-[#241F1B] flex items-center gap-2">
+                        <BookOpen size={18} className="text-[#D3A9A0]" />
                         Nueva Plantilla de Evolución
                     </h3>
-                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-[#F5EFE8] text-[#9A8F84] transition-colors">
+                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-[#F5EFE8] text-[#5E554E] transition-colors">
                         <X size={18} />
                     </button>
                 </div>
                 <div className="p-6 space-y-4">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1.5">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-1.5">
                             Título de la Plantilla
                         </label>
                         <input
@@ -124,17 +124,17 @@ function NewTemplateModal({ onClose, onSave, clinicEmail }) {
                             value={title}
                             onChange={e => setTitle(e.target.value)}
                             placeholder="Ej: Control de Ortodoncia Estándar"
-                            className="w-full bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#312923] outline-none focus:border-[#5B6651]/50 transition-colors placeholder:text-[#9A8F84]/50"
+                            className="w-full bg-[#FBFAF8] border border-[#D9D2C7]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#241F1B] outline-none focus:border-[#46523C]/50 transition-colors placeholder:text-[#5E554E]/50"
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1.5">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-1.5">
                             Categoría
                         </label>
                         <select
                             value={category}
                             onChange={e => setCategory(e.target.value)}
-                            className="w-full bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#312923] outline-none focus:border-[#5B6651]/50 transition-colors"
+                            className="w-full bg-[#FBFAF8] border border-[#D9D2C7]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#241F1B] outline-none focus:border-[#46523C]/50 transition-colors"
                         >
                             {TEMPLATE_CATEGORIES.map(cat => (
                                 <option key={cat.id} value={cat.id}>{cat.label}</option>
@@ -142,7 +142,7 @@ function NewTemplateModal({ onClose, onSave, clinicEmail }) {
                         </select>
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] block mb-1.5">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] block mb-1.5">
                             Contenido de la Plantilla
                         </label>
                         <textarea
@@ -150,11 +150,11 @@ function NewTemplateModal({ onClose, onSave, clinicEmail }) {
                             value={content}
                             onChange={e => setContent(e.target.value)}
                             placeholder="Redacte el texto que se autocompletará al seleccionar esta plantilla..."
-                            className="w-full bg-[#FDFBF7] border border-[#DFD2C4]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#312923] outline-none focus:border-[#5B6651]/50 transition-colors resize-none placeholder:text-[#9A8F84]/50 custom-scrollbar"
+                            className="w-full bg-[#FBFAF8] border border-[#D9D2C7]/60 rounded-xl px-4 py-3 text-sm font-medium text-[#241F1B] outline-none focus:border-[#46523C]/50 transition-colors resize-none placeholder:text-[#5E554E]/50 custom-scrollbar"
                         />
                     </div>
                 </div>
-                <div className="p-6 bg-[#FDFBF7] border-t border-[#DFD2C4]/50 flex justify-end gap-3 rounded-b-[2rem]">
+                <div className="p-6 bg-[#FBFAF8] border-t border-[#D9D2C7]/50 flex justify-end gap-3 rounded-b-[2rem]">
                     <Button onClick={onClose} variant="secondary">
                         <X size={16} /> Cancelar
                     </Button>
@@ -272,10 +272,10 @@ export default function PatientEvolutionTab({
 
     return (
         <div className="space-y-6">
-            <h3 className="text-2xl font-black text-[#312923] tracking-tight">Evolución Clínica</h3>
+            <h3 className="text-2xl font-black text-[#241F1B] tracking-tight">Evolución Clínica</h3>
 
             {/* Área para nueva evolución */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#DFD2C4]/60">
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#D9D2C7]/60">
                 <textarea
                     id="new-evolution-input"
                     ref={evolutionInputRef}
@@ -283,7 +283,7 @@ export default function PatientEvolutionTab({
                     onChange={e => setNewEvolution(e.target.value)}
                     placeholder="Escribe una nueva evolución clínica aquí..."
                     rows={6}
-                    className="w-full p-4 border border-[#DFD2C4]/60 rounded-xl bg-[#FDFBF7] text-[#312923] font-medium outline-none focus:border-[#5B6651]/50 transition-colors resize-none custom-scrollbar"
+                    className="w-full p-4 border border-[#D9D2C7]/60 rounded-xl bg-[#FBFAF8] text-[#241F1B] font-medium outline-none focus:border-[#46523C]/50 transition-colors resize-none custom-scrollbar"
                 ></textarea>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4">
                     <div className="flex gap-2">
@@ -310,11 +310,11 @@ export default function PatientEvolutionTab({
 
                 {/* Selector de Plantillas */}
                 {showTemplates && (
-                    <div className="mt-6 bg-[#FDFBF7] p-4 rounded-2xl border border-[#DFD2C4]/60 shadow-inner">
+                    <div className="mt-6 bg-[#FBFAF8] p-4 rounded-2xl border border-[#D9D2C7]/60 shadow-inner">
                         <div className="flex flex-wrap gap-2 mb-4">
                             <button
                                 onClick={() => setActiveTemplateCategory('all')}
-                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === 'all' ? 'bg-[#5B6651] text-white' : 'bg-white text-[#6B615A] hover:bg-[#FDFBF7]'}`}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === 'all' ? 'bg-[#46523C] text-white' : 'bg-white text-[#5E554E] hover:bg-[#FBFAF8]'}`}
                             >
                                 Todas
                             </button>
@@ -322,7 +322,7 @@ export default function PatientEvolutionTab({
                                 <button
                                     key={cat.id}
                                     onClick={() => setActiveTemplateCategory(cat.id)}
-                                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === cat.id ? 'bg-[#5B6651] text-white' : 'bg-white text-[#6B615A] hover:bg-[#FDFBF7]'}`}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTemplateCategory === cat.id ? 'bg-[#46523C] text-white' : 'bg-white text-[#5E554E] hover:bg-[#FBFAF8]'}`}
                                 >
                                     {cat.label}
                                 </button>
@@ -330,17 +330,17 @@ export default function PatientEvolutionTab({
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
                             {filteredTemplates.length === 0 ? (
-                                <p className="text-sm text-[#9A8F84] col-span-full">No hay plantillas disponibles para esta categoría.</p>
+                                <p className="text-sm text-[#5E554E] col-span-full">No hay plantillas disponibles para esta categoría.</p>
                             ) : (
                                 filteredTemplates.map(template => (
                                     <div
                                         key={template.id}
                                         onClick={() => applyTemplate(template.content)}
-                                        className="p-3 bg-white border border-[#DFD2C4]/60 rounded-xl cursor-pointer hover:bg-[#FDFBF7] transition-colors shadow-sm"
+                                        className="p-3 bg-white border border-[#D9D2C7]/60 rounded-xl cursor-pointer hover:bg-[#FBFAF8] transition-colors shadow-sm"
                                     >
-                                        <p className="font-bold text-[#312923] text-sm">{template.title}</p>
-                                        <p className="text-xs text-[#9A8F84] mt-1 truncate">{template.content}</p>
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#CBAAA2] mt-2 block">{TEMPLATE_CATEGORIES.find(cat => cat.id === template.category)?.label || 'General'}</span>
+                                        <p className="font-bold text-[#241F1B] text-sm">{template.title}</p>
+                                        <p className="text-xs text-[#5E554E] mt-1 truncate">{template.content}</p>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-[#D3A9A0] mt-2 block">{TEMPLATE_CATEGORIES.find(cat => cat.id === template.category)?.label || 'General'}</span>
                                     </div>
                                 ))
                             )}
@@ -352,21 +352,21 @@ export default function PatientEvolutionTab({
             {/* Historial de evoluciones */}
             <div className="space-y-4">
                 {evolutionsList.length === 0 ? (
-                    <div className="text-center py-10 text-[#9A8F84] border border-dashed border-[#DFD2C4] rounded-2xl bg-[#FDFBF7]/50">
+                    <div className="text-center py-10 text-[#5E554E] border border-dashed border-[#D9D2C7] rounded-2xl bg-[#FBFAF8]/50">
                         <p>No hay evoluciones clínicas registradas para este paciente.</p>
                     </div>
                 ) : (
                     evolutionsList.map(evolution => (
-                        <div key={evolution.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#DFD2C4]/60">
+                        <div key={evolution.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#D9D2C7]/60">
                             <div className="flex justify-between items-start mb-3">
                                 <div>
-                                    <p className="text-xs font-bold text-[#9A8F84] uppercase tracking-widest">{new Date(evolution.date).toLocaleDateString()} - {new Date(evolution.date).toLocaleTimeString()}</p>
-                                    <p className="text-sm font-medium text-[#6B615A]">Dr. {evolution.dentist}</p>
+                                    <p className="text-xs font-bold text-[#5E554E] uppercase tracking-widest">{new Date(evolution.date).toLocaleDateString()} - {new Date(evolution.date).toLocaleTimeString()}</p>
+                                    <p className="text-sm font-medium text-[#5E554E]">Dr. {evolution.dentist}</p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => toggleLockEvolution(evolution.id)}
-                                        className={`p-2 rounded-lg transition-colors ${evolution.locked ? 'text-[#5B6651] hover:bg-[#FDFBF7]' : 'text-[#CBAAA2] hover:bg-[#FDFBF7]'}`}
+                                        className={`p-2 rounded-lg transition-colors ${evolution.locked ? 'text-[#46523C] hover:bg-[#FBFAF8]' : 'text-[#D3A9A0] hover:bg-[#FBFAF8]'}`}
                                         title={evolution.locked ? 'Desbloquear evolución' : 'Bloquear evolución'}
                                     >
                                         <FileLock size={16} />
@@ -382,7 +382,7 @@ export default function PatientEvolutionTab({
                                     )}
                                 </div>
                             </div>
-                            <p className="text-[#312923] leading-relaxed whitespace-pre-wrap">{evolution.content}</p>
+                            <p className="text-[#241F1B] leading-relaxed whitespace-pre-wrap">{evolution.content}</p>
                         </div>
                     ))
                 )}

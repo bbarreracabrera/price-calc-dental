@@ -96,13 +96,13 @@ export default function PatientPersonalTab({
             
             {/* --- BARRA DE ESTADO DE GUARDADO --- */}
             <div className="flex justify-end h-6 -mb-6">
-                {saveStatus === 'saving' && <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1 animate-pulse"><Save size={14}/> Guardando...</span>}
-                {saveStatus === 'saved' && <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest flex items-center gap-1"><CheckCircle2 size={14}/> Sincronizado</span>}
+                {saveStatus === 'saving' && <span className="text-[11px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1 animate-pulse"><Save size={14}/> Guardando...</span>}
+                {saveStatus === 'saved' && <span className="text-[11px] font-bold text-green-500 uppercase tracking-widest flex items-center gap-1"><CheckCircle2 size={14}/> Sincronizado</span>}
             </div>
 
             {/* --- SECCIÓN: IDENTIFICACIÓN --- */}
             <section>
-                <h3 className="text-[10px] font-black text-[#9A8F84] uppercase tracking-[0.2em] border-b border-[#DFD2C4]/50 pb-2 mb-6">
+                <h3 className="text-[11px] font-black text-[#5E554E] uppercase tracking-[0.2em] border-b border-[#D9D2C7]/50 pb-2 mb-6">
                     Identificación del Paciente
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -132,7 +132,7 @@ export default function PatientPersonalTab({
                             className={rutError ? 'border-amber-400' : ''}
                         />
                         {rutError && (
-                            <p className="text-[10px] font-bold text-amber-600 mt-1 ml-1">{rutError}</p>
+                            <p className="text-[11px] font-bold text-amber-600 mt-1 ml-1">{rutError}</p>
                         )}
                     </div>
                     <InputField 
@@ -150,7 +150,7 @@ export default function PatientPersonalTab({
 
             {/* --- SECCIÓN: CONTACTO --- */}
             <section>
-                <h3 className="text-[10px] font-black text-[#9A8F84] uppercase tracking-[0.2em] border-b border-[#DFD2C4]/50 pb-2 mb-6">
+                <h3 className="text-[11px] font-black text-[#5E554E] uppercase tracking-[0.2em] border-b border-[#D9D2C7]/50 pb-2 mb-6">
                     Información de Contacto
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -185,7 +185,7 @@ export default function PatientPersonalTab({
                                     // 4. Enviamos a la función constructora de la URL
                                     sendWhatsApp(localData.phone, message);
                                 }} 
-                                className="h-[52px] px-5 bg-[#5B6651]/10 text-[#5B6651] border border-[#5B6651]/20 rounded-2xl hover:bg-[#5B6651] hover:text-white transition-all flex items-center justify-center shadow-sm group"
+                                className="h-[52px] px-5 bg-[#46523C]/10 text-[#46523C] border border-[#46523C]/20 rounded-2xl hover:bg-[#46523C] hover:text-white transition-all flex items-center justify-center shadow-sm group"
                                 title="Contactar por WhatsApp"
                             >
                                 <MessageCircle size={22} className="group-hover:scale-110 transition-transform"/>
@@ -197,7 +197,7 @@ export default function PatientPersonalTab({
 
             {/* --- SECCIÓN: UBICACIÓN --- */}
             <section>
-                <h3 className="text-[10px] font-black text-[#9A8F84] uppercase tracking-[0.2em] border-b border-[#DFD2C4]/50 pb-2 mb-6">
+                <h3 className="text-[11px] font-black text-[#5E554E] uppercase tracking-[0.2em] border-b border-[#D9D2C7]/50 pb-2 mb-6">
                     Ubicación y Residencia
                 </h3>
                 <div className="space-y-5">
@@ -223,7 +223,7 @@ export default function PatientPersonalTab({
 
             {/* --- SECCIÓN: ADMINISTRACIÓN --- */}
             <section>
-                <h3 className="text-[10px] font-black text-[#9A8F84] uppercase tracking-[0.2em] border-b border-[#DFD2C4]/50 pb-2 mb-6">
+                <h3 className="text-[11px] font-black text-[#5E554E] uppercase tracking-[0.2em] border-b border-[#D9D2C7]/50 pb-2 mb-6">
                     Datos Administrativos
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

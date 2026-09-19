@@ -102,55 +102,55 @@ export default function OrthodonticsTrackingTab({
     };
 
     if (loading) {
-        return <div className="text-center py-10 text-[#9A8F84]">Cargando registros de ortodoncia...</div>;
+        return <div className="text-center py-10 text-[#5E554E]">Cargando registros de ortodoncia...</div>;
     }
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-xl font-black text-[#312923]">Seguimiento de Ortodoncia</h3>
+                <h3 className="text-xl font-black text-[#241F1B]">Seguimiento de Ortodoncia</h3>
                 <button
                     onClick={handleAddRecord}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#5B6651] text-white rounded-xl text-sm font-bold hover:bg-[#4a5442] transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#46523C] text-white rounded-xl text-sm font-bold hover:bg-[#36402F] transition-colors"
                 >
                     <Plus size={16} /> Nuevo Registro
                 </button>
             </div>
 
             {newRecord && (
-                <div className="bg-[#FDFBF7] p-4 rounded-2xl border border-[#DFD2C4]/60 shadow-sm space-y-4">
-                    <h4 className="font-bold text-[#312923]">Nuevo Registro</h4>
+                <div className="bg-[#FBFAF8] p-4 rounded-2xl border border-[#D9D2C7]/60 shadow-sm space-y-4">
+                    <h4 className="font-bold text-[#241F1B]">Nuevo Registro</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Tipo de Tratamiento</label>
-                            <input type="text" value={newRecord.treatment_type} onChange={(e) => handleChange(e, newRecord, 'treatment_type')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" placeholder="Fijo, Removible, Alineadores" />
+                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Tipo de Tratamiento</label>
+                            <input type="text" value={newRecord.treatment_type} onChange={(e) => handleChange(e, newRecord, 'treatment_type')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" placeholder="Fijo, Removible, Alineadores" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Torque/Angulación por Diente</label>
-                            <input type="text" value={newRecord.torque_angulation} onChange={(e) => handleChange(e, newRecord, 'torque_angulation')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" placeholder="Ej: 15° en 1.1" />
+                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Torque/Angulación por Diente</label>
+                            <input type="text" value={newRecord.torque_angulation} onChange={(e) => handleChange(e, newRecord, 'torque_angulation')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" placeholder="Ej: 15° en 1.1" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Tipo de Arco</label>
-                            <input type="text" value={newRecord.archwire_type} onChange={(e) => handleChange(e, newRecord, 'archwire_type')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" placeholder="NiTi 0.14, Acero 0.16x0.22" />
+                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Tipo de Arco</label>
+                            <input type="text" value={newRecord.archwire_type} onChange={(e) => handleChange(e, newRecord, 'archwire_type')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" placeholder="NiTi 0.14, Acero 0.16x0.22" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Fecha Cambio de Arco</label>
-                            <input type="date" value={newRecord.archwire_change_date} onChange={(e) => handleChange(e, newRecord, 'archwire_change_date')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" />
+                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Fecha Cambio de Arco</label>
+                            <input type="date" value={newRecord.archwire_change_date} onChange={(e) => handleChange(e, newRecord, 'archwire_change_date')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Elastómeros</label>
-                            <input type="text" value={newRecord.elastomers} onChange={(e) => handleChange(e, newRecord, 'elastomers')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" placeholder="Color, Tipo" />
+                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Elastómeros</label>
+                            <input type="text" value={newRecord.elastomers} onChange={(e) => handleChange(e, newRecord, 'elastomers')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" placeholder="Color, Tipo" />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Notas de Activación</label>
-                            <textarea value={newRecord.activation_notes} onChange={(e) => handleChange(e, newRecord, 'activation_notes')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" rows="3" placeholder="Ajustes realizados, indicaciones al paciente"></textarea>
+                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Notas de Activación</label>
+                            <textarea value={newRecord.activation_notes} onChange={(e) => handleChange(e, newRecord, 'activation_notes')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" rows="3" placeholder="Ajustes realizados, indicaciones al paciente"></textarea>
                         </div>
                     </div>
                     <div className="flex justify-end gap-2">
-                        <button onClick={() => setNewRecord(null)} className="px-4 py-2 text-[#312923] rounded-xl text-sm font-bold hover:bg-[#F5EFE8] transition-colors">
+                        <button onClick={() => setNewRecord(null)} className="px-4 py-2 text-[#241F1B] rounded-xl text-sm font-bold hover:bg-[#F5EFE8] transition-colors">
                             <X size={16} className="inline-block mr-1" /> Cancelar
                         </button>
-                        <button onClick={() => handleSaveRecord(newRecord)} className="px-4 py-2 bg-[#5B6651] text-white rounded-xl text-sm font-bold hover:bg-[#4a5442] transition-colors">
+                        <button onClick={() => handleSaveRecord(newRecord)} className="px-4 py-2 bg-[#46523C] text-white rounded-xl text-sm font-bold hover:bg-[#36402F] transition-colors">
                             <Save size={16} className="inline-block mr-1" /> Guardar
                         </button>
                     </div>
@@ -158,46 +158,46 @@ export default function OrthodonticsTrackingTab({
             )}
 
             {orthoRecords.length === 0 && !newRecord ? (
-                <div className="text-center py-10 text-[#9A8F84] border border-dashed border-[#DFD2C4] rounded-2xl bg-[#FDFBF7]/50">
+                <div className="text-center py-10 text-[#5E554E] border border-dashed border-[#D9D2C7] rounded-2xl bg-[#FBFAF8]/50">
                     <p>No hay registros de ortodoncia para este paciente.</p>
                 </div>
             ) : (
                 <div className="space-y-4">
                     {orthoRecords.map(record => (
-                        <div key={record.id} className="bg-white p-4 rounded-2xl border border-[#DFD2C4]/60 shadow-sm">
+                        <div key={record.id} className="bg-white p-4 rounded-2xl border border-[#D9D2C7]/60 shadow-sm">
                             {editingRecordId === record.id ? (
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Tipo de Tratamiento</label>
-                                            <input type="text" value={record.treatment_type} onChange={(e) => handleChange(e, record, 'treatment_type')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" />
+                                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Tipo de Tratamiento</label>
+                                            <input type="text" value={record.treatment_type} onChange={(e) => handleChange(e, record, 'treatment_type')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Torque/Angulación por Diente</label>
-                                            <input type="text" value={record.torque_angulation} onChange={(e) => handleChange(e, record, 'torque_angulation')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" />
+                                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Torque/Angulación por Diente</label>
+                                            <input type="text" value={record.torque_angulation} onChange={(e) => handleChange(e, record, 'torque_angulation')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Tipo de Arco</label>
-                                            <input type="text" value={record.archwire_type} onChange={(e) => handleChange(e, record, 'archwire_type')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" />
+                                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Tipo de Arco</label>
+                                            <input type="text" value={record.archwire_type} onChange={(e) => handleChange(e, record, 'archwire_type')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Fecha Cambio de Arco</label>
-                                            <input type="date" value={record.archwire_change_date} onChange={(e) => handleChange(e, record, 'archwire_change_date')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" />
+                                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Fecha Cambio de Arco</label>
+                                            <input type="date" value={record.archwire_change_date} onChange={(e) => handleChange(e, record, 'archwire_change_date')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Elastómeros</label>
-                                            <input type="text" value={record.elastomers} onChange={(e) => handleChange(e, record, 'elastomers')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" />
+                                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Elastómeros</label>
+                                            <input type="text" value={record.elastomers} onChange={(e) => handleChange(e, record, 'elastomers')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-xs font-bold text-[#9A8F84] mb-1">Notas de Activación</label>
-                                            <textarea value={record.activation_notes} onChange={(e) => handleChange(e, record, 'activation_notes')} className="w-full p-2 border border-[#DFD2C4] rounded-lg" rows="3"></textarea>
+                                            <label className="block text-xs font-bold text-[#5E554E] mb-1">Notas de Activación</label>
+                                            <textarea value={record.activation_notes} onChange={(e) => handleChange(e, record, 'activation_notes')} className="w-full p-2 border border-[#D9D2C7] rounded-lg" rows="3"></textarea>
                                         </div>
                                     </div>
                                     <div className="flex justify-end gap-2">
-                                        <button onClick={() => setEditingRecordId(null)} className="px-4 py-2 text-[#312923] rounded-xl text-sm font-bold hover:bg-[#F5EFE8] transition-colors">
+                                        <button onClick={() => setEditingRecordId(null)} className="px-4 py-2 text-[#241F1B] rounded-xl text-sm font-bold hover:bg-[#F5EFE8] transition-colors">
                                             <X size={16} className="inline-block mr-1" /> Cancelar
                                         </button>
-                                        <button onClick={() => handleSaveRecord(record)} className="px-4 py-2 bg-[#5B6651] text-white rounded-xl text-sm font-bold hover:bg-[#4a5442] transition-colors">
+                                        <button onClick={() => handleSaveRecord(record)} className="px-4 py-2 bg-[#46523C] text-white rounded-xl text-sm font-bold hover:bg-[#36402F] transition-colors">
                                             <Save size={16} className="inline-block mr-1" /> Guardar
                                         </button>
                                     </div>
@@ -205,14 +205,14 @@ export default function OrthodonticsTrackingTab({
                             ) : (
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                                     <div className="flex-1">
-                                        <p className="font-bold text-[#312923]">{record.treatment_type || 'Sin tipo'}</p>
-                                        <p className="text-sm text-[#6B615A]">Arco: {record.archwire_type || 'N/A'} | Elastómeros: {record.elastomers || 'N/A'}</p>
-                                        {record.archwire_change_date && <p className="text-xs text-[#9A8F84]">Cambio de arco: {new Date(record.archwire_change_date).toLocaleDateString()}</p>}
-                                        {record.activation_notes && <p className="text-xs text-[#9A8F84] mt-1">Notas: {record.activation_notes}</p>}
-                                        <p className="text-xs text-[#9A8F84] mt-1">Registrado por: {record.created_by} el {new Date(record.created_at).toLocaleDateString()}</p>
+                                        <p className="font-bold text-[#241F1B]">{record.treatment_type || 'Sin tipo'}</p>
+                                        <p className="text-sm text-[#5E554E]">Arco: {record.archwire_type || 'N/A'} | Elastómeros: {record.elastomers || 'N/A'}</p>
+                                        {record.archwire_change_date && <p className="text-xs text-[#5E554E]">Cambio de arco: {new Date(record.archwire_change_date).toLocaleDateString()}</p>}
+                                        {record.activation_notes && <p className="text-xs text-[#5E554E] mt-1">Notas: {record.activation_notes}</p>}
+                                        <p className="text-xs text-[#5E554E] mt-1">Registrado por: {record.created_by} el {new Date(record.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div className="flex gap-2 mt-3 md:mt-0">
-                                        <button onClick={() => setEditingRecordId(record.id)} className="p-2 text-[#5B6651] hover:bg-[#F5EFE8] rounded-lg transition-colors">
+                                        <button onClick={() => setEditingRecordId(record.id)} className="p-2 text-[#46523C] hover:bg-[#F5EFE8] rounded-lg transition-colors">
                                             <Edit3 size={16} />
                                         </button>
                                         <button onClick={() => handleDeleteRecord(record.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">

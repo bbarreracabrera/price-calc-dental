@@ -76,49 +76,49 @@ export const buildEmailBody = (patientName, appointmentDate, appointmentTime, cl
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #FDFBF7; margin: 0; padding: 40px 20px;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #FBFAF8; margin: 0; padding: 40px 20px;">
   <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(49,41,35,0.08);">
     
     <!-- Header -->
-    <div style="background: #312923; padding: 32px; text-align: center;">
+    <div style="background: #241F1B; padding: 32px; text-align: center;">
       <h1 style="color: white; font-size: 22px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">ShiningCloud Dental</h1>
       <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 6px 0 0; letter-spacing: 2px; text-transform: uppercase;">Recordatorio de Cita</p>
     </div>
     
     <!-- Body -->
     <div style="padding: 32px;">
-      <p style="font-size: 16px; color: #312923; font-weight: 700; margin: 0 0 24px;">Hola, ${firstName} 👋</p>
-      <p style="font-size: 14px; color: #6B615A; line-height: 1.6; margin: 0 0 24px;">
+      <p style="font-size: 16px; color: #241F1B; font-weight: 700; margin: 0 0 24px;">Hola, ${firstName} 👋</p>
+      <p style="font-size: 14px; color: #5E554E; line-height: 1.6; margin: 0 0 24px;">
         Te recordamos que tienes una <strong>cita dental</strong> agendada en <strong>${clinicName}</strong>.
       </p>
       
       <!-- Cita Card -->
-      <div style="background: #FDFBF7; border: 1px solid #DFD2C4; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+      <div style="background: #FBFAF8; border: 1px solid #D9D2C7; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
           <span style="font-size: 24px;">📅</span>
           <div>
-            <p style="font-size: 11px; color: #9A8F84; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Fecha</p>
-            <p style="font-size: 15px; color: #312923; font-weight: 900; margin: 0; text-transform: capitalize;">${dateStr}</p>
+            <p style="font-size: 11px; color: #5E554E; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Fecha</p>
+            <p style="font-size: 15px; color: #241F1B; font-weight: 900; margin: 0; text-transform: capitalize;">${dateStr}</p>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
           <span style="font-size: 24px;">⏰</span>
           <div>
-            <p style="font-size: 11px; color: #9A8F84; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Hora</p>
-            <p style="font-size: 15px; color: #312923; font-weight: 900; margin: 0;">${appointmentTime}</p>
+            <p style="font-size: 11px; color: #5E554E; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Hora</p>
+            <p style="font-size: 15px; color: #241F1B; font-weight: 900; margin: 0;">${appointmentTime}</p>
           </div>
         </div>
         ${doctorName ? `
         <div style="display: flex; align-items: center; gap: 12px;">
           <span style="font-size: 24px;">👨‍⚕️</span>
           <div>
-            <p style="font-size: 11px; color: #9A8F84; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Profesional</p>
-            <p style="font-size: 15px; color: #312923; font-weight: 900; margin: 0;">${doctorName}</p>
+            <p style="font-size: 11px; color: #5E554E; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Profesional</p>
+            <p style="font-size: 15px; color: #241F1B; font-weight: 900; margin: 0;">${doctorName}</p>
           </div>
         </div>` : ''}
       </div>
       
-      <p style="font-size: 13px; color: #9A8F84; line-height: 1.6; margin: 0 0 24px;">
+      <p style="font-size: 13px; color: #5E554E; line-height: 1.6; margin: 0 0 24px;">
         ¿Necesitas reagendar o tienes alguna consulta? Contáctanos al <strong>${clinicPhone || '+56 9 XXXX XXXX'}</strong>.
       </p>
       
@@ -130,8 +130,8 @@ export const buildEmailBody = (patientName, appointmentDate, appointmentTime, cl
     </div>
     
     <!-- Footer -->
-    <div style="background: #FDFBF7; padding: 20px 32px; border-top: 1px solid #DFD2C4; text-align: center;">
-      <p style="font-size: 10px; color: #9A8F84; margin: 0;">
+    <div style="background: #FBFAF8; padding: 20px 32px; border-top: 1px solid #D9D2C7; text-align: center;">
+      <p style="font-size: 10px; color: #5E554E; margin: 0;">
         ${clinicName} · Powered by <strong>ShiningCloud Dental</strong>
       </p>
     </div>

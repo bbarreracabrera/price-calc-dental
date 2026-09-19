@@ -58,7 +58,7 @@ export function classifyRisk(scores) {
 }
 
 export const RISK_LABELS = {
-    low:      { label: 'Riesgo Bajo',     interval: 'Control cada 12 meses',  color: '#5B6651' },
+    low:      { label: 'Riesgo Bajo',     interval: 'Control cada 12 meses',  color: '#46523C' },
     moderate: { label: 'Riesgo Moderado', interval: 'Control cada 6 meses',   color: '#D9A86C' },
     high:     { label: 'Riesgo Alto',     interval: 'Control cada 3-4 meses', color: '#B92323' },
 };

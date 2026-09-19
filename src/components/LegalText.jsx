@@ -3,17 +3,17 @@ import React from 'react';
 export default function LegalText() {
     // Creamos un sub-componente interno para mantener el diseño consistente en cada bloque
     const LegalSection = ({ num, title, children }) => (
-        <section className="relative pl-6 md:pl-8 border-l border-[#DFD2C4]/60 hover:border-[#A3968B] transition-colors group">
+        <section className="relative pl-6 md:pl-8 border-l border-[#D9D2C7]/60 hover:border-[#8A7F74] transition-colors group">
             {/* Punto decorativo en la línea */}
-            <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#DFD2C4] group-hover:bg-[#CBAAA2] transition-colors"></div>
+            <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#D9D2C7] group-hover:bg-[#D3A9A0] transition-colors"></div>
             
-            <h3 className="text-lg font-black text-[#312923] mb-3 flex items-center gap-3 tracking-tight">
-                <span className="text-[10px] font-black bg-[#FDFBF7] text-[#9A8F84] px-2.5 py-1 rounded-md border border-[#DFD2C4]/50 tracking-widest shadow-sm">
+            <h3 className="text-lg font-black text-[#241F1B] mb-3 flex items-center gap-3 tracking-tight">
+                <span className="text-[11px] font-black bg-[#FBFAF8] text-[#5E554E] px-2.5 py-1 rounded-md border border-[#D9D2C7]/50 tracking-widest shadow-sm">
                     {num}
                 </span>
                 {title}
             </h3>
-            <div className="text-sm font-medium text-[#6B615A] leading-relaxed space-y-4">
+            <div className="text-sm font-medium text-[#5E554E] leading-relaxed space-y-4">
                 {children}
             </div>
         </section>
@@ -26,9 +26,9 @@ export default function LegalText() {
             </LegalSection>
 
             <LegalSection num="02" title="Naturaleza del Servicio">
-                <p>ShiningCloud es una herramienta de apoyo administrativo y clínico. <strong className="text-[#312923] font-black">El Proveedor no practica la odontología.</strong> El diagnóstico, plan de tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario.</p>
-                <div className="bg-[#FDFBF7] border border-[#DFD2C4]/50 p-4 rounded-2xl text-xs">
-                    <span className="font-black text-[#A3968B] uppercase tracking-widest block mb-1">Nota sobre IA:</span>
+                <p>ShiningCloud es una herramienta de apoyo administrativo y clínico. <strong className="text-[#241F1B] font-black">El Proveedor no practica la odontología.</strong> El diagnóstico, plan de tratamiento y las decisiones clínicas son responsabilidad exclusiva del profesional usuario.</p>
+                <div className="bg-[#FBFAF8] border border-[#D9D2C7]/50 p-4 rounded-2xl text-xs">
+                    <span className="font-black text-[#8A7F74] uppercase tracking-widest block mb-1">Nota sobre IA:</span>
                     El software asistido por Inteligencia Artificial (como el periodontograma por voz) es una ayuda técnica diseñada para agilizar el registro, pero en ningún caso reemplaza el criterio, revisión y juicio clínico del dentista tratante.
                 </div>
             </LegalSection>
@@ -36,23 +36,23 @@ export default function LegalText() {
             <LegalSection num="03" title="Propiedad y Privacidad de Datos (Ley 19.628)">
                 <ul className="space-y-4">
                     <li className="flex gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#5B6651] mt-2 shrink-0"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#46523C] mt-2 shrink-0"></div>
                         <div>
-                            <strong className="text-[#312923] font-black block mb-0.5">Propiedad Absoluta:</strong> 
+                            <strong className="text-[#241F1B] font-black block mb-0.5">Propiedad Absoluta:</strong> 
                             Los datos de salud y fichas clínicas cargados pertenecen íntegramente al Usuario (la clínica o el dentista titular). El Proveedor actúa únicamente como custodio y procesador tecnológico.
                         </div>
                     </li>
                     <li className="flex gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#5B6651] mt-2 shrink-0"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#46523C] mt-2 shrink-0"></div>
                         <div>
-                            <strong className="text-[#312923] font-black block mb-0.5">Seguridad e Infraestructura:</strong> 
+                            <strong className="text-[#241F1B] font-black block mb-0.5">Seguridad e Infraestructura:</strong> 
                             Utilizamos protocolos de encriptación de grado bancario e infraestructura segura en la nube. Sin embargo, el Usuario es el único responsable de mantener la confidencialidad de sus claves de acceso y de cerrar su sesión en dispositivos públicos o compartidos.
                         </div>
                     </li>
                     <li className="flex gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#5B6651] mt-2 shrink-0"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#46523C] mt-2 shrink-0"></div>
                         <div>
-                            <strong className="text-[#312923] font-black block mb-0.5">Privacidad Estricta:</strong> 
+                            <strong className="text-[#241F1B] font-black block mb-0.5">Privacidad Estricta:</strong> 
                             Nos comprometemos legal y éticamente a no vender, ceder ni perfilar comercialmente los datos de sus pacientes bajo ninguna circunstancia.
                         </div>
                     </li>
@@ -60,11 +60,11 @@ export default function LegalText() {
             </LegalSection>
 
             <LegalSection num="04" title="Responsabilidades del Usuario">
-                <p>El Usuario se obliga a cumplir con la normativa sanitaria vigente (incluyendo la <strong className="text-[#312923]">Ley 20.584</strong> sobre Derechos y Deberes de los Pacientes en Chile). Además, asume la responsabilidad de realizar exportaciones o respaldos periódicos de su información financiera y clínica (a través de los formatos Excel/PDF provistos) como medida de precaución estándar.</p>
+                <p>El Usuario se obliga a cumplir con la normativa sanitaria vigente (incluyendo la <strong className="text-[#241F1B]">Ley 20.584</strong> sobre Derechos y Deberes de los Pacientes en Chile). Además, asume la responsabilidad de realizar exportaciones o respaldos periódicos de su información financiera y clínica (a través de los formatos Excel/PDF provistos) como medida de precaución estándar.</p>
             </LegalSection>
 
             <LegalSection num="05" title="Suscripción y Pagos">
-                <p>Los pagos se procesan de forma segura a través de <strong className="text-[#312923] font-black">Mercado Pago</strong> (o pasarelas certificadas similares). El servicio funciona bajo la modalidad de suscripción mensual automática.</p>
+                <p>Los pagos se procesan de forma segura a través de <strong className="text-[#241F1B] font-black">Mercado Pago</strong> (o pasarelas certificadas similares). El servicio funciona bajo la modalidad de suscripción mensual automática.</p>
                 <p>El no pago de la suscripción resultará en la limitación de la cuenta a un modo de "solo lectura" durante 30 días. Durante este periodo no se perderá información, pero no se podrán ingresar nuevos datos. Tras este plazo de gracia, la cuenta podría ser suspendida definitivamente.</p>
             </LegalSection>
 

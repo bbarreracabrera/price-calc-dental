@@ -6,7 +6,7 @@ import { getLocalDate } from '../constants';
 function FileIcon({ mimeType, size = 16 }) {
     if (mimeType?.startsWith('image/')) return <Image size={size} className="text-blue-500" />;
     if (mimeType === 'application/pdf') return <FileText size={size} className="text-red-500" />;
-    return <File size={size} className="text-[#9A8F84]" />;
+    return <File size={size} className="text-[#5E554E]" />;
 }
 
 // Formatea bytes a KB/MB
@@ -41,8 +41,8 @@ export default function LabWorkModal({
     const [shade, setShade] = useState("");
     const [notes, setNotes] = useState("");
 
-    const inputClass = "w-full p-3.5 rounded-xl bg-[#FDFBF7] border border-[#DFD2C4] outline-none font-bold text-[#312923] focus:border-[#5B6651] transition-colors appearance-none shadow-sm";
-    const labelClass = "text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block";
+    const inputClass = "w-full p-3.5 rounded-xl bg-[#FBFAF8] border border-[#D9D2C7] outline-none font-bold text-[#241F1B] focus:border-[#46523C] transition-colors appearance-none shadow-sm";
+    const labelClass = "text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-2 mb-2 block";
 
     // ── UPLOAD DE UN ARCHIVO ────────────────────────────────────
     const handleFileUpload = async (e) => {
@@ -197,17 +197,17 @@ export default function LabWorkModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-[#312923]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="w-full max-w-3xl bg-white border border-[#DFD2C4]/50 rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] custom-scrollbar">
+        <div className="fixed inset-0 z-[100] bg-[#241F1B]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="w-full max-w-3xl bg-white border border-[#D9D2C7]/50 rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] custom-scrollbar">
                 
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#DFD2C4]/50 shrink-0">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#D9D2C7]/50 shrink-0">
                     <div>
-                        <h3 className="font-black text-2xl text-[#312923] tracking-tight flex items-center gap-2">
-                            <FlaskConical className="text-[#CBAAA2]"/> Nueva Orden Técnica
+                        <h3 className="font-black text-2xl text-[#241F1B] tracking-tight flex items-center gap-2">
+                            <FlaskConical className="text-[#D3A9A0]"/> Nueva Orden Técnica
                         </h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mt-1">Sincronización con Laboratorio & Finanzas</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mt-1">Sincronización con Laboratorio & Finanzas</p>
                     </div>
-                    <button onClick={()=>setModal(null)} className="p-2 text-[#9A8F84] hover:bg-[#FDFBF7] hover:text-[#312923] rounded-xl transition-all">
+                    <button onClick={()=>setModal(null)} className="p-2 text-[#5E554E] hover:bg-[#FBFAF8] hover:text-[#241F1B] rounded-xl transition-all">
                         <X size={20}/>
                     </button>
                 </div>
@@ -250,7 +250,7 @@ export default function LabWorkModal({
                     <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-[2rem] space-y-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Info size={14} className="text-blue-500" />
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Requerimientos Clínicos</h4>
+                            <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-600">Requerimientos Clínicos</h4>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="col-span-1">
@@ -272,11 +272,11 @@ export default function LabWorkModal({
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <label className={labelClass}>Archivos Adjuntos ({uploadedFiles.length})</label>
-                            <span className="text-[9px] text-[#9A8F84] font-bold uppercase tracking-widest">STL · DICOM · ZIP · PDF · Imágenes</span>
+                            <span className="text-[11px] text-[#5E554E] font-bold uppercase tracking-widest">STL · DICOM · ZIP · PDF · Imágenes</span>
                         </div>
 
                         {/* Zona de drop / click para subir */}
-                        <div className="relative bg-[#FDFBF7] border-2 border-dashed border-[#DFD2C4] rounded-[2rem] p-5 text-center transition-all hover:border-[#5B6651]/50">
+                        <div className="relative bg-[#FBFAF8] border-2 border-dashed border-[#D9D2C7] rounded-[2rem] p-5 text-center transition-all hover:border-[#46523C]/50">
                             <input
                                 type="file"
                                 accept=".dcm,.stl,.pli,.zip,.pdf,.jpg,.jpeg,.png,.webp"
@@ -289,14 +289,14 @@ export default function LabWorkModal({
                             <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
                                 {uploading ? (
                                     <>
-                                        <Loader2 className="animate-spin text-[#CBAAA2]" size={28} />
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Subiendo archivo {uploadingIndex != null ? uploadingIndex + 1 : ''}...</p>
+                                        <Loader2 className="animate-spin text-[#D3A9A0]" size={28} />
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Subiendo archivo {uploadingIndex != null ? uploadingIndex + 1 : ''}...</p>
                                     </>
                                 ) : (
                                     <>
-                                        <UploadCloud size={28} className="text-[#CBAAA2]"/>
-                                        <p className="text-sm font-black text-[#312923]">Clic para adjuntar archivos</p>
-                                        <p className="text-[10px] text-[#9A8F84] font-bold">Puedes seleccionar múltiples archivos a la vez</p>
+                                        <UploadCloud size={28} className="text-[#D3A9A0]"/>
+                                        <p className="text-sm font-black text-[#241F1B]">Clic para adjuntar archivos</p>
+                                        <p className="text-[11px] text-[#5E554E] font-bold">Puedes seleccionar múltiples archivos a la vez</p>
                                     </>
                                 )}
                             </div>
@@ -311,8 +311,8 @@ export default function LabWorkModal({
                                             <FileIcon mimeType={f.mimeType} size={16} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-black text-[#312923] truncate">{f.name}</p>
-                                            <p className="text-[9px] text-[#9A8F84] font-bold uppercase tracking-widest">{formatBytes(f.size)} · Almacenado de forma segura</p>
+                                            <p className="text-xs font-black text-[#241F1B] truncate">{f.name}</p>
+                                            <p className="text-[11px] text-[#5E554E] font-bold uppercase tracking-widest">{formatBytes(f.size)} · Almacenado de forma segura</p>
                                         </div>
                                         <button
                                             onClick={() => handleRemoveFile(idx)}
@@ -328,7 +328,7 @@ export default function LabWorkModal({
                     </div>
                     
                     {/* Fechas */}
-                    <div className="grid grid-cols-2 gap-4 border-b border-[#DFD2C4]/50 pb-5">
+                    <div className="grid grid-cols-2 gap-4 border-b border-[#D9D2C7]/50 pb-5">
                         <div>
                             <label className={labelClass}>Fecha de Envío</label>
                             <input type="date" className={inputClass} value={newLabWork.sendDate} onChange={e=>setNewLabWork({...newLabWork, sendDate:e.target.value})}/>
@@ -342,7 +342,7 @@ export default function LabWorkModal({
                     {/* Zona Financiera */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 bg-red-50/50 border border-red-100 rounded-3xl">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-red-800/60 ml-1 mb-2 block">Costo Lab (Egreso)</label>
+                            <label className="text-[11px] font-black uppercase tracking-widest text-red-800/60 ml-1 mb-2 block">Costo Lab (Egreso)</label>
                             <div className="relative mb-4">
                                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-red-800/40" size={16}/>
                                 <input type="number" placeholder="0" className={`w-full p-3 pl-9 rounded-xl bg-white border border-red-100 outline-none font-bold text-red-900 focus:border-red-300 text-sm`} value={labCost} onChange={e=>setLabCost(e.target.value)} />
@@ -351,33 +351,33 @@ export default function LabWorkModal({
                                 <div className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${autoExpense ? 'bg-red-500 border-red-500' : 'bg-white border-red-200'}`}>
                                     {autoExpense && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
                                 </div>
-                                <p className="text-[10px] font-black uppercase text-red-900">Registrar como Gasto</p>
+                                <p className="text-[11px] font-black uppercase text-red-900">Registrar como Gasto</p>
                             </div>
                         </div>
 
-                        <div className="p-4 bg-[#5B6651]/5 border border-[#5B6651]/20 rounded-3xl">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]/60 ml-1 mb-2 block">Venta Paciente (Ingreso)</label>
+                        <div className="p-4 bg-[#46523C]/5 border border-[#46523C]/20 rounded-3xl">
+                            <label className="text-[11px] font-black uppercase tracking-widest text-[#46523C]/60 ml-1 mb-2 block">Venta Paciente (Ingreso)</label>
                             <div className="relative mb-4">
-                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B6651]/40" size={16}/>
-                                <input type="number" placeholder="0" className={`w-full p-3 pl-9 rounded-xl bg-white border border-[#5B6651]/20 outline-none font-bold text-[#312923] focus:border-[#5B6651] text-sm`} value={patientPrice} onChange={e=>setPatientPrice(e.target.value)} />
+                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-[#46523C]/40" size={16}/>
+                                <input type="number" placeholder="0" className={`w-full p-3 pl-9 rounded-xl bg-white border border-[#46523C]/20 outline-none font-bold text-[#241F1B] focus:border-[#46523C] text-sm`} value={patientPrice} onChange={e=>setPatientPrice(e.target.value)} />
                             </div>
                             <div className={`flex items-center gap-2 cursor-pointer transition-opacity ${autoIncome && Number(patientPrice) > 0 ? 'opacity-100' : 'opacity-50'}`} onClick={() => setAutoIncome(!autoIncome)}>
-                                <div className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${autoIncome ? 'bg-[#5B6651] border-[#5B6651]' : 'bg-white border-[#DFD2C4]'}`}>
+                                <div className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${autoIncome ? 'bg-[#46523C] border-[#46523C]' : 'bg-white border-[#D9D2C7]'}`}>
                                     {autoIncome && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
                                 </div>
-                                <p className="text-[10px] font-black uppercase text-[#312923]">Generar Deuda al Paciente</p>
+                                <p className="text-[11px] font-black uppercase text-[#241F1B]">Generar Deuda al Paciente</p>
                             </div>
                         </div>
                     </div>
 
                     <button
-                        className="w-full mt-2 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white bg-[#312923] hover:bg-black shadow-xl shadow-[#312923]/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full mt-2 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white bg-[#241F1B] hover:bg-black shadow-xl shadow-[#241F1B]/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                         onClick={handleSave}
                         disabled={uploading}
                     >
                         <Save size={16}/>
                         ENVIAR ORDEN TÉCNICA
-                        {uploadedFiles.length > 0 && <span className="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-[9px]">{uploadedFiles.length} archivo(s)</span>}
+                        {uploadedFiles.length > 0 && <span className="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-[11px]">{uploadedFiles.length} archivo(s)</span>}
                     </button>
                 </div>
             </div>

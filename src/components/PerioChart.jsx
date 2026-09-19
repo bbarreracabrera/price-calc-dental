@@ -42,7 +42,7 @@ export function ToothGraphic({ n, hasImplant, missing }) {
     if (missing) {
         return (
             <svg viewBox="0 0 100 120" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="overflow-visible">
-                <path d={crown} fill="none" stroke="#DFD2C4" strokeWidth={2} strokeDasharray="4 4" opacity={0.6} />
+                <path d={crown} fill="none" stroke="#D9D2C7" strokeWidth={2} strokeDasharray="4 4" opacity={0.6} />
             </svg>
         );
     }
@@ -165,7 +165,7 @@ const ROW_LABELS = {
 };
 
 function severityClass(v) {
-    if (v === null || v === undefined || v === '') return 'text-[#312923]';
+    if (v === null || v === undefined || v === '') return 'text-[#241F1B]';
     const n = parseFloat(v);
     if (n >= 6) return 'text-red-600 font-extrabold';
     if (n >= 4) return 'text-amber-600 font-bold';
@@ -224,7 +224,7 @@ function SiteNumberCell({ value, colorClass, onCommit }) {
             onChange={e => setLocal(e.target.value)}
             onBlur={commit}
             onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') { setLocal(value ?? ''); e.target.blur(); } }}
-            className={`block w-full text-center text-[8px] leading-[16px] font-bold bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-[#5B6651] rounded-sm ${colorClass}`}
+            className={`block w-full text-center text-[11px] leading-[16px] font-bold bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-[#46523C] rounded-sm ${colorClass}`}
             style={{ minWidth: 0 }}
         />
     );
@@ -235,7 +235,7 @@ function SiteToggleCell({ active, shape, onToggle, title }) {
         <button onClick={onToggle} title={title} className="w-full h-full flex items-center justify-center">
             {active
                 ? <span className={`w-[6px] h-[6px] inline-block ${shape === 'circle' ? 'rounded-full bg-red-600' : 'rounded-sm bg-amber-600'}`} />
-                : <span className="w-[6px] h-[6px] inline-block rounded-sm border border-[#DFD2C4] opacity-50" />}
+                : <span className="w-[6px] h-[6px] inline-block rounded-sm border border-[#D9D2C7] opacity-50" />}
         </button>
     );
 }
@@ -253,7 +253,7 @@ function siteCell(rowType, patient, n, face, idx, keyPrefix, onUpdateTooth) {
     if (rowType === 'mg') {
         const raw = (perio[`mg_${face}`] || ['', '', ''])[idx];
         return (
-            <SiteNumberCell key={keyPrefix} value={raw} colorClass="text-[#312923]"
+            <SiteNumberCell key={keyPrefix} value={raw} colorClass="text-[#241F1B]"
                 onCommit={(v) => onUpdateTooth(n, d => { const arr = [...(d[`mg_${face}`] || ['', '', ''])]; arr[idx] = v; return { ...d, [`mg_${face}`]: arr }; })}
             />
         );
@@ -284,14 +284,14 @@ function soloCell(rowType, patient, n, onUpdateTooth, onToggleImplant) {
             <button onClick={() => onToggleImplant(n)} title="Implante" className="w-full h-full flex items-center justify-center">
                 {active
                     ? <span className="w-[6px] h-[6px] rounded-full bg-blue-500 inline-block" />
-                    : <span className="w-[6px] h-[6px] rounded-full border border-[#DFD2C4] opacity-50 inline-block" />}
+                    : <span className="w-[6px] h-[6px] rounded-full border border-[#D9D2C7] opacity-50 inline-block" />}
             </button>
         );
     }
     if (rowType === 'movilidad') {
         const v = patient.clinical.perio?.[n]?.mobility || 0;
         return (
-            <button onClick={() => onUpdateTooth(n, d => ({ ...d, mobility: v >= 3 ? 0 : v + 1 }))} title="Click para cambiar grado (0-3)" className="w-full h-full flex items-center justify-center text-[#312923]">
+            <button onClick={() => onUpdateTooth(n, d => ({ ...d, mobility: v >= 3 ? 0 : v + 1 }))} title="Click para cambiar grado (0-3)" className="w-full h-full flex items-center justify-center text-[#241F1B]">
                 {v}
             </button>
         );
@@ -324,7 +324,7 @@ export function PerioArchGrid({ teeth, patient, onToothClick, savePatientData, s
 
     const dataRow = (rt, face) => (
         <tr key={rt}>
-            <td className="h-[17px] text-right pr-1.5 text-[8px] font-bold text-[#9A8F84] whitespace-nowrap align-middle bg-white sticky left-0">
+            <td className="h-[17px] text-right pr-1.5 text-[11px] font-bold text-[#5E554E] whitespace-nowrap align-middle bg-white sticky left-0">
                 {ROW_LABELS[rt]}
             </td>
             {isSiteRow(rt)
@@ -340,7 +340,7 @@ export function PerioArchGrid({ teeth, patient, onToothClick, savePatientData, s
                     <td
                         key={`${rt}-${n}`}
                         colSpan={3}
-                        className="h-[17px] p-0 text-center bg-[#FDFBF7] border-b border-[#EDE6DB] border-r border-r-[#C7BBA8] text-[8px] font-bold"
+                        className="h-[17px] p-0 text-center bg-[#FBFAF8] border-b border-[#EDE6DB] border-r border-r-[#C7BBA8] text-[11px] font-bold"
                     >
                         {soloCell(rt, patient, n, onUpdateTooth, onToggleImplant)}
                     </td>
@@ -354,7 +354,7 @@ export function PerioArchGrid({ teeth, patient, onToothClick, savePatientData, s
         <tr>
             <td colSpan={totalCols} className="p-0">
                 <div className="flex items-end py-1">
-                    <div className="text-right pr-1.5 text-[9px] font-black text-[#8b7d6f] self-center" style={{ width: '7%', flexShrink: 0 }}>{archLabel}</div>
+                    <div className="text-right pr-1.5 text-[11px] font-black text-[#8b7d6f] self-center" style={{ width: '7%', flexShrink: 0 }}>{archLabel}</div>
                     <div className="flex-1 relative" style={{ height: 78 }}>
                         <PerioLineOverlay teeth={teethList} patient={patient} face={face} />
                         <div className="absolute inset-0 flex justify-between">
@@ -387,7 +387,7 @@ export function PerioArchGrid({ teeth, patient, onToothClick, savePatientData, s
                 <tr>
                     <td className="bg-white sticky left-0" />
                     {teeth.map(n => (
-                        <td key={n} colSpan={3} className="h-4 text-center text-[9px] font-black text-[#5B6651] border-r border-r-[#C7BBA8]">
+                        <td key={n} colSpan={3} className="h-4 text-center text-[11px] font-black text-[#46523C] border-r border-r-[#C7BBA8]">
                             {fdiLabel(n)}
                         </td>
                     ))}

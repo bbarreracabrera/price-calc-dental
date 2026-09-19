@@ -17,7 +17,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
     const [sistemico,      setSistemico]      = useState(patientData?.sistemico    || 1);
     const [tabaquismo,     setTabaquismo]     = useState(patientData?.tabaquismo   || 1);
     const [dataColor,      setDataColor]      = useState(() => {
-        try { return localStorage.getItem('pra_chart_color') || '#5B6651'; } catch { return '#5B6651'; }
+        try { return localStorage.getItem('pra_chart_color') || '#46523C'; } catch { return '#46523C'; }
     });
     const [disclaimerAccepted, setDisclaimerAccepted] = useState(() => {
         if (mode !== 'public') return true;
@@ -53,27 +53,27 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
     const handlePrint = () => window.print();
 
     return (
-        <div className="print-area bg-white rounded-3xl border border-[#DFD2C4] p-6 md:p-8">
+        <div className="print-area bg-white rounded-3xl border border-[#D9D2C7] p-6 md:p-8">
             {/* Modal de disclaimer — solo en modo público, hasta que el usuario lo cierre */}
             {mode === 'public' && !disclaimerAccepted && (
-                <div className="fixed inset-0 bg-[#312923]/80 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-[#241F1B]/80 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 rounded-2xl bg-[#B92323]/10 flex items-center justify-center shrink-0">
                                 <AlertCircle size={24} className="text-[#B92323]" />
                             </div>
-                            <h2 className="text-xl font-black text-[#312923]">Información importante</h2>
+                            <h2 className="text-xl font-black text-[#241F1B]">Información importante</h2>
                         </div>
-                        <p className="text-sm text-[#312923] mb-3 leading-relaxed">
+                        <p className="text-sm text-[#241F1B] mb-3 leading-relaxed">
                             Esta es una <strong>herramienta orientativa</strong> de evaluación de riesgo periodontal
                             basada en el modelo validado de Lang &amp; Tonetti.
                         </p>
-                        <p className="text-sm text-[#312923] mb-3 leading-relaxed">
+                        <p className="text-sm text-[#241F1B] mb-3 leading-relaxed">
                             Los resultados <strong>no constituyen un diagnóstico médico</strong> ni reemplazan
                             la evaluación de un odontólogo. Las recomendaciones farmacológicas requieren
                             consulta profesional.
                         </p>
-                        <p className="text-sm text-[#9A8F84] mb-6 leading-relaxed">
+                        <p className="text-sm text-[#5E554E] mb-6 leading-relaxed">
                             Al continuar, aceptas usar esta herramienta solo con fines educativos e informativos.
                         </p>
                         <button
@@ -81,7 +81,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                                 setDisclaimerAccepted(true);
                                 try { sessionStorage.setItem('pra_disclaimer_accepted', 'true'); } catch {}
                             }}
-                            className="w-full py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
+                            className="w-full py-3 bg-[#241F1B] text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
                         >
                             Entiendo y continúo
                         </button>
@@ -90,25 +90,25 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
             )}
             {/* Header de impresión (solo visible al imprimir) */}
             {patientData?.legalName && (
-                <div className="hidden print:block mb-6 pb-4 border-b border-[#DFD2C4]">
+                <div className="hidden print:block mb-6 pb-4 border-b border-[#D9D2C7]">
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Paciente</p>
-                            <p className="text-lg font-black text-[#312923]">{patientData.legalName}</p>
-                            {patientData.rut && <p className="text-sm text-[#9A8F84]">RUT: {patientData.rut}</p>}
+                            <p className="text-[11px] uppercase tracking-widest text-[#5E554E] font-bold">Paciente</p>
+                            <p className="text-lg font-black text-[#241F1B]">{patientData.legalName}</p>
+                            {patientData.rut && <p className="text-sm text-[#5E554E]">RUT: {patientData.rut}</p>}
                         </div>
                         <div className="text-right">
-                            <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Fecha</p>
-                            <p className="text-sm text-[#312923]">{new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                            <p className="text-[11px] uppercase tracking-widest text-[#5E554E] font-bold">Fecha</p>
+                            <p className="text-sm text-[#241F1B]">{new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         </div>
                     </div>
                 </div>
             )}
 
-            <h2 className="text-2xl font-black text-[#312923] mb-1">
+            <h2 className="text-2xl font-black text-[#241F1B] mb-1">
                 Evaluación de Riesgo Periodontal (PRA)
             </h2>
-            <p className="text-sm text-[#9A8F84] mb-6">Diagrama funcional de Lang &amp; Tonetti</p>
+            <p className="text-sm text-[#5E554E] mb-6">Diagrama funcional de Lang &amp; Tonetti</p>
 
             <div className="grid md:grid-cols-2 gap-8 items-start">
 
@@ -118,7 +118,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
 
                     {/* Selector de color */}
                     <div className="no-print flex items-center gap-2 flex-wrap justify-center">
-                        <span className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-bold">Color:</span>
+                        <span className="text-[11px] uppercase tracking-widest text-[#5E554E] font-bold">Color:</span>
                         {COLOR_OPTIONS.map(opt => (
                             <button
                                 key={opt.value}
@@ -127,7 +127,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                                     try { localStorage.setItem('pra_chart_color', opt.value); } catch (e) { console.warn('localStorage unavailable', e); }
                                 }}
                                 className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${
-                                    dataColor === opt.value ? 'ring-2 ring-offset-2 ring-[#312923] scale-110' : ''
+                                    dataColor === opt.value ? 'ring-2 ring-offset-2 ring-[#241F1B] scale-110' : ''
                                 }`}
                                 style={{ backgroundColor: opt.value }}
                                 title={opt.label}
@@ -136,8 +136,8 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                         ))}
                     </div>
 
-                    <div className="w-full bg-[#FDFBF7] rounded-2xl p-4 border border-[#DFD2C4] text-center">
-                        <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] mb-2 font-bold">
+                    <div className="w-full bg-[#FBFAF8] rounded-2xl p-4 border border-[#D9D2C7] text-center">
+                        <p className="text-[11px] uppercase tracking-widest text-[#5E554E] mb-2 font-bold">
                             Clasificación de riesgo
                         </p>
                         <div
@@ -149,7 +149,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                         >
                             {computed.riskInfo.label}
                         </div>
-                        <p className="text-xs text-[#312923] font-bold">{computed.riskInfo.interval}</p>
+                        <p className="text-xs text-[#241F1B] font-bold">{computed.riskInfo.interval}</p>
                     </div>
 
                     {/* Score breakdown */}
@@ -170,10 +170,10 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                                     backgroundColor: scoreBadgeColor(score) + '10',
                                 }}
                             >
-                                <span className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84]">{key}</span>
-                                <span className="text-xs font-bold text-[#312923] mt-0.5">{val}</span>
+                                <span className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">{key}</span>
+                                <span className="text-xs font-bold text-[#241F1B] mt-0.5">{val}</span>
                                 <span
-                                    className="text-[9px] font-black mt-0.5"
+                                    className="text-[11px] font-black mt-0.5"
                                     style={{ color: scoreBadgeColor(score) }}
                                 >
                                     Z{score}
@@ -215,7 +215,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                                 onChange={e => setBopPositive(parseInt(e.target.value) || 0)}
                                 className={inputCls}
                             />
-                            <span className="text-sm font-bold text-[#5B6651]">
+                            <span className="text-sm font-bold text-[#46523C]">
                                 BOP = {computed.bopPct.toFixed(0)}%
                             </span>
                         </div>
@@ -244,7 +244,7 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
                                 onChange={e => setBonelossPercent(parseFloat(e.target.value) || 0)}
                                 className={inputCls}
                             />
-                            <span className="text-sm font-bold text-[#5B6651]">
+                            <span className="text-sm font-bold text-[#46523C]">
                                 BL/Edad = {computed.blRatio.toFixed(2)}
                             </span>
                         </div>
@@ -277,25 +277,25 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
             </div>
 
             {/* Acciones */}
-            <div className="flex flex-col md:flex-row gap-3 mt-6 pt-6 border-t border-[#DFD2C4] no-print">
+            <div className="flex flex-col md:flex-row gap-3 mt-6 pt-6 border-t border-[#D9D2C7] no-print">
                 {mode === 'private' && onSave && (
                     <button
                         onClick={handleSave}
-                        className="flex-1 py-3 bg-[#312923] text-white font-bold rounded-2xl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
+                        className="flex-1 py-3 bg-[#241F1B] text-white font-bold rounded-2xl hover:opacity-90 flex items-center justify-center gap-2 text-sm"
                     >
                         <Save size={16} /> Guardar en ficha
                     </button>
                 )}
                 <button
                     onClick={handlePrint}
-                    className="flex-1 py-3 border-2 border-[#312923] text-[#312923] font-bold rounded-2xl hover:bg-[#312923] hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+                    className="flex-1 py-3 border-2 border-[#241F1B] text-[#241F1B] font-bold rounded-2xl hover:bg-[#241F1B] hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                     <Printer size={16} /> Imprimir / PDF
                 </button>
                 {onClose && (
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 border border-[#DFD2C4] text-[#312923] font-bold rounded-2xl hover:bg-[#FDFBF7] text-sm"
+                        className="flex-1 py-3 border border-[#D9D2C7] text-[#241F1B] font-bold rounded-2xl hover:bg-[#FBFAF8] text-sm"
                     >
                         Cerrar
                     </button>
@@ -308,11 +308,11 @@ export default function PRACalculator({ mode = 'public', patientData, onSave, on
 // ---- constantes ----
 
 const COLOR_OPTIONS = [
-    { value: '#5B6651', label: 'Verde sage' },
-    { value: '#CBAAA2', label: 'Rosa polvo' },
-    { value: '#A3968B', label: 'Taupe' },
+    { value: '#46523C', label: 'Verde sage' },
+    { value: '#D3A9A0', label: 'Rosa polvo' },
+    { value: '#8A7F74', label: 'Taupe' },
     { value: '#D9A86C', label: 'Ámbar' },
-    { value: '#312923', label: 'Espresso' },
+    { value: '#241F1B', label: 'Espresso' },
     { value: '#7A8B7F', label: 'Verde sage osc.' },
     { value: '#9B7E7A', label: 'Marrón rosa' },
     { value: '#B92323', label: 'Rojo' },
@@ -320,14 +320,14 @@ const COLOR_OPTIONS = [
 
 // ---- sub-componentes ----
 
-const inputCls = "w-24 px-3 py-2 border border-[#DFD2C4] rounded-xl bg-[#FDFBF7] text-[#312923] font-bold text-sm outline-none focus:border-[#5B6651] transition-colors";
+const inputCls = "w-24 px-3 py-2 border border-[#D9D2C7] rounded-xl bg-[#FBFAF8] text-[#241F1B] font-bold text-sm outline-none focus:border-[#46523C] transition-colors";
 
 function Field({ label, hint, children }) {
     return (
         <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-[#9A8F84] mb-1.5">
+            <label className="block text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-1.5">
                 {label}
-                {hint && <span className="ml-1 font-normal normal-case text-[#A3968B]">{hint}</span>}
+                {hint && <span className="ml-1 font-normal normal-case text-[#8A7F74]">{hint}</span>}
             </label>
             {children}
         </div>
@@ -342,8 +342,8 @@ function RadioGroup({ name, value, onChange, options, vertical = false }) {
                     key={opt.value}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border cursor-pointer text-xs font-bold transition-colors ${
                         value === opt.value
-                            ? 'border-[#5B6651] bg-[#5B6651]/10 text-[#312923]'
-                            : 'border-[#DFD2C4] bg-[#FDFBF7] text-[#9A8F84] hover:border-[#A3968B]'
+                            ? 'border-[#46523C] bg-[#46523C]/10 text-[#241F1B]'
+                            : 'border-[#D9D2C7] bg-[#FBFAF8] text-[#5E554E] hover:border-[#8A7F74]'
                     }`}
                 >
                     <input
@@ -360,7 +360,7 @@ function RadioGroup({ name, value, onChange, options, vertical = false }) {
 }
 
 function scoreBadgeColor(score) {
-    if (score === 1) return '#5B6651';
+    if (score === 1) return '#46523C';
     if (score === 2) return '#D9A86C';
     if (score === 3) return '#B87C50';
     return '#B92323';
@@ -370,7 +370,7 @@ const HexagonChart = React.memo(function HexagonChart({ scores, dataColor }) {
     const CX = 175, CY = 170, RU = 36;
 
     const ZONE_FILLS   = ['rgba(91,102,81,0.10)', 'rgba(217,168,108,0.12)', 'rgba(184,124,80,0.14)', 'rgba(185,35,35,0.12)'];
-    const ZONE_STROKES = ['#5B6651', '#D9A86C', '#B87C50', '#B92323'];
+    const ZONE_STROKES = ['#46523C', '#D9A86C', '#B87C50', '#B92323'];
     const LABELS       = ['BOP%', 'PD≥5mm', 'D. perd.', 'BL/Edad', 'Sistémico', 'Amb.'];
     const LR           = 4 * RU + 22;
 
@@ -395,7 +395,7 @@ const HexagonChart = React.memo(function HexagonChart({ scores, dataColor }) {
             {/* ejes */}
             {Array.from({ length: 6 }, (_, i) => {
                 const [x, y] = hexPt(4 * RU, i);
-                return <line key={`axis-${i}`} x1={CX} y1={CY} x2={x} y2={y} stroke="#A3968B" strokeWidth="0.8" />;
+                return <line key={`axis-${i}`} x1={CX} y1={CY} x2={x} y2={y} stroke="#8A7F74" strokeWidth="0.8" />;
             })}
 
             {/* polígono de datos */}
@@ -415,7 +415,7 @@ const HexagonChart = React.memo(function HexagonChart({ scores, dataColor }) {
                         key={`dot-${i}`}
                         cx={x} cy={y} r="5"
                         fill={dataColor}
-                        stroke="#FDFBF7"
+                        stroke="#FBFAF8"
                         strokeWidth="2"
                     />
                 );
@@ -436,7 +436,7 @@ const HexagonChart = React.memo(function HexagonChart({ scores, dataColor }) {
                         fontSize="12"
                         fontWeight="600"
                         fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
-                        fill="#312923"
+                        fill="#241F1B"
                     >
                         {label}
                     </text>

@@ -816,7 +816,7 @@ export default function DSDStudio({
                             >
                                 <Target size={16} /> Abrir Asistente
                             </button>
-                            <p className="text-gray-400 text-[10px] text-center">
+                            <p className="text-gray-400 text-[11px] text-center">
                                 {referencePoints ? '✅ Puntos establecidos' : '❌ Sin puntos'}
                             </p>
                         </div>
@@ -835,7 +835,7 @@ export default function DSDStudio({
                                         </button>
                                     ))}
                                 </div>
-                                <p className="text-gray-400 text-[9px]">Arrastra las líneas para ajustarlas</p>
+                                <p className="text-gray-400 text-[11px]">Arrastra las líneas para ajustarlas</p>
                             </div>
                         )}
 
@@ -963,7 +963,7 @@ export default function DSDStudio({
 
                         <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-700">
                             <p className="text-gray-300 text-xs font-bold uppercase">Personalidad: {currentStyle?.personality?.primary || '—'}</p>
-                            <p className="text-gray-400 text-[10px] mt-1">{currentStyle?.proposal?.description || ''}</p>
+                            <p className="text-gray-400 text-[11px] mt-1">{currentStyle?.proposal?.description || ''}</p>
                         </div>
 
                         <div className="space-y-2">
@@ -1147,7 +1147,7 @@ export default function DSDStudio({
 
                         <div className="bg-gray-800 rounded-lg p-3 text-center">
                             <p className="text-gray-400 text-xs">Diseño completado con éxito 🎉</p>
-                            <p className="text-gray-500 text-[10px] mt-1">Estilo: {currentStyle?.name} | Teoría: {proportionTheory}</p>
+                            <p className="text-gray-500 text-[11px] mt-1">Estilo: {currentStyle?.name} | Teoría: {proportionTheory}</p>
                         </div>
                     </div>
                 );
@@ -1216,7 +1216,7 @@ export default function DSDStudio({
                                 <button
                                     key={step.id}
                                     onClick={() => goToStep(index)}
-                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold transition ${
                                         currentStep === index
                                             ? 'bg-purple-600 text-white'
                                             : stepCompleted[index]

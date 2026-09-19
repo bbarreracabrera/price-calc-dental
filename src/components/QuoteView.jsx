@@ -155,17 +155,17 @@ export default function QuoteView({
     return (
         <div className="space-y-8 animate-in fade-in h-full flex flex-col pb-10">
 
-            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#DFD2C4]/50 shrink-0">
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 pb-6 border-b border-[#D9D2C7]/50 shrink-0">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        <Calculator size={14} className="text-[#A3968B]"/>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84]">Planificación Integral</p>
+                        <Calculator size={14} className="text-[#8A7F74]"/>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E]">Planificación Integral</p>
                     </div>
-                    <h2 className="text-4xl font-black text-[#312923] tracking-tighter">Plan de Tratamiento</h2>
+                    <h2 className="text-4xl font-black text-[#241F1B] tracking-tighter">Plan de Tratamiento</h2>
                 </div>
                 <button
                     onClick={handleClearPlan}
-                    className="px-5 py-3 rounded-xl border border-[#DFD2C4] bg-white text-[#9A8F84] text-[10px] font-black uppercase tracking-widest hover:bg-[#FDFBF7] hover:text-[#312923] transition-all shadow-sm"
+                    className="px-5 py-3 rounded-xl border border-[#D9D2C7] bg-white text-[#5E554E] text-[11px] font-black uppercase tracking-widest hover:bg-[#FBFAF8] hover:text-[#241F1B] transition-all shadow-sm"
                 >
                     Limpiar Plan
                 </button>
@@ -179,14 +179,14 @@ export default function QuoteView({
             )}
 
             {savedSuccess && (
-                <div className="bg-[#5B6651]/10 border border-[#5B6651]/30 rounded-2xl p-4 flex items-center justify-between animate-in fade-in">
+                <div className="bg-[#46523C]/10 border border-[#46523C]/30 rounded-2xl p-4 flex items-center justify-between animate-in fade-in">
                     <div className="flex items-center gap-2">
-                        <Check size={20} className="text-[#5B6651]" />
-                        <p className="text-sm font-bold text-[#312923]">Plan guardado correctamente</p>
+                        <Check size={20} className="text-[#46523C]" />
+                        <p className="text-sm font-bold text-[#241F1B]">Plan guardado correctamente</p>
                     </div>
                     <button
                         onClick={() => { setSavedSuccess(false); setActiveTab('history'); }}
-                        className="px-4 py-2 bg-[#5B6651] text-white text-xs font-bold rounded-xl hover:bg-[#4a5442] transition-colors"
+                        className="px-4 py-2 bg-[#46523C] text-white text-xs font-bold rounded-xl hover:bg-[#36402F] transition-colors"
                     >
                         Ver en Caja →
                     </button>
@@ -196,10 +196,10 @@ export default function QuoteView({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                 {/* PANEL IZQUIERDO */}
-                <Card className="lg:col-span-7 space-y-6 rounded-[2.5rem] border border-[#DFD2C4]/60 bg-white p-8 shadow-sm">
+                <Card className="lg:col-span-7 space-y-6 rounded-[2.5rem] border border-[#D9D2C7]/60 bg-white p-8 shadow-sm">
 
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 mb-2 block">1. Seleccionar Paciente</label>
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-2 mb-2 block">1. Seleccionar Paciente</label>
                         <PatientSelect 
                             theme={themeMode} 
                             patients={patientRecords} 
@@ -218,13 +218,13 @@ export default function QuoteView({
                         />
                     </div>
 
-                    <div className="animate-in fade-in space-y-5 pt-6 border-t border-[#DFD2C4]/40">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2 block">2. Planificar Procedimiento</label>
+                    <div className="animate-in fade-in space-y-5 pt-6 border-t border-[#D9D2C7]/40">
+                            <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-2 block">2. Planificar Procedimiento</label>
 
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A3968B]"><Layers size={18}/></div>
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A7F74]"><Layers size={18}/></div>
                                 <select
-                                    className="w-full outline-none font-black text-sm py-4 pl-12 pr-4 rounded-2xl border border-[#DFD2C4] bg-[#CBAAA2]/10 text-[#5B6651] focus:border-[#5B6651] transition-all cursor-pointer appearance-none"
+                                    className="w-full outline-none font-black text-sm py-4 pl-12 pr-4 rounded-2xl border border-[#D9D2C7] bg-[#D3A9A0]/10 text-[#46523C] focus:border-[#46523C] transition-all cursor-pointer appearance-none"
                                     value={currentPhase}
                                     onChange={e => setNewQuoteItem({...newQuoteItem, phase: e.target.value})}
                                 >
@@ -232,14 +232,14 @@ export default function QuoteView({
                                         <option key={phase} value={phase}>{phase}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#A3968B]">▼</div>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#8A7F74]">▼</div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                                 <div className="md:col-span-3 relative" ref={dropdownRef}>
                                     <input
                                         ref={searchInputRef} // <--- REF AGREGADO
-                                        className="w-full outline-none font-bold text-sm p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-[#312923] focus:border-[#5B6651] transition-all"
+                                        className="w-full outline-none font-bold text-sm p-4 rounded-2xl border border-[#D9D2C7] bg-[#FBFAF8] text-[#241F1B] focus:border-[#46523C] transition-all"
                                         placeholder="Busca en tu arancel..."
                                         value={newQuoteItem.name}
                                         autoComplete="off"
@@ -253,15 +253,15 @@ export default function QuoteView({
                                     />
 
                                     {dropdownOpen && (
-                                        <div className="absolute z-50 top-full mt-1 w-full bg-white border border-[#DFD2C4] rounded-2xl shadow-xl overflow-hidden">
+                                        <div className="absolute z-50 top-full mt-1 w-full bg-white border border-[#D9D2C7] rounded-2xl shadow-xl overflow-hidden">
                                             {/* Indicador de categoría activa */}
                                             {activeCategory && (
-                                                <div className="px-4 py-2.5 flex items-center justify-between bg-[#5B6651]/10 border-b border-[#5B6651]/20">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#5B6651]">Filtrando por: {activeCategory}</span>
+                                                <div className="px-4 py-2.5 flex items-center justify-between bg-[#46523C]/10 border-b border-[#46523C]/20">
+                                                    <span className="text-[11px] font-black uppercase tracking-widest text-[#46523C]">Filtrando por: {activeCategory}</span>
                                                     <button
                                                         type="button"
                                                         onMouseDown={e => { e.preventDefault(); setActiveCategory(null); setDropdownHighlight(0); }}
-                                                        className="text-[#5B6651] hover:text-[#312923] transition-colors ml-2"
+                                                        className="text-[#46523C] hover:text-[#241F1B] transition-colors ml-2"
                                                     >
                                                         <X size={14}/>
                                                     </button>
@@ -276,23 +276,23 @@ export default function QuoteView({
                                                                 key={cat}
                                                                 type="button"
                                                                 onMouseDown={e => { e.preventDefault(); setActiveCategory(cat); setDropdownHighlight(0); }}
-                                                                className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[#FDFBF7] border border-[#DFD2C4] text-[#9A8F84] hover:bg-[#5B6651]/10 hover:border-[#5B6651] hover:text-[#5B6651] transition-all"
+                                                                className="px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest bg-[#FBFAF8] border border-[#D9D2C7] text-[#5E554E] hover:bg-[#46523C]/10 hover:border-[#46523C] hover:text-[#46523C] transition-all"
                                                             >
                                                                 {cat}
                                                             </button>
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <div className="p-4 text-center text-xs font-bold text-[#9A8F84]">Escribe para buscar en tu arancel</div>
+                                                    <div className="p-4 text-center text-xs font-bold text-[#5E554E]">Escribe para buscar en tu arancel</div>
                                                 )
                                             ) : filteredCatalog.length === 0 ? (
-                                                <div className="p-4 text-center text-xs font-bold text-[#9A8F84]">Sin resultados{query.trim() ? ` para "${query}"` : ''}</div>
+                                                <div className="p-4 text-center text-xs font-bold text-[#5E554E]">Sin resultados{query.trim() ? ` para "${query}"` : ''}</div>
                                             ) : (
                                                 <div className="max-h-56 overflow-y-auto custom-scrollbar">
                                                     {Object.entries(groupedFiltered).map(([cat, items]) => (
                                                         <div key={cat}>
                                                             {!activeCategory && (
-                                                                <div className="px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[#9A8F84] bg-[#FDFBF7] border-b border-[#DFD2C4]/40 sticky top-0">{cat}</div>
+                                                                <div className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#5E554E] bg-[#FBFAF8] border-b border-[#D9D2C7]/40 sticky top-0">{cat}</div>
                                                             )}
                                                             {items.map(item => {
                                                                 const globalIdx = filteredCatalog.indexOf(item);
@@ -302,10 +302,10 @@ export default function QuoteView({
                                                                         type="button"
                                                                         onMouseDown={e => { e.preventDefault(); handleSelectCatalogItem(item); }}
                                                                         onMouseEnter={() => setDropdownHighlight(globalIdx)}
-                                                                        className={`w-full text-left px-4 py-3 flex items-center justify-between transition-colors ${dropdownHighlight === globalIdx ? 'bg-[#5B6651]/10' : 'hover:bg-[#FDFBF7]'}`}
+                                                                        className={`w-full text-left px-4 py-3 flex items-center justify-between transition-colors ${dropdownHighlight === globalIdx ? 'bg-[#46523C]/10' : 'hover:bg-[#FBFAF8]'}`}
                                                                     >
-                                                                        <span className="text-sm font-bold text-[#312923]">{item.name}</span>
-                                                                        <span className="text-xs font-black text-[#5B6651]">${Number(item.price).toLocaleString()}</span>
+                                                                        <span className="text-sm font-bold text-[#241F1B]">{item.name}</span>
+                                                                        <span className="text-xs font-black text-[#46523C]">${Number(item.price).toLocaleString()}</span>
                                                                     </button>
                                                                 );
                                                             })}
@@ -319,7 +319,7 @@ export default function QuoteView({
                                 <div className="md:col-span-1">
                                     <input
                                         type="number"
-                                        className="w-full outline-none font-black text-sm p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-[#5B6651] focus:border-[#5B6651] transition-all"
+                                        className="w-full outline-none font-black text-sm p-4 rounded-2xl border border-[#D9D2C7] bg-[#FBFAF8] text-[#46523C] focus:border-[#46523C] transition-all"
                                         placeholder="$"
                                         value={newQuoteItem.price}
                                         onChange={e => setNewQuoteItem({...newQuoteItem, price: e.target.value})}
@@ -333,7 +333,7 @@ export default function QuoteView({
                                 </div>
                                 <button
                                     onClick={handleAddItem} // <--- REUTILIZA LA MISMA FUNCIÓN
-                                    className="md:col-span-1 bg-[#312923] text-white rounded-2xl p-4 hover:bg-[#5B6651] transition-all shadow-lg flex items-center justify-center"
+                                    className="md:col-span-1 bg-[#241F1B] text-white rounded-2xl p-4 hover:bg-[#46523C] transition-all shadow-lg flex items-center justify-center"
                                 >
                                     <Plus size={20} />
                                 </button>
@@ -343,19 +343,19 @@ export default function QuoteView({
 
                 {/* PANEL DERECHO: VISTA PREVIA DEL PLAN */}
                 <div className="lg:col-span-5 flex flex-col gap-6">
-                    <Card className="rounded-[2.5rem] border border-[#DFD2C4]/60 bg-[#FDFBF7] p-8 shadow-inner flex-1">
+                    <Card className="rounded-[2.5rem] border border-[#D9D2C7]/60 bg-[#FBFAF8] p-8 shadow-inner flex-1">
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-xl font-black text-[#312923] tracking-tight">Vista Previa</h3>
-                            <div className="bg-white px-4 py-2 rounded-xl border border-[#DFD2C4] shadow-sm">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-[#9A8F84] mb-0.5 text-center">Inversión Total</p>
-                                <p className="text-xl font-black text-[#5B6651] leading-none">
+                            <h3 className="text-xl font-black text-[#241F1B] tracking-tight">Vista Previa</h3>
+                            <div className="bg-white px-4 py-2 rounded-xl border border-[#D9D2C7] shadow-sm">
+                                <p className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] mb-0.5 text-center">Inversión Total</p>
+                                <p className="text-xl font-black text-[#46523C] leading-none">
                                     ${quoteItems.reduce((acc, item) => acc + Number(item.price || 0), 0).toLocaleString()}
                                 </p>
                             </div>
                         </div>
 
                         {quoteItems.length === 0 ? (
-                            <div className="h-64 flex flex-col items-center justify-center text-[#9A8F84] opacity-40">
+                            <div className="h-64 flex flex-col items-center justify-center text-[#5E554E] opacity-40">
                                 <Calculator size={48} className="mb-4" />
                                 <p className="text-xs font-black uppercase tracking-widest">Plan Vacío</p>
                             </div>
@@ -363,19 +363,19 @@ export default function QuoteView({
                             <div className="space-y-8 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
                                 {Object.entries(groupedItems).map(([phase, items]) => (
                                     <div key={phase} className="space-y-3">
-                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#CBAAA2] border-b border-[#CBAAA2]/30 pb-1">{phase}</h4>
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#D3A9A0] border-b border-[#D3A9A0]/30 pb-1">{phase}</h4>
                                         <div className="space-y-2">
                                             {items.map(item => (
-                                                <div key={item.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#DFD2C4]/40 group hover:border-[#CBAAA2] transition-all">
+                                                <div key={item.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#D9D2C7]/40 group hover:border-[#D3A9A0] transition-all">
                                                     <div className="flex-1 min-w-0 pr-4">
-                                                        <p className="text-sm font-bold text-[#312923] truncate">{item.name}</p>
-                                                        {item.tooth && <span className="text-[9px] font-black text-[#9A8F84] uppercase">Pieza: {item.tooth}</span>}
+                                                        <p className="text-sm font-bold text-[#241F1B] truncate">{item.name}</p>
+                                                        {item.tooth && <span className="text-[11px] font-black text-[#5E554E] uppercase">Pieza: {item.tooth}</span>}
                                                     </div>
                                                     <div className="flex items-center gap-4">
-                                                        <span className="text-sm font-black text-[#5B6651]">${Number(item.price).toLocaleString()}</span>
+                                                        <span className="text-sm font-black text-[#46523C]">${Number(item.price).toLocaleString()}</span>
                                                         <button
                                                             onClick={() => setQuoteItems(quoteItems.filter(i => i.id !== item.id))}
-                                                            className="p-2 text-[#DFD2C4] hover:text-red-500 transition-colors"
+                                                            className="p-2 text-[#D9D2C7] hover:text-red-500 transition-colors"
                                                         >
                                                             <Trash2 size={16} />
                                                         </button>
@@ -397,7 +397,7 @@ export default function QuoteView({
                                     patientName: sessionData.patientName || 'Paciente',
                                     total: quoteItems.reduce((acc, item) => acc + Number(item.price || 0), 0)
                                 })}
-                                className="flex items-center justify-center gap-2 py-4 bg-white border border-[#DFD2C4] text-[#312923] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#FDFBF7] transition-all shadow-sm"
+                                className="flex items-center justify-center gap-2 py-4 bg-white border border-[#D9D2C7] text-[#241F1B] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#FBFAF8] transition-all shadow-sm"
                             >
                                 <Printer size={18} /> Imprimir
                             </button>
@@ -423,7 +423,7 @@ export default function QuoteView({
                                     setSavedSuccess(true);
                                     notify('Plan guardado en la ficha del paciente');
                                 }}
-                                className="flex items-center justify-center gap-2 py-4 bg-[#5B6651] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#4a5442] transition-all shadow-lg shadow-[#5B6651]/20"
+                                className="flex items-center justify-center gap-2 py-4 bg-[#46523C] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#36402F] transition-all shadow-lg shadow-[#46523C]/20"
                             >
                                 <CheckCircle size={18} /> Guardar Plan
                             </button>
@@ -435,41 +435,41 @@ export default function QuoteView({
             {/* Modal Nuevo Paciente */}
             {newPatModal.open && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md border border-[#DFD2C4]/60 animate-in fade-in zoom-in-95">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md border border-[#D9D2C7]/60 animate-in fade-in zoom-in-95">
                         <div className="p-8 space-y-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-3 bg-[#5B6651]/10 text-[#5B6651] rounded-2xl"><User size={24}/></div>
+                                <div className="p-3 bg-[#46523C]/10 text-[#46523C] rounded-2xl"><User size={24}/></div>
                                 <div>
-                                    <h3 className="text-xl font-black text-[#312923]">Nuevo Paciente</h3>
-                                    <p className="text-xs font-bold text-[#9A8F84] uppercase tracking-widest">Creación Rápida</p>
+                                    <h3 className="text-xl font-black text-[#241F1B]">Nuevo Paciente</h3>
+                                    <p className="text-xs font-bold text-[#5E554E] uppercase tracking-widest">Creación Rápida</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Nombre Completo</label>
+                                    <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-2">Nombre Completo</label>
                                     <input
                                         type="text"
-                                        className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold outline-none focus:border-[#5B6651] transition-all"
+                                        className="w-full p-4 rounded-2xl border border-[#D9D2C7] bg-[#FBFAF8] text-sm font-bold outline-none focus:border-[#46523C] transition-all"
                                         value={newPatModal.name}
                                         onChange={e => setNewPatModal({...newPatModal, name: e.target.value})}
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">RUT (Opcional)</label>
+                                        <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-2">RUT (Opcional)</label>
                                         <input
                                             type="text"
-                                            className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold outline-none focus:border-[#5B6651] transition-all"
+                                            className="w-full p-4 rounded-2xl border border-[#D9D2C7] bg-[#FBFAF8] text-sm font-bold outline-none focus:border-[#46523C] transition-all"
                                             value={newPatModal.rut}
                                             onChange={e => setNewPatModal({...newPatModal, rut: formatRUT(e.target.value)})}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#9A8F84] ml-2">Teléfono</label>
+                                        <label className="text-[11px] font-black uppercase tracking-widest text-[#5E554E] ml-2">Teléfono</label>
                                         <input
                                             type="text"
-                                            className="w-full p-4 rounded-2xl border border-[#DFD2C4] bg-[#FDFBF7] text-sm font-bold outline-none focus:border-[#5B6651] transition-all"
+                                            className="w-full p-4 rounded-2xl border border-[#D9D2C7] bg-[#FBFAF8] text-sm font-bold outline-none focus:border-[#46523C] transition-all"
                                             value={newPatModal.phone}
                                             onChange={e => setNewPatModal({...newPatModal, phone: e.target.value})}
                                         />
@@ -480,13 +480,13 @@ export default function QuoteView({
                             <div className="flex gap-3 pt-2">
                                 <button
                                     onClick={() => setNewPatModal({ open: false, name: '', rut: '', phone: '' })}
-                                    className="flex-1 py-4 text-[#9A8F84] font-black text-[11px] uppercase tracking-widest hover:bg-[#FDFBF7] rounded-2xl transition-all"
+                                    className="flex-1 py-4 text-[#5E554E] font-black text-[11px] uppercase tracking-widest hover:bg-[#FBFAF8] rounded-2xl transition-all"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     onClick={handleCreateNewPatient}
-                                    className="flex-1 py-4 bg-[#312923] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#5B6651] transition-all shadow-lg"
+                                    className="flex-1 py-4 bg-[#241F1B] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#46523C] transition-all shadow-lg"
                                 >
                                     Crear Paciente
                                 </button>

@@ -65,35 +65,35 @@ export default function ImplantologyTab({ patientId, onSave }) {
   return (
     <div className="space-y-6">
       {/* Formulario de Nuevo Implante */}
-      <div className="bg-white border border-[#DFD2C4] rounded-2xl p-6 space-y-6">
-        <h3 className="text-lg font-black text-[#312923]">Registrar Nuevo Implante</h3>
+      <div className="bg-white border border-[#D9D2C7] rounded-2xl p-6 space-y-6">
+        <h3 className="text-lg font-black text-[#241F1B]">Registrar Nuevo Implante</h3>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Fecha Inserción</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Fecha Inserción</label>
             <input
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Diente</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Diente</label>
             <input
               type="text"
               placeholder="ej: 1.6, 2.4"
               value={formData.tooth}
               onChange={(e) => setFormData({ ...formData, tooth: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Marca</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Marca</label>
             <select
               value={formData.implantBrand}
               onChange={(e) => setFormData({ ...formData, implantBrand: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             >
               <option value="">Seleccionar marca</option>
               <option value="straumann">Straumann</option>
@@ -107,31 +107,31 @@ export default function ImplantologyTab({ patientId, onSave }) {
 
         <div className="grid grid-cols-4 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Modelo</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Modelo</label>
             <input
               type="text"
               placeholder="Modelo"
               value={formData.implantModel}
               onChange={(e) => setFormData({ ...formData, implantModel: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Lote</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Lote</label>
             <input
               type="text"
               placeholder="Lote"
               value={formData.implantLot}
               onChange={(e) => setFormData({ ...formData, implantLot: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Diámetro (mm)</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Diámetro (mm)</label>
             <select
               value={formData.diameter}
               onChange={(e) => setFormData({ ...formData, diameter: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             >
               <option value="3.3">3.3</option>
               <option value="4.1">4.1</option>
@@ -141,11 +141,11 @@ export default function ImplantologyTab({ patientId, onSave }) {
             </select>
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Largo (mm)</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Largo (mm)</label>
             <select
               value={formData.length}
               onChange={(e) => setFormData({ ...formData, length: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             >
               <option value="8">8</option>
               <option value="10">10</option>
@@ -158,29 +158,29 @@ export default function ImplantologyTab({ patientId, onSave }) {
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Torque Inserción (Nm)</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Torque Inserción (Nm)</label>
             <input
               type="number"
               value={formData.insertionTorque}
               onChange={(e) => setFormData({ ...formData, insertionTorque: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">ISQ (Estabilidad)</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">ISQ (Estabilidad)</label>
             <input
               type="number"
               value={formData.isq}
               onChange={(e) => setFormData({ ...formData, isq: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           </div>
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Tipo Prótesis</label>
+            <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Tipo Prótesis</label>
             <select
               value={formData.prosthesisType}
               onChange={(e) => setFormData({ ...formData, prosthesisType: e.target.value })}
-              className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             >
               <option value="single">Unitaria</option>
               <option value="bridge">Puente</option>
@@ -195,33 +195,33 @@ export default function ImplantologyTab({ patientId, onSave }) {
               type="checkbox"
               checked={formData.immediateLoad}
               onChange={(e) => setFormData({ ...formData, immediateLoad: e.target.checked })}
-              className="w-4 h-4 rounded border-[#DFD2C4]"
+              className="w-4 h-4 rounded border-[#D9D2C7]"
             />
-            <span className="text-xs font-black uppercase tracking-widest text-[#6B615A]">Carga Inmediata</span>
+            <span className="text-xs font-black uppercase tracking-widest text-[#5E554E]">Carga Inmediata</span>
           </label>
           {formData.immediateLoad && (
             <input
               type="date"
               value={formData.loadDate}
               onChange={(e) => setFormData({ ...formData, loadDate: e.target.value })}
-              className="px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651]"
+              className="px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C]"
             />
           )}
         </div>
 
         <div>
-          <label className="text-xs font-black uppercase tracking-widest text-[#6B615A] block mb-2">Notas Clínicas</label>
+          <label className="text-xs font-black uppercase tracking-widest text-[#5E554E] block mb-2">Notas Clínicas</label>
           <textarea
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             placeholder="Observaciones adicionales..."
-            className="w-full px-4 py-2 border border-[#DFD2C4] rounded-lg text-sm focus:outline-none focus:border-[#5B6651] resize-none h-20"
+            className="w-full px-4 py-2 border border-[#D9D2C7] rounded-lg text-sm focus:outline-none focus:border-[#46523C] resize-none h-20"
           />
         </div>
 
         <button
           onClick={handleAddImplant}
-          className="w-full px-4 py-3 bg-[#5B6651] text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-[#4a5442] transition-all flex items-center justify-center gap-2"
+          className="w-full px-4 py-3 bg-[#46523C] text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-[#36402F] transition-all flex items-center justify-center gap-2"
         >
           <Plus size={16} /> Guardar Implante
         </button>
@@ -229,19 +229,19 @@ export default function ImplantologyTab({ patientId, onSave }) {
 
       {/* Listado de Implantes */}
       <div className="space-y-3">
-        <h3 className="text-lg font-black text-[#312923]">Implantes Registrados</h3>
+        <h3 className="text-lg font-black text-[#241F1B]">Implantes Registrados</h3>
         {implants.length === 0 ? (
-          <p className="text-sm text-[#9A8F84] italic">No hay implantes registrados.</p>
+          <p className="text-sm text-[#5E554E] italic">No hay implantes registrados.</p>
         ) : (
           implants.map((implant) => (
-            <div key={implant.id} className="bg-white border border-[#DFD2C4] rounded-2xl p-4">
+            <div key={implant.id} className="bg-white border border-[#D9D2C7] rounded-2xl p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className="font-black text-[#312923]">Diente {implant.tooth}</p>
-                  <p className="text-xs text-[#6B615A] font-bold">
+                  <p className="font-black text-[#241F1B]">Diente {implant.tooth}</p>
+                  <p className="text-xs text-[#5E554E] font-bold">
                     {implant.implantBrand} {implant.implantModel} • {implant.diameter}x{implant.length}mm
                   </p>
-                  <p className="text-xs text-[#9A8F84] font-bold mt-1">
+                  <p className="text-xs text-[#5E554E] font-bold mt-1">
                     Inserción: {new Date(implant.date).toLocaleDateString('es-CL')} • Torque: {implant.insertionTorque} Nm • ISQ: {implant.isq}
                   </p>
                 </div>

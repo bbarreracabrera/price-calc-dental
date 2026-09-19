@@ -33,7 +33,7 @@ function formatBytes(bytes) {
 function FileTypeIcon({ mimeType, size = 16 }) {
     if (mimeType?.startsWith('image/')) return <Image size={size} className="text-blue-500" />;
     if (mimeType === 'application/pdf') return <FileText size={size} className="text-red-500" />;
-    return <File size={size} className="text-[#9A8F84]" />;
+    return <File size={size} className="text-[#5E554E]" />;
 }
 
 // Thumbnail para imágenes (genera signed URL y muestra preview)
@@ -58,7 +58,7 @@ function FileThumbnail({ file, onOpen }) {
 
     return (
         <div
-            className="relative group cursor-pointer rounded-2xl overflow-hidden border border-[#DFD2C4] bg-[#FDFBF7] hover:border-[#5B6651] transition-all"
+            className="relative group cursor-pointer rounded-2xl overflow-hidden border border-[#D9D2C7] bg-[#FBFAF8] hover:border-[#46523C] transition-all"
             style={{ aspectRatio: '1' }}
             onClick={onOpen}
             title={file.original_name}
@@ -66,7 +66,7 @@ function FileThumbnail({ file, onOpen }) {
             {isImage ? (
                 loading ? (
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 size={20} className="animate-spin text-[#CBAAA2]" />
+                        <Loader2 size={20} className="animate-spin text-[#D3A9A0]" />
                     </div>
                 ) : previewUrl ? (
                     <img
@@ -76,19 +76,19 @@ function FileThumbnail({ file, onOpen }) {
                     />
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Image size={24} className="text-[#DFD2C4]" />
+                        <Image size={24} className="text-[#D9D2C7]" />
                     </div>
                 )
             ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-2">
                     <FileTypeIcon mimeType={file.mime_type} size={28} />
-                    <p className="text-[9px] font-bold text-[#9A8F84] text-center truncate w-full px-1">
+                    <p className="text-[11px] font-bold text-[#5E554E] text-center truncate w-full px-1">
                         {file.original_name?.split('.').pop()?.toUpperCase()}
                     </p>
                 </div>
             )}
             {/* Overlay al hover */}
-            <div className="absolute inset-0 bg-[#312923]/0 group-hover:bg-[#312923]/30 transition-all flex items-center justify-center">
+            <div className="absolute inset-0 bg-[#241F1B]/0 group-hover:bg-[#241F1B]/30 transition-all flex items-center justify-center">
                 <Download size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             {/* Badge de seguridad */}
@@ -136,16 +136,16 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
     const hasLegacyFile = job.file_url && labFiles.length === 0;
 
     return (
-        <div className="fixed inset-0 bg-[#312923]/80 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-[#241F1B]/80 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
             <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-in zoom-in-95 duration-150">
 
                 {/* Header sticky */}
-                <div className="sticky top-0 bg-white border-b border-[#DFD2C4] px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
+                <div className="sticky top-0 bg-white border-b border-[#D9D2C7] px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
                     <div>
-                        <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-black">Detalle del trabajo</p>
-                        <h2 className="text-lg font-black text-[#312923] leading-tight">{job.workType || 'Sin tipo'}</h2>
+                        <p className="text-[11px] uppercase tracking-widest text-[#5E554E] font-black">Detalle del trabajo</p>
+                        <h2 className="text-lg font-black text-[#241F1B] leading-tight">{job.workType || 'Sin tipo'}</h2>
                     </div>
-                    <button onClick={onClose} className="p-2 text-[#9A8F84] hover:text-[#312923] hover:bg-[#FDFBF7] rounded-xl transition-colors">
+                    <button onClick={onClose} className="p-2 text-[#5E554E] hover:text-[#241F1B] hover:bg-[#FBFAF8] rounded-xl transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -153,15 +153,15 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                 <div className="p-6 space-y-5">
 
                     {/* Estado + avanzar */}
-                    <div className="bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-black mb-1">Estado actual</p>
-                        <p className="text-xl font-black text-[#5B6651]">
+                    <div className="bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl p-4">
+                        <p className="text-[11px] uppercase tracking-widest text-[#5E554E] font-black mb-1">Estado actual</p>
+                        <p className="text-xl font-black text-[#46523C]">
                             {STATUS_LABELS[job.status] || job.status}
                         </p>
                         <div className="flex items-center gap-1 mt-3">
                             {STATUS_FLOW.map((s, i) => (
                                 <React.Fragment key={s}>
-                                    <div className={`h-1.5 flex-1 rounded-full transition-colors ${i <= currentIdx ? 'bg-[#5B6651]' : 'bg-[#DFD2C4]'}`} />
+                                    <div className={`h-1.5 flex-1 rounded-full transition-colors ${i <= currentIdx ? 'bg-[#46523C]' : 'bg-[#D9D2C7]'}`} />
                                     {i < STATUS_FLOW.length - 1 && <div className="w-1" />}
                                 </React.Fragment>
                             ))}
@@ -169,7 +169,7 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                         {nextStatus && (
                             <button
                                 onClick={() => onUpdateStatus(job.id, nextStatus)}
-                                className="mt-4 flex items-center gap-2 px-4 py-2 bg-[#312923] text-white rounded-xl text-sm font-black hover:bg-[#1a1512] transition-colors"
+                                className="mt-4 flex items-center gap-2 px-4 py-2 bg-[#241F1B] text-white rounded-xl text-sm font-black hover:bg-[#1a1512] transition-colors"
                             >
                                 Avanzar a "{STATUS_LABELS[nextStatus]}" <ArrowRight size={14} />
                             </button>
@@ -178,26 +178,26 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
 
                     {/* Paciente */}
                     <Section icon={<User size={15} />} title="Paciente">
-                        <p className="text-sm font-bold text-[#312923]">{job.patientName || 'Sin nombre'}</p>
-                        {job.tooth && <p className="text-xs text-[#9A8F84] mt-0.5">Diente: {job.tooth}</p>}
+                        <p className="text-sm font-bold text-[#241F1B]">{job.patientName || 'Sin nombre'}</p>
+                        {job.tooth && <p className="text-xs text-[#5E554E] mt-0.5">Diente: {job.tooth}</p>}
                     </Section>
 
                     {/* Fechas */}
                     <Section icon={<Calendar size={15} />} title="Fechas">
-                        <p className="text-sm text-[#312923]">Envío: <span className="font-bold">{formatDate(job.sendDate)}</span></p>
-                        <p className="text-sm text-[#312923] mt-1">Entrega esperada: <span className="font-bold">{formatDate(job.expectedDate)}</span></p>
+                        <p className="text-sm text-[#241F1B]">Envío: <span className="font-bold">{formatDate(job.sendDate)}</span></p>
+                        <p className="text-sm text-[#241F1B] mt-1">Entrega esperada: <span className="font-bold">{formatDate(job.expectedDate)}</span></p>
                     </Section>
 
                     {/* Detalles técnicos */}
                     {(job.shade || job.notes) && (
                         <Section icon={<Palette size={15} />} title="Detalles técnicos">
                             {job.shade && (
-                                <p className="text-sm text-[#312923]">
+                                <p className="text-sm text-[#241F1B]">
                                     <span className="font-bold">Color:</span> {job.shade}
                                 </p>
                             )}
                             {job.notes && (
-                                <p className="text-sm text-[#9A8F84] mt-2 whitespace-pre-wrap leading-relaxed italic">
+                                <p className="text-sm text-[#5E554E] mt-2 whitespace-pre-wrap leading-relaxed italic">
                                     "{job.notes}"
                                 </p>
                             )}
@@ -210,7 +210,7 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                         title={`Archivos Adjuntos${labFiles.length > 0 ? ` (${labFiles.length})` : ''}`}
                     >
                         {loadingFiles ? (
-                            <div className="flex items-center gap-2 text-[#9A8F84]">
+                            <div className="flex items-center gap-2 text-[#5E554E]">
                                 <Loader2 size={14} className="animate-spin" />
                                 <span className="text-xs font-bold">Cargando archivos...</span>
                             </div>
@@ -234,22 +234,22 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                                         <button
                                             key={f.id}
                                             onClick={() => handleOpenFile(f)}
-                                            className="w-full flex items-center gap-3 p-3 bg-[#FDFBF7] border border-[#DFD2C4] rounded-2xl hover:border-[#5B6651] transition-all text-left"
+                                            className="w-full flex items-center gap-3 p-3 bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl hover:border-[#46523C] transition-all text-left"
                                         >
-                                            <div className="p-2 bg-white rounded-xl border border-[#DFD2C4] shrink-0">
+                                            <div className="p-2 bg-white rounded-xl border border-[#D9D2C7] shrink-0">
                                                 <FileTypeIcon mimeType={f.mime_type} size={16} />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-black text-[#312923] truncate">{f.original_name}</p>
-                                                <p className="text-[9px] text-[#9A8F84] font-bold uppercase tracking-widest">
+                                                <p className="text-xs font-black text-[#241F1B] truncate">{f.original_name}</p>
+                                                <p className="text-[11px] text-[#5E554E] font-bold uppercase tracking-widest">
                                                     {formatBytes(f.file_size)} · {f.upload_source === 'lab' ? 'Subido por Lab' : 'Subido por Clínica'}
                                                 </p>
                                             </div>
-                                            <Download size={14} className="text-[#9A8F84] shrink-0" />
+                                            <Download size={14} className="text-[#5E554E] shrink-0" />
                                         </button>
                                     ))
                                 }
-                                <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-1">
+                                <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
                                     <Lock size={9} /> Acceso seguro · URLs firmadas · Ley 19.628
                                 </p>
                             </div>
@@ -262,28 +262,28 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                                     if (url) window.open(url, '_blank');
                                     else alert('No se pudo generar el acceso seguro al archivo.');
                                 }}
-                                className="inline-flex items-center gap-2 text-sm text-[#5B6651] font-bold hover:underline"
+                                className="inline-flex items-center gap-2 text-sm text-[#46523C] font-bold hover:underline"
                             >
                                 <FileText size={14} />
                                 {job.file_name || 'Descargar archivo seguro'}
                             </button>
                         ) : (
-                            <p className="text-xs text-[#9A8F84] italic">Sin archivos adjuntos</p>
+                            <p className="text-xs text-[#5E554E] italic">Sin archivos adjuntos</p>
                         )}
                     </Section>
 
                     {/* Clínica */}
                     <Section icon={<Mail size={15} />} title="Clínica que asignó">
-                        <p className="text-sm text-[#312923] font-bold">{job.admin_email}</p>
+                        <p className="text-sm text-[#241F1B] font-bold">{job.admin_email}</p>
                         <a
                             href={`mailto:${job.admin_email}`}
-                            className="inline-flex items-center gap-1.5 mt-2 text-xs text-[#5B6651] font-bold hover:underline"
+                            className="inline-flex items-center gap-1.5 mt-2 text-xs text-[#46523C] font-bold hover:underline"
                         >
                             <Mail size={12} /> Contactar por email
                         </a>
                     </Section>
 
-                    <p className="text-[10px] text-[#DFD2C4] font-mono text-right">
+                    <p className="text-[11px] text-[#D9D2C7] font-mono text-right">
                         ID: {job.id}
                     </p>
                 </div>
@@ -296,8 +296,8 @@ function Section({ icon, title, children }) {
     return (
         <div>
             <div className="flex items-center gap-2 mb-2">
-                <span className="text-[#A3968B]">{icon}</span>
-                <p className="text-[10px] uppercase tracking-widest text-[#9A8F84] font-black">{title}</p>
+                <span className="text-[#8A7F74]">{icon}</span>
+                <p className="text-[11px] uppercase tracking-widest text-[#5E554E] font-black">{title}</p>
             </div>
             <div className="pl-6">{children}</div>
         </div>

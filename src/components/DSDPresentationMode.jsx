@@ -137,7 +137,7 @@ export default function DSDPresentationMode({
                                 {presentation.personality.traits.map((trait, i) => (
                                     <span
                                         key={i}
-                                        className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white/70 text-[10px] font-medium"
+                                        className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white/70 text-[11px] font-medium"
                                     >
                                         {trait}
                                     </span>
