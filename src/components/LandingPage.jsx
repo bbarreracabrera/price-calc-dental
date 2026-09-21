@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, X, Check, Plus } from 'lucide-react';
+import { Menu, X, Check, Plus, Cloud } from 'lucide-react';
 
 // ============================================================================
 // LANDING PAGE
@@ -54,14 +54,6 @@ const FAQS = [
     a: 'Tus datos son tuyos. Puedes exportar toda tu base de pacientes en cualquier momento. No hay cláusula de permanencia.',
   },
 ];
-
-function ToothMark({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
-      <path d="M12 21s-7-6.5-7-12a5 5 0 0 1 10 0 5 5 0 0 1 10 0c0 5.5-7 12-7 12" />
-    </svg>
-  );
-}
 
 /** Cuenta ascendente, una sola vez al montar. Respeta reduce-motion. */
 function useCountUp(target, { prefix = '', suffix = '', duration = 1400, reduceMotion }) {
@@ -163,7 +155,7 @@ export default function LandingPage({ onLoginClick }) {
         <div className="mx-auto flex max-w-[1180px] items-center justify-between px-6">
           <div className="flex items-center gap-2.5 text-[17px] font-bold tracking-tight">
             <span className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-[10px] bg-ink">
-              <ToothMark className="h-[18px] w-[18px] text-white" />
+              <Cloud size={18} className="text-white" strokeWidth={2.4} />
             </span>
             ShiningCloud <span className="text-accent">Dental</span>
           </div>
