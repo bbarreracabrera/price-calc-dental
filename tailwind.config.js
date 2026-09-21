@@ -29,6 +29,10 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // Solo para los titulares del landing público — le da un carácter
+        // editorial/boutique que lo distingue del resto de la app, que se queda
+        // en Plus Jakarta Sans para todo (ficha, agenda, etc.).
+        serif: ['"Fraunces"', 'Georgia', 'serif'],
       },
 
       // En px a propósito: inmunes a la reducción de la raíz.
@@ -92,6 +96,24 @@ export default {
 
       minHeight: { touch: '44px' },
       minWidth:  { touch: '44px' },
+
+      // Animaciones del landing público. Se definen acá (no en CSS suelto)
+      // para que cualquier componente futuro pueda reutilizarlas con
+      // `animate-*`, en vez de reinventarlas.
+      keyframes: {
+        rise:        { '0%': { transform: 'translateY(110%)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+        'fade-up-in': { to: { opacity: '1' } },
+        'pulse-dot': { '0%,100%': { opacity: '1', transform: 'scale(1)' }, '50%': { opacity: '.4', transform: 'scale(1.4)' } },
+        ring:        { '0%': { transform: 'scale(.6)', opacity: '.8' }, '100%': { transform: 'scale(1.8)', opacity: '0' } },
+        grow:        { to: { transform: 'scaleY(1)' } },
+      },
+      animation: {
+        rise:        'rise .9s cubic-bezier(.22,1,.36,1) forwards',
+        'fade-up-in': 'fade-up-in .8s ease forwards',
+        'pulse-dot': 'pulse-dot 2.2s ease-in-out infinite',
+        ring:        'ring 2s ease-out infinite',
+        grow:        'grow .6s cubic-bezier(.22,1,.36,1) forwards',
+      },
     },
   },
   plugins: [],
