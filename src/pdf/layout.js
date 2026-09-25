@@ -20,8 +20,19 @@ import { formatRUT } from '../constants.js';
 // Utilidades
 // ---------------------------------------------------------------------------
 
-export const fecha = (d = new Date()) => new Date(d).toLocaleDateString('es-CL');
-export const fechaHora = (d = new Date()) => new Date(d).toLocaleString('es-CL');
+// Antes, una fecha vacía o mal formada (frecuente en historiales importados o
+// snapshots de prueba) llegaba tal cual a toLocaleDateString, que no valida
+// nada y devuelve literalmente el texto "Invalid Date" impreso en el
+// documento. El valor por defecto `new Date()` se mantiene para las llamadas
+// sin argumento (el sello de fecha/hora de emisión del propio documento).
+export const fecha = (d = new Date()) => {
+  const dt = new Date(d);
+  return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('es-CL');
+};
+export const fechaHora = (d = new Date()) => {
+  const dt = new Date(d);
+  return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleString('es-CL');
+};
 export const pesos = (n) => `$${Number(n || 0).toLocaleString('es-CL')}`;
 
 /**

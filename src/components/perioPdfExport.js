@@ -1,15 +1,12 @@
 // src/components/perioPdfExport.js
 // ----------------------------------------------------------------------------
-// Puente hacia src/pdf/. El generador viejo leía `patient.name` y `patient.rut`,
-// campos que no existen en el objeto paciente — viven en `patient.personal` —,
-// así que el periodontograma salía siempre sin nombre y sin RUT. Además era el
-// único documento sin membrete de la clínica, sin paginación uniforme y sin
-// registro en audit_logs.
+// Puente hacia src/pdf/.
 //
-// La firma se mantiene para no tocar PerioTab.jsx, pero ahora acepta también
-// `config`, `session`, `logAction` y `notify`: pásalos y el documento sale con
-// la identidad de la clínica y queda auditado. Sin ellos funciona igual, solo
-// que con el membrete vacío.
+// El periodontograma ya no se redibuja a mano en el PDF: PerioTab.jsx captura
+// con html2canvas cada arcada tal como se ve en pantalla (mismos dientes,
+// mismo gráfico de líneas, misma tabla) y entrega esas imágenes en
+// `capturas`. Este puente solo las reenvía. Ver src/pdf/documents/perio.js
+// para el porqué del cambio.
 // ----------------------------------------------------------------------------
 import { generarDocumento } from '../pdf/index.js';
 
@@ -17,10 +14,7 @@ export function generatePerioPDF({
   patient,
   stats,
   perioDentition = 'adulto',
-  teethUpper = [],
-  teethLower = [],
-  teethUpperPed = [],
-  teethLowerPed = [],
+  capturas = [],
   config = {},
   session,
   logAction,
@@ -32,7 +26,7 @@ export function generatePerioPDF({
       paciente: patient,
       stats,
       denticion: perioDentition,
-      teethUpper, teethLower, teethUpperPed, teethLowerPed,
+      capturas,
     },
     { config, session, logAction, notify, selectedPatientId: patient?.id },
   );

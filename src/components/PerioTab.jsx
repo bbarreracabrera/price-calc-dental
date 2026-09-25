@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import html2canvas from 'html2canvas';
 import { Card } from './UIComponents';
 import { HygieneCell } from './ToothSystem';
 import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED } from '../constants';
-import { Save, History, Download } from 'lucide-react';
+import { Save, History, Download, Loader2 } from 'lucide-react';
 import { generatePerioPDF } from './perioPdfExport';
 import { PerioArchGrid } from './PerioChart';
 
@@ -24,7 +25,55 @@ export default function PerioTab({
     savePerioSnapshot, getPerioStats, setToothModalData, setPerioData, setModal, restoreSnapshot
 }) {
     const [perioDentition, setPerioDentition] = useState('adulto');
+    const [exportando, setExportando] = useState(false);
     const p = getPatient(selectedPatientId);
+
+    // Un ref por arcada posible. Solo se llenan los que están montados según
+    // perioDentition — html2canvas captura exactamente lo que el dentista ve
+    // en pantalla en ese momento, incluida la etiqueta "Superior"/"Inferior".
+    const archRefs = useRef({});
+
+    const capturarArcadas = async () => {
+        const claves = [
+            ['superior', TEETH_UPPER],
+            ['superiorPed', TEETH_UPPER_PED],
+            ['inferiorPed', TEETH_LOWER_PED],
+            ['inferior', TEETH_LOWER],
+        ];
+        const capturas = [];
+        for (const [key] of claves) {
+            const el = archRefs.current[key];
+            if (!el) continue; // no montado con la denticion actual
+            // scale 2.5: suficiente nitidez para imprimir sin generar un PNG
+            // gigante. backgroundColor explicito porque el fondo real es
+            // transparente y sin esto sale negro en el PDF.
+            const canvas = await html2canvas(el, { scale: 2.5, backgroundColor: '#FFFFFF', useCORS: true });
+            capturas.push({ dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height });
+        }
+        return capturas;
+    };
+
+    const handleDescargarPDF = async () => {
+        if (exportando) return;
+        setExportando(true);
+        try {
+            const capturas = await capturarArcadas();
+            await generatePerioPDF({
+                patient: p,
+                stats: getPerioStats(),
+                perioDentition,
+                capturas,
+                config, session, logAction, notify,
+                teethUpper: TEETH_UPPER, teethLower: TEETH_LOWER,
+                teethUpperPed: TEETH_UPPER_PED, teethLowerPed: TEETH_LOWER_PED,
+            });
+        } catch (e) {
+            console.error('[perio-pdf]', e);
+            notify?.('No se pudo generar el PDF del periodontograma.');
+        } finally {
+            setExportando(false);
+        }
+    };
 
     const openToothModal = (n) => {
         const existingPerio = p.clinical.perio?.[n] || {};
@@ -77,24 +126,12 @@ export default function PerioTab({
                         <Save size={16} /> Guardar Ficha
                     </button>
                     <button
-                        onClick={() => generatePerioPDF({
-                            patient: p,
-                            stats: getPerioStats(),
-                            perioDentition,
-                            // Sin esto el periodontograma salía sin membrete de la
-                            // clínica y sin quedar registrado en audit_logs.
-                            config,
-                            session,
-                            logAction,
-                            notify,
-                            teethUpper: TEETH_UPPER,
-                            teethLower: TEETH_LOWER,
-                            teethUpperPed: TEETH_UPPER_PED,
-                            teethLowerPed: TEETH_LOWER_PED,
-                        })}
-                        className="px-6 py-3.5 bg-white text-[#241F1B] font-black text-[11px] uppercase tracking-widest rounded-2xl border border-[#D9D2C7] shadow-sm flex items-center gap-2 hover:-translate-y-0.5 transition-all"
+                        onClick={handleDescargarPDF}
+                        disabled={exportando}
+                        className="px-6 py-3.5 bg-white text-[#241F1B] font-black text-[11px] uppercase tracking-widest rounded-2xl border border-[#D9D2C7] shadow-sm flex items-center gap-2 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:pointer-events-none"
                     >
-                        <Download size={16} /> Descargar PDF
+                        {exportando ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        {exportando ? 'Generando…' : 'Descargar PDF'}
                     </button>
                 </div>
             </div>
@@ -133,7 +170,7 @@ export default function PerioTab({
             <Card className="w-full flex flex-col gap-6 overflow-x-auto p-4 md:p-6 bg-white border-[#D9D2C7]/40 shadow-sm relative no-scrollbar" style={hideScrollStyles}>
                 <div className="flex flex-col gap-6 w-full">
                     {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
-                        <div>
+                        <div ref={(el) => (archRefs.current.superior = el)}>
                             <p className="text-center text-[11px] font-black text-[#46523C] uppercase tracking-[0.2em] mb-3">Superior</p>
                             <PerioArchGrid
                                 teeth={TEETH_UPPER} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
@@ -143,7 +180,7 @@ export default function PerioTab({
                         </div>
                     )}
                     {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
-                        <div className="bg-[#D3A9A0]/5 p-6 rounded-[2rem] border border-[#D3A9A0]/20 shadow-inner">
+                        <div ref={(el) => (archRefs.current.superiorPed = el)} className="bg-[#D3A9A0]/5 p-6 rounded-[2rem] border border-[#D3A9A0]/20 shadow-inner">
                             <p className="text-center text-[11px] font-black text-[#D3A9A0] uppercase tracking-[0.2em] mb-3">Superior (temporal)</p>
                             <PerioArchGrid
                                 teeth={TEETH_UPPER_PED} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
@@ -156,7 +193,7 @@ export default function PerioTab({
                     <div className="w-full h-px bg-gradient-to-r from-transparent via-[#D9D2C7] to-transparent" />
 
                     {(perioDentition === 'pediatrico' || perioDentition === 'mixto') && (
-                        <div className="bg-[#D3A9A0]/5 p-6 rounded-[2rem] border border-[#D3A9A0]/20 shadow-inner">
+                        <div ref={(el) => (archRefs.current.inferiorPed = el)} className="bg-[#D3A9A0]/5 p-6 rounded-[2rem] border border-[#D3A9A0]/20 shadow-inner">
                             <p className="text-center text-[11px] font-black text-[#D3A9A0] uppercase tracking-[0.2em] mb-3">Inferior (temporal)</p>
                             <PerioArchGrid
                                 teeth={TEETH_LOWER_PED} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}
@@ -166,7 +203,7 @@ export default function PerioTab({
                         </div>
                     )}
                     {(perioDentition === 'adulto' || perioDentition === 'mixto') && (
-                        <div>
+                        <div ref={(el) => (archRefs.current.inferior = el)}>
                             <p className="text-center text-[11px] font-black text-[#46523C] uppercase tracking-[0.2em] mb-3">Inferior</p>
                             <PerioArchGrid
                                 teeth={TEETH_LOWER} patient={p} onToothClick={openToothModal} savePatientData={savePatientData} selectedPatientId={selectedPatientId}

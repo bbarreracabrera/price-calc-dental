@@ -17,7 +17,6 @@ import { construirReceta } from './documents/prescription.js';
 import { construirConsentimiento } from './documents/consent.js';
 import { construirFichaClinica } from './documents/record.js';
 import { construirPeriodontograma } from './documents/perio.js';
-import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED } from '../constants.js';
 
 const NOTAS_PIE = {
   presupuesto:  'Presupuesto referencial. No constituye documento tributario.',
@@ -51,15 +50,12 @@ export async function generarDocumento(tipo, datos = {}, contexto = {}) {
 
     if (tipo === 'perio') {
       ({ doc, g } = crearDocumento({ formato, orientacion: 'l' }));
+      if (!(datos.capturas || []).length) { notify?.('No hay periodontograma visible para exportar.'); return null; }
       construirPeriodontograma({
         doc, g, config, folio,
         paciente,
         stats: datos.stats || {},
-        denticion: datos.denticion || 'adulto',
-        teethUpper: datos.teethUpper || TEETH_UPPER,
-        teethLower: datos.teethLower || TEETH_LOWER,
-        teethUpperPed: datos.teethUpperPed || TEETH_UPPER_PED,
-        teethLowerPed: datos.teethLowerPed || TEETH_LOWER_PED,
+        capturas: datos.capturas,
       });
     } else {
       ({ doc, g } = crearDocumento({ formato }));
