@@ -34,6 +34,14 @@ export default function PerioTab({
     const archRefs = useRef({});
 
     const capturarArcadas = async () => {
+        // Si html2canvas mide el texto antes de que la fuente web termine de
+        // cargar, usa las métricas de una fuente de reemplazo. En filas de
+        // 17px de alto, cualquier diferencia de un par de píxeles alcanza
+        // para recortar el número — esto es lo que se veía cortado.
+        if (document.fonts?.ready) {
+            try { await document.fonts.ready; } catch { /* noop */ }
+        }
+
         const claves = [
             ['superior', TEETH_UPPER],
             ['superiorPed', TEETH_UPPER_PED],
@@ -47,7 +55,24 @@ export default function PerioTab({
             // scale 2.5: suficiente nitidez para imprimir sin generar un PNG
             // gigante. backgroundColor explicito porque el fondo real es
             // transparente y sin esto sale negro en el PDF.
-            const canvas = await html2canvas(el, { scale: 2.5, backgroundColor: '#FFFFFF', useCORS: true });
+            const canvas = await html2canvas(el, {
+                scale: 2.5,
+                backgroundColor: '#FFFFFF',
+                useCORS: true,
+                onclone: (_doc, clonedEl) => {
+                    // Afecta solo a esta copia descartable, nunca a la ficha
+                    // real: se le da a cada celda un poco más de alto y de
+                    // interlineado, porque html2canvas calcula el suyo propio
+                    // y las filas de 17px no dejan margen de error.
+                    clonedEl.querySelectorAll('td').forEach((td) => {
+                        td.style.height = 'auto';
+                        td.style.minHeight = '20px';
+                        td.style.lineHeight = '1.6';
+                        td.style.paddingTop = '1px';
+                        td.style.paddingBottom = '1px';
+                    });
+                },
+            });
             capturas.push({ dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height });
         }
         return capturas;
