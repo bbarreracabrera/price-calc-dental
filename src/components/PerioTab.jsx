@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
+import { toPng, getFontEmbedCSS } from 'html-to-image';
 import { Card } from './UIComponents';
 import { HygieneCell } from './ToothSystem';
 import { TEETH_UPPER, TEETH_LOWER, TEETH_UPPER_PED, TEETH_LOWER_PED } from '../constants';
@@ -29,51 +29,47 @@ export default function PerioTab({
     const p = getPatient(selectedPatientId);
 
     // Un ref por arcada posible. Solo se llenan los que están montados según
-    // perioDentition — html2canvas captura exactamente lo que el dentista ve
+    // perioDentition — la captura toma exactamente lo que el dentista ve
     // en pantalla en ese momento, incluida la etiqueta "Superior"/"Inferior".
     const archRefs = useRef({});
 
+    // Mide una imagen ya generada, para que el PDF la inserte con su proporción real.
+    const medirImagen = (dataUrl) => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = reject;
+        img.src = dataUrl;
+    });
+
     const capturarArcadas = async () => {
-        // Si html2canvas mide el texto antes de que la fuente web termine de
-        // cargar, usa las métricas de una fuente de reemplazo. En filas de
-        // 17px de alto, cualquier diferencia de un par de píxeles alcanza
-        // para recortar el número — esto es lo que se veía cortado.
+        // Antes se usaba html2canvas, que NO dibuja el texto con el motor del
+        // navegador sino con su propio cálculo de posiciones. Con una fuente web
+        // como Plus Jakarta Sans lo dejaba unos píxeles más abajo de lo real, y
+        // la fila siguiente le pintaba el fondo encima: los números y las
+        // etiquetas salían con la base cortada. html-to-image, en cambio, deja
+        // que el navegador renderice el texto, así que la captura queda igual
+        // a lo que se ve en pantalla.
         if (document.fonts?.ready) {
             try { await document.fonts.ready; } catch { /* noop */ }
         }
 
-        const claves = [
-            ['superior', TEETH_UPPER],
-            ['superiorPed', TEETH_UPPER_PED],
-            ['inferiorPed', TEETH_LOWER_PED],
-            ['inferior', TEETH_LOWER],
-        ];
+        const claves = ['superior', 'superiorPed', 'inferiorPed', 'inferior'];
+        const montadas = claves.map((k) => [k, archRefs.current[k]]).filter(([, el]) => el);
+        if (!montadas.length) return [];
+
+        // La fuente se embebe una sola vez y se reutiliza en todas las capturas.
+        let fontEmbedCSS;
+        try { fontEmbedCSS = await getFontEmbedCSS(montadas[0][1]); } catch { fontEmbedCSS = undefined; }
+
         const capturas = [];
-        for (const [key] of claves) {
-            const el = archRefs.current[key];
-            if (!el) continue; // no montado con la denticion actual
-            // scale 2.5: suficiente nitidez para imprimir sin generar un PNG
-            // gigante. backgroundColor explicito porque el fondo real es
-            // transparente y sin esto sale negro en el PDF.
-            const canvas = await html2canvas(el, {
-                scale: 2.5,
-                backgroundColor: '#FFFFFF',
-                useCORS: true,
-                onclone: (_doc, clonedEl) => {
-                    // Afecta solo a esta copia descartable, nunca a la ficha
-                    // real: se le da a cada celda un poco más de alto y de
-                    // interlineado, porque html2canvas calcula el suyo propio
-                    // y las filas de 17px no dejan margen de error.
-                    clonedEl.querySelectorAll('td').forEach((td) => {
-                        td.style.height = 'auto';
-                        td.style.minHeight = '20px';
-                        td.style.lineHeight = '1.6';
-                        td.style.paddingTop = '1px';
-                        td.style.paddingBottom = '1px';
-                    });
-                },
+        for (const [, el] of montadas) {
+            const dataUrl = await toPng(el, {
+                pixelRatio: 2.5,          // nitidez suficiente para imprimir
+                backgroundColor: '#FFFFFF', // el fondo real es transparente
+                fontEmbedCSS,
             });
-            capturas.push({ dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height });
+            const { width, height } = await medirImagen(dataUrl);
+            capturas.push({ dataUrl, width, height });
         }
         return capturas;
     };
