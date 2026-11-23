@@ -62,29 +62,13 @@ export const generateSupplyInventoryReport = (catalog = []) => {
 /**
  * Procesa una orden de Supply
  */
-export const createSupplyOrder = (items = [], clinicId, dentistId) => {
-  const orderId = `ORD-${Date.now()}`;
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  return {
-    id: orderId,
-    clinicId,
-    dentistId,
-    items,
-    total,
-    commission: calculateSupplyCommission(total),
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    deliveryDate: null
-  };
-};
-
-/**
- * Calcula estadísticas de Supply para el Panel Maestro
- */
+// Reintroducido: lo usa SupplyView.jsx. Fix del audit: no mutar el
+// catálogo con sort() in place; topProducts ordenado por stock en copia.
 export const getSupplyStats = (orders = [], catalog = []) => {
-  const thisMonth = new Date().getMonth();
-  const thisYear = new Date().getFullYear();
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
 
   const monthlyOrders = orders.filter(order => {
     const orderDate = new Date(order.createdAt);
@@ -94,48 +78,13 @@ export const getSupplyStats = (orders = [], catalog = []) => {
   const monthlySales = calculateSupplySales(monthlyOrders);
   const monthlyCommission = calculateSupplyCommission(monthlySales);
 
-  const inventory = generateSupplyInventoryReport(catalog);
-
   return {
     totalOrders: orders.length,
     monthlyOrders: monthlyOrders.length,
     monthlySales,
     monthlyCommission,
     totalCommission: calculateSupplyCommission(calculateSupplySales(orders)),
-    inventory,
-    topProducts: catalog
-      .sort((a, b) => b.stock - a.stock)
-      .slice(0, 5)
+    inventory: generateSupplyInventoryReport(catalog),
+    topProducts: [...catalog].sort((a, b) => b.stock - a.stock).slice(0, 5)
   };
-};
-
-/**
- * Valida disponibilidad de productos
- */
-export const validateSupplyAvailability = (items = [], catalog = []) => {
-  const errors = [];
-
-  items.forEach(item => {
-    const catalogItem = catalog.find(c => c.id === item.id);
-    if (!catalogItem) {
-      errors.push(`Producto ${item.id} no existe en catálogo`);
-    } else if (catalogItem.stock < item.quantity) {
-      errors.push(`Stock insuficiente para ${catalogItem.name}. Disponible: ${catalogItem.stock}, Solicitado: ${item.quantity}`);
-    }
-  });
-
-  return { isValid: errors.length === 0, errors };
-};
-
-/**
- * Descuenta stock tras una orden confirmada
- */
-export const updateCatalogStock = (items = [], catalog = []) => {
-  return catalog.map(catalogItem => {
-    const orderItem = items.find(item => item.id === catalogItem.id);
-    if (orderItem) {
-      return { ...catalogItem, stock: catalogItem.stock - orderItem.quantity };
-    }
-    return catalogItem;
-  });
 };

@@ -9,7 +9,7 @@
 // Sobre el blanco y negro: ningún dato puede depender solo del color. En el
 // periodontograma viejo el sangrado era un punto rojo y la supuración una letra
 // ámbar; impresos en una láser monocromática quedaban indistinguibles. Por eso
-// cada marca clínica tiene además su letra (ver GLIFOS más abajo).
+// cada marca clínica lleva además su letra o símbolo en pantalla.
 // ============================================================================
 
 // --- Paleta (RGB) -----------------------------------------------------------
@@ -38,22 +38,6 @@ export const C = {
 };
 
 // Severidad de sondaje: los mismos umbrales que la app usa en pantalla.
-export const colorSondaje = (mm) => {
-  const n = parseFloat(mm);
-  if (!Number.isFinite(n)) return null;
-  if (n >= 6) return C.danger;
-  if (n >= 4) return C.warn;
-  return null;
-};
-
-// --- Glifos: legibles en blanco y negro sin depender del color --------------
-export const GLIFOS = {
-  sangrado:   'S',
-  supuracion: 'P',
-  implante:   'I',
-  ausente:    '\u2014',  // guion largo
-};
-
 // --- Geometría de página ----------------------------------------------------
 // Las coordenadas absolutas de 210 y 195 estaban escritas a mano por todo el
 // generador viejo. En Carta (215,9 mm de ancho) todo quedaba descuadrado a la

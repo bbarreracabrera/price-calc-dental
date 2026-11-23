@@ -623,15 +623,6 @@ export const getAllSmileStyles = () => {
  * @param {string} toothType - Tipo de diente ('central', 'lateral', 'canine', 'premolar', 'molar')
  * @returns {Array|null} - Array de puntos {x, y} o null si no existe
  */
-export const getToothShape = (styleId, toothType) => {
-    const style = getSmileStyle(styleId);
-    if (!style) return null;
-    return style.toothShapes?.[toothType] || null;
-};
-
-/**
- * Genera una descripción completa del estilo para mostrar al paciente
- */
 export const generateStylePresentation = (styleId) => {
     const style = getSmileStyle(styleId);
     if (!style) return null;
@@ -651,75 +642,3 @@ export const generateStylePresentation = (styleId) => {
 /**
  * Calcula recomendaciones de estilo basadas en características del paciente
  */
-export const recommendSmileStyle = (params) => {
-    const {
-        faceShape,        // 'oval', 'round', 'square', 'oblong'
-        personality,      // 'introvert', 'extrovert', 'balanced'
-        age,              // número
-        profession,       // 'professional', 'creative', 'other'
-        preference        // 'conservative', 'modern', 'bold'
-    } = params;
-
-    let recommendations = [];
-
-    // Lógica de recomendación basada en características
-    if (personality === 'extrovert' && preference === 'bold') {
-        recommendations.push({
-            style: SMILE_STYLES.TRIANGULAR,
-            score: 95,
-            reason: 'Perfecto para tu personalidad dinámica y expresiva'
-        });
-    }
-
-    if (profession === 'professional' && preference === 'conservative') {
-        recommendations.push({
-            style: SMILE_STYLES.RECTANGULAR,
-            score: 90,
-            reason: 'Transmite profesionalismo y autoridad'
-        });
-    }
-
-    if (personality === 'introvert' && preference === 'conservative') {
-        recommendations.push({
-            style: SMILE_STYLES.OVAL,
-            score: 85,
-            reason: 'Elegancia y armonía natural'
-        });
-    }
-
-    if (preference === 'modern') {
-        recommendations.push({
-            style: SMILE_STYLES.TRIANGULAR,
-            score: 80,
-            reason: 'Aspecto contemporáneo y fresco'
-        });
-    }
-
-    // Siempre incluir el estilo cuadrado como opción equilibrada
-    recommendations.push({
-        style: SMILE_STYLES.SQUARE,
-        score: 75,
-        reason: 'Opción equilibrada y versátil'
-    });
-
-    // Ordenar por puntuación
-    return recommendations.sort((a, b) => b.score - a.score);
-};
-
-/**
- * Exporta un resumen comparativo de estilos
- */
-export const generateStyleComparison = (styleIds) => {
-    return styleIds.map(id => {
-        const style = getSmileStyle(id);
-        return {
-            name: style.name,
-            emoji: style.emoji,
-            color: style.colorHex,
-            personality: style.personality.primary,
-            traits: style.personality.traits,
-            benefits: style.proposal.benefits,
-            toothShape: style.toothShapes?.central || null
-        };
-    });
-};
