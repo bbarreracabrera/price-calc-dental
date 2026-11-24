@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, FlaskConical, Save, DollarSign, UploadCloud, Paperclip, Loader2, Info, Trash2, FileText, Image, File } from 'lucide-react';
-import { getLocalDate } from '../constants'; 
+import { getLocalDate } from '../constants';
+import LabFileGallery from './lab/LabFileGallery';
 
 // Icono según tipo MIME
 function FileIcon({ mimeType, size = 16 }) {
@@ -34,6 +35,53 @@ export default function LabWorkModal({
 
     // ── MÚLTIPLES ARCHIVOS ──────────────────────────────────────
     const [uploadedFiles, setUploadedFiles] = useState([]); // [{ path, name, size, mimeType }]
+
+    // Archivos YA PERSISTIDOS en lab_work_files (solo al editar un trabajo existente)
+    const [savedFiles, setSavedFiles] = useState([]);
+    const [loadingSavedFiles, setLoadingSavedFiles] = useState(false);
+
+    // Cargar archivos persistidos de lab_work_files (RLS: solo la clínica o el lab los ve)
+    useEffect(() => {
+        if (!newLabWork?.id) { setSavedFiles([]); return; }
+        let cancelled = false;
+        setLoadingSavedFiles(true);
+        supabase
+            .from('lab_work_files')
+            .select('id, file_name, file_path, file_size, content_type, created_at')
+            .eq('lab_work_id', newLabWork.id)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: true })
+            .then(({ data }) => {
+                if (!cancelled) {
+                    setSavedFiles(data || []);
+                    setLoadingSavedFiles(false);
+                }
+            });
+        return () => { cancelled = true; };
+    }, [newLabWork?.id, supabase]);
+
+    // Eliminar archivo ya persistido: soft-delete de la fila + objeto en storage
+    // La RLS de lab_work_files limita el borrado a quien subió el archivo o al admin.
+    const handleDeleteSavedFile = async (file) => {
+        try {
+            const { error: dbError } = await supabase
+                .from('lab_work_files')
+                .update({ deleted_at: new Date().toISOString() })
+                .eq('id', file.id);
+            if (dbError) throw dbError;
+
+            const { error: storageError } = await supabase.storage.from('lab-work-files').remove([file.file_path]);
+            if (storageError) {
+                console.error('No se pudo borrar el objeto del storage:', storageError);
+                notify('Archivo ocultado, pero no se pudo borrar del almacenamiento.');
+            } else {
+                notify('Archivo eliminado.');
+            }
+            setSavedFiles(prev => prev.filter(f => f.id !== file.id));
+        } catch (error) {
+            notify(`Error al eliminar: ${error.message}`);
+        }
+    };
     const [uploading, setUploading] = useState(false);
     const [uploadingIndex, setUploadingIndex] = useState(null);
 
@@ -267,6 +315,38 @@ export default function LabWorkModal({
                             <textarea placeholder="Ej: Dejar póntico en forma de bala, glaseado alto, caracterizar cuello..." className={`${inputClass} !bg-white resize-none h-24`} value={notes} onChange={e=>setNotes(e.target.value)}/>
                         </div>
                     </div>
+
+                    {/* ── GALERÍA DE ARCHIVOS YA GUARDADOS (solo al editar) ── */}
+                    {newLabWork?.id && (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className={labelClass}>Archivos del Trabajo ({savedFiles.length})</label>
+                                <span className="text-[11px] text-[#5E554E] font-bold uppercase tracking-widest">Descargar · Eliminar</span>
+                            </div>
+                            <LabFileGallery
+                                files={savedFiles.map(f => ({
+                                    id: f.id,
+                                    path: f.file_path,
+                                    name: f.file_name,
+                                    size: f.file_size,
+                                    mimeType: f.content_type,
+                                }))}
+                                loading={loadingSavedFiles}
+                                emptyText="Sin archivos"
+                                onDelete={handleDeleteSavedFile}
+                                onOpen={async (file) => {
+                                    // Abrir con URL firmada de 1h del bucket privado.
+                                    // NOTA: aquí iría la integración del visor DICOM/STL
+                                    // (se hace por separado fuera de esta galería).
+                                    const { getSecureUrl } = await import('../utils/securityFixes');
+                                    const url = await getSecureUrl('lab-work-files', file.path, 3600);
+                                    if (url) window.open(url, '_blank');
+                                    else notify('No se pudo generar el acceso seguro al archivo.');
+                                }}
+                                notify={notify}
+                            />
+                        </div>
+                    )}
 
                     {/* ── ZONA DE ARCHIVOS MÚLTIPLES ── */}
                     <div className="space-y-3">

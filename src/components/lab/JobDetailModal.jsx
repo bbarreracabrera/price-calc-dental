@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Calendar, FileText, Palette, Mail, ArrowRight, Image, File, Download, Loader2, Lock, Files } from 'lucide-react';
+import { X, User, Calendar, FileText, Palette, Mail, ArrowRight, Loader2, Files, UploadCloud } from 'lucide-react';
 import { supabase } from '../../supabase';
+import LabFileGallery from './LabFileGallery';
 import { getSecureUrl } from '../../utils/securityFixes';
 
 const STATUS_FLOW   = ['recibido', 'cad_cam', 'ceramica', 'listo', 'despachado'];
@@ -22,108 +23,32 @@ const formatDate = (str) => {
     }
 };
 
-function formatBytes(bytes) {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-// Icono según tipo MIME
-function FileTypeIcon({ mimeType, size = 16 }) {
-    if (mimeType?.startsWith('image/')) return <Image size={size} className="text-blue-500" />;
-    if (mimeType === 'application/pdf') return <FileText size={size} className="text-red-500" />;
-    return <File size={size} className="text-[#5E554E]" />;
-}
-
-// Thumbnail para imágenes (genera signed URL y muestra preview)
-function FileThumbnail({ file, onOpen }) {
-    const [previewUrl, setPreviewUrl] = useState(null);
-    const [loading, setLoading] = useState(false);
-
-    const isImage = file.mime_type?.startsWith('image/');
-
-    useEffect(() => {
-        if (!isImage) return;
-        let cancelled = false;
-        setLoading(true);
-        getSecureUrl('lab_works', file.storage_path, 300).then(url => {
-            if (!cancelled) {
-                setPreviewUrl(url);
-                setLoading(false);
-            }
-        });
-        return () => { cancelled = true; };
-    }, [file.storage_path, isImage]);
-
-    return (
-        <div
-            className="relative group cursor-pointer rounded-2xl overflow-hidden border border-[#D9D2C7] bg-[#FBFAF8] hover:border-[#46523C] transition-all"
-            style={{ aspectRatio: '1' }}
-            onClick={onOpen}
-            title={file.original_name}
-        >
-            {isImage ? (
-                loading ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 size={20} className="animate-spin text-[#D3A9A0]" />
-                    </div>
-                ) : previewUrl ? (
-                    <img
-                        src={previewUrl}
-                        alt={file.original_name}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Image size={24} className="text-[#D9D2C7]" />
-                    </div>
-                )
-            ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-2">
-                    <FileTypeIcon mimeType={file.mime_type} size={28} />
-                    <p className="text-[11px] font-bold text-[#5E554E] text-center truncate w-full px-1">
-                        {file.original_name?.split('.').pop()?.toUpperCase()}
-                    </p>
-                </div>
-            )}
-            {/* Overlay al hover */}
-            <div className="absolute inset-0 bg-[#241F1B]/0 group-hover:bg-[#241F1B]/30 transition-all flex items-center justify-center">
-                <Download size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            {/* Badge de seguridad */}
-            <div className="absolute top-1 right-1 p-0.5 bg-emerald-500 rounded-full">
-                <Lock size={8} className="text-white" />
-            </div>
-        </div>
-    );
-}
-
-export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
+export default function JobDetailModal({ job, onClose, onUpdateStatus, notify, session }) {
     const [labFiles, setLabFiles] = useState([]);
     const [loadingFiles, setLoadingFiles] = useState(false);
+    const [uploadingLabFile, setUploadingLabFile] = useState(false);
+
+    // Cargar archivos de lab_work_files al abrir el modal (y tras subir/eliminar)
+    const loadFiles = React.useCallback(async () => {
+        if (!job?.id) return;
+        setLoadingFiles(true);
+        const { data, error } = await supabase
+            .from('lab_work_files')
+            .select('id, original_name, storage_path, file_size, mime_type, upload_source, created_by, created_at')
+            .eq('lab_work_id', job.id)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: true })
+            .limit(20);
+        if (!error && data) setLabFiles(data);
+        setLoadingFiles(false);
+    }, [job?.id]);
+
+    useEffect(() => { loadFiles(); }, [loadFiles]);
 
     if (!job) return null;
 
     const currentIdx = STATUS_FLOW.indexOf(job.status);
     const nextStatus = currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
-
-    // Cargar archivos de lab_work_files al abrir el modal
-    useEffect(() => {
-        if (!job?.id) return;
-        setLoadingFiles(true);
-        supabase
-            .from('lab_work_files')
-            .select('id, original_name, storage_path, file_size, mime_type, upload_source, created_at')
-            .eq('lab_work_id', job.id)
-            .is('deleted_at', null)
-            .order('created_at', { ascending: true })
-            .limit(20)
-            .then(({ data, error }) => {
-                if (!error && data) setLabFiles(data);
-                setLoadingFiles(false);
-            });
-    }, [job?.id]);
 
     // Abrir archivo con signed URL (expiración 1h)
     const handleOpenFile = async (file) => {
@@ -134,6 +59,71 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
 
     // Fallback: archivo legacy en job.file_url (1 solo archivo, bucket anterior)
     const hasLegacyFile = job.file_url && labFiles.length === 0;
+
+    // ── SUBIR ARCHIVO (solo si el trabajo pertenece a este laboratorio) ──
+    const canUpload = session?.user?.email && job.lab_email && session.user.email === job.lab_email;
+
+    const handleLabUpload = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = ''; // permitir re-selección del mismo archivo
+        if (!file) return;
+        try {
+            // Validación de seguridad existente (magic bytes + extensiones de lab, máx 50MB)
+            const { validateFileSecurity } = await import('../../utils/securityFixes');
+            await validateFileSecurity(file, 'lab');
+
+            setUploadingLabFile(true);
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            const safeName = `lab_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `lab_files/${job.admin_email}/${safeName}`;
+
+            // Mismo bucket privado que la clínica (ver LabWorkModal.jsx)
+            const { error: uploadError } = await supabase.storage.from('lab-work-files').upload(filePath, file);
+            if (uploadError) throw uploadError;
+
+            const { error: insertError } = await supabase.from('lab_work_files').insert([{
+                lab_work_id: job.id,
+                file_name: file.name,
+                file_path: filePath,
+                file_size: file.size,
+                content_type: file.type || 'application/octet-stream',
+                upload_source: 'lab',
+                created_by: session.user.email,
+            }]);
+            if (insertError) throw insertError;
+
+            notify?.(`"${file.name}" adjuntado de forma segura`);
+            await loadFiles();
+        } catch (error) {
+            notify?.(`Error en "${file.name}": ${error.message}`);
+        } finally {
+            setUploadingLabFile(false);
+        }
+    };
+
+    // ── ELIMINAR ARCHIVO: fila lab_work_files + objeto storage ──
+    // La RLS de lab_work_files ya limita el borrado a quien subió el archivo o al admin.
+    const handleDeleteFile = async (file) => {
+        try {
+            const { error: dbError } = await supabase
+                .from('lab_work_files')
+                .update({ deleted_at: new Date().toISOString() })
+                .eq('id', file.id);
+            if (dbError) throw dbError;
+
+            const { error: storageError } = await supabase.storage.from('lab-work-files').remove([file.storage_path]);
+            if (storageError) {
+                // Fila marcada como eliminada pero el objeto sigue en storage
+                console.error('No se pudo borrar el objeto del storage:', storageError);
+                notify?.('Archivo ocultado, pero no se pudo borrar del almacenamiento.');
+            } else {
+                notify?.('Archivo eliminado.');
+            }
+            setLabFiles(prev => prev.filter(f => f.id !== file.id));
+        } catch (error) {
+            notify?.(`Error al eliminar: ${error.message}`);
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-[#241F1B]/80 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
@@ -209,66 +199,53 @@ export default function JobDetailModal({ job, onClose, onUpdateStatus }) {
                         icon={<Files size={15} />}
                         title={`Archivos Adjuntos${labFiles.length > 0 ? ` (${labFiles.length})` : ''}`}
                     >
-                        {loadingFiles ? (
-                            <div className="flex items-center gap-2 text-[#5E554E]">
-                                <Loader2 size={14} className="animate-spin" />
-                                <span className="text-xs font-bold">Cargando archivos...</span>
+                        <LabFileGallery
+                            files={labFiles.map(f => ({
+                                id: f.id,
+                                path: f.storage_path,
+                                name: f.original_name,
+                                size: f.file_size,
+                                mimeType: f.mime_type,
+                            }))}
+                            loading={loadingFiles}
+                            emptyText="Sin archivos"
+                            onDelete={canUpload ? handleDeleteFile : null}
+                            onOpen={handleOpenFile}
+                            lightbox
+                            notify={notify}
+                        />
+                        {canUpload && (
+                            <div className="mt-3">
+                                <input
+                                    type="file"
+                                    accept=".dcm,.stl,.pli,.zip,.pdf,.jpg,.jpeg,.png,.webp"
+                                    onChange={handleLabUpload}
+                                    disabled={uploadingLabFile}
+                                    className="hidden"
+                                    id="lab-detail-upload"
+                                />
+                                <label
+                                    htmlFor="lab-detail-upload"
+                                    className={`inline-flex items-center gap-2 px-4 py-2 bg-[#241F1B] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#1a1512] transition-colors cursor-pointer ${uploadingLabFile ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                >
+                                    {uploadingLabFile ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+                                    {uploadingLabFile ? 'Subiendo...' : 'Subir archivo'}
+                                </label>
                             </div>
-                        ) : labFiles.length > 0 ? (
-                            <div className="space-y-3">
-                                {/* Grid de thumbnails para imágenes */}
-                                {labFiles.some(f => f.mime_type?.startsWith('image/')) && (
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {labFiles
-                                            .filter(f => f.mime_type?.startsWith('image/'))
-                                            .map(f => (
-                                                <FileThumbnail key={f.id} file={f} onOpen={() => handleOpenFile(f)} />
-                                            ))
-                                        }
-                                    </div>
-                                )}
-                                {/* Lista para archivos no-imagen */}
-                                {labFiles
-                                    .filter(f => !f.mime_type?.startsWith('image/'))
-                                    .map(f => (
-                                        <button
-                                            key={f.id}
-                                            onClick={() => handleOpenFile(f)}
-                                            className="w-full flex items-center gap-3 p-3 bg-[#FBFAF8] border border-[#D9D2C7] rounded-2xl hover:border-[#46523C] transition-all text-left"
-                                        >
-                                            <div className="p-2 bg-white rounded-xl border border-[#D9D2C7] shrink-0">
-                                                <FileTypeIcon mimeType={f.mime_type} size={16} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-black text-[#241F1B] truncate">{f.original_name}</p>
-                                                <p className="text-[11px] text-[#5E554E] font-bold uppercase tracking-widest">
-                                                    {formatBytes(f.file_size)} · {f.upload_source === 'lab' ? 'Subido por Lab' : 'Subido por Clínica'}
-                                                </p>
-                                            </div>
-                                            <Download size={14} className="text-[#5E554E] shrink-0" />
-                                        </button>
-                                    ))
-                                }
-                                <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
-                                    <Lock size={9} /> Acceso seguro · URLs firmadas · Ley 19.628
-                                </p>
-                            </div>
-                        ) : hasLegacyFile ? (
-                            // Fallback legacy: un solo archivo en job.file_url
+                        )}
+                        {hasLegacyFile && (
                             <button
                                 onClick={async () => {
-                                    let url = await getSecureUrl('lab_works', job.file_url);
+                                    let url = await getSecureUrl('lab-work-files', job.file_url);
                                     if (!url) url = await getSecureUrl('patient-images', job.file_url);
                                     if (url) window.open(url, '_blank');
-                                    else alert('No se pudo generar el acceso seguro al archivo.');
+                                    else notify?.('No se pudo generar el acceso seguro al archivo.');
                                 }}
-                                className="inline-flex items-center gap-2 text-sm text-[#46523C] font-bold hover:underline"
+                                className="inline-flex items-center gap-2 text-sm text-[#46523C] font-bold hover:underline mt-2"
                             >
                                 <FileText size={14} />
                                 {job.file_name || 'Descargar archivo seguro'}
                             </button>
-                        ) : (
-                            <p className="text-xs text-[#5E554E] italic">Sin archivos adjuntos</p>
                         )}
                     </Section>
 

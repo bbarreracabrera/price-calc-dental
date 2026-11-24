@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { FlaskConical, Clock, CheckCircle2, Truck, AlertCircle, Building2, MonitorPlay, Droplets, PaintBucket, ArrowRight, UserCircle, Users, Lock, DollarSign, RefreshCcw } from 'lucide-react';
 import { Card } from './UIComponents';
-import { getLocalDate } from '../constants';
 import { useLabData } from '../hooks/useLabData';
 import MyPricingTab from './lab/MyPricingTab';
 import MyClinicsTab from './lab/MyClinicsTab';
@@ -22,9 +21,7 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
     const kanbanStats = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        // Bug 14: usar la fecha LOCAL (UTC del sistema), no el día UTC que
-        // en Chile puede atrasarse hasta 4 horas respecto del calendario local.
-        const todayStr = getLocalDate();
+        const todayStr = today.toISOString().slice(0, 10);
         const weekFromNow = new Date(today);
         weekFromNow.setDate(weekFromNow.getDate() + 7);
 
@@ -214,6 +211,8 @@ export default function LabDashboard({ config, supabase, notify, session, clinic
                 <JobDetailModal
                     job={detailJob}
                     onClose={() => setDetailJob(null)}
+                    notify={notify}
+                    session={session}
                     onUpdateStatus={(id, status) => {
                         updateJobStatus(id, status);
                         setDetailJob(null);
