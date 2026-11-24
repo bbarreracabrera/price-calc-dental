@@ -1,13 +1,67 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * Escapa entidades HTML para evitar inyección de HTML en la plantilla
+ * del correo (clinic_name, magic_link y demás campos llegan del cliente).
+ */
+function escapeHTML(unsafe: unknown): string {
+    return String(unsafe ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 serve(async (req) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
+    }
+
+    // Solo un admin autenticado de la clínica puede enviar invitaciones
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !ANON_KEY) {
+        return new Response(
+            JSON.stringify({ error: "No autorizado" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+    }
+
+    const supabaseUser = createClient(SUPABASE_URL, ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    if (userError || !user?.email) {
+        return new Response(
+            JSON.stringify({ error: "No autorizado" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+    }
+
+    // Verificar que el llamador es admin de la clínica (tabla settings)
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const { data: settings, error: settingsError } = await supabase
+        .from("settings")
+        .select("id")
+        .eq("admin_email", user.email)
+        .limit(1)
+        .maybeSingle();
+
+    if (settingsError || !settings) {
+        return new Response(
+            JSON.stringify({ error: "No autorizado" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
     }
 
     try {
@@ -30,10 +84,15 @@ serve(async (req) => {
             );
         }
 
+        // Escapar los campos controlados por el cliente antes de interpolarlos
+        const safeClinicName = escapeHTML(clinic_name);
+        const safeLabName = escapeHTML(lab_name || "Laboratorio");
+        const safeMagicLink = escapeHTML(magic_link || "https://shiningclouddental.vercel.app");
+
         const html = buildInviteHTML({
-            lab_name: lab_name || "Laboratorio",
-            clinic_name,
-            magic_link: magic_link || "https://shiningclouddental.vercel.app",
+            lab_name: safeLabName,
+            clinic_name: safeClinicName,
+            magic_link: safeMagicLink,
         });
 
         const resendResponse = await fetch("https://api.resend.com/emails", {
@@ -43,9 +102,9 @@ serve(async (req) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                from: `${clinic_name} via ShiningCloud <${FROM_EMAIL}>`,
+                from: `${safeClinicName} via ShiningCloud <${FROM_EMAIL}>`,
                 to: lab_email,
-                subject: `${clinic_name} te invita a su red de laboratorios`,
+                subject: `${safeClinicName} te invita a su red de laboratorios`,
                 html,
             }),
         });
@@ -60,8 +119,10 @@ serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     } catch (e) {
+        console.error("[invite-lab] Error:", e);
+        // Nunca exponer el detalle del error al cliente
         return new Response(
-            JSON.stringify({ error: (e as Error).message, fallback: true }),
+            JSON.stringify({ error: "Error interno", fallback: true }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }

@@ -1,7 +1,7 @@
 // src/pdf/documents/prescription.js
 import autoTable from 'jspdf-autotable';
 import { C, T, FUENTE } from '../theme.js';
-import { crearDocumento, dibujarMembrete, cajaPaciente, dibujarFirmas, texto, fecha } from '../layout.js';
+import { crearDocumento, dibujarMembrete, dibujarFirmas, texto, fecha } from '../layout.js';
 
 /**
  * Receta odontológica.
@@ -22,7 +22,7 @@ export function construirReceta({ doc, g, paciente, medicamentos = [], config, f
   const { indicacionesGenerales, diagnostico } = opciones;
 
   let y = dibujarMembrete(doc, g, config, { titulo: 'Receta', folio });
-  y = cajaPaciente(doc, g, paciente, y, { compacta: true });
+  y = dibujarCajaPaciente(doc, g, paciente, y, { compacta: true });
 
   if (diagnostico) {
     texto(doc, 'Diagnóstico', g.izq, y + 1, { size: T.etiqueta, estilo: 'bold', color: C.muted });

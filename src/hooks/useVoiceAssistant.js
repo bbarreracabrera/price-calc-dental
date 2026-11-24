@@ -89,13 +89,16 @@ export function useVoiceAssistant(props) {
                         }
                         if (latestProps.current.setSelectedToothId) latestProps.current.setSelectedToothId(toothMatchNum);
                         // Actualizar también el id en el modal si está abierto
-                        if (latestProps.current.setToothModalData && latestProps.current.toothModalData) {
+                        if (latestProps.current.setToothModalData && latestProps.current.getToothModalState?.()) {
                             latestProps.current.setToothModalData(prev => ({ ...prev, id: toothMatchNum }));
                         }
                     }
 
                     setTimeout(() => {
-                        const { patientTab, setPerioData, getPatient, selectedPatientId, savePatientData, notify, setSelectedToothId, setToothModalData, toothModalData } = latestProps.current;
+                        const { patientTab, setPerioData, getPatient, selectedPatientId, savePatientData, notify, setSelectedToothId, setToothModalData, getToothModalState } = latestProps.current;
+                        // Bug 3: leer el estado VIVO del modal; si el caller no pasó
+                        // getter, caer al valor de props (comportamiento anterior).
+                        const toothModalData = getToothModalState ? getToothModalState() : latestProps.current.toothModalData;
                         const currentToothId = toothMatchNum !== null ? toothMatchNum : (activeToothRef.current || toothModalData?.id);
                         if (!currentToothId) return;
 

@@ -233,20 +233,28 @@ export const calculateToothBoxes = (params) => {
     }
 
     const teeth = [
-        { id: 18, name: 'Molar 2', side: 'left', proportion: 'molar2' },
-        { id: 17, name: 'Molar 1', side: 'left', proportion: 'molar1' },
-        { id: 16, name: 'Premolar 2', side: 'left', proportion: 'premolar2' },
-        { id: 15, name: 'Premolar 1', side: 'left', proportion: 'premolar1' },
-        { id: 14, name: 'Canino', side: 'left', proportion: 'canine' },
-        { id: 13, name: 'Lateral', side: 'left', proportion: 'lateral' },
-        { id: 12, name: 'Central', side: 'left', proportion: 'central' },
-        { id: 11, name: 'Central', side: 'right', proportion: 'central' },
-        { id: 21, name: 'Lateral', side: 'right', proportion: 'lateral' },
-        { id: 22, name: 'Canino', side: 'right', proportion: 'canine' },
-        { id: 23, name: 'Premolar 1', side: 'right', proportion: 'premolar1' },
-        { id: 24, name: 'Premolar 2', side: 'right', proportion: 'premolar2' },
-        { id: 25, name: 'Molar 1', side: 'right', proportion: 'molar1' },
-        { id: 26, name: 'Molar 2', side: 'right', proportion: 'molar2' }
+        // FDI 11-18: cuadrante superior derecho del PACIENTE (se dibuja a la
+        // izquierda de la línea media en la foto). Bug 5 del audit: antes el
+        // cuadrante derecho usaba 21-27 con nombres espejados. Listado desde el
+        // central hacia afuera porque el primer diente procesado queda junto a
+        // la línea media.
+        { id: 11, name: 'Central', side: 'left', proportion: 'central' },
+        { id: 12, name: 'Lateral', side: 'left', proportion: 'lateral' },
+        { id: 13, name: 'Canino', side: 'left', proportion: 'canine' },
+        { id: 14, name: 'Premolar 1', side: 'left', proportion: 'premolar1' },
+        { id: 15, name: 'Premolar 2', side: 'left', proportion: 'premolar2' },
+        { id: 16, name: 'Molar 1', side: 'left', proportion: 'molar1' },
+        { id: 17, name: 'Molar 2', side: 'left', proportion: 'molar2' },
+        { id: 18, name: 'Molar 3', side: 'left', proportion: 'molar2' },
+        // FDI 21-27: cuadrante superior izquierdo del PACIENTE (a la derecha de
+        // la línea media). De 11 hacia 27 el tamaño crece (central -> molar2).
+        { id: 21, name: 'Central', side: 'right', proportion: 'central' },
+        { id: 22, name: 'Lateral', side: 'right', proportion: 'lateral' },
+        { id: 23, name: 'Canino', side: 'right', proportion: 'canine' },
+        { id: 24, name: 'Premolar 1', side: 'right', proportion: 'premolar1' },
+        { id: 25, name: 'Premolar 2', side: 'right', proportion: 'premolar2' },
+        { id: 26, name: 'Molar 1', side: 'right', proportion: 'molar1' },
+        { id: 27, name: 'Molar 2', side: 'right', proportion: 'molar2' }
     ];
 
     const boxes = [];
@@ -266,9 +274,11 @@ export const calculateToothBoxes = (params) => {
         return { toothWidthPx, boxHeightPx };
     };
 
-    // Dientes derechos (11-16...26)
+    // Dientes derechos de la FOTO (FDI 11-21): se dibujan desde la línea media
+    // hacia la derecha EN ORDEN NATURAL (11, 21, 22...27): el central junto a la
+    // línea media y el segundo molar más afuera. Sin .reverse() (Bug 5).
     let currentX = midlineX;
-    const rightTeeth = teeth.filter(t => t.side === 'right').reverse();
+    const rightTeeth = teeth.filter(t => t.side === 'right');
     rightTeeth.forEach((tooth) => {
         const dims = computeDims(tooth);
         if (!dims) return;
@@ -290,7 +300,10 @@ export const calculateToothBoxes = (params) => {
     // Reiniciar para dientes izquierdos
     currentX = midlineX;
 
-    // Dientes izquierdos (17-26...18)
+    // Dientes izquierdos de la FOTO (FDI 18-11): desde la línea media hacia la
+    // izquierda EN ORDEN NATURAL (11, 12...18): el central junto a la línea media
+    // y el segundo molar más afuera.
+    currentX = midlineX;
     const leftTeeth = teeth.filter(t => t.side === 'left');
     leftTeeth.forEach((tooth) => {
         const dims = computeDims(tooth);

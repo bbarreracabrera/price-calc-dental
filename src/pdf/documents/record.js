@@ -1,7 +1,7 @@
 // src/pdf/documents/record.js
 import autoTable from 'jspdf-autotable';
 import { C, T, FUENTE } from '../theme.js';
-import { crearDocumento, dibujarMembrete, cajaPaciente, texto, fecha, fechaHora } from '../layout.js';
+import { crearDocumento, dibujarMembrete, texto, fecha, fechaHora } from '../layout.js';
 import { CONDICIONES_MEDICAS, formatRUT } from '../../constants.js';
 
 /**
@@ -85,7 +85,7 @@ export function construirFichaClinica({ doc, g, paciente, config, folio, opcione
   }
 
   // --- Art. 6 a) Identificación -------------------------------------------
-  y = cajaPaciente(doc, g, p, y);
+  y = dibujarCajaPaciente(doc, g, p, y);
 
   const per = p.personal || {};
   const extra = [

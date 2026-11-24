@@ -1,7 +1,7 @@
 // src/pdf/documents/quote.js
 import autoTable from 'jspdf-autotable';
 import { C, T, FUENTE } from '../theme.js';
-import { crearDocumento, dibujarMembrete, cajaPaciente, dibujarFirmas, texto, pesos, fecha } from '../layout.js';
+import { crearDocumento, dibujarMembrete, dibujarFirmas, texto, pesos, fecha } from '../layout.js';
 
 /**
  * Presupuesto clínico.
@@ -15,7 +15,7 @@ export function construirPresupuesto({ doc, g, paciente, items = [], config, fol
   const { validezDias = 30, descuento = 0, abono = 0, notas } = opciones;
 
   let y = dibujarMembrete(doc, g, config, { titulo: 'Presupuesto', folio });
-  y = cajaPaciente(doc, g, paciente, y);
+  y = dibujarCajaPaciente(doc, g, paciente, y);
 
   const bruto = items.reduce((s, it) => s + Number(it.price || 0) * Number(it.qty || 1), 0);
   const total = Math.max(0, bruto - Number(descuento || 0));
@@ -88,7 +88,15 @@ export function construirPresupuesto({ doc, g, paciente, items = [], config, fol
     ...(notas ? [notas] : []),
   ];
 
-  const altoCaja = 8 + condiciones.length * 7;
+  // Cada condición puede envolver a más de una línea con el ancho disponible,
+  // así que la caja se dimensiona midiendo el texto real con splitTextToSize
+  // en lugar de asumir 7 mm fijos por condición: la estimación anterior dejaba
+  // la última línea montada sobre el borde inferior de la caja.
+  const anchoCond = g.util - 10;
+  doc.setFont(FUENTE, 'normal');
+  doc.setFontSize(T.etiqueta);
+  const lineasCond = condiciones.flatMap(c => doc.splitTextToSize(`${c}`, anchoCond));
+  const altoCaja = 12 + lineasCond.length * 3.8;
   if (y + altoCaja > g.pieY - 40) { doc.addPage(); y = g.margen.arriba + 18; }
 
   doc.setFillColor(...C.canvas);
@@ -97,13 +105,15 @@ export function construirPresupuesto({ doc, g, paciente, items = [], config, fol
   doc.roundedRect(g.izq, y, g.util, altoCaja, 2, 2, 'FD');
 
   texto(doc, 'Condiciones', g.izq + 5, y + 6, { size: T.etiqueta, estilo: 'bold' });
-  condiciones.forEach((c, i) => {
-    texto(doc, `${i + 1}. ${c}`, g.izq + 5, y + 12 + i * 7, {
-      size: T.etiqueta, color: C.muted, maxWidth: g.util - 10,
-    });
+  let yc = y + 12;
+  condiciones.forEach((c) => {
+    for (const linea of doc.splitTextToSize(`${c}`, anchoCond)) {
+      texto(doc, linea, g.izq + 5, yc, { size: T.etiqueta, color: C.muted, maxWidth: anchoCond });
+      yc += 3.8;
+    }
   });
 
-  y += altoCaja + 10;
+  y = yc + 8;
 
   y = dibujarFirmas(doc, g, y, [
     { titulo: 'Firma del profesional', esProfesional: true },

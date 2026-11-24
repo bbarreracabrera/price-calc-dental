@@ -45,11 +45,21 @@ export const sendEmailReminder = async (patientEmail, patientName, date, time, c
  * Validador de conflictos de agenda
  */
 export const checkAppointmentConflict = (appointments, newAppt) => {
-    return appointments.find(a => 
+    // Bug 4: comparar por solapamiento de rangos (hora inicio + duración) y
+    // no exigir deleted_at === null exacto (la fila puede no traer la columna).
+    const toMin = (t) => {
+        const [h, m] = String(t || '00:00').split(':').map(Number);
+        return (h || 0) * 60 + (m || 0);
+    };
+    const isDeleted = (a) => a.deleted_at !== null && a.deleted_at !== undefined;
+    const start = toMin(newAppt.time);
+    const end = start + (Number(newAppt.duration) || 60);
+    return appointments.find(a =>
         a.id !== newAppt.id &&
         a.date === newAppt.date &&
         a.dentist_email === newAppt.dentist_email &&
-        a.time === newAppt.time &&
-        a.deleted_at === null
+        !isDeleted(a) &&
+        start < toMin(a.time) + (Number(a.duration) || 60) &&
+        end > toMin(a.time)
     );
 };

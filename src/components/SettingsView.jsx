@@ -125,6 +125,12 @@ export default function SettingsView({
 
     const handleAddLab = async () => {
         if (!newLab.name) return notify("El nombre del laboratorio es obligatorio");
+        // Bug 10: validar el email ANTES de persistir config/team; antes se
+        // guardaba el laboratorio con un email inválido y luego se avisaba.
+        if (newLab.email && !validateEmail(newLab.email)) {
+            notify("El email del laboratorio no es válido");
+            return;
+        }
 
         const labId = Date.now().toString();
         const now = new Date().toISOString();
@@ -148,10 +154,6 @@ export default function SettingsView({
         await saveToSupabase('clinic_config', session?.user?.email || 'general', updatedConfig);
         
         if (newLab.email) {
-            if (!validateEmail(newLab.email)) {
-                notify("El email del laboratorio no es válido");
-                return;
-            }
             const u = {
                 id: labId,
                 name: newLab.name,

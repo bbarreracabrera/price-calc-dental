@@ -6,7 +6,7 @@ const PAGE_SIZE = 100;
 export function useClinicData({
     session, setTeam, setUserRole, setClinicOwner, setConfigLocal,
     setPatientRecords, setAppointments, setFinancialRecords,
-    setProtocols, setInventory, setCatalog, setLabWorks
+    setProtocols, setInventory, setCatalog, setLabWorks, notify
 }) {
     const [totalPatients, setTotalPatients] = useState(0);
     const [hasMorePatients, setHasMorePatients] = useState(false);
@@ -58,6 +58,7 @@ export function useClinicData({
             }
         } catch (err) {
             console.error('Error loading financials:', err);
+            if (typeof notify === 'function') notify('Error al cargar los registros financieros', 'error');
         } finally {
             setIsLoadingFinancials(false);
         }
@@ -97,27 +98,29 @@ export function useClinicData({
             adminEmailRef.current = myClinicAdmin;
             pageRef.current = 0;
 
-            // 2. Equipo completo
-            const { data: t } = await supabase.from('team').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
-            if (!mounted) return;
-            if (t) setTeam(t.map(r => ({ ...r.data, id: r.id })));
-
-            // 3. Config
-            const [{ data: s }, { data: cc }] = await Promise.all([
-                supabase
-                    .from('settings')
-                    .select('*')
-                    .eq('id', 'general')
-                    .eq('admin_email', myClinicAdmin)
-                    .maybeSingle(),
-                supabase
-                    .from('clinic_config')
-                    .select('*')
-                    .eq('id', myClinicAdmin)
-                    .maybeSingle(),
+            // 2-5. Cargas en paralelo (Bug 16): team, config y el resto de las
+            // tablas no dependen entre sí; solo se serializa lo que necesita
+            // myClinicAdmin (ya resuelto arriba).
+            const [
+                { data: t }, settingsRes, patientsRes, apptsRes, packsRes, invRes, catRes, labRes
+            ] = await Promise.all([
+                supabase.from('team').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null),
+                Promise.all([
+                    supabase.from('settings').select('*').eq('id', 'general').eq('admin_email', myClinicAdmin).maybeSingle(),
+                    supabase.from('clinic_config').select('*').eq('id', myClinicAdmin).maybeSingle(),
+                ]),
+                supabase.from('patients').select('*', { count: 'exact' }).eq('admin_email', myClinicAdmin).is('deleted_at', null).order('id', { ascending: false }).range(0, PAGE_SIZE - 1),
+                supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null),
+                supabase.from('packs').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null),
+                supabase.from('inventory').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null),
+                supabase.from('catalog').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null),
+                supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null),
             ]);
 
             if (!mounted) return;
+
+            const [{ data: s }, { data: cc }] = settingsRes;
+            setTeam(t ? t.map(r => ({ ...r.data, id: r.id })) : []);
             setClinicOwner(myClinicAdmin);
             setUserRole(myRole);
             setConfigLocal({
@@ -125,16 +128,7 @@ export function useClinicData({
                 name: s?.data?.name || cc?.name || 'Profesional',
             });
 
-            // 4. Primera página de pacientes con conteo total
-            const { data: p, count } = await supabase
-                .from('patients')
-                .select('*', { count: 'exact' })
-                .eq('admin_email', myClinicAdmin)
-                .is('deleted_at', null)
-                .order('id', { ascending: false })
-                .range(0, PAGE_SIZE - 1);
-
-            if (!mounted) return;
+            const { data: p, count } = patientsRes;
             if (p) {
                 const m = {};
                 p.forEach(r => { m[r.id] = r.data; });
@@ -144,25 +138,19 @@ export function useClinicData({
             setTotalPatients(total);
             setHasMorePatients(total > PAGE_SIZE);
 
-            // 5. Resto de datos
-            const { data: a } = await supabase.from('appointments').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
-            if (!mounted) return;
+            const { data: a } = apptsRes;
             if (a) setAppointments(a.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: pk } = await supabase.from('packs').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
-            if (!mounted) return;
+            const { data: pk } = packsRes;
             if (pk) setProtocols(pk.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: i } = await supabase.from('inventory').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
-            if (!mounted) return;
+            const { data: i } = invRes;
             if (i) setInventory(i.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: catData } = await supabase.from('catalog').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
-            if (!mounted) return;
+            const { data: catData } = catRes;
             if (catData) setCatalog(catData.map(r => ({ ...r.data, id: r.id })));
 
-            const { data: labData } = await supabase.from('lab_works').select('*').eq('admin_email', myClinicAdmin).is('deleted_at', null);
-            if (!mounted) return;
+            const { data: labData } = labRes;
             if (labData) setLabWorks(labData.map(job => ({
                 ...job,
                 ...(job.data || {}),
@@ -180,7 +168,7 @@ export function useClinicData({
 
         load();
         return () => { mounted = false; };
-    }, [session]);
+    }, [session?.user?.id]);
 
     // Re-carga financials cuando el usuario cambia el rango
     useEffect(() => {

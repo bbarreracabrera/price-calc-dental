@@ -9,9 +9,9 @@ import StlViewerModal from './StlViewerModal';
 
 // --- COMPONENTE DE SEGURIDAD: URLS FIRMADAS PARA BUCKET PRIVADO ---
 export const PrivateImage = ({ img, onClick, className }) => {
-    const [signedUrl, setSignedUrl] = useState(null);
     const [dicomOpen, setDicomOpen] = useState(false);
     const [stlOpen, setStlOpen] = useState(false);
+    const [signedUrl, setSignedUrl] = useState(null);
 
     useEffect(() => {
         let isMounted = true; 
@@ -157,12 +157,16 @@ export const PatientSelect = ({ theme, patients, onSelect, placeholder = "Buscar
                     .from('patients')
                     .select('id, data');
                 if (adminEmail) q = q.eq('admin_email', adminEmail);
+                // Bug 7: filtrar filas no eliminadas y escapar el término para
+                // que el usuario no pueda inyectar sintaxis del filtro 'or'.
+                q = q.is('deleted_at', null);
+                const safeQuery = query.replace(/[,()]/g, ' ').trim();
                 const { data, error } = await q
                     .or([
-                        `data->personal->>legalName.ilike.%${query}%`,
-                        `data->personal->>rut.ilike.%${query}%`,
-                        `data->personal->>phone.ilike.%${query}%`,
-                        `data->personal->>email.ilike.%${query}%`,
+                        `data->personal->>legalName.ilike.%${safeQuery}%`,
+                        `data->personal->>rut.ilike.%${safeQuery}%`,
+                        `data->personal->>phone.ilike.%${safeQuery}%`,
+                        `data->personal->>email.ilike.%${safeQuery}%`,
                     ].join(','))
                     .limit(10);
 

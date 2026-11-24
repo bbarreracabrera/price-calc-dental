@@ -94,20 +94,44 @@ export default function CatalogView({
         e.target.value = '';
     };
 
+    // Bug 18: upsert por lotes de 500 (una fila por ítem, secuencial, tardaba
+    // minutos y bloqueaba la UI en aranceles grandes).
+    const upsertCatalogBatch = async (items) => {
+        // Bug 18: upsert por lotes de 500 filas (antes: 1 fila por ítem en
+        // secuencia, minutos de espera en aranceles grandes). La tabla catalog
+        // es genérica (id/data/admin_email): el payload va en data.
+        const CHUNK = 500;
+        for (let i = 0; i < items.length; i += CHUNK) {
+            const rows = items.slice(i, i + CHUNK).map(it => ({
+                id: it.id,
+                data: { name: it.name, price: it.price, category: it.category },
+                admin_email: it.admin_email
+            }));
+            const { error } = await supabase.from('catalog').upsert(rows);
+            if (error) throw error;
+        }
+    };
+
     const confirmImport = async () => {
         if (!importPreview?.items?.length) return;
         setImporting(true);
-        const newItems = [];
-        for (const item of importPreview.items) {
-            const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-            const fullItem = { ...item, id, admin_email: clinicOwner || session?.user?.email };
-            newItems.push(fullItem);
-            await saveToSupabase('catalog', id, fullItem);
+        try {
+            const newItems = [];
+            for (const item of importPreview.items) {
+                const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                const fullItem = { ...item, id, admin_email: clinicOwner || session?.user?.email };
+                newItems.push(fullItem);
+            }
+            await upsertCatalogBatch(newItems);
+            setCatalog(prev => [...prev, ...newItems]);
+            setImportPreview(null);
+            notify(`✅ ${newItems.length} tratamientos importados exitosamente.`);
+        } catch (err) {
+            console.error('Error importando catálogo:', err);
+            notify('Error al importar el arancel', 'error');
+        } finally {
+            setImporting(false);
         }
-        setCatalog(prev => [...prev, ...newItems]);
-        setImportPreview(null);
-        setImporting(false);
-        notify(`✅ ${newItems.length} tratamientos importados exitosamente.`);
     };
 
     const downloadTemplate = () => {
@@ -305,15 +329,20 @@ export default function CatalogView({
                         <button 
                             onClick={async () => {
                                 notify("Cargando arancel referencial...");
-                                const newItems = [];
-                                for (const item of DEFAULT_CATALOG) {
-                                    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                                    const fullItem = { ...item, category: item.category || 'Otros', id, admin_email: clinicOwner || session?.user?.email };
-                                    newItems.push(fullItem);
-                                    await saveToSupabase('catalog', id, fullItem);
+                                try {
+                                    const newItems = [];
+                                    for (const item of DEFAULT_CATALOG) {
+                                        const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                                        const fullItem = { ...item, category: item.category || 'Otros', id, admin_email: clinicOwner || session?.user?.email };
+                                        newItems.push(fullItem);
+                                    }
+                                    await upsertCatalogBatch(newItems);
+                                    setCatalog(newItems);
+                                    notify("¡Arancel base cargado con éxito!");
+                                } catch (err) {
+                                    console.error('Error cargando arancel:', err);
+                                    notify('Error al cargar el arancel referencial', 'error');
                                 }
-                                setCatalog(newItems);
-                                notify("¡Arancel base cargado con éxito!");
                             }}
                             className="mt-4 flex items-center gap-2 px-6 py-3.5 bg-[#46523C] text-white font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-[#36402F] transition-all shadow-md"
                         >

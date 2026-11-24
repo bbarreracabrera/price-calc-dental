@@ -46,6 +46,7 @@ export default function QuoteView({
 
     const [newPatModal, setNewPatModal] = useState({ open: false, name: '', rut: '', phone: '' });
     const [savedSuccess, setSavedSuccess] = useState(false);
+    const [isSavingPlan, setIsSavingPlan] = useState(false);
 
     // --- EFECTO DE AUTO-SELECCIÓN ---
     useEffect(() => {
@@ -403,7 +404,10 @@ export default function QuoteView({
                             </button>
                             <button
                                 onClick={async () => {
+                                    if (isSavingPlan) return; // Bug 12: evitar doble click que duplica el quote
                                     if (!sessionData.patientId) { notify('Selecciona un paciente', 'error'); return; }
+                                    setIsSavingPlan(true);
+                                    try {
                                     const p = getPatient(sessionData.patientId);
                                     const newQuote = {
                                         id: Date.now().toString(),
@@ -422,6 +426,9 @@ export default function QuoteView({
                                     await savePatientData(sessionData.patientId, updatedPatient);
                                     setSavedSuccess(true);
                                     notify('Plan guardado en la ficha del paciente');
+                                    } finally {
+                                        setIsSavingPlan(false);
+                                    }
                                 }}
                                 className="flex items-center justify-center gap-2 py-4 bg-[#46523C] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#36402F] transition-all shadow-lg shadow-[#46523C]/20"
                             >

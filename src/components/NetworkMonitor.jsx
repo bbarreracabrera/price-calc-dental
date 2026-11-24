@@ -71,7 +71,10 @@ export default function NetworkMonitor() {
                     payload = { id: item.id, ...item.data };
                 } else {
                     payload.data = item.data;
-                    if (currentEmail) payload.admin_email = currentEmail;
+                    // Bug 11: usar el admin_email guardado al encolar; el email
+                    // de la sesión actual puede ser otro usuario.
+                    const ownerEmail = item.admin_email || currentEmail;
+                    if (ownerEmail) payload.admin_email = ownerEmail;
                 }
 
                 const { error } = await supabase.from(item.table).upsert([payload]);

@@ -186,6 +186,10 @@ export default function PatientWorkspace({
   // mientras se escribe en un campo ni con modificadores, para no pelear con
   // copiar y pegar.
   useEffect(() => {
+    // Bug 15: los atajos r/o/e/p de la ficha solo actúan con el paciente cargado
+    // (la ficha abierta); el componente se monta con selectedPatientId antes de
+    // que p exista y no debe robar teclas en ese estado.
+    if (!p) return;
     const manejar = (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target;
@@ -200,7 +204,7 @@ export default function PatientWorkspace({
     };
     window.addEventListener('keydown', manejar);
     return () => window.removeEventListener('keydown', manejar);
-  }, [irA, abrirEvolucion, panelEvolucion]);
+  }, [irA, abrirEvolucion, panelEvolucion, p]);
 
   // ---------------------------------------------------------------------
   if (isLoading || (selectedPatientId && !p)) {

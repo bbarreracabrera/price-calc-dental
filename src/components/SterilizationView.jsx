@@ -84,7 +84,8 @@ export default function SterilizationView({
         for (const status of ['dirty', 'sterilizing', 'sterile']) {
             const kitId = `ster_item_${id}_${status}`;
             if (sterilizationItems.some(k => k.id === kitId)) {
-                await supabase.from('sterilization').delete().eq('id', kitId);
+                const kit = sterilizationItems.find(k => k.id === kitId);
+                await saveToSupabase('sterilization', kitId, { ...kit, id: kitId, deleted_at: new Date().toISOString() });
             }
         }
         setSterilizationItems(prev => prev.filter(k => k.linked_item_id !== id));
@@ -184,7 +185,8 @@ export default function SterilizationView({
                 await saveToSupabase('sterilization', kitId, kit);
             } else if (nextItems.some(k => k.id === kitId)) {
                 nextItems = nextItems.filter(k => k.id !== kitId);
-                await supabase.from('sterilization').delete().eq('id', kitId);
+                const existingKit = sterilizationItems.find(k => k.id === kitId);
+                await saveToSupabase('sterilization', kitId, { ...existingKit, id: kitId, deleted_at: new Date().toISOString() });
             }
         }
 
@@ -308,7 +310,7 @@ export default function SterilizationView({
         // Kit suelto: comportamiento original.
         if (await confirm(`¿Eliminar permanentemente el kit "${kit.name}"?`)) {
             setSterilizationItems(sterilizationItems.filter(i => i.id !== kit.id));
-            await supabase.from('sterilization').delete().eq('id', kit.id);
+            await saveToSupabase('sterilization', kit.id, { ...kit, deleted_at: new Date().toISOString() });
             notify("Kit eliminado");
         }
     };

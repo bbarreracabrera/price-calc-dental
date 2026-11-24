@@ -1,7 +1,7 @@
 // src/pdf/documents/perio.js
 import autoTable from 'jspdf-autotable';
 import { C, T, FUENTE } from '../theme.js';
-import { crearDocumento, dibujarMembrete, cajaPaciente, texto, fecha } from '../layout.js';
+import { crearDocumento, dibujarMembrete, texto, fecha } from '../layout.js';
 
 // ============================================================================
 // PERIODONTOGRAMA
@@ -31,7 +31,7 @@ import { crearDocumento, dibujarMembrete, cajaPaciente, texto, fecha } from '../
 export function construirPeriodontograma({ doc, g, paciente, stats = {}, config, folio, capturas = [] }) {
   // --- Portada: identificación e índices ---
   let y = dibujarMembrete(doc, g, config, { titulo: 'Periodontograma', folio });
-  y = cajaPaciente(doc, g, paciente, y);
+  y = dibujarCajaPaciente(doc, g, paciente, y);
 
   const indices = [
     ['Sangrado al sondaje (BOP)', stats.bop != null ? `${stats.bop}%` : '—', 'Objetivo terapéutico: menos de 10%'],

@@ -5,6 +5,11 @@ import { ChevronLeft, ChevronRight, Plus, CalendarClock, Filter, Calendar } from
 import { AppointmentCardSkeleton } from './SkeletonLoaders';
 
 export default function AgendaView({ patientRecords = {}, appointments, onOpenModal, team, isLoading = false, onGoToPatient }) {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [selectedDentistFilter, setSelectedDentistFilter] = useState('all');
+    const [viewMode, setViewMode] = useState('week');
+    const [selectedDay, setSelectedDay] = useState(new Date());
+
     if (isLoading) {
         return (
             <div className="flex flex-col h-full min-h-0 animate-in fade-in pb-4">
@@ -25,11 +30,6 @@ export default function AgendaView({ patientRecords = {}, appointments, onOpenMo
             </div>
         );
     }
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [selectedDentistFilter, setSelectedDentistFilter] = useState('all');
-    const [viewMode, setViewMode] = useState('week');
-    const [selectedDay, setSelectedDay] = useState(new Date());
-
     const dayNames = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
     const dentists = (team || []).filter(m => m.role === 'admin' || m.role === 'dentist');
     const hours = Array.from({ length: 12 }, (_, i) => 8 + i);

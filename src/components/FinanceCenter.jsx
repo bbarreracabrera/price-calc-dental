@@ -61,7 +61,7 @@ export default function FinanceCenter({
     ];
     const methodBreakdown = PAYMENT_METHODS.map(({ key, Icon }) => {
         const bucket = filteredPayments.filter(p => (p.method === key) || (!p.method && key === 'Otro'));
-        const total = bucket.reduce((s, p) => s + p.amount, 0);
+        const total = bucket.reduce((s, p) => s + (Number(p.amount) || 0), 0);
         const count = bucket.length;
         const pct = filteredCollected > 0 ? Math.round((total / filteredCollected) * 100) : 0;
         return { key, Icon, total, count, pct };
@@ -72,7 +72,7 @@ export default function FinanceCenter({
             const isIncome = record.type === 'income';
             let incomeAmount = 0;
             if (isIncome) {
-                incomeAmount = (record.payments || []).reduce((s,p) => s + p.amount, 0) + (record.paid && !record.payments ? record.paid : 0);
+                incomeAmount = (record.payments || []).reduce((s,p) => s + (Number(p.amount) || 0), 0) + ((record.paid && !record.payments ? record.paid : 0) || 0);
             }
             const expenseAmount = !isIncome ? Number(record.amount) : 0;
 
@@ -114,7 +114,7 @@ export default function FinanceCenter({
             const tratamientosDelDoc = incomeRecords.filter(inc => inc.created_by === doc.email);
             
             const produccionReal = tratamientosDelDoc.reduce((acc, inc) => {
-                const pago = (inc.payments || []).reduce((s, p) => s + p.amount, 0) + (inc.paid && !inc.payments ? inc.paid : 0);
+                const pago = (inc.payments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0) + ((inc.paid && !inc.payments ? inc.paid : 0) || 0);
                 return acc + pago;
             }, 0);
 
@@ -212,7 +212,7 @@ export default function FinanceCenter({
                                         const stats = incomeRecords.reduce((acc, rec) => {
                                             const t = rec.treatment || 'General';
                                             if(!acc[t]) acc[t] = { income: 0, count: 0 };
-                                            acc[t].income += (rec.payments || []).reduce((s, p) => s + p.amount, 0) + (rec.paid && !rec.payments ? rec.paid : 0);
+                                            acc[t].income += (rec.payments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0) + ((rec.paid && !rec.payments ? rec.paid : 0) || 0);
                                             acc[t].count += 1;
                                             return acc;
                                         }, {});
@@ -347,7 +347,7 @@ export default function FinanceCenter({
                             <div className="text-center py-20 opacity-40 font-bold">No hay registros de ingresos.</div>
                         ) : (
                             incomeRecords.map(h => {
-                                const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
+                                const paid = (h.payments || []).reduce((s,p)=>s+(Number(p.amount) || 0),0) + ((h.paid && !h.payments ? h.paid : 0) || 0);
                                 const pending = (h.total || 0) - paid;
                                 return (
                                     <div key={h.id} onClick={()=>onOpenAbonoModal(h, pending)} className="group flex justify-between items-center p-6 bg-white rounded-3xl border border-[#D9D2C7]/40 hover:border-[#46523C]/50 hover:shadow-lg transition-all cursor-pointer">
@@ -414,10 +414,10 @@ export default function FinanceCenter({
 
                         <div className="grid gap-4">
                             {incomeRecords.filter(h => {
-                                const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
+                                const paid = (h.payments || []).reduce((s,p)=>s+(Number(p.amount) || 0),0) + ((h.paid && !h.payments ? h.paid : 0) || 0);
                                 return (h.total || 0) - paid > 0;
                             }).map(h => {
-                                const paid = (h.payments || []).reduce((s,p)=>s+p.amount,0) + (h.paid && !h.payments ? h.paid : 0);
+                                const paid = (h.payments || []).reduce((s,p)=>s+(Number(p.amount) || 0),0) + ((h.paid && !h.payments ? h.paid : 0) || 0);
                                 const pending = (h.total || 0) - paid; 
                                 return (
                                     <div key={h.id} className="p-6 bg-white rounded-3xl border border-red-100 hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-center gap-6">

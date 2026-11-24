@@ -9,12 +9,14 @@
  * 
  * SECRETS REQUERIDOS EN SUPABASE:
  * - MP_ACCESS_TOKEN: Token de acceso de MercadoPago (producción)
+ * - MP_WEBHOOK_SECRET: secret de firma de webhooks de MercadoPago (valida el header x-signature)
  * - SUPABASE_URL
  * - SUPABASE_SERVICE_ROLE_KEY
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyMercadoPagoSignature } from "../_shared/mp-signature.ts";
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -35,7 +37,18 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     try {
-        const body = await req.json();
+        // Verificación de firma de MercadoPago (header x-signature) antes de procesar.
+        // Las URLs de webhook deben estar registradas en el dashboard de MercadoPago
+        // tras configurar MP_WEBHOOK_SECRET; sin el header firmado la petición se rechaza.
+        const rawBody = await req.text();
+        const signature = await verifyMercadoPagoSignature(req, rawBody);
+        if (!signature.ok) {
+            return new Response(
+                JSON.stringify({ error: "Firma inválida" }),
+                { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
+        const body = JSON.parse(rawBody);
         const { type, data } = body;
 
         // Solo procesamos eventos de preapproval (suscripciones)
@@ -106,7 +119,7 @@ serve(async (req) => {
     } catch (e) {
         console.error("[mp-lab-webhook] Error:", e);
         return new Response(
-            JSON.stringify({ error: (e as Error).message }),
+            JSON.stringify({ error: "Error interno" }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }

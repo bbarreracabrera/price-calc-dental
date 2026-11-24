@@ -46,7 +46,16 @@ export const pesos = (n) => `$${Number(n || 0).toLocaleString('es-CL')}`;
 export function generarFolio(tipo) {
   const d = new Date();
   const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  const azar = Math.random().toString(36).slice(2, 6).toUpperCase();
+  // Math.random().toString(36) colisionaba al emitir varios documentos seguidos.
+  // crypto.randomUUID() está disponible en todo navegador moderno; se toman 8
+  // dígitos hexadecimales del UUID y se comprimen a base36 para mantener el
+  // formato TIPO-AAAAMMDD-XXXX y el largo total. Solo ASCII: los folios viajan
+  // por fuentes WinAnsi y por el registro de auditoría. En contextos sin
+  // randomUUID (http sin TLS) se cae al azar anterior en lugar de tumbar el PDF.
+  const azar = crypto.randomUUID
+    ? (parseInt(crypto.randomUUID().replace(/-/g, '').slice(0, 8), 16) % 36 ** 4)
+        .toString(36).padStart(4, '0').toUpperCase()
+    : Math.floor(Math.random() * 36 ** 4).toString(36).padStart(4, '0').toUpperCase();
   return `${String(tipo).toUpperCase().slice(0, 4)}-${ymd}-${azar}`;
 }
 
@@ -104,8 +113,16 @@ export function dibujarMembrete(doc, g, config = {}, { titulo, folio } = {}) {
     }
   }
 
-  texto(doc, (config.name || 'Clínica Dental').toUpperCase(), xTexto, y + 3, {
-    size: T.subtitulo, estilo: 'bold',
+  // La columna derecha (título y folio) empieza en g.der; los datos de la
+  // clínica se limitan al 60% del ancho útil para que un nombre o una dirección
+  // larga no la invadan. Si el texto no cabe en una línea, se recorta: envolver
+  // aquí desalinearía las líneas de datos que avanzan a paso fijo.
+  const anchoDatos = g.util * 0.6;
+  doc.setFont(FUENTE, 'bold');
+  doc.setFontSize(T.subtitulo);
+  const nombreLinea = doc.splitTextToSize((config.name || 'Clínica Dental').toUpperCase(), anchoDatos)[0];
+  texto(doc, nombreLinea, xTexto, y + 3, {
+    size: T.subtitulo, estilo: 'bold', maxWidth: anchoDatos,
   });
 
   const datos = [
@@ -118,7 +135,8 @@ export function dibujarMembrete(doc, g, config = {}, { titulo, folio } = {}) {
 
   let yd = y + 8;
   for (const linea of datos) {
-    texto(doc, linea, xTexto, yd, { size: T.etiqueta, color: C.muted });
+    const primera = doc.splitTextToSize(String(linea), anchoDatos)[0];
+    texto(doc, primera, xTexto, yd, { size: T.etiqueta, color: C.muted, maxWidth: anchoDatos });
     yd += 3.6;
   }
 
@@ -151,11 +169,12 @@ export function dibujarMembrete(doc, g, config = {}, { titulo, folio } = {}) {
 // hace visible si alguien lleva dos años sin confirmarlos.
 // ---------------------------------------------------------------------------
 
-export function dibujarCajaPaciente(doc, g, p = {}, { compacta = false } = {}) {
+export function dibujarCajaPaciente(doc, g, p = {}, y = g.margen.arriba + 26, { compacta = false } = {}) {
   const per = p.personal || {};
   const alto = compacta ? 16 : 27;
 
-  const y = doc.__y ?? 0;
+  // La coordenada vertical viaja ahora como parámetro real. Antes se colaba por
+  // doc.__y y una llamada directa dibujaba la caja pegada al borde superior.
   doc.setFillColor(...C.raised);
   doc.setDrawColor(...C.line);
   doc.setLineWidth(0.3);
@@ -198,11 +217,7 @@ export function dibujarCajaPaciente(doc, g, p = {}, { compacta = false } = {}) {
   return y + alto + 6;
 }
 
-/** Versión encadenable: recibe y devuelve la coordenada vertical. */
-export function cajaPaciente(doc, g, p, y, opts) {
-  doc.__y = y;
-  return dibujarCajaPaciente(doc, g, p, opts);
-}
+
 
 // ---------------------------------------------------------------------------
 // Bloque de firmas

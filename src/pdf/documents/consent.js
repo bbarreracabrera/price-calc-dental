@@ -1,6 +1,6 @@
 // src/pdf/documents/consent.js
 import { C, T } from '../theme.js';
-import { crearDocumento, dibujarMembrete, cajaPaciente, texto, fechaHora } from '../layout.js';
+import { crearDocumento, dibujarMembrete, texto, fechaHora } from '../layout.js';
 import { NOTA_LEGAL_CONSENTIMIENTO } from '../../constants.js';
 
 /**
@@ -21,7 +21,7 @@ export function construirConsentimiento({ doc, g, paciente, consentimiento = {},
   const titulo = consentimiento.type || consentimiento.title || 'Consentimiento informado';
 
   let y = dibujarMembrete(doc, g, config, { titulo: 'Consentimiento', folio });
-  y = cajaPaciente(doc, g, paciente, y);
+  y = dibujarCajaPaciente(doc, g, paciente, y);
 
   texto(doc, titulo.toUpperCase(), g.centro, y + 4, { size: T.subtitulo, estilo: 'bold', align: 'center' });
   y += 12;
@@ -53,9 +53,16 @@ export function construirConsentimiento({ doc, g, paciente, consentimiento = {},
   if (y > g.pieY - 58) { doc.addPage(); y = g.margen.arriba + 14; }
 
   // --- Firma ---
+  // La firma se escala respetando su relación de aspecto, con tope de 70x28 mm,
+  // y queda centrada horizontalmente. El tamaño fijo anterior estiraba las
+  // imágenes que no eran exactamente 2.5:1.
   if (consentimiento.signature) {
     try {
-      doc.addImage(consentimiento.signature, 'PNG', g.centro - 35, y, 70, 28);
+      const cap = doc.getImageProperties(consentimiento.signature);
+      const escala = Math.min(70 / cap.width, 28 / cap.height);
+      const ancho = cap.width * escala;
+      const alto = cap.height * escala;
+      doc.addImage(consentimiento.signature, 'PNG', g.centro - ancho / 2, y, ancho, alto, undefined, 'FAST');
     } catch { /* firma ilegible: se imprime la línea vacía igual */ }
   }
   const yLinea = y + 30;
@@ -91,9 +98,20 @@ export function construirConsentimiento({ doc, g, paciente, consentimiento = {},
     y += alto + 5;
   }
 
+  // La nota legal se imprime completa y con espacio verificado: si no alcanza
+  // antes del pie se abre página, igual que en los bloques anteriores del
+  // documento. Un salto aquí también exige reimprimir el membrete (banda de
+  // acento y línea de folio) para que la hoja nueva se identifique sola.
+  const altoNota = doc.splitTextToSize(NOTA_LEGAL_CONSENTIMIENTO, g.util).length * 3.2 + 4;
+  if (y + altoNota > g.pieY - 10) {
+    doc.addPage();
+    doc.setFillColor(...C.accent);
+    doc.rect(0, 0, g.ancho, 3.2, 'F');
+    y = g.margen.arriba + 14;
+  }
   texto(doc, NOTA_LEGAL_CONSENTIMIENTO, g.izq, y + 2, { size: T.pie, color: C.faint, maxWidth: g.util });
 
-  return y + 10;
+  return y + altoNota + 4;
 }
 
 export function consentimiento(payload) {

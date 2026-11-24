@@ -2,6 +2,12 @@
  * ShiningCloud Dental — Edge Function: send-reminders
  * =====================================================
  * Envía recordatorios automáticos de citas por email (Resend)
+ *
+ * SEGURIDAD:
+ * - Solo acepta invocaciones server-side (pg_cron) con el header
+ *   Authorization: Bearer SUPABASE_SERVICE_ROLE_KEY. Cualquier otra
+ *   petición se rechaza con 401.
+ * - La respuesta solo incluye conteos, nunca correos de pacientes.
  * 
  * ACTIVACIÓN:
  * 1. Configurar en Supabase Dashboard > Edge Functions > Secrets:
@@ -29,11 +35,19 @@ serve(async (req) => {
         return new Response("ok", { headers: corsHeaders });
     }
 
+    // Solo invocaciones server-side (pg_cron) con el service role key
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!SERVICE_ROLE_KEY || authHeader !== `Bearer ${SERVICE_ROLE_KEY}`) {
+        return new Response(
+            JSON.stringify({ error: "No autorizado" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
     if (!RESEND_API_KEY) {
         return new Response(
             JSON.stringify({ message: "RESEND_API_KEY no configurada. Recordatorios desactivados." }),
@@ -60,15 +74,16 @@ serve(async (req) => {
         .limit(100);
 
     if (error) {
+        console.error("[send-reminders] Error consultando citas:", error);
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: "Error interno" }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }
 
     let sent = 0;
     let skipped = 0;
-    const errors: string[] = [];
+    let failed = 0;
 
     for (const appt of appointments || []) {
         const d = appt.data || {};
@@ -115,16 +130,19 @@ serve(async (req) => {
                     days_before: daysUntil,
                 }).maybeSingle();
             } else {
+                // El detalle del error solo se registra en el servidor (sin emails)
                 const errText = await res.text();
-                errors.push(`${patientEmail}: ${errText}`);
+                console.error(`[send-reminders] Falta enviando a ${appt.id}: ${errText}`);
+                failed++;
             }
         } catch (e) {
-            errors.push(`${patientEmail}: ${(e as Error).message}`);
+            console.error(`[send-reminders] Error en cita ${appt.id}:`, e);
+            failed++;
         }
     }
 
     return new Response(
-        JSON.stringify({ success: true, sent, skipped, errors }),
+        JSON.stringify({ success: true, sent, skipped, failed }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 });

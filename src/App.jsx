@@ -210,16 +210,21 @@ export default function App() {
           setSession(session);
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
           if (event === 'PASSWORD_RECOVERY') setIsInRecovery(true);
-          setSession(session);
-
-          if (!session) {
-              clearVault();
-              setClinicOwner('');
-              setUserRole('admin');
-              setTeam([]);
-          }
+          // Bug 2: INITIAL_SESSION y los TOKEN_REFRESHED repetidos disparaban el
+          // efecto de carga en cada emisión. Solo actualizamos si el usuario cambió.
+          if (event === 'INITIAL_SESSION') return;
+          setSession(prev => {
+              if (prev?.user?.id === newSession?.user?.id && prev?.access_token === newSession?.access_token) return prev;
+              if (!newSession) {
+                  clearVault();
+                  setClinicOwner('');
+                  setUserRole('admin');
+                  setTeam([]);
+              }
+              return newSession;
+          });
       });
 
       return () => subscription.unsubscribe();
@@ -269,7 +274,7 @@ export default function App() {
   } = useClinicData({
       session, setTeam, setUserRole, setClinicOwner, setConfigLocal,
       setPatientRecords, setAppointments, setFinancialRecords,
-      setProtocols, setInventory, setCatalog, setLabWorks
+      setProtocols, setInventory, setCatalog, setLabWorks, notify
   });
 
   // Migrar cola offline de texto plano al vault cifrado (ejecución única por sesión)
@@ -425,7 +430,9 @@ const saveToOfflineVault = async (table, id, data) => {
     if (!userId) return;
     console.warn(`Modo Offline: Guardando en bóveda cifrada [Tabla: ${table}]`);
     const queue = await getVaultItem('offline_queue', userId) || [];
-    queue.push({ table, id, data, timestamp: new Date().toISOString() });
+    // Bug 11: fijar el admin_email dueño al ENCOLAR (el email de la sesión al
+    // sincronizar después puede ser otro usuario y corrompería la fila).
+    queue.push({ table, id, data, timestamp: new Date().toISOString(), admin_email: clinicOwner || session?.user?.email });
     await setVaultItem('offline_queue', queue, userId);
 };
   
@@ -576,7 +583,18 @@ const saveToOfflineVault = async (table, id, data) => {
       }
   };
   
-  const { isListening, voiceStatus, isPerioVoiceActive, voiceFeedback, toggleVoice, startPerioDictation, voiceConfirmationEnabled, toggleVoiceConfirmation } = useVoiceAssistant({ notify, setToothModalData, setPerioData, goToAdjacentTooth, setSelectedToothId, odontogramType, getPatient, selectedPatientId, savePatientData, patientTab, activeTab, toothModalData });
+  // Bug 3: el dictado por voz debe leer el estado actual del ToothModal en el
+  // momento de procesar el comando, no la captura del render en que se armó el
+  // objeto de props. Un getter con ref evita el estado pisado y no reintroduce
+  // el problema de la identidad del objeto props (latestProps).
+  const toothModalStateRef = useRef(toothModalData);
+  useEffect(() => { toothModalStateRef.current = toothModalData; }, [toothModalData]);
+  const voiceAssistantProps = useMemo(() => ({
+      notify, setToothModalData, setPerioData, goToAdjacentTooth, setSelectedToothId,
+      odontogramType, getPatient, selectedPatientId, savePatientData, patientTab,
+      activeTab, getToothModalState: () => toothModalStateRef.current,
+  }), [notify, goToAdjacentTooth, setSelectedToothId, odontogramType, getPatient, selectedPatientId, savePatientData, patientTab, activeTab]);
+  const { isListening, voiceStatus, isPerioVoiceActive, voiceFeedback, toggleVoice, startPerioDictation, voiceConfirmationEnabled, toggleVoiceConfirmation } = useVoiceAssistant(voiceAssistantProps);
 
   const handleLogoUploadWrapper = useCallback((e) => uploadLogo(e, { setUploading, notify, clinicOwner, session, config, setConfigLocal, saveToSupabase }), [clinicOwner, session, config]);
   const handleImageUploadWrapper = useCallback((file) => {
@@ -620,14 +638,22 @@ const saveToOfflineVault = async (table, id, data) => {
   const netProfit = useMemo(() => totalCollected - totalExpenses, [totalCollected, totalExpenses]);
   const totalDebt = useMemo(
       () => incomeRecords.reduce((acc, rec) => {
-          const paid = (rec.payments || []).reduce((s, p) => s + Number(p.amount), 0) + (rec.paid && !rec.payments ? rec.paid : 0);
+          const paid = (rec.payments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0) + ((rec.paid && !rec.payments ? rec.paid : 0) || 0);
           const pending = (rec.total || 0) - paid;
           return acc + (pending > 0 ? pending : 0);
       }, 0),
       [incomeRecords]
   );
   
-  const todaysAppointments = appointments.filter(a => a.date === getLocalDate()).sort((a,b) => a.time.localeCompare(b.time));
+  // Bug 19: memoizado y sin mutar el arreglo filtrado (el .sort directo
+  // ordenaba el mismo array que alimenta otros cálculos).
+  const todaysAppointments = useMemo(() => {
+      if (!appointments) return [];
+      return appointments
+          .filter(a => a.date === getLocalDate())
+          .slice()
+          .sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+  }, [appointments]);
 
   const openApptModal = useCallback((apptData = {}) => {
     const now = new Date();
@@ -673,14 +699,16 @@ const saveToOfflineVault = async (table, id, data) => {
                 }, 150);
                 break;
             case 'a': openApptModal(); break;
-            case 'p': setActiveTab('ficha'); break;
-            case 'g': setActiveTab('agenda'); break;
-            case 'f': setActiveTab('history'); break;
+            // Bug 15: p/g/f solo cuando no hay ficha de paciente abierta;
+            // con la ficha abierta esas teclas le pertenecen a PatientWorkspace.
+            case 'p': if (selectedPatientId === null) setActiveTab('ficha'); break;
+            case 'g': if (selectedPatientId === null) setActiveTab('agenda'); break;
+            case 'f': if (selectedPatientId === null) setActiveTab('history'); break;
         }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openApptModal]);
+  }, [openApptModal, selectedPatientId]);
   const filteredInventory = useMemo(() => { if(!inventorySearch) return inventory; return inventory.filter(i => i.name.toLowerCase().includes(inventorySearch.toLowerCase())); }, [inventory, inventorySearch]);
   
   const chartData = useMemo(() => {
@@ -759,18 +787,21 @@ const saveToOfflineVault = async (table, id, data) => {
       if (!config?.name || config.name === 'Profesional') return;
       if (config?.tour_completed === true) return;
 
-      const timer = setTimeout(async () => {
-          const updatedConfig = { ...config, tour_completed: true };
-          setConfigLocal(updatedConfig);
-          await saveToSupabase('settings', 'general', updatedConfig);
+      const timer = setTimeout(() => {
+          // Bug 13: solo INICIAR el tour aquí; tour_completed se persiste en
+          // handleTourComplete para que cerrar la app a mitad de tour no lo marque.
           setRunTour(true);
       }, 2500);
       return () => clearTimeout(timer);
   }, [session?.user?.id, clinicOwner, config?.name, config?.tour_completed, runTour]);
 
-  const handleTourComplete = useCallback(() => {
+  const handleTourComplete = useCallback(async () => {
       setRunTour(false);
-  }, []);
+      // Bug 13: marcar el tour como completado solo cuando el usuario lo termina.
+      const updatedConfig = { ...config, tour_completed: true };
+      setConfigLocal(updatedConfig);
+      await saveToSupabase('settings', 'general', updatedConfig);
+  }, [config]);
 
   const pendingLabWorks = useMemo(() => {
     return labWorks
