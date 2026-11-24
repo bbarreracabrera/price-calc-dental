@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -6,6 +7,27 @@ export default defineConfig({
   // Cornerstone dicom-image-loader crea su worker con { type: 'module' };
   // el formato iife por defecto de Vite rompe el build ("Invalid value iife for worker.format").
   worker: { format: 'es' },
+  // --- Fix dev: TypeError "Class extends value undefined" en xmlbuilder2 ---
+  // xmlbuilder2 (dep de dicom-image-loader) hace `class XMLBuilderCBImpl extends events_1.EventEmitter`.
+  // En dev, Vite externaliza el builtin 'events' y rompe el interop CJS (EventEmitter queda undefined).
+  // Se pre-bundla con el polyfill npm de events y se define `global` para el bundle de deps.
+  define: { global: 'globalThis' },
+  resolve: {
+    // resuelve al polyfill npm, no al builtin de Node
+    alias: { events: fileURLToPath(new URL('./node_modules/events', import.meta.url)) },
+  },
+  optimizeDeps: {
+    include: [
+      '@cornerstonejs/core',
+      '@cornerstonejs/dicom-image-loader',
+      'dicom-parser',
+      'xmlbuilder2',
+      'events',
+    ],
+    esbuildOptions: {
+      define: { global: 'globalThis' },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
