@@ -3,6 +3,9 @@
 -- Tablas de especialidades con el nombre que usa el código
 -- (*_tracking). Idempotente: segura de re-ejecutar.
 --
+-- NOTA DE TIPOS: en este proyecto patients.id es TEXT (no UUID),
+-- igual que lab_works.id. Todas las FK de especialidades usan TEXT.
+--
 -- Historia: SPECIALTIES_TABLES.sql creaba estas tablas como
 -- *_tracking, pero PatientWorkspace y sus 3 tabs consultaban
 -- *_records (tablas inexistentes). Se estandariza el código a
@@ -13,8 +16,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- --- Ortodoncia ---
 CREATE TABLE IF NOT EXISTS public.orthodontics_tracking (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    patient_id TEXT NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
     treatment_type TEXT,
     torque_angulation TEXT,
     archwire_type TEXT,
@@ -27,8 +30,8 @@ CREATE TABLE IF NOT EXISTS public.orthodontics_tracking (
 
 -- --- Implantología ---
 CREATE TABLE IF NOT EXISTS public.implantology_tracking (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    patient_id TEXT NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
     implant_brand TEXT,
     implant_model TEXT,
     diameter TEXT,
@@ -46,8 +49,8 @@ CREATE TABLE IF NOT EXISTS public.implantology_tracking (
 
 -- --- Endodoncia ---
 CREATE TABLE IF NOT EXISTS public.endodontics_tracking (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    patient_id TEXT NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
     tooth_number TEXT,
     diagnosis TEXT,
     working_length TEXT,
@@ -61,7 +64,7 @@ CREATE TABLE IF NOT EXISTS public.endodontics_tracking (
     created_by TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_ortho_track_patient   ON public.orthodontics_tracking(patient_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ortho_track_patient    ON public.orthodontics_tracking(patient_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_implanto_track_patient ON public.implantology_tracking(patient_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_endo_track_patient     ON public.endodontics_tracking(patient_id, created_at DESC);
 
@@ -69,7 +72,9 @@ CREATE INDEX IF NOT EXISTS idx_endo_track_patient     ON public.endodontics_trac
 CREATE INDEX IF NOT EXISTS idx_patients_id_admin ON public.patients(id, admin_email);
 
 -- =================================================================
--- Respaldo si existiera una tabla *_records con datos reales
+-- Respaldo si existiera una tabla *_records con datos reales.
+-- Con guard de excepción: si los tipos no coinciden, avisa y sigue,
+-- no aborta toda la migración.
 -- =================================================================
 DO $$
 DECLARE t TEXT;
@@ -77,10 +82,14 @@ BEGIN
   FOREACH t IN ARRAY ARRAY['orthodontics','implantology','endodontics'] LOOP
     IF EXISTS (SELECT 1 FROM information_schema.tables
                WHERE table_schema='public' AND table_name = t || '_records') THEN
-      EXECUTE format(
-        'INSERT INTO public.%I_tracking SELECT * FROM public.%I_records ON CONFLICT DO NOTHING;',
-        t, t);
-      RAISE NOTICE 'Migrados datos de %_records a %_tracking', t, t;
+      BEGIN
+        EXECUTE format(
+          'INSERT INTO public.%I_tracking SELECT * FROM public.%I_records ON CONFLICT DO NOTHING;',
+          t, t);
+        RAISE NOTICE 'Migrados datos de %_records a %_tracking', t, t;
+      EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'No se pudo migrar %_records automáticamente (%). Revísala y migra a mano.', t, SQLERRM;
+      END;
     END IF;
   END LOOP;
 END $$;

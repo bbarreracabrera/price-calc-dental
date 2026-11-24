@@ -1,0 +1,1423 @@
+From f1a6215129225df6857d11407ad5d6c027a65c7a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Auditor=C3=ADa=20ShiningCloud?= <audit@shiningcloud.local>
+Date: Mon, 23 Nov 2026 15:18:56 +0000
+Subject: [PATCH] =?UTF-8?q?chore:=20ordenar=20SQL=20en=20migraciones=20ver?=
+ =?UTF-8?q?sionadas=20y=20limpiar=20c=C3=B3digo=20muerto?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+SQL:
+- supabase/migrations/: 3 migraciones idempotentes (2026-11-23):
+  01 crea *_tracking con respaldo desde *_records, 02 RLS de
+  especialidades+esterilización con my_clinic_admin (incluye team),
+  03 lab_work_files (antes suelto en la raíz)
+- SQL legacy movido a supabase/migrations/archive/ con README de orden
+
+Código:
+- Fix: especialidades consultaban *_records (tablas inexistentes);
+  ahora usan *_tracking (PatientWorkspace + 3 tabs)
+- Eliminados módulos muertos: siiService, reminderService,
+  financeAnalytics (nunca importados)
+- Eliminados exports muertos: recommendSmileStyle,
+  generateStyleComparison, getToothShape (smileStyles), colorSondaje,
+  GLIFOS (pdf/theme), getWelcomeTemplate (emailService)
+- supplyManager: getSupplyStats conserva (lo usa SupplyView) con fix
+  de sort in-place; eliminadas createSupplyOrder,
+  validateSupplyAvailability, updateCatalogStock (sin uso)
+
+Verificado: build completo OK; lint 221->214 problemas (solo resta)
+---
+ package-lock.json                             |  24 +-
+ src/pdf/theme.js                              |  18 +-
+ src/utils/emailService.js                     |  15 -
+ src/utils/financeAnalytics.js                 |  51 ----
+ src/utils/reminderService.js                  | 284 ------------------
+ src/utils/siiService.js                       | 255 ----------------
+ src/utils/smileStyles.js                      |  81 -----
+ src/utils/supplyManager.js                    |  65 +---
+ ...0261123_01_specialties_tracking_tables.sql |  86 ++++++
+ .../20261123_02_specialties_rls.sql           |  68 +++++
+ .../migrations/20261123_03_lab_work_files.sql |  86 ++++++
+ supabase/migrations/README.md                 |  31 ++
+ .../migrations/archive/SPECIALTIES_TABLES.sql |   0
+ .../migrations/archive/apply_lab_files.json   |   0
+ .../archive/apply_rls_specialties.sql         |   0
+ .../migrations/archive/get_table_info.json    |   0
+ .../supabase_cleanup_duplicate_policies.sql   |   0
+ .../supabase_fix_lab_accepted_backfill.sql    |   0
+ .../migrations/archive/supabase_lab_files.sql |   0
+ .../archive/supabase_lab_hybrid_migration.sql |   0
+ .../archive/supabase_recommended_indexes.sql  |   0
+ .../archive/supabase_rls_input.json           |   0
+ .../archive/supabase_sprint1_security.sql     |   0
+ 23 files changed, 282 insertions(+), 782 deletions(-)
+ delete mode 100644 src/utils/financeAnalytics.js
+ delete mode 100644 src/utils/reminderService.js
+ delete mode 100644 src/utils/siiService.js
+ create mode 100644 supabase/migrations/20261123_01_specialties_tracking_tables.sql
+ create mode 100644 supabase/migrations/20261123_02_specialties_rls.sql
+ create mode 100644 supabase/migrations/20261123_03_lab_work_files.sql
+ create mode 100644 supabase/migrations/README.md
+ rename SPECIALTIES_TABLES.sql => supabase/migrations/archive/SPECIALTIES_TABLES.sql (100%)
+ rename apply_lab_files.json => supabase/migrations/archive/apply_lab_files.json (100%)
+ rename apply_rls_specialties.sql => supabase/migrations/archive/apply_rls_specialties.sql (100%)
+ rename get_table_info.json => supabase/migrations/archive/get_table_info.json (100%)
+ rename supabase_cleanup_duplicate_policies.sql => supabase/migrations/archive/supabase_cleanup_duplicate_policies.sql (100%)
+ rename supabase_fix_lab_accepted_backfill.sql => supabase/migrations/archive/supabase_fix_lab_accepted_backfill.sql (100%)
+ rename supabase_lab_files.sql => supabase/migrations/archive/supabase_lab_files.sql (100%)
+ rename supabase_lab_hybrid_migration.sql => supabase/migrations/archive/supabase_lab_hybrid_migration.sql (100%)
+ rename supabase_recommended_indexes.sql => supabase/migrations/archive/supabase_recommended_indexes.sql (100%)
+ rename supabase_rls_input.json => supabase/migrations/archive/supabase_rls_input.json (100%)
+ rename supabase_sprint1_security.sql => supabase/migrations/archive/supabase_sprint1_security.sql (100%)
+
+diff --git a/package-lock.json b/package-lock.json
+index 4722347..14af895 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -88,7 +88,6 @@
+       "integrity": "sha512-CGOfOJqWjg2qW/Mb6zNsDm+u5vFQ8DxXfbM09z69p5Z6+mE1ikP2jUXw+j42Pf1XTYED2Rni5f95npYeuwMDQA==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.29.0",
+         "@babel/generator": "^7.29.0",
+@@ -3242,7 +3241,6 @@
+       "resolved": "https://registry.npmjs.org/@types/react/-/react-19.2.14.tgz",
+       "integrity": "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==",
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "csstype": "^3.2.2"
+       }
+@@ -3313,7 +3311,6 @@
+       "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "bin": {
+         "acorn": "bin/acorn"
+       },
+@@ -3665,7 +3662,6 @@
+         }
+       ],
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "baseline-browser-mapping": "^2.9.0",
+         "caniuse-lite": "^1.0.30001759",
+@@ -4027,8 +4023,7 @@
+       "version": "3.2.3",
+       "resolved": "https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz",
+       "integrity": "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==",
+-      "license": "MIT",
+-      "peer": true
++      "license": "MIT"
+     },
+     "node_modules/d3-array": {
+       "version": "3.2.4",
+@@ -4561,7 +4556,6 @@
+       "integrity": "sha512-LEyamqS7W5HB3ujJyvi0HQK/dtVINZvd5mAAp9eT5S/ujByGjiZLCzPcHVzuXbpJDJF/cxwHlfceVUDZ2lnSTw==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "@eslint-community/eslint-utils": "^4.8.0",
+         "@eslint-community/regexpp": "^4.12.1",
+@@ -6058,7 +6052,6 @@
+       "integrity": "sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "bin": {
+         "jiti": "bin/jiti.js"
+       }
+@@ -6158,7 +6151,6 @@
+       "resolved": "https://registry.npmjs.org/jspdf/-/jspdf-4.2.1.tgz",
+       "integrity": "sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ==",
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "@babel/runtime": "^7.28.6",
+         "fast-png": "^6.2.0",
+@@ -6721,7 +6713,6 @@
+         }
+       ],
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "nanoid": "^3.3.11",
+         "picocolors": "^1.1.1",
+@@ -6927,7 +6918,6 @@
+       "resolved": "https://registry.npmjs.org/react/-/react-19.2.4.tgz",
+       "integrity": "sha512-9nfp2hYpCwOjAN+8TZFGhtWEwgvWHXqESH8qT89AT/lWklpLON22Lc8pEtnpsZz7VmawabSU0gCjnj8aC0euHQ==",
+       "license": "MIT",
+-      "peer": true,
+       "engines": {
+         "node": ">=0.10.0"
+       }
+@@ -6937,7 +6927,6 @@
+       "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.4.tgz",
+       "integrity": "sha512-AXJdLo8kgMbimY95O2aKQqsz2iWi9jMgKJhRBAxECE4IFxfcazB2LmzloIoibJI3C12IlY20+KFaLv+71bUJeQ==",
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "scheduler": "^0.27.0"
+       },
+@@ -6976,8 +6965,7 @@
+       "version": "19.2.7",
+       "resolved": "https://registry.npmjs.org/react-is/-/react-is-19.2.7.tgz",
+       "integrity": "sha512-kZFnouyVv7eP/Phmrlo9FK+zcAdriZJvzxXHF1Sl1P377WSGe2G/JxVolhTrB/jeV47lKImhNUsijjHAAbcl/A==",
+-      "license": "MIT",
+-      "peer": true
++      "license": "MIT"
+     },
+     "node_modules/react-joyride": {
+       "version": "3.1.0",
+@@ -7006,7 +6994,6 @@
+       "resolved": "https://registry.npmjs.org/react-redux/-/react-redux-9.2.0.tgz",
+       "integrity": "sha512-ROY9fvHhwOD9ySfrF0wmvu//bKCQ6AeZZq1nJNtbDC+kk5DuSuNX/n6YWYF/SYy7bSba4D4FSz8DJeKY/S/r+g==",
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "@types/use-sync-external-store": "^0.0.6",
+         "use-sync-external-store": "^1.4.0"
+@@ -7105,8 +7092,7 @@
+       "version": "5.0.1",
+       "resolved": "https://registry.npmjs.org/redux/-/redux-5.0.1.tgz",
+       "integrity": "sha512-M9/ELqF6fy8FwmkpnF0S3YKOqMyoWJ4+CS5Efg2ct3oY9daQvd/Pc71FpGZsVsbl3Cpb+IIcjBDUnnyBdQbq4w==",
+-      "license": "MIT",
+-      "peer": true
++      "license": "MIT"
+     },
+     "node_modules/redux-thunk": {
+       "version": "3.1.0",
+@@ -7965,7 +7951,6 @@
+       "integrity": "sha512-vzCjQO/rgUuK9sf8VJZvjqiqiHFaZLnOiimmUuOKODxWL8mm/xua7viT7aqX7dgPY60otQjUotzFMmCB4VdmqQ==",
+       "dev": true,
+       "license": "BSD-2-Clause",
+-      "peer": true,
+       "dependencies": {
+         "@jridgewell/source-map": "^0.3.3",
+         "acorn": "^8.15.0",
+@@ -8378,7 +8363,6 @@
+       "integrity": "sha512-Bby3NOsna2jsjfLVOHKes8sGwgl4TT0E6vvpYgnAYDIF/tie7MRaFthmKuHx1NSXjiTueXH3do80FMQgvEktRg==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "esbuild": "^0.27.0",
+         "fdir": "^6.5.0",
+@@ -8724,7 +8708,6 @@
+       "integrity": "sha512-PlXPeEWMXMZ7sPYOHqmDyCJzcfNrUr3fGNKtezX14ykXOEIvyK81d+qydx89KY5O71FKMPaQ2vBfBFI5NHR63A==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "fast-deep-equal": "^3.1.3",
+         "fast-uri": "^3.0.1",
+@@ -8977,7 +8960,6 @@
+       "integrity": "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "funding": {
+         "url": "https://github.com/sponsors/colinhacks"
+       }
+diff --git a/src/pdf/theme.js b/src/pdf/theme.js
+index cb7d93a..17aeaec 100644
+--- a/src/pdf/theme.js
++++ b/src/pdf/theme.js
+@@ -9,7 +9,7 @@
+ // Sobre el blanco y negro: ningún dato puede depender solo del color. En el
+ // periodontograma viejo el sangrado era un punto rojo y la supuración una letra
+ // ámbar; impresos en una láser monocromática quedaban indistinguibles. Por eso
+-// cada marca clínica tiene además su letra (ver GLIFOS más abajo).
++// cada marca clínica lleva además su letra o símbolo en pantalla.
+ // ============================================================================
+ 
+ // --- Paleta (RGB) -----------------------------------------------------------
+@@ -38,22 +38,6 @@ export const C = {
+ };
+ 
+ // Severidad de sondaje: los mismos umbrales que la app usa en pantalla.
+-export const colorSondaje = (mm) => {
+-  const n = parseFloat(mm);
+-  if (!Number.isFinite(n)) return null;
+-  if (n >= 6) return C.danger;
+-  if (n >= 4) return C.warn;
+-  return null;
+-};
+-
+-// --- Glifos: legibles en blanco y negro sin depender del color --------------
+-export const GLIFOS = {
+-  sangrado:   'S',
+-  supuracion: 'P',
+-  implante:   'I',
+-  ausente:    '\u2014',  // guion largo
+-};
+-
+ // --- Geometría de página ----------------------------------------------------
+ // Las coordenadas absolutas de 210 y 195 estaban escritas a mano por todo el
+ // generador viejo. En Carta (215,9 mm de ancho) todo quedaba descuadrado a la
+diff --git a/src/utils/emailService.js b/src/utils/emailService.js
+index fb0496a..d845daa 100644
+--- a/src/utils/emailService.js
++++ b/src/utils/emailService.js
+@@ -37,18 +37,3 @@ export const sendProfessionalEmail = async ({ to, subject, html }) => {
+         return { success: false, error: error.message };
+     }
+ };
+-
+-/**
+- * Template para bienvenida de nuevos usuarios
+- */
+-export const getWelcomeTemplate = (userName) => `
+-    <div style="font-family: sans-serif; color: #241F1B; max-width: 600px; margin: auto; border: 1px solid #D9D2C7; border-radius: 24px; padding: 40px;">
+-        <h1 style="font-size: 24px; font-weight: 900; margin-bottom: 20px;">¡Bienvenido a la Bóveda Digital, ${userName}!</h1>
+-        <p style="font-size: 16px; line-height: 1.6;">Estamos felices de tenerte en <b>ShiningCloud Dental</b>. Tus datos y los de tus pacientes ahora están protegidos bajo los estándares más altos de seguridad.</p>
+-        <div style="margin: 30px 0;">
+-            <a href="https://shiningclouddental.cl" style="background-color: #46523C; color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px;">Entrar a mi Clínica</a>
+-        </div>
+-        <hr style="border: 0; border-top: 1px solid #D9D2C7; margin: 30px 0;" />
+-        <p style="font-size: 12px; color: #5E554E;">Si no creaste esta cuenta, puedes ignorar este correo.</p>
+-    </div>
+-`;
+diff --git a/src/utils/financeAnalytics.js b/src/utils/financeAnalytics.js
+deleted file mode 100644
+index 5f70e3b..0000000
+--- a/src/utils/financeAnalytics.js
++++ /dev/null
+@@ -1,51 +0,0 @@
+-/**
+- * Utilidades para análisis financiero avanzado en ShiningCloud Dental
+- */
+-
+-/**
+- * Calcula la rentabilidad por tratamiento
+- */
+-export const getTreatmentProfitability = (incomeRecords, expenseRecords) => {
+-    const stats = {};
+-
+-    incomeRecords.forEach(record => {
+-        const treatment = record.treatment || 'Otros';
+-        if (!stats[treatment]) stats[treatment] = { income: 0, count: 0 };
+-        
+-        const amount = (record.payments || []).reduce((s, p) => s + p.amount, 0) + (record.paid && !record.payments ? record.paid : 0);
+-        stats[treatment].income += amount;
+-        stats[treatment].count += 1;
+-    });
+-
+-    // Podríamos cruzar con gastos específicos si estuvieran tageados por tratamiento
+-    return Object.entries(stats).map(([name, data]) => ({
+-        name,
+-        income: data.income,
+-        count: data.count,
+-        avgTicket: data.income / data.count
+-    })).sort((a, b) => b.income - a.income);
+-};
+-
+-/**
+- * Categorías de gastos profesionales para contabilidad chilena
+- */
+-export const EXPENSE_CATEGORIES = [
+-    { key: 'Insumos', label: 'Insumos Dentales', icon: 'Box' },
+-    { key: 'Laboratorio', label: 'Laboratorio Dental', icon: 'FlaskConical' },
+-    { key: 'Sueldos', label: 'Honorarios y Sueldos', icon: 'Users' },
+-    { key: 'Arriendo', label: 'Arriendo / Gastos Comunes', icon: 'Building2' },
+-    { key: 'Marketing', label: 'Marketing y Publicidad', icon: 'Megaphone' },
+-    { key: 'Servicios', label: 'Luz, Agua, Internet', icon: 'Zap' },
+-    { key: 'Otros', label: 'Otros Gastos', icon: 'MoreHorizontal' }
+-];
+-
+-/**
+- * Formateador de moneda CLP
+- */
+-export const formatCLP = (amount) => {
+-    return new Intl.NumberFormat('es-CL', {
+-        style: 'currency',
+-        currency: 'CLP',
+-        minimumFractionDigits: 0
+-    }).format(amount);
+-};
+diff --git a/src/utils/reminderService.js b/src/utils/reminderService.js
+deleted file mode 100644
+index 2e8c8c7..0000000
+--- a/src/utils/reminderService.js
++++ /dev/null
+@@ -1,284 +0,0 @@
+-/**
+- * ============================================================
+- * SERVICIO DE RECORDATORIOS AUTOMÁTICOS ANTI NO-SHOW
+- * ShiningCloud Dental
+- * ============================================================
+- * 
+- * ESTADO: ⏳ PENDIENTE DE ACTIVACIÓN
+- * 
+- * Para activar este servicio, necesitas:
+- * 1. WhatsApp Cloud API (Meta):
+- *    - Crear cuenta en https://developers.facebook.com/
+- *    - Crear una App de tipo "Business"
+- *    - Activar el producto "WhatsApp"
+- *    - Obtener: WHATSAPP_TOKEN y WHATSAPP_PHONE_ID
+- *    - Costo: GRATIS hasta 1.000 conversaciones/mes
+- * 
+- * 2. Resend (Email):
+- *    - Crear cuenta en https://resend.com
+- *    - Verificar tu dominio (shiningclouddental.cl)
+- *    - Obtener: RESEND_API_KEY
+- *    - Costo: GRATIS hasta 3.000 emails/mes
+- * 
+- * 3. Supabase Edge Functions (Scheduler):
+- *    - Ya incluido en tu plan de Supabase
+- *    - Crear una Edge Function que se ejecute cada día a las 9:00 AM
+- *    - Esta función consultará las citas de los próximos 7 días y enviará recordatorios
+- * 
+- * INSTRUCCIONES DE ACTIVACIÓN:
+- * 1. Agregar al archivo .env:
+- *    VITE_WHATSAPP_TOKEN=tu_token_aqui
+- *    VITE_WHATSAPP_PHONE_ID=tu_phone_id_aqui
+- *    VITE_RESEND_API_KEY=tu_api_key_aqui
+- * 
+- * 2. Descomentar las funciones sendWhatsAppReminder y sendEmailReminder
+- * 3. Desplegar la Edge Function de Supabase (ver archivo supabase/functions/send-reminders/index.ts)
+- * ============================================================
+- */
+-
+-// ============================================================
+-// CONFIGURACIÓN DE RECORDATORIOS
+-// ============================================================
+-export const REMINDER_SCHEDULE = [
+-    { daysBeforeAppt: 7, label: '7 días antes', channel: ['email'] },
+-    { daysBeforeAppt: 5, label: '5 días antes', channel: ['email'] },
+-    { daysBeforeAppt: 3, label: '3 días antes', channel: ['whatsapp', 'email'] },
+-    { daysBeforeAppt: 1, label: '1 día antes',  channel: ['whatsapp', 'email'] },
+-    { daysBeforeAppt: 0, label: 'Mismo día',    channel: ['whatsapp'] },
+-];
+-
+-// ============================================================
+-// GENERADOR DE MENSAJES PERSONALIZADOS
+-// ============================================================
+-export const buildWhatsAppMessage = (patientName, appointmentDate, appointmentTime, clinicName, doctorName) => {
+-    const firstName = patientName?.split(' ')[0] || 'paciente';
+-    const dateStr = new Date(appointmentDate).toLocaleDateString('es-CL', {
+-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+-    });
+-
+-    return `Hola ${firstName} 👋\n\nTe recordamos que tienes una cita en *${clinicName}* el *${dateStr}* a las *${appointmentTime}*.\n\n👨‍⚕️ Doctor/a: ${doctorName || 'tu dentista'}\n\n¿Necesitas reagendar? Responde este mensaje o llámanos directamente.\n\n_${clinicName} - Powered by ShiningCloud Dental_`;
+-};
+-
+-export const buildEmailSubject = (patientName, daysUntil) => {
+-    const firstName = patientName?.split(' ')[0] || 'paciente';
+-    if (daysUntil === 0) return `⏰ Recordatorio: Tu cita dental es HOY, ${firstName}`;
+-    if (daysUntil === 1) return `📅 Tu cita dental es mañana, ${firstName}`;
+-    return `📅 Recordatorio: Tu cita dental en ${daysUntil} días, ${firstName}`;
+-};
+-
+-export const buildEmailBody = (patientName, appointmentDate, appointmentTime, clinicName, doctorName, clinicPhone) => {
+-    const firstName = patientName?.split(' ')[0] || 'paciente';
+-    const dateStr = new Date(appointmentDate).toLocaleDateString('es-CL', {
+-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+-    });
+-
+-    return `
+-<!DOCTYPE html>
+-<html>
+-<head><meta charset="UTF-8"></head>
+-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #FBFAF8; margin: 0; padding: 40px 20px;">
+-  <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(49,41,35,0.08);">
+-    
+-    <!-- Header -->
+-    <div style="background: #241F1B; padding: 32px; text-align: center;">
+-      <h1 style="color: white; font-size: 22px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">ShiningCloud Dental</h1>
+-      <p style="color: rgba(255,255,255,0.6); font-size: 11px; margin: 6px 0 0; letter-spacing: 2px; text-transform: uppercase;">Recordatorio de Cita</p>
+-    </div>
+-    
+-    <!-- Body -->
+-    <div style="padding: 32px;">
+-      <p style="font-size: 16px; color: #241F1B; font-weight: 700; margin: 0 0 24px;">Hola, ${firstName} 👋</p>
+-      <p style="font-size: 14px; color: #5E554E; line-height: 1.6; margin: 0 0 24px;">
+-        Te recordamos que tienes una <strong>cita dental</strong> agendada en <strong>${clinicName}</strong>.
+-      </p>
+-      
+-      <!-- Cita Card -->
+-      <div style="background: #FBFAF8; border: 1px solid #D9D2C7; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+-          <span style="font-size: 24px;">📅</span>
+-          <div>
+-            <p style="font-size: 11px; color: #5E554E; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Fecha</p>
+-            <p style="font-size: 15px; color: #241F1B; font-weight: 900; margin: 0; text-transform: capitalize;">${dateStr}</p>
+-          </div>
+-        </div>
+-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+-          <span style="font-size: 24px;">⏰</span>
+-          <div>
+-            <p style="font-size: 11px; color: #5E554E; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Hora</p>
+-            <p style="font-size: 15px; color: #241F1B; font-weight: 900; margin: 0;">${appointmentTime}</p>
+-          </div>
+-        </div>
+-        ${doctorName ? `
+-        <div style="display: flex; align-items: center; gap: 12px;">
+-          <span style="font-size: 24px;">👨‍⚕️</span>
+-          <div>
+-            <p style="font-size: 11px; color: #5E554E; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 2px;">Profesional</p>
+-            <p style="font-size: 15px; color: #241F1B; font-weight: 900; margin: 0;">${doctorName}</p>
+-          </div>
+-        </div>` : ''}
+-      </div>
+-      
+-      <p style="font-size: 13px; color: #5E554E; line-height: 1.6; margin: 0 0 24px;">
+-        ¿Necesitas reagendar o tienes alguna consulta? Contáctanos al <strong>${clinicPhone || '+56 9 XXXX XXXX'}</strong>.
+-      </p>
+-      
+-      <!-- CTA -->
+-      <a href="https://wa.me/56${(clinicPhone || '').replace(/\D/g, '')}" 
+-         style="display: block; background: #25D366; color: white; text-align: center; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 13px; text-decoration: none; letter-spacing: 0.5px;">
+-        💬 Contactar por WhatsApp
+-      </a>
+-    </div>
+-    
+-    <!-- Footer -->
+-    <div style="background: #FBFAF8; padding: 20px 32px; border-top: 1px solid #D9D2C7; text-align: center;">
+-      <p style="font-size: 10px; color: #5E554E; margin: 0;">
+-        ${clinicName} · Powered by <strong>ShiningCloud Dental</strong>
+-      </p>
+-    </div>
+-  </div>
+-</body>
+-</html>`;
+-};
+-
+-// ============================================================
+-// ENVÍO VÍA WHATSAPP CLOUD API (META)
+-// ⏳ PENDIENTE: Descomentar cuando tengas las API keys
+-// ============================================================
+-export const sendWhatsAppReminder = async (toPhone, message) => {
+-    // TODO: Activar cuando se obtengan las credenciales de Meta WhatsApp Cloud API
+-    // const WHATSAPP_TOKEN = import.meta.env.VITE_WHATSAPP_TOKEN;
+-    // const PHONE_ID = import.meta.env.VITE_WHATSAPP_PHONE_ID;
+-    // 
+-    // if (!WHATSAPP_TOKEN || !PHONE_ID) {
+-    //     console.warn('[ReminderService] WhatsApp API no configurada. Agrega VITE_WHATSAPP_TOKEN y VITE_WHATSAPP_PHONE_ID al .env');
+-    //     return { success: false, reason: 'not_configured' };
+-    // }
+-    // 
+-    // const cleanPhone = toPhone.replace(/\D/g, '');
+-    // const fullPhone = cleanPhone.startsWith('56') ? cleanPhone : `56${cleanPhone}`;
+-    // 
+-    // const res = await fetch(`https://graph.facebook.com/v18.0/${PHONE_ID}/messages`, {
+-    //     method: 'POST',
+-    //     headers: {
+-    //         'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+-    //         'Content-Type': 'application/json',
+-    //     },
+-    //     body: JSON.stringify({
+-    //         messaging_product: 'whatsapp',
+-    //         to: fullPhone,
+-    //         type: 'text',
+-    //         text: { body: message }
+-    //     })
+-    // });
+-    // 
+-    // const data = await res.json();
+-    // return { success: res.ok, data };
+-
+-    // MODO FALLBACK: Generar enlace de WhatsApp manual mientras no hay API
+-    const cleanPhone = toPhone?.replace(/\D/g, '') || '';
+-    const fullPhone = cleanPhone.startsWith('56') ? cleanPhone : `56${cleanPhone}`;
+-    return {
+-        success: false,
+-        reason: 'not_configured',
+-        fallbackUrl: `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`
+-    };
+-};
+-
+-// ============================================================
+-// ENVÍO VÍA RESEND (EMAIL)
+-// ⏳ PENDIENTE: Descomentar cuando tengas la API key de Resend
+-// ============================================================
+-export const sendEmailReminder = async (toEmail, subject, htmlBody, fromName = 'ShiningCloud Dental') => {
+-    // TODO: Activar cuando se obtenga la API key de Resend
+-    // const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
+-    // 
+-    // if (!RESEND_API_KEY) {
+-    //     console.warn('[ReminderService] Resend API no configurada. Agrega VITE_RESEND_API_KEY al .env');
+-    //     return { success: false, reason: 'not_configured' };
+-    // }
+-    // 
+-    // const res = await fetch('https://api.resend.com/emails', {
+-    //     method: 'POST',
+-    //     headers: {
+-    //         'Authorization': `Bearer ${RESEND_API_KEY}`,
+-    //         'Content-Type': 'application/json',
+-    //     },
+-    //     body: JSON.stringify({
+-    //         from: `${fromName} <hola@shiningclouddental.cl>`,
+-    //         to: [toEmail],
+-    //         subject,
+-    //         html: htmlBody,
+-    //     })
+-    // });
+-    // 
+-    // const data = await res.json();
+-    // return { success: res.ok, data };
+-
+-    console.info('[ReminderService] Email pendiente de activación:', { toEmail, subject });
+-    return { success: false, reason: 'not_configured' };
+-};
+-
+-// ============================================================
+-// ORQUESTADOR PRINCIPAL DE RECORDATORIOS
+-// Llama a esta función desde la agenda al guardar una cita
+-// ============================================================
+-export const scheduleRemindersForAppointment = async (appointment, patient, clinicConfig) => {
+-    const {
+-        date: apptDate,
+-        time: apptTime,
+-        doctorName,
+-    } = appointment;
+-
+-    const {
+-        personal: { legalName: patientName, phone: patientPhone, email: patientEmail } = {}
+-    } = patient;
+-
+-    const {
+-        clinicName = 'Tu Clínica Dental',
+-        clinicPhone = '',
+-    } = clinicConfig || {};
+-
+-    const apptDateTime = new Date(`${apptDate}T${apptTime || '10:00'}:00`);
+-    const now = new Date();
+-    const daysUntilAppt = Math.ceil((apptDateTime - now) / (1000 * 60 * 60 * 24));
+-
+-    const results = [];
+-
+-    for (const schedule of REMINDER_SCHEDULE) {
+-        if (schedule.daysBeforeAppt > daysUntilAppt) continue; // Ya pasó esa ventana
+-
+-        // WhatsApp
+-        if (schedule.channel.includes('whatsapp') && patientPhone) {
+-            const message = buildWhatsAppMessage(patientName, apptDate, apptTime, clinicName, doctorName);
+-            const result = await sendWhatsAppReminder(patientPhone, message);
+-            results.push({ type: 'whatsapp', schedule: schedule.label, ...result });
+-        }
+-
+-        // Email
+-        if (schedule.channel.includes('email') && patientEmail) {
+-            const subject = buildEmailSubject(patientName, schedule.daysBeforeAppt);
+-            const html = buildEmailBody(patientName, apptDate, apptTime, clinicName, doctorName, clinicPhone);
+-            const result = await sendEmailReminder(patientEmail, subject, html, clinicName);
+-            results.push({ type: 'email', schedule: schedule.label, ...result });
+-        }
+-    }
+-
+-    return results;
+-};
+-
+-// ============================================================
+-// GENERADOR DE ENLACE WHATSAPP RÁPIDO (DISPONIBLE AHORA)
+-// Úsalo para el botón manual de recordatorio en la agenda
+-// ============================================================
+-export const getWhatsAppReminderLink = (appointment, patient, clinicName) => {
+-    const phone = patient?.personal?.phone?.replace(/\D/g, '') || '';
+-    const fullPhone = phone.startsWith('56') ? phone : `56${phone}`;
+-    const message = buildWhatsAppMessage(
+-        patient?.personal?.legalName,
+-        appointment?.date,
+-        appointment?.time,
+-        clinicName || 'la clínica',
+-        appointment?.doctorName
+-    );
+-    return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+-};
+diff --git a/src/utils/siiService.js b/src/utils/siiService.js
+deleted file mode 100644
+index 9108606..0000000
+--- a/src/utils/siiService.js
++++ /dev/null
+@@ -1,255 +0,0 @@
+-/**
+- * ============================================================
+- * SERVICIO DE EMISIÓN DE BOLETAS ELECTRÓNICAS - SII CHILE
+- * ShiningCloud Dental
+- * ============================================================
+- * 
+- * ESTADO: ⏳ PENDIENTE DE ACTIVACIÓN
+- * 
+- * PROVEEDOR RECOMENDADO: OpenFactura (Haulmer)
+- * - Web: https://www.haulmer.com/openfactura/
+- * - Precio: desde $9.990 CLP/mes
+- * - API REST con excelente documentación
+- * - Soporte en español
+- * - Integración en 1-2 días de desarrollo
+- * 
+- * ALTERNATIVA: Acepta.cl
+- * - Web: https://www.acepta.com/
+- * - Precio: similar a OpenFactura
+- * - Más antiguo en el mercado, mayor soporte
+- * 
+- * INSTRUCCIONES DE ACTIVACIÓN:
+- * 1. Contratar plan en https://www.haulmer.com/openfactura/
+- * 2. Obtener API Key desde el panel de OpenFactura
+- * 3. Agregar al archivo .env:
+- *    VITE_OPENFACTURA_API_KEY=tu_api_key_aqui
+- *    VITE_OPENFACTURA_ENV=sandbox  (cambiar a 'production' cuando estés listo)
+- * 4. Descomentar las funciones de emisión en este archivo
+- * 5. Configurar RUT y datos de la clínica en el Panel Maestro
+- * ============================================================
+- */
+-
+-// ============================================================
+-// CONFIGURACIÓN
+-// ============================================================
+-const OPENFACTURA_BASE_URL = {
+-    sandbox:    'https://api.haulmer.com/v2/dte/sandbox',
+-    production: 'https://api.haulmer.com/v2/dte',
+-};
+-
+-// ============================================================
+-// TIPOS DE DOCUMENTO SII
+-// ============================================================
+-export const DTE_TYPES = {
+-    BOLETA_ELECTRONICA:         39,
+-    BOLETA_EXENTA_ELECTRONICA:  41,
+-    FACTURA_ELECTRONICA:        33,
+-    FACTURA_EXENTA_ELECTRONICA: 34,
+-    NOTA_CREDITO:               61,
+-    NOTA_DEBITO:                56,
+-};
+-
+-// ============================================================
+-// CONSTRUCTOR DE DOCUMENTO DTE
+-// Convierte los datos de la app al formato requerido por OpenFactura
+-// ============================================================
+-export const buildDTEPayload = ({
+-    tipo = DTE_TYPES.BOLETA_ELECTRONICA,
+-    emisorRut,
+-    emisorRazonSocial,
+-    emisorGiro,
+-    emisorDireccion,
+-    emisorComuna,
+-    receptorRut = '66666666-6',   // RUT genérico para boletas sin receptor específico
+-    receptorNombre = 'Sin Nombre',
+-    receptorEmail = null,
+-    items = [],                    // [{ nombre, cantidad, precioUnitario, descuento? }]
+-    formaPago = 'Efectivo',
+-    observaciones = '',
+-}) => {
+-    const subtotal = items.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario * (1 - (item.descuento || 0) / 100)), 0);
+-    const iva = tipo === DTE_TYPES.BOLETA_ELECTRONICA ? Math.round(subtotal * 0.19) : 0;
+-    const total = Math.round(subtotal + iva);
+-
+-    return {
+-        Encabezado: {
+-            IdDoc: {
+-                TipoDTE: tipo,
+-                FchEmis: new Date().toISOString().split('T')[0],
+-                FmaPago: formaPago === 'Crédito' ? 2 : 1,
+-            },
+-            Emisor: {
+-                RUTEmisor: emisorRut,
+-                RznSoc: emisorRazonSocial,
+-                GiroEmis: emisorGiro || 'Servicios Odontológicos',
+-                DirOrigen: emisorDireccion || '',
+-                CmnaOrigen: emisorComuna || '',
+-            },
+-            Receptor: {
+-                RUTRecep: receptorRut,
+-                RznSocRecep: receptorNombre,
+-                ...(receptorEmail ? { CorreoRecep: receptorEmail } : {}),
+-            },
+-            Totales: {
+-                MntNeto: tipo === DTE_TYPES.BOLETA_ELECTRONICA ? subtotal : total,
+-                TasaIVA: tipo === DTE_TYPES.BOLETA_ELECTRONICA ? 19 : 0,
+-                IVA: iva,
+-                MntTotal: total,
+-            },
+-        },
+-        Detalle: items.map((item, idx) => ({
+-            NroLinDet: idx + 1,
+-            NmbItem: item.nombre,
+-            QtyItem: item.cantidad,
+-            PrcItem: item.precioUnitario,
+-            ...(item.descuento ? { DescuentoPct: item.descuento } : {}),
+-            MontoItem: Math.round(item.cantidad * item.precioUnitario * (1 - (item.descuento || 0) / 100)),
+-        })),
+-        ...(observaciones ? {
+-            Referencia: [{
+-                NroLinRef: 1,
+-                TpoDocRef: 'SET',
+-                FolioRef: 'N/A',
+-                FchRef: new Date().toISOString().split('T')[0],
+-                RazonRef: observaciones,
+-            }]
+-        } : {}),
+-    };
+-};
+-
+-// ============================================================
+-// EMISIÓN DE BOLETA ELECTRÓNICA
+-// ⏳ PENDIENTE: Descomentar cuando tengas la API key de OpenFactura
+-// ============================================================
+-export const emitirBoleta = async (payload) => {
+-    // TODO: Activar cuando se obtenga la API key de OpenFactura
+-    // const API_KEY = import.meta.env.VITE_OPENFACTURA_API_KEY;
+-    // const ENV = import.meta.env.VITE_OPENFACTURA_ENV || 'sandbox';
+-    // 
+-    // if (!API_KEY) {
+-    //     console.warn('[SIIService] OpenFactura API no configurada. Agrega VITE_OPENFACTURA_API_KEY al .env');
+-    //     return { success: false, reason: 'not_configured' };
+-    // }
+-    // 
+-    // const res = await fetch(`${OPENFACTURA_BASE_URL[ENV]}/document`, {
+-    //     method: 'POST',
+-    //     headers: {
+-    //         'apikey': API_KEY,
+-    //         'Content-Type': 'application/json',
+-    //     },
+-    //     body: JSON.stringify(payload),
+-    // });
+-    // 
+-    // const data = await res.json();
+-    // 
+-    // if (!res.ok) {
+-    //     return { success: false, error: data.message || 'Error al emitir boleta', data };
+-    // }
+-    // 
+-    // return {
+-    //     success: true,
+-    //     folio: data.folio,
+-    //     pdfUrl: data.urlPdf,
+-    //     xmlUrl: data.urlXml,
+-    //     ted: data.ted,
+-    //     data,
+-    // };
+-
+-    // MODO SIMULACIÓN: Retorna datos de prueba mientras no hay API key
+-    console.info('[SIIService] Boleta en modo simulación. Activa con VITE_OPENFACTURA_API_KEY');
+-    return {
+-        success: false,
+-        reason: 'not_configured',
+-        simulation: true,
+-        message: 'Para emitir boletas reales, activa la integración con OpenFactura en el Panel Maestro.',
+-    };
+-};
+-
+-// ============================================================
+-// CONSULTA DE ESTADO DE UN DTE
+-// ============================================================
+-export const consultarEstadoDTE = async (folio, tipoDTE) => {
+-    // TODO: Activar cuando se obtenga la API key de OpenFactura
+-    // const API_KEY = import.meta.env.VITE_OPENFACTURA_API_KEY;
+-    // const ENV = import.meta.env.VITE_OPENFACTURA_ENV || 'sandbox';
+-    // 
+-    // const res = await fetch(`${OPENFACTURA_BASE_URL[ENV]}/document/status?folio=${folio}&tipoDTE=${tipoDTE}`, {
+-    //     headers: { 'apikey': API_KEY }
+-    // });
+-    // const data = await res.json();
+-    // return { success: res.ok, data };
+-
+-    return { success: false, reason: 'not_configured' };
+-};
+-
+-// ============================================================
+-// HELPER: CONSTRUIR ITEMS DESDE UN PRESUPUESTO DE LA APP
+-// ============================================================
+-export const buildItemsFromQuote = (quoteItems = []) => {
+-    return quoteItems.map(item => ({
+-        nombre: item.name || item.treatment || 'Tratamiento dental',
+-        cantidad: item.quantity || item.qty || 1,
+-        precioUnitario: Math.round((item.price || item.unitPrice || 0) / 1.19), // Precio neto sin IVA
+-        descuento: item.discount || 0,
+-    }));
+-};
+-
+-// ============================================================
+-// HELPER: CONSTRUIR ITEMS DESDE EVOLUCIONES CLÍNICAS
+-// ============================================================
+-export const buildItemsFromEvolutions = (evolutions = [], catalog = []) => {
+-    return evolutions
+-        .filter(ev => ev.treatment && ev.date)
+-        .map(ev => {
+-            const catalogItem = catalog.find(c => c.name === ev.treatment);
+-            return {
+-                nombre: ev.treatment,
+-                cantidad: 1,
+-                precioUnitario: Math.round((catalogItem?.price || 0) / 1.19),
+-                descuento: 0,
+-            };
+-        })
+-        .filter(item => item.precioUnitario > 0);
+-};
+-
+-// ============================================================
+-// CHECKLIST DE ACTIVACIÓN
+-// Muestra en el Panel Maestro qué falta para activar el servicio
+-// ============================================================
+-export const getSIIActivationStatus = () => {
+-    const apiKey = import.meta.env.VITE_OPENFACTURA_API_KEY;
+-    const env = import.meta.env.VITE_OPENFACTURA_ENV;
+-
+-    return {
+-        isConfigured: !!apiKey,
+-        isSandbox: env === 'sandbox' || !env,
+-        isProduction: env === 'production',
+-        checklist: [
+-            {
+-                id: 'plan',
+-                label: 'Contratar plan OpenFactura',
+-                done: !!apiKey,
+-                url: 'https://www.haulmer.com/openfactura/',
+-                description: 'Desde $9.990 CLP/mes. Incluye emisión ilimitada de boletas.',
+-            },
+-            {
+-                id: 'apikey',
+-                label: 'Configurar API Key en .env',
+-                done: !!apiKey,
+-                description: 'Agrega VITE_OPENFACTURA_API_KEY=tu_key al archivo .env',
+-            },
+-            {
+-                id: 'rut',
+-                label: 'Configurar RUT de la clínica en Panel Maestro',
+-                done: false,
+-                description: 'Necesario para emitir documentos tributarios válidos.',
+-            },
+-            {
+-                id: 'production',
+-                label: 'Cambiar a modo Producción',
+-                done: env === 'production',
+-                description: 'Cambia VITE_OPENFACTURA_ENV=production cuando estés listo.',
+-            },
+-        ],
+-    };
+-};
+diff --git a/src/utils/smileStyles.js b/src/utils/smileStyles.js
+index 9187aa6..f8cc2d8 100644
+--- a/src/utils/smileStyles.js
++++ b/src/utils/smileStyles.js
+@@ -623,15 +623,6 @@ export const getAllSmileStyles = () => {
+  * @param {string} toothType - Tipo de diente ('central', 'lateral', 'canine', 'premolar', 'molar')
+  * @returns {Array|null} - Array de puntos {x, y} o null si no existe
+  */
+-export const getToothShape = (styleId, toothType) => {
+-    const style = getSmileStyle(styleId);
+-    if (!style) return null;
+-    return style.toothShapes?.[toothType] || null;
+-};
+-
+-/**
+- * Genera una descripción completa del estilo para mostrar al paciente
+- */
+ export const generateStylePresentation = (styleId) => {
+     const style = getSmileStyle(styleId);
+     if (!style) return null;
+@@ -651,75 +642,3 @@ export const generateStylePresentation = (styleId) => {
+ /**
+  * Calcula recomendaciones de estilo basadas en características del paciente
+  */
+-export const recommendSmileStyle = (params) => {
+-    const {
+-        faceShape,        // 'oval', 'round', 'square', 'oblong'
+-        personality,      // 'introvert', 'extrovert', 'balanced'
+-        age,              // número
+-        profession,       // 'professional', 'creative', 'other'
+-        preference        // 'conservative', 'modern', 'bold'
+-    } = params;
+-
+-    let recommendations = [];
+-
+-    // Lógica de recomendación basada en características
+-    if (personality === 'extrovert' && preference === 'bold') {
+-        recommendations.push({
+-            style: SMILE_STYLES.TRIANGULAR,
+-            score: 95,
+-            reason: 'Perfecto para tu personalidad dinámica y expresiva'
+-        });
+-    }
+-
+-    if (profession === 'professional' && preference === 'conservative') {
+-        recommendations.push({
+-            style: SMILE_STYLES.RECTANGULAR,
+-            score: 90,
+-            reason: 'Transmite profesionalismo y autoridad'
+-        });
+-    }
+-
+-    if (personality === 'introvert' && preference === 'conservative') {
+-        recommendations.push({
+-            style: SMILE_STYLES.OVAL,
+-            score: 85,
+-            reason: 'Elegancia y armonía natural'
+-        });
+-    }
+-
+-    if (preference === 'modern') {
+-        recommendations.push({
+-            style: SMILE_STYLES.TRIANGULAR,
+-            score: 80,
+-            reason: 'Aspecto contemporáneo y fresco'
+-        });
+-    }
+-
+-    // Siempre incluir el estilo cuadrado como opción equilibrada
+-    recommendations.push({
+-        style: SMILE_STYLES.SQUARE,
+-        score: 75,
+-        reason: 'Opción equilibrada y versátil'
+-    });
+-
+-    // Ordenar por puntuación
+-    return recommendations.sort((a, b) => b.score - a.score);
+-};
+-
+-/**
+- * Exporta un resumen comparativo de estilos
+- */
+-export const generateStyleComparison = (styleIds) => {
+-    return styleIds.map(id => {
+-        const style = getSmileStyle(id);
+-        return {
+-            name: style.name,
+-            emoji: style.emoji,
+-            color: style.colorHex,
+-            personality: style.personality.primary,
+-            traits: style.personality.traits,
+-            benefits: style.proposal.benefits,
+-            toothShape: style.toothShapes?.central || null
+-        };
+-    });
+-};
+\ No newline at end of file
+diff --git a/src/utils/supplyManager.js b/src/utils/supplyManager.js
+index 24b0438..73dd47e 100644
+--- a/src/utils/supplyManager.js
++++ b/src/utils/supplyManager.js
+@@ -62,29 +62,13 @@ export const generateSupplyInventoryReport = (catalog = []) => {
+ /**
+  * Procesa una orden de Supply
+  */
+-export const createSupplyOrder = (items = [], clinicId, dentistId) => {
+-  const orderId = `ORD-${Date.now()}`;
+-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+ 
+-  return {
+-    id: orderId,
+-    clinicId,
+-    dentistId,
+-    items,
+-    total,
+-    commission: calculateSupplyCommission(total),
+-    status: 'pending',
+-    createdAt: new Date().toISOString(),
+-    deliveryDate: null
+-  };
+-};
+-
+-/**
+- * Calcula estadísticas de Supply para el Panel Maestro
+- */
++// Reintroducido: lo usa SupplyView.jsx. Fix del audit: no mutar el
++// catálogo con sort() in place; topProducts ordenado por stock en copia.
+ export const getSupplyStats = (orders = [], catalog = []) => {
+-  const thisMonth = new Date().getMonth();
+-  const thisYear = new Date().getFullYear();
++  const now = new Date();
++  const thisMonth = now.getMonth();
++  const thisYear = now.getFullYear();
+ 
+   const monthlyOrders = orders.filter(order => {
+     const orderDate = new Date(order.createdAt);
+@@ -94,48 +78,13 @@ export const getSupplyStats = (orders = [], catalog = []) => {
+   const monthlySales = calculateSupplySales(monthlyOrders);
+   const monthlyCommission = calculateSupplyCommission(monthlySales);
+ 
+-  const inventory = generateSupplyInventoryReport(catalog);
+-
+   return {
+     totalOrders: orders.length,
+     monthlyOrders: monthlyOrders.length,
+     monthlySales,
+     monthlyCommission,
+     totalCommission: calculateSupplyCommission(calculateSupplySales(orders)),
+-    inventory,
+-    topProducts: catalog
+-      .sort((a, b) => b.stock - a.stock)
+-      .slice(0, 5)
++    inventory: generateSupplyInventoryReport(catalog),
++    topProducts: [...catalog].sort((a, b) => b.stock - a.stock).slice(0, 5)
+   };
+ };
+-
+-/**
+- * Valida disponibilidad de productos
+- */
+-export const validateSupplyAvailability = (items = [], catalog = []) => {
+-  const errors = [];
+-
+-  items.forEach(item => {
+-    const catalogItem = catalog.find(c => c.id === item.id);
+-    if (!catalogItem) {
+-      errors.push(`Producto ${item.id} no existe en catálogo`);
+-    } else if (catalogItem.stock < item.quantity) {
+-      errors.push(`Stock insuficiente para ${catalogItem.name}. Disponible: ${catalogItem.stock}, Solicitado: ${item.quantity}`);
+-    }
+-  });
+-
+-  return { isValid: errors.length === 0, errors };
+-};
+-
+-/**
+- * Descuenta stock tras una orden confirmada
+- */
+-export const updateCatalogStock = (items = [], catalog = []) => {
+-  return catalog.map(catalogItem => {
+-    const orderItem = items.find(item => item.id === catalogItem.id);
+-    if (orderItem) {
+-      return { ...catalogItem, stock: catalogItem.stock - orderItem.quantity };
+-    }
+-    return catalogItem;
+-  });
+-};
+diff --git a/supabase/migrations/20261123_01_specialties_tracking_tables.sql b/supabase/migrations/20261123_01_specialties_tracking_tables.sql
+new file mode 100644
+index 0000000..e364849
+--- /dev/null
++++ b/supabase/migrations/20261123_01_specialties_tracking_tables.sql
+@@ -0,0 +1,86 @@
++-- =================================================================
++-- ShiningCloud Dental — Migración 2026-11-23 #1
++-- Tablas de especialidades con el nombre que usa el código
++-- (*_tracking). Idempotente: segura de re-ejecutar.
++--
++-- Historia: SPECIALTIES_TABLES.sql creaba estas tablas como
++-- *_tracking, pero PatientWorkspace y sus 3 tabs consultaban
++-- *_records (tablas inexistentes). Se estandariza el código a
++-- *_tracking; esta migración garantiza que existan con ese nombre.
++-- =================================================================
++
++CREATE EXTENSION IF NOT EXISTS pgcrypto;
++
++-- --- Ortodoncia ---
++CREATE TABLE IF NOT EXISTS public.orthodontics_tracking (
++    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++    patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
++    treatment_type TEXT,
++    torque_angulation TEXT,
++    archwire_type TEXT,
++    archwire_change_date DATE,
++    elastomers TEXT,
++    activation_notes TEXT,
++    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++    created_by TEXT
++);
++
++-- --- Implantología ---
++CREATE TABLE IF NOT EXISTS public.implantology_tracking (
++    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++    patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
++    implant_brand TEXT,
++    implant_model TEXT,
++    diameter TEXT,
++    length TEXT,
++    insertion_torque TEXT,
++    placement_date DATE,
++    stage TEXT,
++    abutment_type TEXT,
++    crown_type TEXT,
++    bone_graft BOOLEAN DEFAULT FALSE,
++    bone_graft_notes TEXT,
++    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++    created_by TEXT
++);
++
++-- --- Endodoncia ---
++CREATE TABLE IF NOT EXISTS public.endodontics_tracking (
++    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++    patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
++    tooth_number TEXT,
++    diagnosis TEXT,
++    working_length TEXT,
++    instruments_used TEXT,
++    irrigation_solution TEXT,
++    intracanal_medication TEXT,
++    obturation_material TEXT,
++    radiographic_follow_up BOOLEAN DEFAULT FALSE,
++    notes TEXT,
++    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++    created_by TEXT
++);
++
++CREATE INDEX IF NOT EXISTS idx_ortho_track_patient   ON public.orthodontics_tracking(patient_id, created_at DESC);
++CREATE INDEX IF NOT EXISTS idx_implanto_track_patient ON public.implantology_tracking(patient_id, created_at DESC);
++CREATE INDEX IF NOT EXISTS idx_endo_track_patient     ON public.endodontics_tracking(patient_id, created_at DESC);
++
++-- Índice que acelera el JOIN de las políticas (patient_id -> admin_email)
++CREATE INDEX IF NOT EXISTS idx_patients_id_admin ON public.patients(id, admin_email);
++
++-- =================================================================
++-- Respaldo si existiera una tabla *_records con datos reales
++-- =================================================================
++DO $$
++DECLARE t TEXT;
++BEGIN
++  FOREACH t IN ARRAY ARRAY['orthodontics','implantology','endodontics'] LOOP
++    IF EXISTS (SELECT 1 FROM information_schema.tables
++               WHERE table_schema='public' AND table_name = t || '_records') THEN
++      EXECUTE format(
++        'INSERT INTO public.%I_tracking SELECT * FROM public.%I_records ON CONFLICT DO NOTHING;',
++        t, t);
++      RAISE NOTICE 'Migrados datos de %_records a %_tracking', t, t;
++    END IF;
++  END LOOP;
++END $$;
+diff --git a/supabase/migrations/20261123_02_specialties_rls.sql b/supabase/migrations/20261123_02_specialties_rls.sql
+new file mode 100644
+index 0000000..11c0155
+--- /dev/null
++++ b/supabase/migrations/20261123_02_specialties_rls.sql
+@@ -0,0 +1,68 @@
++-- =================================================================
++-- ShiningCloud Dental — Migración 2026-11-23 #2
++-- RLS de especialidades + esterilización, coherente con el
++-- modelo del resto del sistema (my_clinic_admin del sprint 1).
++-- Reemplaza apply_rls_specialties.sql, que solo contemplaba al
++-- admin y dejaba fuera al equipo (dentistas / asistentes).
++-- Idempotente.
++-- =================================================================
++
++ALTER TABLE public.orthodontics_tracking  ENABLE ROW LEVEL SECURITY;
++ALTER TABLE public.implantology_tracking  ENABLE ROW LEVEL SECURITY;
++ALTER TABLE public.endodontics_tracking   ENABLE ROW LEVEL SECURITY;
++ALTER TABLE public.sterilization_inventory ENABLE ROW LEVEL SECURITY;
++ALTER TABLE public.sterilization_cycles    ENABLE ROW LEVEL SECURITY;
++
++-- Limpiar políticas previas (nombres viejos y nuevos) para idempotencia
++DO $$
++DECLARE t TEXT;
++BEGIN
++  FOREACH t IN ARRAY ARRAY['orthodontics_tracking','implantology_tracking','endodontics_tracking'] LOOP
++    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', t || '_select_team', t);
++    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', t || '_all_owner', t);
++    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', t || '_all_team', t);
++    EXECUTE format('DROP POLICY IF EXISTS %L ON public.%I', 'Clínicas pueden ver sus propios registros de ' ||
++      CASE t WHEN 'orthodontics_tracking' THEN 'ortodoncia' WHEN 'implantology_tracking' THEN 'implantología' ELSE 'endodoncia' END, t);
++  END LOOP;
++  EXECUTE 'DROP POLICY IF EXISTS "Clínicas pueden ver su propio inventario de esterilización" ON public.sterilization_inventory';
++  EXECUTE 'DROP POLICY IF EXISTS "Clínicas pueden ver sus propios ciclos de esterilización" ON public.sterilization_cycles';
++END $$;
++
++-- --- Tablas por paciente: acceso por membresía de clínica ---
++DO $$
++DECLARE t TEXT;
++BEGIN
++  FOREACH t IN ARRAY ARRAY['orthodontics_tracking','implantology_tracking','endodontics_tracking'] LOOP
++    EXECUTE format($f$
++      CREATE POLICY %I ON public.%I
++        FOR ALL TO authenticated
++        USING (
++          EXISTS (
++            SELECT 1 FROM public.patients p
++            WHERE p.id = %I.patient_id
++              AND p.admin_email = public.my_clinic_admin()
++              AND p.deleted_at IS NULL
++          )
++        )
++        WITH CHECK (
++          EXISTS (
++            SELECT 1 FROM public.patients p
++            WHERE p.id = %I.patient_id
++              AND p.admin_email = public.my_clinic_admin()
++              AND p.deleted_at IS NULL
++          )
++        );
++    $f$, t || '_all_team', t, t, t);
++  END LOOP;
++END $$;
++
++-- --- Esterilización: por clinic_email (mismo modelo que sprint 1) ---
++CREATE POLICY "ster_inventory_all_team" ON public.sterilization_inventory
++  FOR ALL TO authenticated
++  USING (clinic_email = public.my_clinic_admin())
++  WITH CHECK (clinic_email = public.my_clinic_admin());
++
++CREATE POLICY "ster_cycles_all_team" ON public.sterilization_cycles
++  FOR ALL TO authenticated
++  USING (clinic_email = public.my_clinic_admin())
++  WITH CHECK (clinic_email = public.my_clinic_admin());
+diff --git a/supabase/migrations/20261123_03_lab_work_files.sql b/supabase/migrations/20261123_03_lab_work_files.sql
+new file mode 100644
+index 0000000..5cd919f
+--- /dev/null
++++ b/supabase/migrations/20261123_03_lab_work_files.sql
+@@ -0,0 +1,86 @@
++-- =================================================================
++-- ShiningCloud Dental — Migración 2026-11-23 #3
++-- lab_work_files: múltiples archivos por trabajo de laboratorio.
++-- (Versión ordenada del antiguo supabase_lab_files.sql, idéntica
++-- en comportamiento, con índice de auditoría por created_by.)
++-- Idempotente.
++-- =================================================================
++
++CREATE TABLE IF NOT EXISTS public.lab_work_files (
++    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++    lab_work_id TEXT NOT NULL REFERENCES public.lab_works(id) ON DELETE CASCADE,
++    file_path TEXT NOT NULL,
++    file_name TEXT NOT NULL,
++    file_size BIGINT,
++    content_type TEXT,
++    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++    created_by TEXT
++);
++
++ALTER TABLE public.lab_work_files ENABLE ROW LEVEL SECURITY;
++
++DROP POLICY IF EXISTS "lab_files_select_clinic" ON public.lab_work_files;
++DROP POLICY IF EXISTS "lab_files_select_lab" ON public.lab_work_files;
++DROP POLICY IF EXISTS "lab_files_insert_authorized" ON public.lab_work_files;
++DROP POLICY IF EXISTS "lab_files_delete_creator_or_admin" ON public.lab_work_files;
++
++CREATE POLICY "lab_files_select_clinic" ON public.lab_work_files
++  FOR SELECT TO authenticated
++  USING (
++    EXISTS (
++      SELECT 1 FROM public.lab_works lw
++      WHERE lw.id = lab_work_files.lab_work_id
++        AND (
++          lw.admin_email = auth.jwt()->>'email'
++          OR EXISTS (
++            SELECT 1 FROM public.team t
++            WHERE t.admin_email = lw.admin_email
++              AND t.data->>'email' = auth.jwt()->>'email'
++              AND t.deleted_at IS NULL
++          )
++        )
++    )
++  );
++
++CREATE POLICY "lab_files_select_lab" ON public.lab_work_files
++  FOR SELECT TO authenticated
++  USING (
++    EXISTS (
++      SELECT 1 FROM public.lab_works lw
++      WHERE lw.id = lab_work_files.lab_work_id
++        AND lw.lab_email = auth.jwt()->>'email'
++    )
++  );
++
++CREATE POLICY "lab_files_insert_authorized" ON public.lab_work_files
++  FOR INSERT TO authenticated
++  WITH CHECK (
++    EXISTS (
++      SELECT 1 FROM public.lab_works lw
++      WHERE lw.id = lab_work_files.lab_work_id
++        AND (
++          lw.admin_email = auth.jwt()->>'email'
++          OR lw.lab_email = auth.jwt()->>'email'
++          OR EXISTS (
++            SELECT 1 FROM public.team t
++            WHERE t.admin_email = lw.admin_email
++              AND t.data->>'email' = auth.jwt()->>'email'
++              AND t.deleted_at IS NULL
++          )
++        )
++    )
++  );
++
++CREATE POLICY "lab_files_delete_creator_or_admin" ON public.lab_work_files
++  FOR DELETE TO authenticated
++  USING (
++    created_by = auth.jwt()->>'email'
++    OR EXISTS (
++      SELECT 1 FROM public.lab_works lw
++      WHERE lw.id = lab_work_files.lab_work_id
++        AND lw.admin_email = auth.jwt()->>'email'
++    )
++  );
++
++CREATE INDEX IF NOT EXISTS idx_lab_work_files_work_id  ON public.lab_work_files(lab_work_id);
++CREATE INDEX IF NOT EXISTS idx_lab_work_files_creator  ON public.lab_work_files(created_by, created_at DESC);
+diff --git a/supabase/migrations/README.md b/supabase/migrations/README.md
+new file mode 100644
+index 0000000..e3b0772
+--- /dev/null
++++ b/supabase/migrations/README.md
+@@ -0,0 +1,31 @@
++# Migraciones Supabase — orden de aplicación
++
++## Línea base (ya aplicadas en producción, solo referencia)
++
++Los archivos en `archive/` corresponden a SQL que ya se aplicó
++manualmente en el proyecto (SQL Editor) y se conserva como
++referencia histórica. NO re-aplicar sin revisar.
++
++## Migraciones activas (2026-11-23)
++
++Aplicar en orden, en el SQL Editor de Supabase (o con
++`supabase db push` cuando el CLI esté vinculado). Todas son
++idempotentes: seguras de re-ejecutar.
++
++1. `20261123_01_specialties_tracking_tables.sql`
++   Crea/garantiza orthodontics_tracking, implantology_tracking,
++   endodontics_tracking (nombres que usa el código), índices y
++   respaldo automático si existiera una tabla *_records con datos.
++2. `20261123_02_specialties_rls.sql`
++   RLS de especialidades + esterilización con my_clinic_admin(),
++   coherente con el sprint 1 (incluye al equipo, no solo al admin).
++3. `20261123_03_lab_work_files.sql`
++   Tabla de múltiples archivos por trabajo de laboratorio con RLS.
++
++## Pendiente (próxima sesión)
++
++- `pg_dump --schema-only` para capturar la línea base completa de
++  las tablas sin versionar (patients, appointments, financials,
++  catalog, settings, team, audit_logs, lab_works, saas_*,
++  lab_subscriptions, supply_*, public_*, reminder_log,
++  evolution_templates, packs, clinic_config).
+diff --git a/SPECIALTIES_TABLES.sql b/supabase/migrations/archive/SPECIALTIES_TABLES.sql
+similarity index 100%
+rename from SPECIALTIES_TABLES.sql
+rename to supabase/migrations/archive/SPECIALTIES_TABLES.sql
+diff --git a/apply_lab_files.json b/supabase/migrations/archive/apply_lab_files.json
+similarity index 100%
+rename from apply_lab_files.json
+rename to supabase/migrations/archive/apply_lab_files.json
+diff --git a/apply_rls_specialties.sql b/supabase/migrations/archive/apply_rls_specialties.sql
+similarity index 100%
+rename from apply_rls_specialties.sql
+rename to supabase/migrations/archive/apply_rls_specialties.sql
+diff --git a/get_table_info.json b/supabase/migrations/archive/get_table_info.json
+similarity index 100%
+rename from get_table_info.json
+rename to supabase/migrations/archive/get_table_info.json
+diff --git a/supabase_cleanup_duplicate_policies.sql b/supabase/migrations/archive/supabase_cleanup_duplicate_policies.sql
+similarity index 100%
+rename from supabase_cleanup_duplicate_policies.sql
+rename to supabase/migrations/archive/supabase_cleanup_duplicate_policies.sql
+diff --git a/supabase_fix_lab_accepted_backfill.sql b/supabase/migrations/archive/supabase_fix_lab_accepted_backfill.sql
+similarity index 100%
+rename from supabase_fix_lab_accepted_backfill.sql
+rename to supabase/migrations/archive/supabase_fix_lab_accepted_backfill.sql
+diff --git a/supabase_lab_files.sql b/supabase/migrations/archive/supabase_lab_files.sql
+similarity index 100%
+rename from supabase_lab_files.sql
+rename to supabase/migrations/archive/supabase_lab_files.sql
+diff --git a/supabase_lab_hybrid_migration.sql b/supabase/migrations/archive/supabase_lab_hybrid_migration.sql
+similarity index 100%
+rename from supabase_lab_hybrid_migration.sql
+rename to supabase/migrations/archive/supabase_lab_hybrid_migration.sql
+diff --git a/supabase_recommended_indexes.sql b/supabase/migrations/archive/supabase_recommended_indexes.sql
+similarity index 100%
+rename from supabase_recommended_indexes.sql
+rename to supabase/migrations/archive/supabase_recommended_indexes.sql
+diff --git a/supabase_rls_input.json b/supabase/migrations/archive/supabase_rls_input.json
+similarity index 100%
+rename from supabase_rls_input.json
+rename to supabase/migrations/archive/supabase_rls_input.json
+diff --git a/supabase_sprint1_security.sql b/supabase/migrations/archive/supabase_sprint1_security.sql
+similarity index 100%
+rename from supabase_sprint1_security.sql
+rename to supabase/migrations/archive/supabase_sprint1_security.sql
+-- 
+2.39.5
+
