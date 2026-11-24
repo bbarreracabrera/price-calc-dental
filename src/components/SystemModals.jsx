@@ -4,10 +4,12 @@ import { supabase } from '../supabase';
 import { THEMES } from '../constants';
 import { InputField, Button, Card } from './UIComponents';
 import LegalText from './LegalText';
+import DicomViewerModal from './DicomViewerModal';
 
 // --- COMPONENTE DE SEGURIDAD: URLS FIRMADAS PARA BUCKET PRIVADO ---
 export const PrivateImage = ({ img, onClick, className }) => {
     const [signedUrl, setSignedUrl] = useState(null);
+    const [dicomOpen, setDicomOpen] = useState(false);
 
     useEffect(() => {
         let isMounted = true; 
@@ -59,11 +61,19 @@ export const PrivateImage = ({ img, onClick, className }) => {
         };
 
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-[#FBFAF8] hover:bg-white border border-[#D9D2C7]/40 transition-colors rounded-xl p-4 text-center" onClick={() => window.open(signedUrl, '_blank')}>
+            <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-[#FBFAF8] hover:bg-white border border-[#D9D2C7]/40 transition-colors rounded-xl p-4 text-center" onClick={() => (isDicom ? setDicomOpen(true) : window.open(signedUrl, '_blank'))}>
                 {getIcon()}
                 <span className="text-[11px] font-black mt-2 text-[#241F1B] uppercase tracking-widest">{getLabel()}</span>
                 <span className="text-[11px] font-bold mt-1 text-[#5E554E] uppercase tracking-tighter opacity-60">Click para descargar/ver</span>
-            </div>
+            {dicomOpen && (
+                <DicomViewerModal
+                    signedUrl={signedUrl}
+                    storagePath={img.path || img.url}
+                    fileName={(img.path || img.url || '').split('/').pop()}
+                    onClose={() => setDicomOpen(false)}
+                />
+            )}
+        </div>
         );
     }
 

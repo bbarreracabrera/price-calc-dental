@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cornerstonejs/core": "^5.19.4",
+    "@cornerstonejs/dicom-image-loader": "^5.19.4",
     "@supabase/supabase-js": "^2.95.3",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",

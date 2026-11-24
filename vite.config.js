@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Cornerstone dicom-image-loader crea su worker con { type: 'module' };
+  // el formato iife por defecto de Vite rompe el build ("Invalid value iife for worker.format").
+  worker: { format: 'es' },
   plugins: [
     react(),
     VitePWA({

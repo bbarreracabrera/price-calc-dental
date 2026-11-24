@@ -1,0 +1,48 @@
+From f7163287bc03ab1e65fa87c18e9bb1c3c76ae71d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Auditor=C3=ADa=20ShiningCloud?= <audit@shiningcloud.local>
+Date: Tue, 24 Nov 2026 04:46:28 +0000
+Subject: [PATCH] =?UTF-8?q?feat(uploads):=20l=C3=ADmite=20DICOM=20200MB=20?=
+ =?UTF-8?q?en=20ficha=20de=20paciente;=20im=C3=A1genes/PDF=20a=2025MB?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Los CBCT/TAC superaban el tope uniforme de 10MB. El límite ahora
+se elige por extensión (.dcm/.dicom -> 200MB); storage de Supabase
+no tiene límite de bucket, así que no hace falta SQL.
+---
+ src/utils/uploadHandlers.js | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/src/utils/uploadHandlers.js b/src/utils/uploadHandlers.js
+index d8761ed..6f99b36 100644
+--- a/src/utils/uploadHandlers.js
++++ b/src/utils/uploadHandlers.js
+@@ -1,8 +1,10 @@
+ import { supabase } from '../supabase';
+ 
+ const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
+-    const MAX_PATIENT_SIZE = 10 * 1024 * 1024; // 10MB
+-    const MAX_LAB_SIZE = 50 * 1024 * 1024; // 50MB para archivos de lab
++const MAX_PATIENT_SIZE = 25 * 1024 * 1024; // 25MB (imágenes y PDF clínicos)
++const MAX_DICOM_SIZE = 200 * 1024 * 1024; // 200MB (estudios DICOM/CBCT)
++const MAX_LAB_SIZE = 50 * 1024 * 1024; // 50MB para archivos de lab
++const DICOM_EXTENSIONS = ['dcm', 'dicom'];
+ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+     // Permitir cualquier tipo de archivo para pacientes, pero mantener límites de seguridad para el visor
+     const ALLOWED_PATIENT_TYPES = ['*']; 
+@@ -129,7 +131,10 @@ export const uploadPatientImage = async (file, context, fileType = 'clinical') =
+         return;
+     }
+ 
+-    const currentMaxSize = fileType === 'lab' ? MAX_LAB_SIZE : MAX_PATIENT_SIZE;
++    // DICOM por extensión: límite propio, mucho mayor (estudios CBCT/TAC)
++    const ext = (file.name || '').split('.').pop().toLowerCase();
++    const isDicom = DICOM_EXTENSIONS.includes(ext);
++    const currentMaxSize = fileType === 'lab' ? MAX_LAB_SIZE : (isDicom ? MAX_DICOM_SIZE : MAX_PATIENT_SIZE);
+     if (file.size > currentMaxSize) {
+         notify(`El archivo es demasiado grande (máximo ${currentMaxSize / (1024 * 1024)}MB)`);
+         return;
+-- 
+2.39.5
+
