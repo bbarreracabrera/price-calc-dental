@@ -1,8 +1,10 @@
 import { supabase } from '../supabase';
 
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
-    const MAX_PATIENT_SIZE = 10 * 1024 * 1024; // 10MB
-    const MAX_LAB_SIZE = 50 * 1024 * 1024; // 50MB para archivos de lab
+const MAX_PATIENT_SIZE = 25 * 1024 * 1024; // 25MB (imágenes y PDF clínicos)
+const MAX_DICOM_SIZE = 200 * 1024 * 1024; // 200MB (estudios DICOM/CBCT)
+const MAX_LAB_SIZE = 50 * 1024 * 1024; // 50MB para archivos de lab
+const DICOM_EXTENSIONS = ['dcm', 'dicom'];
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     // Permitir cualquier tipo de archivo para pacientes, pero mantener límites de seguridad para el visor
     const ALLOWED_PATIENT_TYPES = ['*']; 
@@ -129,7 +131,10 @@ export const uploadPatientImage = async (file, context, fileType = 'clinical') =
         return;
     }
 
-    const currentMaxSize = fileType === 'lab' ? MAX_LAB_SIZE : MAX_PATIENT_SIZE;
+    // DICOM por extensión: límite propio, mucho mayor (estudios CBCT/TAC)
+    const ext = (file.name || '').split('.').pop().toLowerCase();
+    const isDicom = DICOM_EXTENSIONS.includes(ext);
+    const currentMaxSize = fileType === 'lab' ? MAX_LAB_SIZE : (isDicom ? MAX_DICOM_SIZE : MAX_PATIENT_SIZE);
     if (file.size > currentMaxSize) {
         notify(`El archivo es demasiado grande (máximo ${currentMaxSize / (1024 * 1024)}MB)`);
         return;
